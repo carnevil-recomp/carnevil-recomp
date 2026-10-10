@@ -1,0 +1,14 @@
+# Game assets and original binaries are never committed
+original/
+assets/
+*.chd
+*.raw
+*.bndb
+# build output
+build/
+*.o
+*.elf
+*.bin
+experiments/**/out/
+.DS_Store
+__pycache__/

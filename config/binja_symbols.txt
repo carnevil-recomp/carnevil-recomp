@@ -1,0 +1,890 @@
+# Exported from ~/Downloads/GAME.EXE-2.bndb via MCP on 2026-10-10.
+# View maps GAME.EXE (incl. 8-byte header) at 0x800C3FF8, so code starts at 0x800C4000.
+# format: address<TAB>kind<TAB>name<TAB>prototype-or-type
+0x800c3ff8	func	goose_init	void(void* gii)
+0x800c4154	func	_ioctl	int32_t()
+0x800c4154	func	_ioctl	int32_t()
+0x800c4224	func	exec	int32_t()
+0x800c426c	func	install_sys_handler	void(int32_t num, void (* func)())
+0x800c4274	func	install_fpu_handler	void(int32_t num, int32_t (* func)(int32_t*))
+0x800c427c	func	install_int_div0_handler	void(void (* func)())
+0x800c4284	func	install_int_divo_handler	void(void (* func)())
+0x800c428c	func	install_interrupt_handler	void(int32_t num, int32_t (* func)())
+0x800c42d8	func	graphics_init	int32_t()
+0x800c4778	func	print_dma_timeout	int32_t()
+0x800c47b0	func	fp_div0_reboot	void()
+0x800c47e0	func	func	int32_t(int32_t arg1, int32_t* arg2)
+0x800c4ae0	func	wdog_setup	void(int32_t arg1) __noreturn
+0x800c4cec	func	func_800c4cec	void()
+0x800c4d10	func	func_800c4d10	void()
+0x800c4d34	func	func_800c4d34	void()
+0x800c4da0	func	int_div0_handler	void()
+0x800c4e68	func	int_divo_handler	void()
+0x800c4f30	func	utime_proc	void()
+0x800c50ac	func	main_proc	int32_t()
+0x800c5748	func	init_main_game_proc	int32_t()
+0x800c5830	func	game_proc_alt	void()
+0x800c5e50	func	main_init_sound	void()
+0x800c6030	func	vblank_handler	int32_t()
+0x800c611c	func	galileo_dma0_handler	void()
+0x800c63c8	func	print_select_countdown	int32_t()
+0x800c65d4	func	hw_info_screen	void*(int32_t arg1 @ $f20, int32_t arg2 @ $f21)
+0x800c6950	func	diags_proc	void()
+0x800c69ac	func	dispatch_diags_proc	int32_t(int32_t arg1)
+0x800c6a64	func	something_todo_with_credits	int32_t()
+0x800c6cc0	func	dispatch_start_proc	void(int32_t arg1, int32_t arg2)
+0x800c6d04	func	start_proc	void()
+0x800c6f44	func	coin_volume_proc	void()
+0x800c706c	func	show_volume_level	void*(int32_t arg1 @ $f20, int32_t arg2 @ $f21, int32_t arg3 @ $f22, int32_t arg4 @ $f23, int32_t arg5 @ $f24, int32_t arg6 @ $f25, int32_t arg7 @ $f26, int32_t arg8 @ $f27)
+0x800c78b0	func	free_play_func	int32_t()
+0x800c7ab8	func	dispatch_slam_proc	int32_t(int32_t arg1)
+0x800c7b14	func	slam_proc	void()
+0x800c7b3c	func	ccproc_proc	void()
+0x800c7d74	func	check_for_freeplay	int32_t()
+0x800c7dd0	func	credit_info	int32_t(int32_t arg1)
+0x800c817c	func	check_credits_to_start_mode	int32_t()
+0x800c818c	func	check_credits_to_continue_mode	int32_t()
+0x800c9ed0	func	print_heap_and_obj_info_onscreen	void*()
+0x800ca4d0	func	load_camera_file	int32_t(void** arg1, int32_t given_size, char* camera_filename, int32_t given_crc)
+0x800ca6d4	func	load_anim	int32_t(struct submesh_info* submesh_array, int32_t num_groups, int32_t num_frames, char* anim_filename, int32_t given_crc)
+0x800ca97c	func	load_model	int32_t(char** arg1, int32_t arg2, char** arg3, int32_t arg4, char** arg5, int32_t arg6, char* model_filename, int32_t given_crc)
+0x800cac64	func	load_path	int32_t(char** arg1, int32_t sz_multiplier_idk, char* pth_filename, int32_t given_crc)
+0x800cae68	func	remove_animation	void(struct submesh_info* model_info, int32_t num_groups)
+0x800caed0	func	remove_model	void(int32_t* arg1, int32_t arg2, int32_t* arg3, int32_t* arg4)
+0x800caf24	func	remove_path	void(int32_t* path_pointer)
+0x800caf48	func	load_backup_file	int32_t(char* arg1)
+0x800caf80	func	load_attract_texmap	void()
+0x800caff4	func	load_aamav_texmap	void()
+0x800cb024	func	remove_attract_texmap	void()
+0x800cb084	func	game_proc	void()
+0x800cb228	func	movie_load_intro	int32_t()
+0x800cb2c0	func	movie_load_attract	int32_t()
+0x800cb368	func	movie_load_midway	int32_t()
+0x800cb800	func	do_play_mode	int32_t*(int32_t arg1 @ $f20, int32_t arg2 @ $f21)
+0x800cbbb4	func	print_onscreen_debuginfo	void(void* arg1)
+0x800cc398	func	get_object_data	int32_t(int32_t obj_id)
+0x800cc52c	func	add_object1_wrapper	int32_t(int16_t arg1)
+0x800cc560	func	add_object	int32_t(int32_t* arg1)
+0x800cc7c4	func	remove_game_object	int32_t(int32_t arg1)
+0x800cca70	func	object_draw_func	void(void* arg1)
+0x800cdfb4	func	do_something_with_submesh	int32_t(void* arg1, int32_t arg2, int32_t num_groups, int32_t arg4, float arg5 @ $f0, float arg6 @ $f2, int32_t arg7 @ $f3)
+0x800ce294	func	get_player_info_struct?	struct player_info*()
+0x800cf190	func	get_player_info_struct2?	struct player_info*(void* arg1)
+0x800d45dc	func	load_level_camera	void*(int32_t wave_id, int32_t arg2 @ $f20, int32_t arg3 @ $f21, int32_t arg4 @ $f22, int32_t arg5 @ $f23, int32_t arg6 @ $f24, int32_t arg7 @ $f25, int32_t arg8 @ $f26, int32_t arg9 @ $f27, int32_t arg10 @ $f28, int32_t arg11 @ $f29, int32_t arg12 @ $f30, int32_t arg13 @ $f31)
+0x800d4ac8	func	kss_reset?	int32_t()
+0x800d4b98	func	kss_reset_w_calib?	int32_t()
+0x800d4d00	func	cmos_calibration?	int32_t()
+0x800d5a84	func	something_to_do_with_shooting?	struct player_info*(struct player_info* arg1)
+0x800d61c0	func	calibrate_guns	int32_t*(int32_t arg1 @ $f20, int32_t arg2 @ $f21, int32_t arg3 @ $f22, int32_t arg4 @ $f23, int32_t arg5 @ $f24, int32_t arg6 @ $f25)
+0x800d685c	func	add_surface	int32_t(struct texmap_struct* texmap)
+0x800d69ec	func	load_texmap	void(struct texmap_struct* texmap_struct, int32_t tex_filename_array_sz, char* tex_key)
+0x800d6b98	func	remove_surface	void(struct texmap_struct* texmap, int32_t texmap_sz)
+0x800d6ef0	func	load_level_lights	int32_t(int32_t wave_id)
+0x800d71e0	func	add_light	int32_t(int32_t arg1)
+0x800d7b44	func	show_debug_light?	int32_t*(int32_t arg1)
+0x800d8198	func	create_particle_light?	int32_t(int32_t* arg1)
+0x800d8660	func	check_if_light_exists	int32_t(int32_t arg1)
+0x800d8a78	func	add_light_to_camera?	int32_t(int32_t arg1)
+0x800d8c60	func	load_misc_texmaps	int32_t()
+0x800d8e70	func	load_freakshow_texmap	int32_t()
+0x800d8f38	func	load_rickity_texmap	int32_t()
+0x800d8fec	func	load_btop_gore_texmaps	int32_t()
+0x800d9068	func	remove_btop_gore_texmaps	int32_t()
+0x800dbf04	func	some_sort_of_free	void()
+0x800dbf58	func	load_font_texmap	int32_t()
+0x800ddf74	func	add_to_print?	void*(int32_t arg1, char* arg2, float arg3, int32_t arg4 @ $f2, int32_t arg5)
+0x800dea2c	func	setup_cmos	int32_t(void* s, int32_t* aud_stat, int32_t* adj_stat, int32_t* rec_stat)
+0x800deaa0	func	some_todo_with_animations	int32_t(void* arg1, model_info* model_info, int32_t submeshes, int32_t arg4, float arg5 @ $f26, float arg6 @ temp2147483647, int32_t arg7 @ 0x10, int32_t arg8 @ 0x14, int32_t arg9 @ 0x18, int32_t arg10 @ 0x1c)
+0x800e08c8	func	load_level_object	int32_t(int32_t arg1, void* arg2, int32_t arg3, int32_t arg4, int32_t arg5 @ $f20, int32_t arg6 @ $f21, int16_t arg7 @ 0x10, int32_t arg8 @ 0x14)
+0x800e2a34	func	decrenent_health?	int32_t(struct player_info* player_info, int32_t arg2, int32_t arg3, int32_t arg4 @ $s0, int32_t arg5 @ $s1, int32_t arg6 @ $f20, int32_t arg7 @ $f21)
+0x800e2d48	func	init_player_stats?	int32_t(int32_t player_index)
+0x800e3490	func	end_of_game	int32_t()
+0x800e3560	func	end_of_wave	int32_t()
+0x800e44f4	func	level_end_stats_wrapper	void*()
+0x800e4538	func	level_end_stats	void*(struct player_info* info_struct)
+0x800e4c70	func	load_hstd_texmap	int32_t()
+0x800e4ca4	func	remove_hstd_texmap	int32_t()
+0x800e4cd0	func	load_ehstd_texmap	int32_t()
+0x800e4d38	func	remove_ehstd_texmap	int32_t()
+0x800e4eac	func	reset_high_scores	int32_t()
+0x800e5114	func	write_scores	int32_t()
+0x800e521c	func	print_high_scores?	void*()
+0x800e5560	func	something_player_score	struct player_info*(struct player_info* player_stats)
+0x800e6208	func	file_copy	void(char* readfile, char* writefile)
+0x800e6358	func	create_hstd_tex	int32_t(void* arg1, int32_t arg2)
+0x800e69b8	func	make_highscore_screen	void*(int32_t arg1 @ $f1)
+0x800e7188	func	movie_load	int32_t(int32_t movie_num)
+0x800e75ac	func	load_fram_wrapper	int32_t()
+0x800e77ec	func	show_debug_frame_data	int32_t()
+0x800e7cf8	func	something_about_reading_frames	int32_t(int32_t disk_err)
+0x800e7d50	func	loadfram_proc	void()
+0x800e7fbc	func	grab_save_screen	int32_t(char* save_screen_filepath)
+0x800e8168	func	movie_load_ending	int32_t()
+0x800e8510	func	decompress_movie	int32_t(int16_t* arg1, int32_t* arg2)
+0x800e8b78	func	decoode_movie2	int32_t(void* arg1, int32_t* arg2)
+0x800e92bc	func	load_level_spawn	int32_t(int32_t wave_id)
+0x800e9570	func	construct_and_spawn_object	int32_t(int16_t* arg1, int32_t arg2)
+0x800ea8e8	func	something_gool_anim	int32_t*(void* arg1)
+0x800eb018	func	load_gool_texmap	void()
+0x800eb048	func	load_gool	void()
+0x800eb0d0	func	remove_gool	void()
+0x800ebca4	func	clean_up_level_sounds	int32_t()
+0x800ebcf4	func	find_snd_in_snd_bank	int32_t(ummmmm* arg1, int32_t arg2, char* sound_key, int32_t arg4)
+0x800ec3b0	func	iterate_tokken2_snds	int32_t(int32_t arg1, int32_t arg2)
+0x800ec3f4	func	iterate_bigtop2_snds	int32_t(int32_t arg1, int32_t arg2)
+0x800ec438	func	iterate_skeleton_snds	int32_t(int32_t arg1, int32_t arg2)
+0x800ed030	func	game_proc2	void() __noreturn
+0x800ed7e8	func	something_mari_anim	int32_t*(void* arg1)
+0x800eded8	func	load_mari_texmap	void()
+0x800edf20	func	load_mari	void()
+0x800eee20	func	remove_mari	void()
+0x800ef870	func	startaudit	void(struct FILE* buffer)
+0x800f1f78	func	write_adjustments_file_wrapper	int32_t()
+0x800f1fd0	func	write_adjustments_file	void()
+0x800f2a28	func	setup_cmos	int32_t(setup_cmos_struct_t* s, int32_t* aud_stat, int32_t* adj_stat, int32_t* rec_stat)
+0x800f3dac	func	load_bat_texmap	void()
+0x800f3ddc	func	load_bat	void()
+0x800f3e84	func	remove_bat_assets	void()
+0x800f44d8	func	something_bat_state	void(void* arg1, int32_t arg2)
+0x800f4b18	func	load_spider_texmap	void()
+0x800f4b48	func	load_spider	void()
+0x800f4bd0	func	remove_spider_assets	void()
+0x800f56d0	func	unload_wave	int32_t()
+0x800f59dc	func	preload_wave	int32_t(int32_t wave_id)
+0x800f5cbc	func	load_wave_proc	void()
+0x800f60ec	func	remove_hhouse_assets	int32_t()
+0x800f616c	func	load_hhouse_assets	int32_t()
+0x800f624c	func	load_level_sounds	int32_t(int32_t wave_id)
+0x800f6574	func	remove_level_sounds	int32_t(int32_t arg1)
+0x800f693c	func	remove_freakshow_assets	int32_t()
+0x800f69ac	func	load_freakshow_assets	int32_t()
+0x800f6a6c	func	remove_bigtop_assets	int32_t()
+0x800f6c30	func	load_bigtop_assets	int32_t()
+0x800f6cd8	func	remove_rickitytown_assets	void()
+0x800f6d38	func	load_rickity_town_assets	void()
+0x800f6e50	func	load_gallery_objects_wrapper	void()
+0x800f6eb0	func	btopload_proc	void()
+0x800f7534	func	load_hand_texmap	int32_t()
+0x800f7564	func	load_hand	int32_t()
+0x800f8620	func	load_zombie_texmap	int32_t()
+0x800f8650	func	load_zomb	int32_t()
+0x800fbfa0	func	move_cd	int32_t(int16_t* arg1, float arg2, float arg3, float arg4, int32_t arg5 @ $f20, int32_t arg6 @ $f21, int32_t arg7 @ $f22, int32_t arg8 @ $f23, int32_t arg9 @ $f24, int32_t arg10 @ $f25)
+0x800fe0e0	func	load_chnk_texmap	int32_t()
+0x800fe128	func	load_chnk_model	int32_t()
+0x800ffb38	func	malloc_snow	void()
+0x8010097c	func	load_ainn	int32_t()
+0x80101258	func	load_ainn_texmap	int32_t()
+0x80101288	func	load_atps	int32_t()
+0x80101370	func	remove_ainn_assets	int32_t()
+0x80101ce0	func	load_gallery_objects	int32_t()
+0x80101f08	func	remove_gallery_objects	int32_t()
+0x80102ac4	func	load_shotgun_texmap	int32_t()
+0x80102af4	func	load_shotgun_model	int32_t()
+0x801031d4	func	load_health_texmap	int32_t()
+0x80103204	func	load_health_model	int32_t()
+0x80103928	func	load_ammmo_texmap	int32_t()
+0x80103958	func	load_ammo_model	int32_t()
+0x801039b8	func	remove_ammo_assets	int32_t()
+0x8010407c	func	load_acid_texmap	int32_t()
+0x801040ac	func	load_acid_model	int32_t()
+0x8010410c	func	remove_acidbath	int32_t()
+0x80104834	func	load_machinegun_texmap	int32_t()
+0x80104864	func	load_machinegun_model	int32_t()
+0x80104ff8	func	load_flamethrower_texmap	int32_t()
+0x80105028	func	load_flamethrower_model	int32_t()
+0x80105794	func	load_inng_texmap	int32_t()
+0x801057c4	func	load_inng	int32_t()
+0x8010644c	func	load_vict_texmap	int32_t()
+0x8010647c	func	load_vict	int32_t()
+0x80106d08	func	load_spdl_texmap	int32_t()
+0x80106d38	func	load_spdl	int32_t()
+0x8010768c	func	get_jester_mog	int32_t*(void* arg1, int16_t* arg2, int32_t arg3, void* arg4, int32_t arg5 @ $f20, int32_t arg6 @ $f21, int32_t arg7 @ $f22, int32_t arg8 @ $f23, int32_t arg9 @ 0x14, int32_t arg10 @ 0x18, void* arg11 @ 0x1c)
+0x80108724	func	load_jester_texmap	int32_t()
+0x80108754	func	load_jester_model	int32_t()
+0x801087b4	func	load_hhouse_jester_anim	int32_t()
+0x801087f4	func	remove_hhouse_jester_anim	int32_t()
+0x80108828	func	load_freakshow_jester_anim	int32_t()
+0x80108868	func	remove_freakshow_jester_anim	int32_t()
+0x8010889c	func	load_rickity_jester_anim	int32_t()
+0x801088dc	func	remove_rickity_jester_anim	int32_t()
+0x80108910	func	load_bigtop_jester_anim	int32_t()
+0x80108950	func	remove_bigtop_jester_anim	int32_t()
+0x80108984	func	load_jester_path	int32_t()
+0x8010a794	func	load_mike_texmap	int32_t()
+0x8010a7dc	func	load_mike	int32_t()
+0x8010a964	func	remove_mike_assets	int32_t()
+0x8010e698	func	load_hhouse_enemy_weap_texmaps	int32_t()
+0x8010e710	func	load_hhouse_enemy_weap_models	int32_t()
+0x8010f1d0	func	wtf	int32_t(int32_t* arg1, int32_t arg2, int32_t* arg3, int32_t arg4, int32_t arg5 @ $s0, int32_t arg6 @ $s1, int32_t arg7 @ $s2, int32_t arg8 @ $s3, int32_t* arg9 @ 0x10)
+0x8010fa2c	func	load_freakshow_enemy_weap_texmaps	int32_t()
+0x8010fad4	func	load_freakshow_enemy_weap_models	int32_t()
+0x8010fca0	func	remove_freakshow_weaps	int32_t()
+0x8010fee4	func	load_junk	int32_t()
+0x801100d0	func	load_btop_weap_texmaps	int32_t()
+0x80110118	func	load_btop_weap_models	int32_t()
+0x801102d0	func	do_script	int32_t(int32_t arg1)
+0x8011533c	func	load_flash_texmap	int32_t()
+0x80115374	func	remove_flash_texmap	int32_t()
+0x80116c20	func	load_tops_texmap	int32_t()
+0x80116c50	func	load_tops	int32_t()
+0x80116d58	func	remove_tops_assets	int32_t()
+0x80118e14	func	load_taur_texmap	int32_t()
+0x80118e44	func	load_taur	int32_t()
+0x80118f9c	func	remove_taur_assets	int32_t()
+0x8011a588	func	load_monk_texmap	int32_t()
+0x8011a5b8	func	load_monk	int32_t()
+0x8011a660	func	remove_monk_asets	int32_t()
+0x8011b8ec	func	load_grub_texmap	int32_t()
+0x8011b91c	func	load_grub	int32_t()
+0x8011b9c4	func	remove_grub_assets	int32_t()
+0x8011c69c	func	load_tort_texmap	int32_t()
+0x8011c6cc	func	load_tort	int32_t()
+0x8011c80c	func	remove_tort_assets	int32_t()
+0x8011e408	func	load_rodz_texmap	int32_t()
+0x8011e438	func	load_rodz	int32_t()
+0x8011e5f8	func	remove_rodz_assets	int32_t()
+0x801203f0	func	load_junoir_texmap	int32_t()
+0x80120460	func	load_junior	int32_t()
+0x801205cc	func	remove_junior_texmap	int32_t()
+0x8012142c	func	chose_junoir_animation?	struct player_info*(struct_1* arg1)
+0x801226e8	func	load_finn	int32_t()
+0x80122790	func	remove_finn_assts	int32_t()
+0x801233e4	func	load_flie_texmap	int32_t()
+0x80123414	func	load_flie	int32_t()
+0x8012352c	func	remove_flie_assets	int32_t()
+0x80125414	func	load_dino_texmap	void()
+0x80125444	func	load_dino	int32_t()
+0x8012556c	func	remove_dino_assets	void()
+0x80126bd0	func	load_krinkle_texmap	int32_t()
+0x80126c00	func	load_krinkle	int32_t()
+0x80126ce8	func	remove_krinkle_assets	int32_t()
+0x8012899c	func	load_term	int32_t()
+0x80128a44	func	remove_term_assets	int32_t()
+0x801297a0	func	load_rinn_texmap	int32_t()
+0x801297d0	func	load_rinn	int32_t()
+0x80129858	func	remove_rinn_assets	int32_t()
+0x8012a600	func	load_smilingbob_texmap	int32_t()
+0x8012a630	func	load_smilingbob	int32_t()
+0x8012a758	func	remove_smilingbob_assets	int32_t()
+0x8012c0ec	func	load_teen	int32_t()
+0x8012e270	func	load_krampus_texmap	int32_t()
+0x8012e2a0	func	load_krampus	int32_t()
+0x8012e448	func	remove_krampus_assets	int32_t()
+0x8012e528	func	spawn_krampus?	int32_t(ummmmm* arg1)
+0x80131218	func	load_pood_texmap	int32_t()
+0x80131248	func	load_pood	int32_t()
+0x80132664	func	load_mame_texmap	int32_t()
+0x80132694	func	load_mame	int32_t()
+0x8013277c	func	remove_mame_assets	int32_t()
+0x80133bc8	func	load_batb_texmap	int32_t()
+0x80133bf8	func	load_batb	int32_t()
+0x80133ca0	func	remove_batb_texmap	int32_t()
+0x801350b4	func	load_clown_texmap	void()
+0x801350e4	func	load_clown	int32_t()
+0x8013522c	func	remove_clown_assets	void()
+0x80136e6c	func	load_litl_texmap	int32_t()
+0x80136e9c	func	load_litl	int32_t()
+0x80136f44	func	remove_litl_assets	int32_t()
+0x801392fc	func	load_toke_texmap	int32_t()
+0x8013932c	func	remove_toke_texmap	int32_t()
+0x80139354	func	load_toke	int32_t()
+0x8013b9c8	func	render_enetity_debug_info	int32_t*(void* arg1)
+0x8013c16c	func	load_doctorklot_texmap	int32_t()
+0x8013c19c	func	load_doctor_klot	int32_t()
+0x8013d624	func	load_skeleton_texmap	int32_t()
+0x8013d654	func	load_skeleton	void()
+0x8013d6fc	func	remove_skeleton_assets	void()
+0x8013edf0	func	load_binn_texmap	int32_t()
+0x8013ee20	func	load_binn	int32_t()
+0x8013eea8	func	remove_binn_assets	int32_t()
+0x8013f678	func	interrupt_ioasic_handler	int32_t()
+0x80141020	func	close_credit_fds	void()
+0x801410a4	func	load_credits	int32_t()
+0x801412d0	func	load_game.env	int32_t()
+0x801415b0	func	strcpy	uint8_t*(char* dest, char* src)
+0x80141610	func	memcpy	int32_t(void* dest, void* src, uint32_t n)
+0x801416b8	func	printf	int32_t(char* fmt, ...)
+0x80141708	func	graphical_printf	int32_t(int32_t* addr, char* fmt, ...)
+0x80142cf8	func	fclose	int32_t(struct FILE* _stream)
+0x80142e30	func	fflush	int32_t(struct FILE* stream)
+0x80143100	func	fopen	struct FILE*(char* pathname, char* mode)
+0x801432a0	func	fprintf	int32_t(int32_t stream, char* fmt, ...)
+0x801433b8	func	fread	uint32_t(void* ptr, uint32_t size, uint32_t nmemb, struct FILE* filestream)
+0x80143908	func	fwrite	int32_t(char* arg1, int32_t arg2, int32_t arg3, int32_t* arg4)
+0x80143d78	func	__asm__	int32_t(int32_t arg1)
+0x80143df8	func	getenv	void*(char* __name)
+0x80143e90	func	get_free_mem_left	int32_t()
+0x80143ee8	func	malloc	int32_t*(int32_t arg1)
+0x8014431c	func	free	void(int32_t arg1)
+0x80144d90	func	fmod	int32_t()
+0x80144eb8	func	frexp	double(double x @ 0x10, int32_t* exp @ $a0)
+0x80145158	func	ldexp	void __convention("o32-hard-float")(float arg1, int32_t arg2)
+0x80145318	func	findfirst	int32_t(int32_t arg1, int32_t arg2)
+0x80145698	func	open_system_controller_dev	int32_t(char* name, int32_t flags, ...)
+0x80145950	func	calculate_crc	int32_t(void* file_buffer, int32_t given_crc)
+0x8014762c	func	check_dipswitch_value?	int32_t()
+0x801485e0	func	create_object	void*(char* name, int32_t id, int32_t flags, int32_t draw_order, void* object_data, void (* object_draw_func)(void*))
+0x80148d00	func	strncpy	uint8_t*(uint8_t* dest, char* src, int32_t n)
+0x80148d58	func	set_resource_control	void(int32_t mode)
+0x80148db0	func	reset_process_lists	void()
+0x80148dd0	func	add_process_block	int32_t*()
+0x80148fa4	func	create_process	int32_t(char* arg1, int32_t arg2, int32_t* arg3, int32_t arg4, int32_t arg5)
+0x80149200	func	create_process_immediate	int32_t(char* arg1, int32_t arg2, int32_t* arg3, int32_t arg4, int32_t arg5)
+0x8014947c	func	delete_process	void(struct process_node* pn)
+0x801495ec	func	delete_process_id	void(int32_t id)
+0x8014966c	func	print_processes	struct process_node*()
+0x801496e4	func	delete_multiple_processs	struct process_node*(int32_t id, int32_t mask)
+0x80149770	func	clear_all_processs	void()
+0x80149874	func	add_sleep_process_id	void(int32_t id, int16_t ticks)
+0x801498f8	func	sleep_process	void(struct process_node* p, int16_t ticks)
+0x80149988	func	wakeup_process_id	void(int32_t id)
+0x801499f8	func	wakeup_process	void(struct process_node* p)
+0x80149a44	func	suspend_self	int32_t()
+0x80149aa0	func	suspend_process	void(struct process_node* pn)
+0x80149af4	func	suspend_all	void()
+0x80149b40	func	resume_process	void(struct process_node* pn)
+0x80149b90	func	resume_all	void()
+0x80149bc8	func	existp	struct process_node*(int32_t process_id, int32_t mask)
+0x80149c58	func	kill	void(struct process_node* proc, int32_t cause)
+0x80149d20	func	killall	void(int32_t process_id, int32_t mask)
+0x80149dd8	func	kill_everything	void()
+0x80149e58	func	set_id	void(int32_t new_process_id)
+0x80149e8c	func	get_data	void*()
+0x80149ec4	func	suspend_multiple_processes	void(int32_t id, int32_t mask)
+0x80149f64	func	resume_multiple_processes	void(int32_t id, int32_t mask)
+0x80149ff0	func	set_run_level	void(int32_t level)
+0x8014a018	func	set_process_run_level	void(process_node_t* proc, int32_t level)
+0x8014a09c	func	_proc_sort	int32_t(void const* a, void const* b)
+0x8014a0f4	func	do_process_sort	void()
+0x8014a3f0	func	clear_free_process_list	void()
+0x8014a734	func	qsort	int32_t(char* arg1, int32_t arg2, int32_t arg3, int32_t arg4)
+0x8014e488	func	set_texture_free_mode	void(int32_t mode)
+0x8014e498	func	reset_texture_lists	void()
+0x8014e4b0	func	find_texture	struct texture_node*(char* name, int16_t id)
+0x8014e528	func	create_texture	struct texture_node*(char* name, int32_t id, int32_t flags, int32_t cflags, int32_t sclamp, int32_t tclamp, int32_t minfilt, int32_t maxfilt)
+0x8014e98c	func	delete_texture	void(struct texture_node* tn)
+0x8014ead8	func	delete_texture_id	void(int32_t id)
+0x8014eb28	func	force_delete_multiple_textures	void(int32_t id, int32_t mask)
+0x8014eba0	func	delete_multiple_textures	void(int32_t id, int32_t mask)
+0x8014ec0c	func	clear_texture_list	void(int32_t flag)
+0x8014ec6c	func	lock_texture	void(struct texture_node* tn)
+0x8014ec7c	func	lock_texture_id	void(int32_t id)
+0x8014ecbc	func	lock_multiple_textures	void(int32_t id, int32_t mask)
+0x8014ecfc	func	lock_textures_all	void()
+0x8014ed2c	func	unlock_texture	void(struct texture_node* tn)
+0x8014ed3c	func	unlock_texture_id	void(int32_t id)
+0x8014ed88	func	unlock_multiple_textures	void(int32_t id, int32_t mask)
+0x8014edd4	func	unlock_all_textures	void()
+0x8014ee10	func	create_texture_from_memory	struct texture_node*(char* name, void* buf, int32_t id, int32_t flags, int32_t cflags, int32_t sclamp, int32_t tclamp, int32_t minfilt, int32_t maxfilt)
+0x8014f0ec	func	clear_free_texture_list	void()
+0x8014f138	func	clear_free_lists	void()
+0x8014f19c	func	clear_all_textures	int32_t()
+0x8014f238	func	clear_unlocked_textures	void()
+0x8014f298	func	clear_locked_textures	void()
+0x8014f378	func	create_font	void**(int32_t* arg1, int32_t arg2)
+0x8014f590	func	create_font_from_memory	void**(void* arg1, int32_t* arg2, int32_t arg3, int32_t arg4 @ $s0, int32_t arg5 @ $s1, int32_t arg6 @ $s2, int32_t arg7 @ $s3, int32_t arg8 @ $s4, int32_t arg9 @ $s5, int32_t arg10 @ $s6, int32_t arg11 @ $s7, int32_t arg12 @ $fp)
+0x8014fdf0	func	func_8014fdf0	void()
+0x8014fef0	func	div0_handler	int32_t(int32_t* arg1)
+0x80150860	func	unimplemented_handler	void(int32_t* r_save)
+0x80150dfc	func	show_object_list	void()
+0x80150fac	func	show_process_list	void()
+0x80151178	func	show_free_process_list	void()
+0x801512a0	func	show_textures_list	void()
+0x80151628	func	dump_used_handle	void(int32_t mmid)
+0x801517ec	func	list_dumper	int32_t(int32_t cause, int32_t* regs)
+0x801519a8	func	enable_lockup	void()
+0x801519d0	func	disable_lockup	void()
+0x801519f8	func	enable_tlb_dump	void()
+0x80151a38	func	do_list_dump	void()
+0x80151a70	func	null_lock	int32_t(int32_t cause, int32_t* regs)
+0x80151a88	func	getchar	uint32_t()
+0x80151ac0	func	qyield	int32_t(int16_t arg1)
+0x80151bc0	func	process_dispatch	int32_t()
+0x8015201c	func	qcreate	struct process_node(char* process_name, int32_t process_id\, void (* entry_func)(), int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4) __location("$v0")
+0x80152098	func	iqcreate	int32_t(char* name, int32_t process_id, void (* entry_func)(), int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4)
+0x80152114	func	set_frame_factor	void(int32_t f)
+0x8015212c	func	draw_enable	void(int32_t val)
+0x8015217c	func	mthread_enable_framerate	void()
+0x80152190	func	mthread_disable_framerate	void()
+0x801521a0	func	mthread_get_framerate	int32_t() __pure
+0x801521b8	func	install_process_stall_func	void(void (* func)())
+0x80155d30	func	sstInitVideo	int32_t(int32_t* sstbase, enum GrScreenResolution_t screenResolution, enum GrScreenRefresh_t screenRefresh, struct sst1VideoTimingStruct* altVideoTiming)
+0x80156db8	func	sst1InitSetResolution	int32_t(uint32_t* sstbase, struct sst1VideoTimingStruct* sstVideoRez, uint32_t Banked)
+0x80157eb4	func	sst1InitCheckBoard?	int32_t(uint32_t* sstbase)
+0x80159310	func	sst1InitCalcGrxClk	int32_t(uint32_t* arg1)
+0x8015c4f8	func	sst1InitSli	int32_t(uint32_t* arg1, uint32_t* arg2)
+0x8015d56c	func	sst1InitIdleFBINoNOP	int32_t(uint32_t* sstbase)
+0x8015d5cc	func	sst1InitReturnStatus	int32_t(uint32_t* sstbase)
+0x8015db04	func	sst1InitWrite32	int32_t(uint32_t* addr, uint32_t data)
+0x8015db0c	func	sst1InitRead32	int32_t(uint32_t* addr)
+0x80160058	func	grGlideInit	void*()
+0x801615e8	func	grSstOpen	bool(enum GrScreenResolution_t res, enum GrScreenRefresh_t refresh, enum GrColorFormat_t cFormat, enum GrOriginLocation_t locateOrigin, enum GrSmoothingMode_t smoothMode, int32_t numBuffers)
+0x80161fb8	func	grSstQueryHardware	int32_t(int32_t* arg1)
+0x801620f0	func	grSstSelect	int32_t(int32_t which_sst)
+0x80162684	func	grSstOrigin?	void*(int32_t arg1)
+0x8016270c	func	grSstVidMode	int32_t(int32_t arg1, int32_t arg2)
+0x80162ac8	func	grFreeTexture	int32_t*(int32_t arg1)
+0x80162b50	func	allocate_tmu_mem?	int32_t(int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t @ $zero, int32_t arg6 @ $f0, int32_t arg7 @ $f2, int32_t arg8 @ $f20, int32_t arg9 @ 0x10, int32_t arg10 @ 0x14, int32_t arg11 @ 0x18, int32_t arg12 @ 0x1c, int32_t arg13 @ 0x20, int32_t arg14 @ 0x24, int32_t arg15 @ 0x28, int32_t arg16 @ 0x2c, int32_t arg17 @ 0x30, int32_t arg18 @ 0x38)
+0x80163684	func	grTexCombineFunction	void*(GrChipID_t tmu, enum GrTextureCombineFnc_t fnc)
+0x80163f74	func	grTexMipMapMode	void*(enum GrChipID_t tmu, enum GrMipMapMode_t mode, bool lodBlend)
+0x80165594	func	get_mm_frag	int32_t(int32_t arg1)
+0x801655d0	func	show_texture_list	void()
+0x80168558	func	guLoadTextureDirect	Texture_node_t*(char const* FileName, Gu3dfInfo* Info, int32_t sclamp, int32_t tclamp, int32_t minfilt, int32_t maxfilt)
+0x80168c48	func	guLoadTextureDirectFromMemory	Texture_node_t*(char* buffer, Gu3dfInfo* Info, int32_t sclamp, int32_t tclamp, int32_t minfilt, int32_t maxfilt)
+0x80169474	func	snd_init	int32_t()
+0x801694cc	func	snd_init_multi	int32_t(int32_t opsys_type)
+0x80169528	func	snd_init_from_memory	int32_t(void* os, void* comp, void* dm_ext, void* dm_int)
+0x801695b4	func	snd_dbg_boot_info	void()
+0x80169980	func	snd_bank_delete	int32_t(char* bank_name)
+0x80169a4c	func	snd_bank_load	int32_t(char* bank_name)
+0x80169bb0	func	snd_bank_load_from_memory	int32_t(char* bank_name, void* bnk_data)
+0x80169d34	func	snd_bank_load_playing	int32_t(char* bank_name)
+0x80169e98	func	snd_scall_bank	int32_t(char* bank_name, uint32_t scall, uint32_t volume, uint32_t pan, uint32_t priority)
+0x80169f78	func	snd_bank_showlist	void()
+0x8016a104	func	snd_bank_init	void()
+0x8016a188	func	snd_init_scall_table	int32_t()
+0x8016a350	func	snd_reset_ack	int32_t()
+0x8016a42c	func	snd_get_data	int32_t(int32_t arg1)
+0x8016a510	func	snd_get_debug	int32_t(int32_t* arg1)
+0x8016a614	func	snd_send_data	int32_t(uint32_t data)
+0x8016a6e8	func	snd_send_data_realtime	int32_t(int16_t arg1)
+0x8016a7cc	func	snd_dump_port	void() __noreturn
+0x8016a82c	func	snd_send_command	int32_t(uint32_t command)
+0x8016a930	func	snd_wait_for_completion	uint32_t()
+0x8016aa68	func	snd_get_boot_version	int32_t()
+0x8016aaac	func	snd_get_sdrc_version	uint32_t()
+0x8016aaf0	func	snd_get_pmint_sum	uint32_t()
+0x8016ab34	func	snd_test_port	int32_t()
+0x8016ac04	func	snd_load_file	uint32_t*(char* file_name)
+0x8016ade0	func	snd_load_opsys	int32_t()
+0x8016aea0	func	snd_load_opsys_multi	int32_t(int32_t opsys_type)
+0x8016af84	func	snd_load_opsys_from_memory	int32_t(void* os, void* comp, void* dm_ext, void* dm_int)
+0x8016b060	func	snd_load_pm	int32_t(char* file_name, uint32_t start, uint32_t end)
+0x8016b33c	func	snd_load_pm_from_memory	int32_t(int32_t* arg1, uint32_t arg2, uint32_t arg3)
+0x8016b5ec	func	snd_load_dm	int32_t(char* file_name, uint32_t start, uint32_t end)
+0x8016b7d0	func	snd_load_dm_from_memory	int32_t(int32_t* arg1, uint32_t arg2, uint32_t arg3)
+0x8016b990	func	snd_get_opsys_ver	uint32_t()
+0x8016b9e4	func	snd_checksum_banks	int32_t(char* first_bank_name, char* last_bank_name)
+0x8016bac8	func	snd_checksum_dram	int32_t(int32_t start_addr, int32_t end_addr)
+0x8016bb60	func	snd_download_bank	int32_t(uint32_t* bank_data, int32_t start, int32_t end)
+0x8016bd2c	func	snd_download_bank_playing	int32_t(uint32_t* bank_data, int32_t start, int32_t end)
+0x8016bf0c	func	snd_download_table	int32_t(uint32_t* table_data, int32_t start, int32_t end)
+0x8016c0dc	func	snd_download_table_playing	int32_t(uint32_t* table_data, int32_t start, int32_t end)
+0x8016c2ac	func	snd_load_bank	int32_t(char* bank_name, int32_t* num_sound_calls)
+0x8016c4cc	func	snd_load_bank_from_memory	int32_t(uint32_t* data_buffer, int32_t* num_sound_calls)
+0x8016c6e8	func	snd_load_bank_playing	int32_t(char* bank_name, int32_t* num_sound_calls)
+0x8016c930	func	snd_scall_quick	int32_t(uint32_t scall)
+0x8016c990	func	snd_master_volume	int32_t(int32_t volume)
+0x8016ca00	func	snd_stop_all	int32_t()
+0x8016ca28	func	snd_scall_direct	int32_t(uint32_t scall, uint32_t volume, uint32_t pan, uint32_t priority)
+0x8016cad8	func	snd_scall_return	int32_t(char* bank_name, uint32_t scall, uint32_t volume, uint32_t pan, uint32_t priority, uint32_t* return_info)
+0x8016cc50	func	snd_output_stereo	int32_t()
+0x8016cc8c	func	snd_output_mono	int32_t()
+0x8016ccc8	func	snd_flush_pending	int32_t()
+0x8016ccf0	func	snd_flush_queues	int32_t()
+0x8016cd18	func	snd_set_reserved	int32_t(uint32_t track_mask)
+0x8016cd64	func	snd_stop_track	int32_t(uint32_t track_mask)
+0x8016cdb0	func	snd_track_volume	int32_t(uint32_t track_mask, uint32_t track_volume)
+0x8016ce08	func	snd_track_pan	int32_t(uint32_t track_mask, uint32_t track_pan)
+0x8016ce60	func	snd_load_samples	int32_t(char** sample_names, int32_t num_samples)
+0x8016d218	func	snd_scall_engine	int32_t(uint32_t cmd, uint32_t pitch, uint32_t volume, uint32_t pan)
+0x8016d2c0	func	snd_stop_engine	int32_t(uint32_t engine_select)
+0x8016d2f0	func	snd_clear_latch	int32_t()
+0x8016d340	func	snd_query_buffers	int32_t(int32_t* buffers_available)
+0x8016d388	func	snd_stream_volume	int32_t(int32_t volume)
+0x8016d3e8	func	snd_read_buffer	int32_t(uint32_t* buffer, int32_t frame_size, struct FILE* file_handle)
+0x8016d410	func	snd_send_buffer	int32_t(uint32_t* buffer, int32_t frame_size)
+0x8016d4c0	func	snd_stream_init	int32_t(char* stream_name, int32_t* num_buffers)
+0x8016d640	func	snd_stream	int32_t(int32_t buffer_total)
+0x8016d7c8	func	snd_stream_stop	int32_t()
+0x8016d830	func	snd_stream_proc	void(int32_t* args)
+0x8016d870	func	snd_bank_lockout	int32_t(int32_t arg1)
+0x8016d880	func	snd_lockout	void(int32_t mode)
+0x8016d890	func	snd_get_first_sound	int32_t(char* bank_name)
+0x8016d908	func	snd_get_last_sound	int32_t(char* bank_name)
+0x8016d984	func	snd_is_bank_loaded	int32_t(char* bank_name)
+0x8016d9e0	func	snd_report_banks	int32_t(int32_t arg1 @ $f20, int32_t arg2 @ $f21)
+0x8016db88	func	snd_get_lockout	int32_t()
+0x8016db98	func	snd_get_bank_lockout	int32_t()
+0x8016dba8	func	snd_crc_check_enable	int32_t()
+0x8016dbbc	func	snd_crc_fail_audit	void(void (* func)())
+0x8016dbd0	func	strcat	char*(char* dest, char* src)
+0x8016dc10	func	strcmp	uint32_t(char* arg1, char* arg2)
+0x800c6290	data	jump_table_2298	DataSymbol
+0x800c7838	data	jump_table_3840	DataSymbol
+0x800c8110	data	jump_table_4118	DataSymbol
+0x800c86d8	data	jump_table_46e0	DataSymbol
+0x800cb0f8	data	jump_table_7100	DataSymbol
+0x80110b04	data	hhouse_script	DataSymbol
+0x80111928	data	freakshow_script	DataSymbol
+0x80112748	data	rickity_town_script	DataSymbol
+0x801130b8	data	intro_script	DataSymbol
+0x8011312c	data	attract2_script	DataSymbol
+0x80113180	data	end_script	DataSymbol
+0x801131e0	data	midway_script	DataSymbol
+0x801131ec	data	attract_script	DataSymbol
+0x801131f8	data	attract3_script	DataSymbol
+0x80113204	data	gallery_script	DataSymbol
+0x80113218	data	bigtop_script	DataSymbol
+0x8016eee8	data	jump_table_8016eee8	DataSymbol
+0x801701e8	data	jump_table_801701e8	DataSymbol
+0x80170238	data	jump_table_80170238	DataSymbol
+0x801702b0	data	jump_table_801702b0	DataSymbol
+0x80170568	data	jump_table_80170568	DataSymbol
+0x80170758	data	jump_table_80170758	DataSymbol
+0x80170ab0	data	jump_table_80170ab0	DataSymbol
+0x80170e70	data	jump_table_80170e70	DataSymbol
+0x80170e98	data	jump_table_80170e98	DataSymbol
+0x80171e08	data	jump_table_80171e08	DataSymbol
+0x80172298	data	jump_table_80172298	DataSymbol
+0x80172300	data	jump_table_80172300	DataSymbol
+0x80172358	data	jump_table_80172358	DataSymbol
+0x80172480	data	jump_table_80172480	DataSymbol
+0x801724a8	data	jump_table_801724a8	DataSymbol
+0x80172878	data	jump_table_80172878	DataSymbol
+0x80172e98	data	jump_table_80172e98	DataSymbol
+0x80172ff8	data	jump_table_80172ff8	DataSymbol
+0x80173150	data	jump_table_80173150	DataSymbol
+0x80173380	data	jump_table_80173380	DataSymbol
+0x801733f8	data	jump_table_801733f8	DataSymbol
+0x80173540	data	jump_table_80173540	DataSymbol
+0x80173638	data	jump_table_80173638	DataSymbol
+0x801736a0	data	jump_table_801736a0	DataSymbol
+0x801736c8	data	jump_table_801736c8	DataSymbol
+0x801737f0	data	jump_table_801737f0	DataSymbol
+0x80173840	data	jump_table_80173840	DataSymbol
+0x80173938	data	jump_table_80173938	DataSymbol
+0x80173980	data	jump_table_80173980	DataSymbol
+0x80173a60	data	jump_table_80173a60	DataSymbol
+0x80173ba0	data	jump_table_80173ba0	DataSymbol
+0x80173c70	data	jump_table_80173c70	DataSymbol
+0x80173ca8	data	jump_table_80173ca8	DataSymbol
+0x80173d58	data	jump_table_80173d58	DataSymbol
+0x80173da8	data	jump_table_80173da8	DataSymbol
+0x80174008	data	jump_table_80174008	DataSymbol
+0x80174030	data	jump_table_80174030	DataSymbol
+0x80174118	data	jump_table_80174118	DataSymbol
+0x80174168	data	jump_table_80174168	DataSymbol
+0x801741d8	data	jump_table_801741d8	DataSymbol
+0x801742b8	data	jump_table_801742b8	DataSymbol
+0x80174328	data	jump_table_80174328	DataSymbol
+0x80174398	data	jump_table_80174398	DataSymbol
+0x80174518	data	jump_table_80174518	DataSymbol
+0x80174550	data	jump_table_80174550	DataSymbol
+0x801745c8	data	jump_table_801745c8	DataSymbol
+0x80174618	data	jump_table_80174618	DataSymbol
+0x801746e0	data	jump_table_801746e0	DataSymbol
+0x80174720	data	jump_table_80174720	DataSymbol
+0x801747d0	data	jump_table_801747d0	DataSymbol
+0x80174858	data	jump_table_80174858	DataSymbol
+0x80174870	data	jump_table_80174870	DataSymbol
+0x801748b0	data	jump_table_801748b0	DataSymbol
+0x80174918	data	jump_table_80174918	DataSymbol
+0x80174b68	data	jump_table_80174b68	DataSymbol
+0x80174bb0	data	jump_table_80174bb0	DataSymbol
+0x80174c50	data	jump_table_80174c50	DataSymbol
+0x80174f40	data	jump_table_80174f40	DataSymbol
+0x80175148	data	jump_table_80175148	DataSymbol
+0x801753c8	data	jump_table_801753c8	DataSymbol
+0x80175548	data	jump_table_80175548	DataSymbol
+0x801755a8	data	jump_table_801755a8	DataSymbol
+0x801757a8	data	jump_table_801757a8	DataSymbol
+0x80175bf0	data	jump_table_80175bf0	DataSymbol
+0x80175ce8	data	jump_table_80175ce8	DataSymbol
+0x80176288	data	jump_table_80176288	DataSymbol
+0x80176318	data	jump_table_80176318	DataSymbol
+0x80176380	data	jump_table_80176380	DataSymbol
+0x801764f8	data	jump_table_801764f8	DataSymbol
+0x80176578	data	jump_table_80176578	DataSymbol
+0x801767c0	data	jump_table_801767c0	DataSymbol
+0x801768c0	data	jump_table_801768c0	DataSymbol
+0x80176908	data	jump_table_80176908	DataSymbol
+0x80176978	data	jump_table_80176978	DataSymbol
+0x80176ad8	data	jump_table_80176ad8	DataSymbol
+0x80176af8	data	jump_table_80176af8	DataSymbol
+0x80176b18	data	jump_table_80176b18	DataSymbol
+0x80176b38	data	jump_table_80176b38	DataSymbol
+0x80176b58	data	jump_table_80176b58	DataSymbol
+0x80176b78	data	jump_table_80176b78	DataSymbol
+0x80176b98	data	jump_table_80176b98	DataSymbol
+0x80176bb8	data	jump_table_80176bb8	DataSymbol
+0x80176bd8	data	jump_table_80176bd8	DataSymbol
+0x80176bf8	data	jump_table_80176bf8	DataSymbol
+0x80176c18	data	jump_table_80176c18	DataSymbol
+0x80176c38	data	jump_table_80176c38	DataSymbol
+0x80176c58	data	jump_table_80176c58	DataSymbol
+0x80176c78	data	jump_table_80176c78	DataSymbol
+0x80177100	data	jump_table_80177100	DataSymbol
+0x80177118	data	jump_table_80177118	DataSymbol
+0x80179be8	data	jump_table_80175bf0	DataSymbol
+0x80179c70	data	disclaimer_texmap	DataSymbol
+0x80179cf0	data	attract_violent_texmap	DataSymbol
+0x80179d10	data	preattract_texmap	DataSymbol
+0x80179f78	data	hhouse_light_info	DataSymbol
+0x8017ae58	data	freakshow_light_info	DataSymbol
+0x8017b8d8	data	rickitytown_light_info	DataSymbol
+0x8017c2b0	data	main_weapon_texmap	DataSymbol
+0x8017c750	data	text_texmap	DataSymbol
+0x8017c770	data	smoketall_texmap	DataSymbol
+0x8017c790	data	gunsmoke_texmap	DataSymbol
+0x8017c830	data	explosion_texmap	DataSymbol
+0x8017c930	data	blood_texmap	DataSymbol
+0x8017c9b0	data	bloodnv_texmap	DataSymbol
+0x8017ca30	data	smokesplat_texmap	DataSymbol
+0x8017cab0	data	fire_texmap	DataSymbol
+0x8017cb50	data	spark_texmap	DataSymbol
+0x8017cf10	data	btop_texmap	DataSymbol
+0x8017d170	data	blood_btop_texmap	DataSymbol
+0x8017d1d0	data	noblood_btop_texmap	DataSymbol
+0x8017ddac	data	font_texmap	DataSymbol
+0x8017de58	data	hstd_texmap	DataSymbol
+0x8017df98	data	ehstd_texmap	DataSymbol
+0x8017dfb8	data	ehstd2_texmap	DataSymbol
+0x80186628	data	hhouse_spawn_blob	DataSymbol
+0x80188a14	data	freakshow_spawn_blob	DataSymbol
+0x8018aa90	data	rickity_spawn_blob	DataSymbol
+0x8018c1c4	data	bigtop_spawn_blob	DataSymbol
+0x8018db98	data	gool_texmap	DataSymbol
+0x8018deb8	data	gool_anim_blob	DataSymbol
+0x8018e058	data	mari_texmap	DataSymbol
+0x8018e5b8	data	mari_anim_blob	DataSymbol
+0x8018e9d8	data	something_mari_weap_anim	DataSymbol
+0x8018f138	data	bat_texmap	DataSymbol
+0x8018f478	data	bat_anim_blob	DataSymbol
+0x8018f658	data	spider_texmap	DataSymbol
+0x8018fb18	data	spider_anim_blob	DataSymbol
+0x8018ffa0	data	hand_texmap	DataSymbol
+0x80190068	data	zombie_texmap	DataSymbol
+0x80190608	data	zombie_anim_blob	DataSymbol
+0x80190968	data	chnk_texmap	DataSymbol
+0x80190988	data	chnknv_texmap	DataSymbol
+0x80190a00	data	ainn_texmap	DataSymbol
+0x80190f00	data	atps_texmap	DataSymbol
+0x801917e0	data	hhou_misc	DataSymbol
+0x801918a0	data	rickity_misc	DataSymbol
+0x80191d78	data	shotgun_texmap	DataSymbol
+0x80191dd8	data	hlth_texmap	DataSymbol
+0x80191e70	data	ammo_textmap	DataSymbol
+0x80191ed0	data	acidbath_texmap	DataSymbol
+0x80191f10	data	machinegun_texmap	DataSymbol
+0x80191f70	data	flamethrower_teamp	DataSymbol
+0x80191fd0	data	inng_texmap	DataSymbol
+0x801924e0	data	vict_texmap	DataSymbol
+0x801926c0	data	submesh_info_vict	DataSymbol
+0x80192800	data	spdl_texmap	DataSymbol
+0x801929c0	data	jester_texmap	DataSymbol
+0x80192d80	data	jester_animation_blob?	DataSymbol
+0x80192ff0	data	mike_texmap	DataSymbol
+0x801939b0	data	mike_blt_texmap	DataSymbol
+0x801939d0	data	mikeblt_animation_blob	DataSymbol
+0x80193bb0	data	wigs_texmap	DataSymbol
+0x80193d90	data	freakshow_enemy_sword_texmap	DataSymbol
+0x80193df0	data	freakshow_enemy_club_texmap	DataSymbol
+0x80193e50	data	freakshow_enemy_hook_texmap	DataSymbol
+0x80193eb0	data	freakshow_enemy_blade_texmap	DataSymbol
+0x80193f70	data	freakshow_enemy_rattle	DataSymbol
+0x80193ff0	data	rickitytown_food_texmap	DataSymbol
+0x80194210	data	coal_texmap	DataSymbol
+0x80194658	data	flash_texmap	DataSymbol
+0x801946d8	data	tops_texmap	DataSymbol
+0x80195078	data	taur_texmap	DataSymbol
+0x80195618	data	taur_submesh_info	DataSymbol
+0x80195a70	data	monk_texmap	DataSymbol
+0x801964b0	data	grub_texmap	DataSymbol
+0x80196670	data	tort_texmap	DataSymbol
+0x80196ea0	data	rodz_texmap	DataSymbol
+0x80197848	data	baby_texmap	DataSymbol
+0x80197d88	data	baby_anim_blob	DataSymbol
+0x80197f68	data	bear_texmap	DataSymbol
+0x80198208	data	bear_anim_blob	DataSymbol
+0x801983e8	data	puke_texmap	DataSymbol
+0x80198fd0	data	finn_texmap	DataSymbol
+0x801994e0	data	flie_texmap	DataSymbol
+0x80199d80	data	dino_texmap	DataSymbol
+0x8019a788	data	krinkle_texmap	DataSymbol
+0x8019ae68	data	submesh_info_krik	DataSymbol
+0x8019b0d8	data	terminite_texmap	DataSymbol
+0x8019b4e8	data	rinn_texmap	DataSymbol
+0x8019b9f8	data	smilingbob_texmap	DataSymbol
+0x8019c580	data	teen_texmap	DataSymbol
+0x8019ce20	data	submesh_info_teen	DataSymbol
+0x8019d1a0	data	krampus_texmap	DataSymbol
+0x8019da40	data	submesh_info_krampus	DataSymbol
+0x8019de50	data	pood_texmap	DataSymbol
+0x8019e410	data	submesh_info_pood	DataSymbol
+0x8019e720	data	mame_texmap	DataSymbol
+0x8019ee88	data	batb_texmap	DataSymbol
+0x8019f590	data	clown_texmap	DataSymbol
+0x801a06a8	data	toke_texmap	DataSymbol
+0x801a11b0	data	doctor_texmap	DataSymbol
+0x801a17f0	data	submesh_info_doctor	DataSymbol
+0x801a1bc0	data	skeleton_texmap	DataSymbol
+0x801a1e40	data	skeleton_anim_blob	DataSymbol
+0x801a20b8	data	binn_texmap	DataSymbol
+0x801a2398	data	inng_amin_blob	DataSymbol
+0x801a2918	data	stderr	DataSymbol
+0x801a3110	data	plist	DataSymbol
+0x801a3114	data	pfree	DataSymbol
+0x801a3118	data	cur_proc	DataSymbol
+0x801a311c	data	sort_processes	DataSymbol
+0x801a3120	data	resource_mode	DataSymbol
+0x801a3154	data	gS_simLowRes	DataSymbol
+0x801a31c8	data	texture_node_mode	DataSymbol
+0x801a31cc	data	tlist	DataSymbol
+0x801a31d0	data	tfree	DataSymbol
+0x801a3558	data	_process_called	DataSymbol
+0x801a355c	data	install_vector	DataSymbol
+0x801a35a1	data	lookup_table_801a35a1	DataSymbol
+0x801a36b8	data	__draw	DataSymbol
+0x801a36bc	data	frame_factor	DataSymbol
+0x801a36c0	data	frame_time	DataSymbol
+0x801a36c4	data	enable_realtime	DataSymbol
+0x801a36c8	data	pstall_func	DataSymbol
+0x801a36cc	data	pstall_count	DataSymbol
+0x801a4158	data	dram_start_g	DataSymbol
+0x801a415c	data	scall_first_g	DataSymbol
+0x801a4160	data	snd_bnk_list	DataSymbol
+0x801a4164	data	snd_lock	DataSymbol
+0x801a4168	data	snd_lock_bank	DataSymbol
+0x801a421c	data	snd_use_crc	DataSymbol
+0x801a4220	data	snd_crc_fail_audit_func	DataSymbol
+0x801a4350	data	credit_info_struct_1	DataSymbol
+0x801b31e0	data	tex_file_in_mem	DataSymbol
+0x801de0e0	data	snd_filename_w_ext_g	DataSymbol
+0x801de888	data	spawn_struct_g	DataSymbol
+0x801de8a8	data	available_free_mem	DataSymbol
+0x801de914	data	frame_number	DataSymbol
+0x801de928	data	scan_plane	DataSymbol
+0x801de92c	data	script_id	DataSymbol
+0x801de930	data	enable_flag	DataSymbol
+0x801de948	data	cb_ptr	DataSymbol
+0x801e0978	data	is_freeplay	DataSymbol
+0x801e0988	data	score	DataSymbol
+0x801e0990	data	cmos_status	DataSymbol
+0x801e09d8	data	movie_script_g1	DataSymbol
+0x801e09fc	data	tmu_info	DataSymbol
+0x801e0eb0	data	credits_filebuf_g	DataSymbol
+0x801e0ee8	data	free_mem_left	DataSymbol
+0x801e0f60	data	player1_stats	DataSymbol
+0x801e0f64	data	player_stats	DataSymbol
+0x801e0ffc	data	player1_ammo_count	DataSymbol
+0x801e1054	data	player1_time_to_continue	DataSymbol
+0x801e1068	data	something_with_reload_p1	DataSymbol
+0x801e1080	data	player2_stats	DataSymbol
+0x801e111c	data	player2_ammo_count	DataSymbol
+0x801e1174	data	player2_time_to_continue	DataSymbol
+0x801e1188	data	something_with_reload_p2	DataSymbol
+0x801e177c	data	movie_script_g2	DataSymbol
+0x801e5868	data	player_stats_g	DataSymbol
+0x801e5cd8	data	violence_level	DataSymbol
+0x801e5cf8	data	credit_info_struct_2	DataSymbol
+0x801e5d18	data	coins_needed_to_play	DataSymbol
+0x801e5d1c	data	num_credits_to_continue	DataSymbol
+0x801e5d20	data	max_credits	DataSymbol
+0x801e5dd8	data	snd_fileptr_g	DataSymbol
+0x801e6ec8	data	volume	DataSymbol
+0x801e7030	data	serial_number	DataSymbol
+0x801e7038	data	month	DataSymbol
+0x801e703c	data	day	DataSymbol
+0x801e7040	data	year	DataSymbol
+0x801e7048	data	num_enemies_in_wave_g	DataSymbol
+0x801e70fc	data	camera_data_id	DataSymbol
+0x801fac6c	data	wave_id	DataSymbol
+0x801fad30	data	msb1.buffer_g	DataSymbol
+0x801fad40	data	msb2.buffer_g	DataSymbol
+0x80212d90	data	num_objects_on_heap	DataSymbol
+0x80212e20	data	debug_mode	DataSymbol
+0x80212e30	data	wave_id_g2	DataSymbol
+0x80212e34	data	game_mode	DataSymbol
+0x8021f084	data	level_light_info_global	DataSymbol
+0x8021f0d4	data	num_light_groups	DataSymbol
+0x8021f0ec	data	credit_camera_data	DataSymbol
+0x802373e4	data	snd_opsys_ver	DataSymbol
+0x80237400	data	level_start_counter	DataSymbol
+0x80237414	data	DMA_val	DataSymbol
+0x802374b4	data	credistb_filebuf_g	DataSymbol
+0x80237508	data	RTP_val	DataSymbol
+-	type	FILE	struct FILE
+-	type	FxBool	int32_t
+-	type	FxColor4	struct _FxColor4
+-	type	FxColor_t	uint32_t
+-	type	FxDouble	double
+-	type	FxFloat	float
+-	type	FxI16	int16_t
+-	type	FxI32	int32_t
+-	type	FxI8	char
+-	type	FxU16	uint16_t
+-	type	FxU32	uint32_t
+-	type	FxU8	uint8_t
+-	type	GrAspectRatio_t	FxI32
+-	type	GrChipID_t	FxI32
+-	type	GrColorFormat_t	enum GrColorFormat_t
+-	type	GrCombineFactor_t	enum GrCombineFactor_t
+-	type	GrCombineFunction_t	enum GrCombineFunction_t
+-	type	GrLOD_t	FxI32
+-	type	GrMipMapMode_t	enum GrMipMapMode_t
+-	type	GrOriginLocation_t	enum GrOriginLocation_t
+-	type	GrScreenRefresh_t	enum GrScreenRefresh_t
+-	type	GrScreenResolution_t	enum GrScreenResolution_t
+-	type	GrSmoothingMode_t	enum GrSmoothingMode_t
+-	type	GrTexBaseRange_t	FxU32
+-	type	GrTexInfo	struct _GrTexInfo
+-	type	GrTextureClampMode_t	FxI32
+-	type	GrTextureCombineFnc_t	enum GrTextureCombineFnc_t
+-	type	GrTextureFilterMode_t	FxI32
+-	type	GrTextureFormat_t	FxI32
+-	type	Gu3dfHeader	struct _Gu3dfHeader
+-	type	Gu3dfInfo	struct _Gu3dfInfo
+-	type	GuNccTable	struct _GuNccTable
+-	type	GuTexPalette	struct _GuTexPalette
+-	type	GuTexTable	enum anonymous_2
+-	type	PlayerState	enum PlayerState
+-	type	TexCombineMode_t	FxU32
+-	type	TexLod_t	FxFloat
+-	type	TextureAttrib_t	struct _TextureAttrib_t
+-	type	Texture_Node	struct Texture_Node
+-	type	Texture_node_t	struct Texture_Node
+-	type	_FxColor4	struct _FxColor4
+-	type	_GrTexInfo	struct _GrTexInfo
+-	type	_Gu3dfHeader	struct _Gu3dfHeader
+-	type	_Gu3dfInfo	struct _Gu3dfInfo
+-	type	_GuNccTable	struct _GuNccTable
+-	type	_GuTexPalette	struct _GuTexPalette
+-	type	_GuTexTable	union _GuTexTable
+-	type	_IO_FILE	struct _IO_FILE
+-	type	_IO_codecvt	struct _IO_codecvt
+-	type	_IO_lock_t	void
+-	type	_IO_marker	struct _IO_marker
+-	type	_IO_wide_data	struct _IO_wide_data
+-	type	_TextureAttrib_t	struct _TextureAttrib_t
+-	type	__int64_t	int64_t
+-	type	__off64_t	__int64_t
+-	type	__off_t	int32_t
+-	type	adjustment_info	struct adjustment_info
+-	type	adjustment_info_t	struct adjustment_info
+-	type	anonymous_2	enum anonymous_2
+-	type	cmos_config_info	struct cmos_config_info
+-	type	cmos_config_info_t	struct cmos_config_info
+-	type	credit_info	struct credit_info
+-	type	generic_cmos_record_info	struct generic_cmos_record_info
+-	type	generic_cmos_record_info_t	struct generic_cmos_record_info
+-	type	level_id	enum level_id
+-	type	light_info	struct light_info
+-	type	player_info	struct player_info
+-	type	process_node	struct process_node
+-	type	process_node_t	struct process_node
+-	type	setup_cmos_struct	struct setup_cmos_struct
+-	type	setup_cmos_struct_t	struct setup_cmos_struct
+-	type	snd_bank_node	struct snd_bank_node
+-	type	snd_bank_node_t	struct snd_bank_node
+-	type	snd_bank_struct	struct snd_bank_struct
+-	type	spawn_struct	struct spawn_struct
+-	type	sst1VideoTimingStruct	struct sst1VideoTimingStruct
+-	type	submesh_info	struct submesh_info
+-	type	table_node	struct table_node
+-	type	texmap_struct	struct texmap_struct
+-	type	texture_node	struct texture_node
+-	type	texture_node_t	struct texture_node
+-	type	tmu_info?	struct tmu_info?
+-	type	tmu_node	struct tmu_node
+-	type	va_list	void*
