@@ -8,3 +8,4 @@ galhand  src/goose/galhand.c  goose  0x8014fdf0 0x8014fef0  -          -        
 div0hand src/goose/div0hand.c goose  0x8014fef0 0x801500dc  0x80175690 0x801757a4  0x801a3338 0x801a3347
 anim2d   src/goose/anim2d.c   goose  0x801500e0 0x8015053c  0x801757a8 0x801757d9  0x801a3348 0x801a3358
 adjust   src/goose/adjust.c   goose  0x80150540 0x80150860  -          -           0x801a3358 0x801a3528
+object   src/goose/object.c   goose  0x801485e0 0x80148cfc  0x801754b0 0x801754c4  0x801a30e8 0x801a3100

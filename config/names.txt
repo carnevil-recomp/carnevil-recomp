@@ -143,3 +143,20 @@
 0x801a3148 sprite_node_list
 0x801a314c alpha_sprite_node_list
 0x8014b0cc generate_sprite_verts
+# goose object.c (rev 9 in the game: no current_3dobj)
+0x801485e0 create_object
+0x8014879c insert_object
+0x8014884c delete_object
+0x801488f8 delete_object_id
+0x801489d8 delete_multiple_objects
+0x80148acc clear_object_list
+0x80148b38 hide_multiple_objects
+0x80148b78 unhide_multiple_objects
+0x80148bbc draw_3d_objects
+0x80148c14 hide_all_3d_objects
+0x80148c44 unhide_all_3d_objects
+0x80148c78 clear_free_object_list
+0x80148cc4 object_exists
+0x801a30e8 goose_object_c_version
+0x801a30f8 olist
+0x801a30fc ofree

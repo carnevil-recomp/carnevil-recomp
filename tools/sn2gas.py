@@ -11,6 +11,9 @@ asmmips differs from GNU as in these ways, all emulated here:
 import sys, re
 BR=re.compile(r"^\s*(b|bal|beq|bne|beql|bnel|blez|bgtz|bltz|bgez|blezl|bgtzl|bltzl|bgezl|bltzal|bgezal|bc1t|bc1f|bc1tl|bc1fl|j|jal|jr|jalr)\b")
 LI=re.compile(r"^\s*li\.([sd])\s+(\$f\d+)\s*,\s*(\S+)")
+# load/store with a symbolic address plus a base register: asmmips expands through $at,
+# gas through the destination register (loads) -- so expand it ourselves the asmmips way
+SYMBASE=re.compile(r"^\s*(lw|sw|lh|lhu|lb|lbu|sh|sb|lwc1|swc1|ldc1|sdc1|lwl|lwr|swl|swr)\s+(\$\w+)\s*,\s*([A-Za-z_$][\w$]*(?:[+-]\d+)?)\((\$\w+)\)\s*$")
 MOVE=re.compile(r"^\s*move\s+(\$\w+)\s*,\s*(\$\w+)\s*$")   # asmmips encodes move as addu rd,rs,$0 (gas would use or)
 DIVM=re.compile(r"^\s*(div|divu|rem|remu)\s+(\$\w+)\s*,\s*(\$\w+)\s*,\s*(\$\w+)\s*$")
 def expand_div(op,d,s,t,n):
@@ -36,6 +39,11 @@ def convert(lines):
         m=MOVE.match(line)
         if m:
             out.append("\taddu\t%s,%s,$0"%m.groups()); continue
+        m=SYMBASE.match(line)
+        if m:
+            op,rt,sym,base=m.groups()
+            out+=["\t.set\tnoat","\tlui\t$at,%%hi(%s)"%sym,"\taddu\t$at,$at,%s"%base,"\t%s\t%s,%%lo(%s)($at)"%(op,rt,sym),"\t.set\tat"]
+            continue
         m=DIVM.match(line)
         if m and m.group(2) not in ("$0","$zero"):
             out+=expand_div(*m.groups(),n); n+=1; continue
