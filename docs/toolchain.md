@@ -116,3 +116,34 @@ so unreferenced modules are absent. Do not expect every SDK function to appear.
   `asm()` that defines the entry and falls into the C body). No compiler switch produces it;
   `-mabicalls` emits `.cpload $25` instead. Draw code refers to `$gp` via
   `register ... asm("$28")` (the spelling `asm("$gp")` is mis-handled by this compiler).
+
+## Assembler emulation, round two (found while importing GOOSE modules)
+- `lw $2,sym+20($7)` (symbolic address plus base register): asmmips goes through `$at`
+  (`lui $at,%hi; addu $at,$at,$7; lw $2,%lo($at)`), gas through the destination register.
+  `tools/sn2gas.py` expands these itself (cmos.c needed it).
+- `.def/.val/.scl/.type/.endef` SDB records appear in cc1 output for functions written as
+  inline asm (mthread.c); gas has no COFF debug, so sn2gas drops them.
+- The original linker aligned every object's sections to 8 bytes and left **uninitialised
+  garbage** in the padding (`0xC0`, text fragments, even a stray instruction word). Module
+  ranges in `config/modules.txt` therefore end at the real content; the padding stays in asm
+  chunks, and `tools/disasm.py` never decodes module padding words as instructions.
+- Uninitialised globals (COMMON) and `static` BSS: the C object defines them as COMMON and the
+  linker script's absolute assignment (`config/symbols_abs.ld`, from `config/names.txt`)
+  wins, so the object's own allocation is discarded. Every BSS name in `names.txt` is always
+  defined, referenced or not. Mapping names to addresses is done by reading the function that
+  initialises them (cmos.c: `config_cmos`).
+- GCC 2.7.2 allowed raw newlines inside string literals; the SDK's inline asm uses them.
+  `tools/fixasmstr.py` rewrites those files before `clang -E`.
+- `sleep(n)` in the SDK is `qyield(n)` in the game's older revisions (process.c, anim2d.c).
+
+## Module import workflow (`tools/sweep.sh` → `tools/modfit.py` → `tools/findsec.py`)
+1. `sweep.sh` compiles every SDK source under each profile and `findfn.py` locates its
+   functions in the image; `build/sweep/report.txt` says how many hit per file/profile.
+2. `modfit.py file.s` infers the addresses of the non-matching functions from their SDK-order
+   neighbours and prints their diffs: that is the revision gap to edit.
+3. `findsec.py file.s name src profile` finds `.text/.rodata/.data` in the image and prints the
+   `modules.txt` line. Version-only `.data` is ambiguous: use link order (text order) to pick
+   the slot and set the version string to what the slot holds.
+4. Add the names the object exports to `config/names.txt`, register, `make regen && make`.
+Imported so far: crc, sincos, initg, process, galhand, div0hand, anim2d, adjust, object, cmos.
+Profiles: `goose` for the library (process.c and mthread.c are `noopt`).

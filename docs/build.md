@@ -57,8 +57,8 @@ A module rebuilt from C is one line: name, source, flag profile (`opt`/`noopt`, 
 4. `config/names.txt` pins the symbol names at the module's addresses so the C object exports
    exactly what the surrounding assembly references (`crc`, `crctab`, `fsin`, ...).
 
-Current modules: `src/goose/crc.c`, `src/goose/sincos.c` and `src/goose/initg.c` (GOOSE's
-`main` + `graphics_init`, text 0x800C42D8, strings 0x8016DC50, data 0x80177B20).
+Current modules (see `config/modules.txt`): crc, sincos, initg (GOOSE `main` +
+`graphics_init`), process (scheduler), galhand, div0hand, anim2d, adjust, object, cmos.
 `tools/progress.py` reports the share of text/data built from C; `tools/secdiff.py <module>`
 compares an object's sections with the original bytes; `tools/trymatch.sh` and `tools/fn.py`
 are the per-function decompilation loop.

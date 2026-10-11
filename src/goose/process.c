@@ -17,6 +17,7 @@
 char	goose_process_c_version[] = {"$Revision: 17 $"};	/* CarnEvil links revision 17 (SDK: 19): no kill_current(), malloc() for process stacks, delete_process() always frees the stack */
 
 void	_proc_shell(int *);
+void	qyield(int);			/* mthread.c; rev 17 calls it directly from suspend_self() */
 
 #define ALLOC_NUM	16
 
