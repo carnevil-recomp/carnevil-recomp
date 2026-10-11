@@ -10,7 +10,6 @@ D_801aabf8 = 0x801aabf8;
 D_801aabfc = 0x801aabfc;
 D_801aac00 = 0x801aac00;
 D_801aac04 = 0x801aac04;
-D_801ab178 = 0x801ab178;
 D_801ab180 = 0x801ab180;
 D_801ab188 = 0x801ab188;
 D_801ab18c = 0x801ab18c;

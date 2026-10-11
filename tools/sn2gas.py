@@ -11,6 +11,7 @@ asmmips differs from GNU as in these ways, all emulated here:
   object's .bss (seen in switch, sprites, ostrings and sound: 800/960-byte arrays at 16).
 """
 import sys, re
+BREAK=re.compile(r"^\s*break\s+(0x[0-9a-fA-F]+|\d+)\s*$")
 LCOMM=re.compile(r"^\s*\.lcomm\s+([^,\s]+)\s*,\s*(\d+)\s*$")
 BR=re.compile(r"^\s*(b|bal|beq|bne|beql|bnel|blez|bgtz|bltz|bgez|blezl|bgtzl|bltzl|bgezl|bltzal|bgezal|bc1t|bc1f|bc1tl|bc1fl|j|jal|jr|jalr)\b")
 LI=re.compile(r"^\s*li\.([sd])\s+(\$f\d+)\s*,\s*(\S+)")
@@ -51,6 +52,9 @@ def convert(lines):
         m=DIVM.match(line)
         if m and m.group(2) not in ("$0","$zero"):
             out+=expand_div(*m.groups(),n); n+=1; continue
+        m=BREAK.match(line)
+        if m and int(m.group(1),0)>1023:           # asmmips takes a 20-bit break code; gas only 10 bits
+            out.append("\t.word\t0x%08x"%((int(m.group(1),0)<<6)|0xd)); continue
         m=LCOMM.match(line)
         if m:                                      # asmmips aligns each .lcomm to min(16, pow2ceil(size))
             sym,size=m.group(1),int(m.group(2)); a=4   # relative to the object's .bss start; pad by hand so

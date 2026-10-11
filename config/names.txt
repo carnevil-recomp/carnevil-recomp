@@ -323,3 +323,36 @@
 0x8016a9e8 snd_delay
 0x8016a290 snd_reset
 0x8016a160 snd_clear
+# goose GFADER.C (rev 6)
+0x8014fc6c fade
+0x8014fcc0 fade_at_full
+0x8014fce0 normal_screen
+0x8014fd30 black_screen
+0x8014fd7c specific_gamma_load
+# goose TRANS.C (rev 3)
+0x80152310 config_transition
+0x80152588 make_bars
+0x80152924 transition_on
+0x80152c38 transition_off
+0x80152f58 _draw_normal
+0x8015321c _draw_staggered_on
+0x801534e4 _draw_staggered_off
+0x801538c8 _rl_wipe_init
+0x80153b24 _rl_slide_init
+0x80153d74 _lr_wipe_init
+0x80153fd4 _lr_slide_init
+0x80154228 _h_interleave_init
+0x801544c4 _htb_slide_init
+0x8015471c _hbt_slide_init
+0x80154980 _vrl_slide_init
+0x80154bd8 _vlr_slide_init
+0x80154e40 _tb_wipe_init
+0x801550a0 _tb_slide_init
+0x801552f4 _bt_wipe_init
+0x80155558 _bt_slide_init
+0x801557b0 _v_interleave_init
+0x801a36f8 transition_control
+0x801a3724 texture_name
+0x801a3744 timg
+0x801a3768 init_bars
+0x801ab178 whdr
