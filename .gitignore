@@ -13,3 +13,4 @@ experiments/**/out/
 .DS_Store
 __pycache__/
 tools/mipsel-elf-binutils/
+experiments/**/work/

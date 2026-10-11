@@ -11,15 +11,23 @@ GOOSE library sources tested so far:
 | `lib/goose/crc.c` | `crc` | 0x801454A8 | 100% (36 insns) |
 | `lib/goose/sincos.c` | `fsin` | 0x80145558 | 100% (63 insns) |
 | `lib/goose/sincos.c` | `fcos` | 0x80145654 | 100% (66 insns, `fsin` inlined) |
+| `lib/goose/process.c` | `print_processes` | 0x801491C4 | 100% (30 insns) — **-O0 profile**, see below |
 
 "100%" = every instruction identical after masking link-time relocations (hi16/lo16 of
 data addresses, jal targets). Byte-exact equality will follow once the link layout is
 reproduced.
 
 ## Flags that match
+Two profiles exist inside the same binary, so flags must be chosen **per module**:
 ```
+# profile "opt"   (crc.c, sincos.c)
 -O3 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
+# profile "noopt" (process.c; -O0 code: args spilled to home slots, $fp saved but unused)
+    -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
 ```
+Guess: the game linked a debug build of parts of GOOSE (the SDK makefiles build `goose_sd`
+and `goose_sr` variants) while other modules came in optimized. The code style is obvious
+at a glance (`sw $a0,0x20($sp)` prologues and `lw $v0,0x10($sp)` reloads = noopt).
 - `-O` (as written in `goose.mak`) gives 5% match: different register allocation.
 - `-O2` matches leaf code but does not inline `fsin` into `fcos`; `-O3` does and matches.
   So the shipped library was built at `-O3` (GCC 2.7.2: `-O2 -finline-functions`).
@@ -52,6 +60,21 @@ clang -E  ->  tools/sncc.sh (cc1 in DOSBox-X)  ->  tools/sn2gas.py  ->  mipsel-e
                                                    ->  tools/match.py (compare to GAME.EXE)
 ```
 `tools/match.py file.s name=0xADDR ...` prints per-function match percentage and diffs.
+
+## Source revisions differ from the SDK
+Every GOOSE module embeds a `$Revision: N $` string. The game's process.c is revision **17**;
+the SDK has 19 — `create_process` therefore matches only 16% (the allocation call changed),
+while unchanged functions like `print_processes` match fully. Treat the SDK as "very close"
+source: expect small per-module edits to reach the shipped revision. The game's revision
+strings (50 of them, in .data order at 0x801A1F08–0x801A3628) are the module manifest for
+the whole statically linked library set; map them to modules as each one is identified.
+
+## Binary Ninja database caveat
+The user's `GAME.EXE-2.bndb` raw view is 0x3021ED bytes, not this file's 915,212, and its
+labels in the process module land on the wrong functions here (e.g. its
+`set_resource_control` address holds the game's `create_process`). The database was made
+from a different image (other version or a memory dump). Its names remain valuable but must
+be re-anchored by code signature, never by address.
 
 ## Not linked
 `randrng` (`randper.c`) has no counterpart in GAME.EXE: the library was linked as an archive,
