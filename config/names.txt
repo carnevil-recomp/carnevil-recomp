@@ -101,3 +101,10 @@
 0x801a4228 hwconfig
 0x800c4a08 install_sys_handlers
 0x801412a8 __main
+# goose cmos.c / switch.c as linked (identified from main_proc usage)
+0x8014618c get_audit
+0x80146288 set_audit
+0x80146610 get_adjustment
+0x80146748 set_adjustment
+0x80146c04 set_psw_handler
+0x801e7034 game_id

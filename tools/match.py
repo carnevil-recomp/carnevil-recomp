@@ -80,7 +80,8 @@ def main():
                 diffs.append("  %08x  ours: %-28s theirs: %s"%(addr+4*k, (x.mnemonic+" "+x.op_str) if x else "%08x"%wo, (y.mnemonic+" "+y.op_str) if y else "%08x"%wt))
         total+=n; total_ok+=ok
         print("%-24s %4d insns  %3d%% match (words, relocs masked)"%(name,n,100*ok//max(n,1)))
-        for d in diffs[:12]: print(d)
-        if len(diffs)>12: print("  ... %d more"%(len(diffs)-12))
+        lim=int(os.environ.get("MATCH_MAXDIFF","12"))
+        for d in diffs[:lim]: print(d)
+        if len(diffs)>lim: print("  ... %d more"%(len(diffs)-lim))
     print("TOTAL %d/%d insns (%d%%)"%(total_ok,total,100*total_ok//max(total,1)))
 main()

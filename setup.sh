@@ -1,15 +1,40 @@
 #!/bin/sh
-# Links the original game files and the SDK into the repo (nothing is copied or committed).
+# Point the build at YOUR copy of the game. Nothing from the game is stored in this repository.
+#
+#   ./setup.sh --partition DIR        DIR holds the files of the game's filesystem partition
+#                                     (GAME.EXE, DIAG.EXE, *.WMS, ...) as produced by your own
+#                                     extractor or by tools/lfn32.py
+#   ./setup.sh --raw IMAGE.raw        a raw dump of the CarnEvil hard disk (e.g. chdman extractraw
+#                                     of carnevil.chd); the partition is extracted with tools/lfn32.py
+#   ./setup.sh                        defaults for this machine (see below)
+#
+# The build needs GAME.EXE from CarnEvil v1.0.3 (MAME set "carnevil"). It also links the Midway
+# Seattle SDK (github.com/historicalsource/midwayvideo) for the original compiler and headers,
+# and optionally the boot/sound ROM dumps for the MAME-based tests.
 set -e
 cd "$(dirname "$0")"
+PART="${CARNEVIL_PARTITION:-$HOME/Downloads/carnevil-chd/v103/partition}"
+RAW="${CARNEVIL_RAW:-$HOME/Downloads/carnevil-chd/carnevil_103.raw}"
+SDK="${MIDWAY_SDK:-$HOME/Downloads/carnevil-chd/midwayvideo}"
+ROMS="${CARNEVIL_ROMS:-$HOME/Downloads/carnevil}"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --partition) PART="$2"; shift 2;;
+    --raw) RAW="$2"; PART="$(pwd)/original/partition_extracted"; shift 2;;
+    --sdk) SDK="$2"; shift 2;;
+    --roms) ROMS="$2"; shift 2;;
+    *) echo "unknown option $1"; exit 2;;
+  esac
+done
 mkdir -p original
-# Target is CarnEvil v1.0.3 (MAME parent set "carnevil"). v1.0.1 (MAME "carnevil1", BAD_DUMP) is kept for reference.
-# Re-create the partition dirs from the CHDs with:
-#   chdman extractraw -i carnevil.chd -o carnevil_103.raw && tools/lfn32.py extract carnevil_103.raw@1 v103/partition
-ln -sfn "${CARNEVIL_PARTITION:-$HOME/Downloads/carnevil-chd/v103/partition}" original/partition
-ln -sfn "${CARNEVIL_RAW:-$HOME/Downloads/carnevil-chd/carnevil_103.raw}" original/carn.raw
-ln -sfn "${CARNEVIL_PARTITION_101:-$HOME/Downloads/carnevil-chd/v101/partition}" original/partition_v101
-ln -sfn "${CARNEVIL_RAW_101:-$HOME/Downloads/carnevil-chd/carn.raw}" original/carn_v101.raw
-ln -sfn "${MIDWAY_SDK:-$HOME/Downloads/carnevil-chd/midwayvideo}" original/sdk
-ln -sfn "${CARNEVIL_ROMS:-$HOME/Downloads/carnevil}" original/roms
+if [ ! -d "$PART" ] && [ -f "$RAW" ]; then
+  echo "extracting the game partition from $RAW ..."
+  python3 tools/lfn32.py extract "$RAW@1" "$PART"
+fi
+[ -f "$PART/GAME.EXE" ] || { echo "no GAME.EXE in $PART: run with --partition DIR or --raw IMAGE"; exit 1; }
+ln -sfn "$PART" original/partition
+[ -f "$RAW" ] && ln -sfn "$RAW" original/carn.raw
+[ -d "$SDK" ] && ln -sfn "$SDK" original/sdk || echo "warning: SDK not found at $SDK (set MIDWAY_SDK); the matching build needs it"
+[ -d "$ROMS" ] && ln -sfn "$ROMS" original/roms
+python3 tools/exe.py check original/partition/GAME.EXE
 echo "linked:"; ls -l original
