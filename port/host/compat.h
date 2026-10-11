@@ -12,4 +12,10 @@
 #ifndef O_BINARY
 #define O_BINARY 0           /* DJGPP text/binary distinction; no-op on POSIX */
 #endif
+/* DJGPP's case-insensitive compares (the game links its own copies; see 0x8014f310).
+   Declared rather than pulled from <string.h>: some SDK modules declare their own memset. */
+int strncasecmp(const char *, const char *, unsigned long);
+int strcasecmp(const char *, const char *);
+#define strnicmp(a, b, n) strncasecmp((a), (b), (n))
+#define stricmp(a, b) strcasecmp((a), (b))
 #endif

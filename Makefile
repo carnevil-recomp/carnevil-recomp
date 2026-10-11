@@ -54,7 +54,10 @@ HOSTCFLAGS := -O2 -g -Wall -Wno-unused-result -Wno-int-to-pointer-cast -Wno-poin
 C_SRCS     := $(shell grep -v '^\#' config/modules.txt | awk 'NF {print $$2}')
 
 HOST_LINK_SRCS := src/goose/crc.c src/goose/sincos.c     # modules the self-test links; the rest are compile-checked
-HOST_OBJS := $(patsubst %.c,build/host/%.o,$(C_SRCS))
+# mthread.c is the MIPS context switcher (register save/restore in inline asm); the port
+# replaces it with its own scheduler under port/, so it is never compiled natively.
+HOST_SKIP  := src/goose/mthread.c
+HOST_OBJS := $(patsubst %.c,build/host/%.o,$(filter-out $(HOST_SKIP),$(C_SRCS)))
 
 build/host/%.o: %.c include/types.h port/host/compat.h
 	@mkdir -p $(dir $@)

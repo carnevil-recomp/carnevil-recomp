@@ -645,12 +645,19 @@ void set_49way(int mode)
 // run off around 40 instructions, which is around 200ns on a 200MHz CPU
 static void __burn_200ns( void )
 {
-asm("
-		ori		$8,$0,13
-__burn_top:
-		addi	$8,$8,-1
-		bne		$0,$8,__burn_top
-		nop
-		jr		$31
-");
+#ifdef PORT_HOST
+	/* The target spins ~40 instructions between I/O accesses; the host has no such bus. */
+	volatile int i;
+	for(i = 13; i; i--)
+		;
+#else
+asm("\n"
+"		ori		$8,$0,13\n"
+"__burn_top:\n"
+"		addi	$8,$8,-1\n"
+"		bne		$0,$8,__burn_top\n"
+"		nop\n"
+"		jr		$31\n"
+"");
+#endif
 }
