@@ -13,9 +13,9 @@ TAR="binutils-$VER.tar.xz"
 if command -v curl >/dev/null; then curl -LO "https://ftp.gnu.org/gnu/binutils/$TAR"; else wget "https://ftp.gnu.org/gnu/binutils/$TAR"; fi
 tar xf "$TAR"
 mkdir build && cd build
-"../binutils-$VER/configure" --target=mipsel-elf --prefix="$PREFIX" --disable-nls --disable-werror --disable-gdb --disable-sim --disable-gprofng >configure.log
-make -j"$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)" >make.log 2>&1
-make install >install.log 2>&1
+MAKEINFO=true "../binutils-$VER/configure" --target=mipsel-elf --prefix="$PREFIX" --disable-nls --disable-werror --disable-gdb --disable-sim --disable-gprofng >configure.log
+make -j"$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)" MAKEINFO=true >make.log 2>&1
+make install MAKEINFO=true >install.log 2>&1
 cd "$HERE"; rm -rf "$WORK"
 echo "installed: $PREFIX/bin/mipsel-elf-as"
 "$PREFIX/bin/mipsel-elf-as" --version | head -1
