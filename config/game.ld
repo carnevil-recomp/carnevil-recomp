@@ -11,5 +11,7 @@ SECTIONS
     .image : {
         INCLUDE build/link_order.ld
     }
+    /* uninitialised data of C modules: one NOLOAD output section per module at its original address */
+    INCLUDE build/link_bss.ld
     /DISCARD/ : { *(.reginfo) *(.MIPS.abiflags) *(.pdr) *(.mdebug*) *(.comment) *(.gnu.attributes) *(.note*) }
 }

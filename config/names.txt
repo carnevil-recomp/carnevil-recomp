@@ -106,7 +106,8 @@
 0x80146288 set_audit
 0x80146610 get_adjustment
 0x80146748 set_adjustment
-0x80146c04 set_psw_handler
+0x80146be8 set_psw_handler
+0x80146c04 set_dcsw_handler
 0x801e7034 game_id
 # goose process.c rev 17 (SDK names)
 0x80149770 clear_process_list
@@ -225,3 +226,33 @@
 0x8014fb08 delete_fonts
 0x801a32e0 goose_fonts_c_version
 0x801a32f0 font_list
+# goose switch.c (rev 14: no 49-way result mask); statics live in the module's own .bss at 0x801aaaa8
+0x80146c20 init_sw_handlers
+0x80146c60 switch_init
+0x80146d9c scan_switches
+0x801470a4 get_mplex_stick
+0x80147130 blitz_stick_decode
+0x801474d4 get_player_49way_current
+0x801474e4 get_player_sw_current
+0x801474f4 diag_get_player_sw_current
+0x8014761c get_p5_sw_current
+0x8014762c get_dip_coin_current
+0x8014763c diag_get_dip_coin_current
+0x80147688 get_player_sw_close
+0x80147698 get_p5_sw_close
+0x801476a8 get_player_sw_open
+0x801476b8 get_p5_sw_open
+0x801476c8 get_dip_coin_close
+0x801476d8 get_dip_coin_open
+0x801476e8 read_dip_direct
+0x80147714 read_coin_direct
+0x80147740 read_player12_direct
+0x8014776c read_player34_direct
+0x80147798 clear_stuck_psw
+0x801477b4 set_49way
+0x8014789c __burn_200ns
+0x801478c0 null_sw_handler
+0x801a2e78 goose_switch_c_version
+0x801a2e88 __use_49way
+0x801a2e8c I40_present
+0x801a2fa0 xlat_49to8

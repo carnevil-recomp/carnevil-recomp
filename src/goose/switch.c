@@ -2,7 +2,7 @@
 #include	<ioctl.h>
 #include	<goose/switch.h>
 
-char	goose_switch_c_version[] = {"$Revision: 18 $"};
+char	goose_switch_c_version[] = {"$Revision: 14 $"};
 
 static int	__use_49way = 0;		// set non-zero for Blitz '98 control panel configurations
 int			I40_present = 0;		// non-static, but should only be written by functions in switch.c

@@ -20,7 +20,7 @@ extern int	get_audit(int, int *), get_adjustment(int, int *);
 extern int	set_audit(int, int), set_adjustment(int, int);
 extern void	reset_high_scores(void);
 extern void	set_frame_factor(int), main_init_sound(void), snd_master_volume(int);
-extern void	set_psw_handler(int, void (*)());
+extern void	set_dcsw_handler(int, void (*)());
 extern int	add_object1_wrapper(int, void (*)(), int, int);
 extern void	remove_game_object(short);
 extern int	kss_reset_(void), kss_reset_w_calib_(void);
@@ -164,16 +164,16 @@ void main_proc(void)
 	gfx_scale = func_80157004();
 	set_frame_factor(3);
 	main_init_sound();
-	set_psw_handler(0, func_800c718c);
-	set_psw_handler(1, func_800c718c);
-	set_psw_handler(7, func_800c718c);
-	set_psw_handler(8, func_800c718c);
-	set_psw_handler(0xf, func_800c718c);
-	set_psw_handler(6, func_800c726c);
-	set_psw_handler(3, dispatch_slam_proc);
-	set_psw_handler(0xb, func_800c6f28);
-	set_psw_handler(0xc, func_800c6f28);
-	set_psw_handler(4, dispatch_diags_proc);
+	set_dcsw_handler(0, func_800c718c);
+	set_dcsw_handler(1, func_800c718c);
+	set_dcsw_handler(7, func_800c718c);
+	set_dcsw_handler(8, func_800c718c);
+	set_dcsw_handler(0xf, func_800c718c);
+	set_dcsw_handler(6, func_800c726c);
+	set_dcsw_handler(3, dispatch_slam_proc);
+	set_dcsw_handler(0xb, func_800c6f28);
+	set_dcsw_handler(0xc, func_800c6f28);
+	set_dcsw_handler(4, dispatch_diags_proc);
 	qcreate("volume", 0x8201, coin_volume_proc, 0, 0, 0, 0);
 	D_801e5da8 = qcreate("ccproc", 0x8200, ccproc_proc, 0, 0, 0, 0);
 	func_8014c65c();
@@ -209,8 +209,8 @@ void main_proc(void)
 	hw_obj = add_object1_wrapper(0x20, hw_info_screen, 0, 0);
 	qyield(20);
 	D_80212d98 = 0;
-	set_psw_handler(2, dispatch_start_proc);
-	set_psw_handler(5, dispatch_start_proc);
+	set_dcsw_handler(2, dispatch_start_proc);
+	set_dcsw_handler(5, dispatch_start_proc);
 	if(debug_mode & 1)
 	{
 		remove_game_object(hw_obj);

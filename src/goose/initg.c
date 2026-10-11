@@ -33,9 +33,9 @@ extern float	hres, vres;
 extern int	hwconfig[];
 extern int	free_mem_left;
 
-extern int	func_801476e8(void);
+extern int	read_dip_direct(void);
 extern int	func_80157004(void);
-extern void	func_80146c60(void), func_8014cd88(void), func_8013f5b4(void), func_800ca4a8(void);
+extern void	switch_init(void), func_8014cd88(void), func_8013f5b4(void), func_800ca4a8(void);
 extern void	install_sys_handlers(void);
 extern void	graphics_init(void);
 extern void	grSstVidMode(int, sst1VideoTimingStruct *);
@@ -115,7 +115,7 @@ void graphics_init_body(void)
 	int	ok;
 
 	D_801de8ec = 0;
-	func_801476e8();
+	read_dip_direct();
 	fprintf(stderr, "Setting ");
 	fflush(stdout);
 	if(getenv("SIM_LORES") == NULL)
@@ -184,7 +184,7 @@ void main(void)
 	dma_buffer2 = dma_buffer1 + DMA_BUFFER_SIZE;
 	dma_buffer1 = PHYS(dma_buffer1);
 	dma_buffer2 = PHYS(dma_buffer2);
-	func_80146c60();
+	switch_init();
 	func_8014cd88();
 	graphics_init();
 	install_interrupt_handler(0, vblank_handler);
