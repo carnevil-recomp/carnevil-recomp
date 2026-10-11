@@ -8,7 +8,7 @@ struct process_node;
 extern struct process_node *qcreate(char *, int, void (*)(), int, int, int, int);
 extern void	qyield(int);
 extern void	ide_set_partition(int);
-extern void	func_801459e0(u32);
+extern void	set_background_color(u32);
 extern void	func_800ca3a0(void), func_800c7570(void), func_800f1a20(void), func_800f1fa8(void), func_800f1d88(void), func_800e5014(void);
 extern void	func_8014c65c(void), func_800ca448(void);
 extern int	func_800f1bac(void);
@@ -50,7 +50,7 @@ void main_proc(void)
 	D_80237404 = 0;
 	snd_opsys_ver = 0;
 	ide_set_partition(1);
-	func_801459e0(0xff000000);
+	set_background_color(0xff000000);
 	D_801fad10 = 1;
 	func_800ca3a0();
 	func_800c6480(&serial_number);

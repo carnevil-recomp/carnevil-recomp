@@ -209,3 +209,19 @@
 0x8015f7b0 grDepthBufferFunction
 0x8015f940 grDepthMask
 0x8015ec5c grBufferClear
+0x801a3154 is_low_res
+0x801a2e48 background_color
+0x801459e0 set_background_color
+0x801459f0 get_background_color
+# goose fonts.c (rev 7: texture error path active)
+0x8014f378 create_font
+0x8014f590 create_font_from_memory
+0x8014f7b8 delete_font
+0x8014f8b4 delete_font_id
+0x8014f9dc get_font_handle
+0x8014fa0c get_char_image_info
+0x8014fa88 get_font_space_width
+0x8014fac8 get_font_height
+0x8014fb08 delete_fonts
+0x801a32e0 goose_fonts_c_version
+0x801a32f0 font_list

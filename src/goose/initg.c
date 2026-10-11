@@ -26,7 +26,7 @@ typedef struct {
 /* externs resolved by the surrounding build (names from config/names.txt) */
 extern sst1VideoTimingStruct	D_801a37b0;		/* default 400x256 timing (glide table) */
 extern int	D_801de8ec;
-extern int	gS_simLowRes;
+extern int	is_low_res;
 extern int	gt_fd;
 extern unsigned char	*dma_buffer1, *dma_buffer2;
 extern float	hres, vres;
@@ -130,7 +130,7 @@ void graphics_init_body(void)
 		fprintf(stderr, "512x256 57Hz LO RES SIMULATION");
 		fflush(stdout);
 		vt = &lores_timing;
-		gS_simLowRes = 1;
+		is_low_res = 1;
 		res = 0x39;
 	}
 	gfx_scale = res;
