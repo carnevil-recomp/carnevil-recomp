@@ -284,7 +284,9 @@ reproduces the board. This is the "port" and is layered to keep the game source 
 
 HAL modules (`port/`), each with a MAME-derived reference:
 
-1. **CPU/memory semantics**: `uint32_t` pointers assumptions, KSEG0/KSEG1 aliasing (uncached
+1. **CPU/memory semantics**: ILP32 vs LP64 (`long` is 32-bit on the target; all imported
+   sources use `include/types.h` fixed-width names, enforced from the first module on),
+   `uint32_t` pointers assumptions, KSEG0/KSEG1 aliasing (uncached
    writes to 0xA0xxxxxx), `cache` ops -> no-ops, `ll/sc` -> atomics, `break` div0 trap ->
    explicit check that mimics `div0hand.c`, FCSR FTZ -> `_MM_SET_FLUSH_ZERO_MODE` /
    `FPCR.FZ` on arm64, `-ffp-contract=off`, strict single precision.

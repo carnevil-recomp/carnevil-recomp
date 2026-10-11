@@ -65,6 +65,19 @@ Adding a module = find its three ranges in the image (text from the function fil
 = its string/literal pool in link order; data = its `$Revision` string onward), add the
 line and the names, drop the source in `src/`, `make regen && make`.
 
+## Host build (`make host`)
+The same `src/` compiled natively with clang (`-DPORT_HOST`) plus `port/`. Today that is
+`port/host/selftest`, which checks `crc()` against the GAME.EXE header word and
+`fsin`/`fcos` against libm. Rules learned so far:
+- **Types.** The target is ILP32 (`long` = 32 bits), the host is LP64. Sources imported into
+  `src/` use `u32`/`s32`/... from `include/types.h`, which map to `unsigned long` under the SN
+  compiler (so matching is unaffected) and to `uint32_t` on the host. The unmodified crc.c
+  crashed on arm64 because its 64-bit `unsigned long` CRC overran the table.
+- **Headers.** `port/host/compat.h` supplies what the SDK's DJGPP headers define and the host
+  libc does not (`M_TWOPI`, `M_3PI_2`); the SDK include dir is searched after the system one.
+- **Floats.** Still to do: flush-to-zero (the game sets FCSR FS at boot), `-ffp-contract=off`,
+  and R5000 `madd.s` semantics, see `docs/PLAN.md` Phase 5.
+
 ## Build time
 Clean `make` (2,600 asm objects + C modules through DOSBox-X) takes about 1.5 min; an
 incremental asm-only rebuild about 11 s.

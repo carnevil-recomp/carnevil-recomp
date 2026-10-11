@@ -46,6 +46,18 @@ build/game.bin: build/game.elf
 build/GAME.EXE: build/game.bin
 	python3 tools/exe.py pack $< $(LOAD) $@
 
+# ---- native host build (the port) ----
+HOSTCC     := clang
+HOSTCFLAGS := -O2 -g -Wall -Wno-unused-result -DPORT_HOST -Iinclude -include port/host/compat.h -idirafter $(SDK)/include -Wno-nonportable-include-path
+C_SRCS     := $(shell grep -v '^#' config/modules.txt | awk 'NF {print $$2}')
+
+build/host/selftest: port/host/selftest.c $(C_SRCS) include/types.h port/host/compat.h
+	@mkdir -p build/host
+	$(HOSTCC) $(HOSTCFLAGS) -o $@ port/host/selftest.c $(C_SRCS)
+
+host: build/host/selftest
+	./build/host/selftest $(ORIG)
+
 check: build/GAME.EXE
 	@cmp $(ORIG) build/GAME.EXE && echo "OK: build/GAME.EXE is byte-identical to $(ORIG)"
 
@@ -57,5 +69,5 @@ regen:
 
 clean:
 	rm -rf build/asm build/game.* build/GAME.EXE build/src
-.PHONY: all check verify regen clean
+.PHONY: all check verify regen clean host
 .SECONDARY:
