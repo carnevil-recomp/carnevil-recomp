@@ -33,33 +33,38 @@ extern texture_node_t		*tlist;
 void install_vector(int, int (*)(int, int *));
 
 
+#ifdef PORT_HOST
+/* BIOS syscall 0x409 installs an exception-vector handler; the port has no exception vectors. */
+void install_vector(int vector, int (*handler)(int, int *)) { (void)vector; (void)handler; }
+#else
 #ifndef CYGNUS
 
-__asm__("
-	.globl	install_vector
-	.set		noreorder
-install_vector:
-	break		0x409
-	nop
-	jr			$31
-	nop
-	.set		reorder
-");
+__asm__("\n"
+"	.globl	install_vector\n"
+"	.set		noreorder\n"
+"install_vector:\n"
+"	break		0x409\n"
+"	nop\n"
+"	jr			$31\n"
+"	nop\n"
+"	.set		reorder\n"
+"");
 
 #else
 
-__asm__("
-	.globl	install_vector
-	.set		noreorder
-install_vector:
-	.word		0xD | (0x409 << 6)
-	nop
-	jr			$31
-	nop
-	.set		reorder
-");
+__asm__("\n"
+"	.globl	install_vector\n"
+"	.set		noreorder\n"
+"install_vector:\n"
+"	.word		0xD | (0x409 << 6)\n"
+"	nop\n"
+"	jr			$31\n"
+"	nop\n"
+"	.set		reorder\n"
+"");
 
 #endif
+#endif /* PORT_HOST */
 
 
 static char	*ld_commands[] = {
