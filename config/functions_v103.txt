@@ -2208,7 +2208,7 @@
 0x80150540 0x801506e7 sub_80150540
 0x801506e8 0x8015085f sub_801506e8
 0x80150860 0x80150dfb unimplemented_handler
-0x80150dfc 0x80150fab show_object_list
+0x80150e00 0x80150fab show_object_list
 0x80150fac 0x80151177 show_process_list
 0x80151178 0x8015129f show_free_process_list
 0x801512a0 0x80151627 show_textures_list

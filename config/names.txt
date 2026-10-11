@@ -356,3 +356,11 @@
 0x801a3744 timg
 0x801a3768 init_bars
 0x801ab178 whdr
+# goose LOCKUP.C (rev 16); 0x80150dfc is a pad word; install_vector is top-level asm assembled into .data
+0x80150e00 show_object_list
+0x801512a0 show_texture_list
+0x801655d0 show_tmu_map
+0x80165534 get_tmu_fragmentation
+0x801a355c install_vector
+0x801a356c ld_commands
+0x801a35a0 __dj_ctype_toupper

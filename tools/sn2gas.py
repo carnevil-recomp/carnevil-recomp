@@ -39,7 +39,8 @@ def convert(lines):
         s=line.strip()
         m=re.match(r"\.set\s+(no)?reorder",s)
         if m:
-            reorder = (m.group(1) is None); continue   # drop; we are always noreorder for gas
+            reorder = (m.group(1) is None)             # drop; we are always noreorder for gas
+            out.append("#SN_REORDER %d"%reorder); continue
         m=MOVE.match(line)
         if m:
             out.append("\taddu\t%s,%s,$0"%m.groups()); continue
@@ -86,6 +87,19 @@ def convert(lines):
                 out.append("\t.align\t%d"%(2 if kind=="s" else 3))
                 out.append("%s:\t.%s\t%s"%(lab,"float" if kind=="s" else "double",val))
             out.append("\t.text"); lits=[]
-    return "\n".join(out)+"\n"
+    return "\n".join(mf_hazards(out))+"\n"
+MF=re.compile(r"^\s*(mflo|mfhi)\b"); MULT=re.compile(r"^\s*(mult|multu|dmult|dmultu|div|divu|ddiv|ddivu)\b")
+INSN=re.compile(r"^\s*[a-z][a-z0-9.]*(\s|$)")
+def mf_hazards(lines):
+    """asmmips (reorder mode) keeps two instructions between mflo/mfhi and the next mult/div
+    (R4000 hazard); it pads with nops. Seen in LOCKUP.C dump_used_handle."""
+    out=[]; reorder=True; since=99
+    for l in lines:
+        if l.startswith("#SN_REORDER"): reorder=(l.split()[1]=="1"); continue
+        if INSN.match(l) and not l.lstrip().startswith("."):
+            if reorder and MULT.match(l) and since<2: out+=["\tnop"]*(2-since); since=2
+            since = 0 if MF.match(l) else since+1
+        out.append(l)
+    return out
 if __name__=="__main__":
     src=open(sys.argv[1]).readlines(); open(sys.argv[2],"w").write(convert(src))
