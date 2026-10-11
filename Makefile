@@ -76,6 +76,28 @@ build/host/selftest: port/host/selftest.c $(HOST_LINK_SRCS) include/types.h port
 host: $(HOST_OBJS) build/host/selftest
 	./build/host/selftest $(ORIG)
 
+# ---- the playable port: GOOSE + game modules with the host HAL (port/host/*.c) ----
+# The game sees pointers as int, so port/host/mem.c keeps all its memory below 4 GB. The arm64
+# macOS kernel refuses executables that map that low, so on macOS the port is an x86_64 binary
+# run under Rosetta (as Wine does); elsewhere it is native with -no-pie.
+PORT_SRCS := $(filter-out port/host/selftest.c,$(wildcard port/host/*.c))
+PORT_OBJS := $(patsubst %.c,build/port/%.o,$(filter-out $(HOST_SKIP),$(C_SRCS)))
+comma := ,
+PORT_FORTIFY ?= 0     # libc fortification trips on ILP32 idioms; set 2 to debug with it
+ifeq ($(shell uname),Darwin)
+PORT_ARCH    := -arch x86_64
+PORT_LDFLAGS := -Wl$(comma)-pagezero_size$(comma)0x4000
+else
+PORT_ARCH    :=
+PORT_LDFLAGS := -no-pie
+endif
+build/port/%.o: %.c include/types.h port/host/compat.h
+	@mkdir -p $(dir $@)
+	$(HOSTCC) $(HOSTCFLAGS) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -c -o $@ $<
+build/host/carnevil: $(PORT_OBJS) $(PORT_SRCS) port/host/hal.h
+	$(HOSTCC) $(HOSTCFLAGS) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -Wno-deprecated-declarations $(PORT_LDFLAGS) -o $@ $(PORT_SRCS) $(PORT_OBJS)
+port: build/host/carnevil
+
 check: build/GAME.EXE
 	@cmp $(ORIG) build/GAME.EXE && echo "OK: build/GAME.EXE is byte-identical to $(ORIG)"
 
@@ -87,5 +109,5 @@ regen:
 
 clean:
 	rm -rf build/asm build/game.* build/GAME.EXE build/src
-.PHONY: all check verify regen clean host
+.PHONY: all check verify regen clean host port
 .SECONDARY:
