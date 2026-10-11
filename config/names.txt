@@ -364,3 +364,12 @@
 0x801a355c install_vector
 0x801a356c ld_commands
 0x801a35a0 __dj_ctype_toupper
+# goose inthand.c (rev 3) and randper.c (rev 3); the four functions between them are DJGPP's BSD random.c
+0x801478c8 interrupt_handler
+0x801a2fec tick_counter
+0x801a2ff0 uptime
+0x80147968 randrng
+0x801479bc srandom
+0x80147ac8 initstate
+0x80147d34 setstate
+0x80147e8c random

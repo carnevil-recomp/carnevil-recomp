@@ -24,3 +24,5 @@ sound    src/sound/sound.c    o2r5k  0x80169478 0x8016dbcc  0x801774c0 0x80177b2
 gfader   src/goose/gfader.c   goose  0x8014fb78 0x8014fdf0  0x80175678 0x80175690  0x801a32f8 0x801a331c
 trans    src/goose/trans.c    goose  0x80152310 0x80155a98  0x801762e0 0x80176310  0x801a36e8 0x801a37a0  0x801ab178 0x801ab17c
 lockup   src/goose/lockup.c   goose  0x80150e00 0x80151a84  0x80175d80 0x801762e0  0x801a3548 0x801a35a0
+inthand  src/goose/inthand.c  goose  0x801478c8 0x80147968  -          -            0x801a2fd8 0x801a2ff4
+randper  src/goose/randper.c  goose  0x80147968 0x801479bc  -          -            0x801a2ff8 0x801a3008
