@@ -1,4 +1,5 @@
 # Modules rebuilt from C. Each line: name  source  profile  text_start text_end  rodata_start rodata_end  data_start data_end
-# Ranges are v1.0.3 addresses, end exclusive, '-' when the module has none. profile = opt (-O3) | noopt (-O0), see docs/toolchain.md
-crc     src/goose/crc.c     opt  0x801458c0 0x801459e0  -          -           0x801a2a28 0x801a2e38
-sincos  src/goose/sincos.c  opt  0x80145a00 0x80145c04  0x80175408 0x8017549c  0x801a2e50 0x801a2e5f
+# Ranges are v1.0.3 addresses, end exclusive, '-' when the module has none. profile = goose (-O3 -mcpu=r5000, GOOSE lib) | game (-O3, default cpu) | noopt (-O0), see docs/toolchain.md
+crc     src/goose/crc.c     goose  0x801458c0 0x801459e0  -          -           0x801a2a28 0x801a2e38
+sincos  src/goose/sincos.c  goose  0x80145a00 0x80145c04  0x80175408 0x8017549c  0x801a2e50 0x801a2e5f
+initg   src/goose/initg.c   game   0x800c42d8 0x800c4778  0x8016dc50 0x8016dfa4  0x80177b20 0x80177be0

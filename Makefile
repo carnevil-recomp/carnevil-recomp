@@ -8,8 +8,9 @@ ORIG     := original/partition/GAME.EXE
 LOAD     := 0x800c4000
 SDK      := original/sdk
 CPPFLAGS := -E -P -Wno-nonportable-include-path -nostdinc -I$(SDK)/include -Iinclude -D__DJGPP__ -DSEATTLE -DRELEASE
-CC1_opt   := -O3 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
-CC1_noopt := -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
+CC1_goose := -O3 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
+CC1_game  := -O3 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
+CC1_noopt := -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
 DISASM   := python3 tools/disasm.py $(ORIG) asm --functions config/functions_v103.txt --symbols config/binja_symbols.txt \
             --names config/names.txt --modules config/modules.txt --word-fallback config/word_fallback.txt --nosym config/nosym.txt
 
@@ -51,11 +52,18 @@ HOSTCC     := clang
 HOSTCFLAGS := -O2 -g -Wall -Wno-unused-result -DPORT_HOST -Iinclude -include port/host/compat.h -idirafter $(SDK)/include -Wno-nonportable-include-path
 C_SRCS     := $(shell grep -v '^\#' config/modules.txt | awk 'NF {print $$2}')
 
-build/host/selftest: port/host/selftest.c $(C_SRCS) include/types.h port/host/compat.h
-	@mkdir -p build/host
-	$(HOSTCC) $(HOSTCFLAGS) -o $@ port/host/selftest.c $(C_SRCS)
+HOST_LINK_SRCS := src/goose/crc.c src/goose/sincos.c     # modules the self-test links; the rest are compile-checked
+HOST_OBJS := $(patsubst %.c,build/host/%.o,$(C_SRCS))
 
-host: build/host/selftest
+build/host/%.o: %.c include/types.h port/host/compat.h
+	@mkdir -p $(dir $@)
+	$(HOSTCC) $(HOSTCFLAGS) -c -o $@ $<
+
+build/host/selftest: port/host/selftest.c $(HOST_LINK_SRCS) include/types.h port/host/compat.h
+	@mkdir -p build/host
+	$(HOSTCC) $(HOSTCFLAGS) -o $@ port/host/selftest.c $(HOST_LINK_SRCS)
+
+host: $(HOST_OBJS) build/host/selftest
 	./build/host/selftest $(ORIG)
 
 check: build/GAME.EXE

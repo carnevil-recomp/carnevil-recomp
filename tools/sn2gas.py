@@ -51,11 +51,12 @@ def convert(lines):
         out.append(line.rstrip("\n"))
         if reorder and BR.match(line) and not s.startswith("#"):
             out.append("\tnop")
-    if lits:
-        out.append("\t.rdata")
-        for kind,lab,val in lits:
-            out.append("\t.align\t%d"%(2 if kind=="s" else 3))
-            out.append("%s:\t.%s\t%s"%(lab,"float" if kind=="s" else "double",val))
+        if s.startswith(".end") and lits:          # flush this function's literal pool
+            out.append("\t.rdata")
+            for kind,lab,val in lits:
+                out.append("\t.align\t%d"%(2 if kind=="s" else 3))
+                out.append("%s:\t.%s\t%s"%(lab,"float" if kind=="s" else "double",val))
+            out.append("\t.text"); lits=[]
     return "\n".join(out)+"\n"
 if __name__=="__main__":
     src=open(sys.argv[1]).readlines(); open(sys.argv[2],"w").write(convert(src))

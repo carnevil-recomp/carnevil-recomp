@@ -24,13 +24,18 @@ data addresses, jal targets). Byte-exact equality will follow once the link layo
 reproduced.
 
 ## Flags that match
-Two profiles exist inside the same binary, so flags must be chosen **per module**:
+Three profiles exist inside the same binary, so flags must be chosen **per module**:
 ```
-# profile "opt"   (crc.c, sincos.c)
+# profile "goose"  (GOOSE library objects: crc.c, sincos.c)
 -O3 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
-# profile "noopt" (process.c; -O0 code: args spilled to home slots, $fp saved but unused)
-    -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
+# profile "game"   (initg.c, and presumably the game's own code): same but NO -mcpu
+-O3 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
+# profile "noopt"  (process.c; -O0 code: args spilled to home slots, $fp saved but unused)
+    -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
 ```
+`-mcpu` only changes instruction scheduling, so most functions match under either; `main`
+in initg.c is the first that distinguishes them (one `ori` moves). Try `game` first for
+non-library code, `goose` for anything from lib/goose.
 Guess: the game linked a debug build of parts of GOOSE (the SDK makefiles build `goose_sd`
 and `goose_sr` variants) while other modules came in optimized. The code style is obvious
 at a glance (`sw $a0,0x20($sp)` prologues and `lw $v0,0x10($sp)` reloads = noopt).
@@ -47,9 +52,10 @@ GNU as (`tools/mipsel-elf-binutils`, binutils 2.43 built with `--target=mipsel-e
    jump in reorder regions; GNU as would move the previous instruction into the slot. We
    assemble everything under `.set noreorder` and insert the nops ourselves.
 2. **`li.s` / `li.d` go through a literal pool.** asmmips emits each float/double constant
-   into a read-only literal area (no dedup, in order of first appearance, naturally aligned)
-   and loads it with `lui $at` + `lwc1`/`ldc1`. GNU as with `-G0` would build the constant
-   in registers instead.
+   into `.rdata` (no dedup, in order of first appearance, naturally aligned) **at the end of
+   the function that uses it**, i.e. after that function's own string constants and before
+   the next function's, and loads it with `lui $at` + `lwc1`/`ldc1`. GNU as with `-G0` would
+   build the constant in registers instead.
 3. **`move rd,rs` is `addu rd,rs,$0`** in asmmips (11,759 occurrences in the game vs 101
    `or` forms, which come from hand-written or third-party code); gas encodes `move` as `or`.
 4. **`div`/`rem` macros** put the divide first, then `bnez t; nop; break 7`, then the
@@ -97,3 +103,16 @@ so unreferenced modules are absent. Do not expect every SDK function to appear.
 - Confirm flags for game-side code (not SDK) on the first decompiled game function.
 - `madd.s` is emitted freely by this compiler (`fsin` uses it): the port must reproduce
   R5000 MADD.S rounding semantics exactly (check MAME's `mips3` and real-hardware behaviour).
+
+## Source-shape lessons from initg.c (the first non-library module)
+- GCC 2.7.2 emits a translation unit's string constants in order of *compilation*: strings used
+  by a static helper that gets inlined appear before the strings of the function it is inlined
+  into. The banner loop in `main` had to be a static `print_banner()` for the pool to match.
+- Array initializers push their strings onto the pool in reverse order; identical literals
+  are shared within the unit.
+- A `main()` in C automatically gets a `jal __main` first (libgcc constructor hook); the
+  game's `__main` is at 0x801412A8.
+- The `$gp` DMA-pointer preamble on `graphics_init` is hand-written assembly (a top-level
+  `asm()` that defines the entry and falls into the C body). No compiler switch produces it;
+  `-mabicalls` emits `.cpload $25` instead. Draw code refers to `$gp` via
+  `register ... asm("$28")` (the spelling `asm("$gp")` is mis-handled by this compiler).

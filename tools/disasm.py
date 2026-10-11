@@ -213,7 +213,9 @@ def main():
             order.append((cs,"build/%s.o(%s)"%(m['src'][:-2],'.rodata .rdata' if kind=='rodata' else '.data'))); continue
         fn="data/data_%08x.s"%cs; files.append(fn); order.append((cs,"build/asm/%s.o(.data)"%fn[:-2]))
         with open(os.path.join(a.outdir,fn),'w') as f:
-            f.write(".section .data\n")
+            al=0
+            while al<3 and (cs>>(al+1))<<(al+1)==cs: al+=1     # alignment of the chunk's original address (max 8)
+            f.write(".section .data\n.align %d\n"%al)
             off=cs-LOAD; li=0
             while off<ce-LOAD:
                 A=LOAD+off
