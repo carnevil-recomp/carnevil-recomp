@@ -58,6 +58,7 @@ def gpr_written(w):
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('exe'); ap.add_argument('outdir')
     ap.add_argument('--functions'); ap.add_argument('--symbols'); ap.add_argument('--word-fallback'); ap.add_argument('--nosym')
+    ap.add_argument('--names'); ap.add_argument('--modules')
     ap.add_argument('--code-end',type=lambda x:int(x,0),default=CODE_END)
     a=ap.parse_args()
     d=open(a.exe,'rb').read(); img=d[8:]; END=LOAD+len(img); code_end=a.code_end
@@ -66,19 +67,35 @@ def main():
         except (FileNotFoundError,TypeError): return set()
     fallback=rdset(a.word_fallback); nosym=rdset(a.nosym)
     # ---- names ----
-    fnames={}; dnames={}; used=set()
+    fnames={}; dnames={}; used=set(); bstarts=set(); override={}
+    if a.names:
+        for l in open(a.names):
+            if l.startswith('0x'): x,n=l.split()[:2]; override[int(x,16)]=n; used.add(n)
     if a.functions:
         for l in open(a.functions):
             if l.startswith('0x'):
                 s,e,n=l.split()[:3]; s=int(s,16)
-                if LOAD<=s<code_end and not n.startswith('sub_'):
-                    n=san(n); n=n if n not in used else "%s_%08x"%(n,s); used.add(n); fnames[s]=n
+                if LOAD<=s<code_end:
+                    bstarts.add(s)
+                    if s in override: fnames[s]=override[s]
+                    elif not n.startswith('sub_'):
+                        n=san(n); n=n if n not in used else "%s_%08x"%(n,s); used.add(n); fnames[s]=n
+    for x,n in override.items():
+        if LOAD<=x<code_end: fnames[x]=n
+    modules=[]
+    if a.modules:
+        for l in open(a.modules):
+            if l.strip() and not l.startswith('#'):
+                f=l.split(); rng=lambda i:(None if f[i]=='-' else (int(f[i],16),int(f[i+1],16)))
+                modules.append(dict(name=f[0],src=f[1],profile=f[2],text=rng(3),rodata=rng(5),data=rng(7)))
     if a.symbols:
         for l in open(a.symbols):
             p=l.rstrip('\n').split('\t')
             if len(p)>3 and p[1]=='data' and not p[2].startswith('jump_table'):
                 s=int(p[0],16); n=san(p[2])
-                if code_end<=s<BSS_END and n not in used: used.add(n); dnames[s]=n
+                if code_end<=s<BSS_END and n not in used and s not in override: used.add(n); dnames[s]=n
+    for x,n in override.items():
+        if x>=code_end: dnames[x]=n
     # ---- decode ----
     md=Cs(CS_ARCH_MIPS, CS_MODE_MIPS32|CS_MODE_LITTLE_ENDIAN)
     words=struct.unpack('<%dI'%((code_end-LOAD)//4), img[:code_end-LOAD])
@@ -88,12 +105,15 @@ def main():
         if i.id and i.mnemonic not in MIPS4: i=Raw(A)
         ins.append(i)
     # ---- function starts / branch targets ----
-    starts=set(fnames); btargets=set()
+    starts=set(fnames)|bstarts; btargets=set()
     for i in ins:
         if i.id==0 or i.address in fallback: continue
-        if i.mnemonic in ('j','jal'):
+        if i.mnemonic=='jal':
             t=int(i.op_str,16)
             if LOAD<=t<code_end: starts.add(t)
+        elif i.mnemonic=='j':
+            t=int(i.op_str,16)
+            if LOAD<=t<code_end: btargets.add(t)
         elif i.mnemonic.startswith('b') and i.mnemonic!='break':
             m=re.search(r'0x[0-9a-f]+$',i.op_str)
             if m:
@@ -131,7 +151,7 @@ def main():
         return None
     glob_labels=set()   # text addresses needing a global (non-.L) label
     for i in ins:
-        if i.id==0 or i.address in fallback or not (i.mnemonic.startswith('b') and i.mnemonic!='break'): continue
+        if i.id==0 or i.address in fallback or not ((i.mnemonic.startswith('b') and i.mnemonic!='break') or i.mnemonic=='j'): continue
         m=re.search(r'0x[0-9a-f]+$',i.op_str)
         if m:
             t=int(m.group(0),16)
@@ -154,9 +174,21 @@ def main():
     for b in symaddrs: symname(b)
     # ---- emit code ----
     os.makedirs(os.path.join(a.outdir,'functions'),exist_ok=True); os.makedirs(os.path.join(a.outdir,'data'),exist_ok=True)
-    files=[]
+    files=[]; order=[]   # order: (addr, 'build/...o(section)') for the generated link order
+    def module_at(addr,kind):
+        for m in modules:
+            r=m[kind]
+            if r and r[0]<=addr<r[1]: return m
+    for m in modules:
+        for kind in ('text','rodata','data'):
+            r=m[kind]
+            if kind=='text' and r: assert r[0] in starts and (r[1] in starts or r[1]==code_end), "module %s text range must start/end on region boundaries"%m['name']
     for (s,e) in bounds:
-        fn="functions/%08x_%s.s"%(s,label(s)); files.append(fn)
+        m=module_at(s,'text')
+        if m:
+            if s==m['text'][0]: order.append((s,"build/%s.o(.text)"%m['src'][:-2]))
+            continue
+        fn="functions/%08x_%s.s"%(s,label(s)); files.append(fn); order.append((s,"build/asm/%s.o(.text)"%fn[:-2]))
         with open(os.path.join(a.outdir,fn),'w') as f:
             f.write(".set noreorder\n.set noat\n.section .text\n")
             if s==LOAD: f.write(".globl _start\n_start:\n")
@@ -171,21 +203,38 @@ def main():
                 f.write("\t%s\n"%render(i,w,A,label,sym_hi,sym_lo,symname))
     # ---- emit data (byte-granular labels) ----
     labels=sorted(x for x in symaddrs|set(dnames) if code_end<=x<END)
-    fn="data/data_%08x.s"%code_end; files.append(fn)
-    with open(os.path.join(a.outdir,fn),'w') as f:
-        f.write(".section .data\n.globl data_start\ndata_start:\n")
-        off=code_end-LOAD; li=0
-        while off<len(img):
-            A=LOAD+off
-            while li<len(labels) and labels[li]<A: li+=1
-            if li<len(labels) and labels[li]==A: f.write(".globl %s\n%s:\n"%(symname(A),symname(A))); li+=1
-            nxt=labels[li] if li<len(labels) else END
-            n=nxt-A
-            if A%4 or n<4:
-                k=min(n, 4-(A%4) if A%4 else n); f.write("\t.byte "+",".join("0x%02x"%b for b in img[off:off+k])+"\n"); off+=k
-            else:
-                k=min(n//4,8); f.write("\t.word "+",".join("0x%08x"%w for w in struct.unpack('<%dI'%k,img[off:off+4*k]))+"\n"); off+=4*k
+    cuts=sorted({code_end,END}|{x for m in modules for k in ('rodata','data') if m[k] for x in m[k]})
+    for cs,ce in zip(cuts,cuts[1:]):
+        m=None
+        for mm in modules:
+            for k in ('rodata','data'):
+                if mm[k] and mm[k][0]==cs: m,kind=mm,k
+        if m:
+            order.append((cs,"build/%s.o(%s)"%(m['src'][:-2],'.rodata .rdata' if kind=='rodata' else '.data'))); continue
+        fn="data/data_%08x.s"%cs; files.append(fn); order.append((cs,"build/asm/%s.o(.data)"%fn[:-2]))
+        with open(os.path.join(a.outdir,fn),'w') as f:
+            f.write(".section .data\n")
+            off=cs-LOAD; li=0
+            while off<ce-LOAD:
+                A=LOAD+off
+                while li<len(labels) and labels[li]<A: li+=1
+                if li<len(labels) and labels[li]==A: f.write(".globl %s\n%s:\n"%(symname(A),symname(A))); li+=1
+                nxt=min(labels[li] if li<len(labels) else END, ce)
+                n=nxt-A
+                if A%4 or n<4:
+                    k=min(n, 4-(A%4) if A%4 else n); f.write("\t.byte "+",".join("0x%02x"%b for b in img[off:off+k])+"\n"); off+=k
+                else:
+                    k=min(n//4,8); f.write("\t.4byte "+",".join("0x%08x"%w for w in struct.unpack('<%dI'%k,img[off:off+4*k]))+"\n"); off+=4*k
     open(os.path.join(a.outdir,"files.txt"),'w').write("\n".join(files)+"\n")
+    os.makedirs('build',exist_ok=True)
+    with open('build/link_order.ld','w') as f:
+        f.write("/* generated by tools/disasm.py: input sections in image order */\n")
+        for addr,ent in sorted(order): f.write("    %s   /* 0x%08x */\n"%(ent,addr))
+    with open('build/modules.mk','w') as f:
+        f.write("# generated by tools/disasm.py\nC_OBJS :=")
+        for m in modules: f.write(" build/%s.o"%m['src'][:-2])
+        f.write("\n")
+        for m in modules: f.write("build/%s.o: PROFILE := %s\n"%(m['src'][:-2],m['profile']))
     with open("config/symbols_abs.ld",'w') as f:
         f.write("/* generated by tools/disasm.py: symbols outside the image (BSS) or at odd addresses */\n")
         for addr in sorted(abs_syms): f.write("%s = 0x%08x;\n"%(abs_syms[addr],addr))

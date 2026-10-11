@@ -1,0 +1,9 @@
+# Canonical symbol names by address (override Binary Ninja names). Needed so that C objects
+# export exactly the names the surrounding assembly references.
+0x801458c0 cmos_crc
+0x80145950 crc
+0x80145a00 fsin
+0x80145afc fcos
+0x801a2a28 goose_crc_c_version
+0x801a2a38 crctab
+0x801a2e50 goose_sincos_c_version

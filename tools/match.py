@@ -42,6 +42,10 @@ def relocs(obj):
         p=line.split()
         if len(p)>=3 and re.match(r"^[0-9a-f]+$",p[0]) and p[1].startswith("R_"): r[int(p[0],16)]=p[1]
     return r
+def relmask(rtype):
+    if rtype in ("R_MIPS_HI16","R_MIPS_LO16","R_MIPS_GPREL16","R_MIPS_LITERAL"): return 0xffff0000
+    if rtype=="R_MIPS_26": return 0xfc000000
+    return 0xffffffff
 
 def norm(ins, masked):
     # mask relocated immediates
@@ -65,14 +69,17 @@ def main():
         name,addr=spec.split("="); addr=int(addr,16)
         ours,oaddr=func_bytes(obj,name)
         theirs=game[addr-LOAD:addr-LOAD+len(ours)]
-        a=list(md.disasm(ours,0)); b=list(md.disasm(theirs,addr))
-        ok=0; diffs=[]
-        for i,(x,y) in enumerate(zip(a,b)):
-            nx=norm(x, (oaddr+x.address) in rel); ny=norm(y, (oaddr+x.address) in rel)
-            if nx==ny: ok+=1
-            else: diffs.append("  %08x  ours: %-28s theirs: %s"%(y.address, x.mnemonic+" "+x.op_str, y.mnemonic+" "+y.op_str))
-        n=len(a); total+=n; total_ok+=ok
-        print("%-24s %4d insns  %3d%% match  bytes-equal=%s"%(name,n,100*ok//max(n,1), ours==theirs))
+        n=len(ours)//4; ok=0; diffs=[]
+        dis=lambda w,at: next(iter(md.disasm(struct.pack("<I",w),at)),None)
+        for k in range(n):
+            wo=struct.unpack("<I",ours[4*k:4*k+4])[0]; wt=struct.unpack("<I",theirs[4*k:4*k+4])[0]
+            mask=relmask(rel.get(oaddr+4*k,"")); 
+            if (wo&mask)==(wt&mask): ok+=1
+            else:
+                x=dis(wo,addr+4*k); y=dis(wt,addr+4*k)
+                diffs.append("  %08x  ours: %-28s theirs: %s"%(addr+4*k, (x.mnemonic+" "+x.op_str) if x else "%08x"%wo, (y.mnemonic+" "+y.op_str) if y else "%08x"%wt))
+        total+=n; total_ok+=ok
+        print("%-24s %4d insns  %3d%% match (words, relocs masked)"%(name,n,100*ok//max(n,1)))
         for d in diffs[:12]: print(d)
         if len(diffs)>12: print("  ... %d more"%(len(diffs)-12))
     print("TOTAL %d/%d insns (%d%%)"%(total_ok,total,100*total_ok//max(total,1)))

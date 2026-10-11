@@ -10,7 +10,7 @@ def rdset(p):
 def fallback(): return rdset(FB)
 def save(fb,p=FB): open(p,'w').write("\n".join("0x%08x"%a for a in sorted(fb))+"\n")
 def regen():
-    subprocess.run(['rm','-rf','asm']); subprocess.check_call(['python3','tools/disasm.py',ORIG,'asm','--functions','config/functions_v103.txt','--symbols','config/binja_symbols.txt','--word-fallback',FB,'--nosym',NS])
+    subprocess.run(['rm','-rf','asm']); subprocess.check_call(['python3','tools/disasm.py',ORIG,'asm','--functions','config/functions_v103.txt','--symbols','config/binja_symbols.txt','--names','config/names.txt','--modules','config/modules.txt','--word-fallback',FB,'--nosym',NS])
 def line_addr(path,lineno):
     """address of the instruction on a given line: 4 bytes per instruction/.word line"""
     base=int(re.search(r'/([0-9a-f]{8})_',path).group(1),16); a=base

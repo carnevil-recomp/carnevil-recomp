@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """Rewrite SN cc1 assembly so GNU as reproduces what the SN assembler (asmmips) emitted.
 
-asmmips never moves instructions into branch delay slots; it only appends a nop. GNU as in
-reorder mode would swap the previous instruction in. So: emit everything under
-.set noreorder and add an explicit nop after every branch/jump that cc1 left in a reorder
-region (cc1's own noreorder blocks already contain their delay-slot instruction).
+asmmips differs from GNU as in these ways, all emulated here:
+- it never moves instructions into branch delay slots; it only appends a nop (we assemble
+  under .set noreorder and add the nops ourselves);
+- `move rd,rs` is encoded as `addu rd,rs,$0` (gas uses `or`);
+- `li.s`/`li.d` constants go to a literal pool loaded via lui/lwc1|ldc1 (no dedup);
+- `div`/`rem` macros put the divide before the zero check (gas puts it in the delay slot).
 """
 import sys, re
 BR=re.compile(r"^\s*(b|bal|beq|bne|beql|bnel|blez|bgtz|bltz|bgez|blezl|bgtzl|bltzl|bgezl|bltzal|bgezal|bc1t|bc1f|bc1tl|bc1fl|j|jal|jr|jalr)\b")
 LI=re.compile(r"^\s*li\.([sd])\s+(\$f\d+)\s*,\s*(\S+)")
+MOVE=re.compile(r"^\s*move\s+(\$\w+)\s*,\s*(\$\w+)\s*$")   # asmmips encodes move as addu rd,rs,$0 (gas would use or)
 DIVM=re.compile(r"^\s*(div|divu|rem|remu)\s+(\$\w+)\s*,\s*(\$\w+)\s*,\s*(\$\w+)\s*$")
 def expand_div(op,d,s,t,n):
     """asmmips expansion of the div/rem macros: the real div comes first, then the zero-divisor
@@ -30,6 +33,9 @@ def convert(lines):
         m=re.match(r"\.set\s+(no)?reorder",s)
         if m:
             reorder = (m.group(1) is None); continue   # drop; we are always noreorder for gas
+        m=MOVE.match(line)
+        if m:
+            out.append("\taddu\t%s,%s,$0"%m.groups()); continue
         m=DIVM.match(line)
         if m and m.group(2) not in ("$0","$zero"):
             out+=expand_div(*m.groups(),n); n+=1; continue

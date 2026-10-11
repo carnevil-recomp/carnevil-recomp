@@ -42,13 +42,35 @@ a byte is caught by `make`. From here, matched C replaces regions of `asm/` incr
 a function compiled by `tools/sncc.sh` + `tools/sn2gas.py` is linked in place of its
 instructions, and the link must still produce the identical image.
 
+## C modules (`config/modules.txt`)
+A module rebuilt from C is one line: name, source, flag profile (`opt`/`noopt`, see
+`docs/toolchain.md`), and its text / rodata / data ranges in the original image. The build:
+1. `tools/disasm.py` leaves holes for those ranges: no function files for the text range, the
+   data dump is cut around the rodata/data ranges (`asm/data/data_<addr>.s`), and the module's
+   object is written into `build/link_order.ld` at each of those positions.
+2. The Makefile compiles `src/**/*.c` with `clang -E` (SDK headers) → `tools/sncc.sh` (SN cc1
+   under DOSBox-X, flags from the profile) → `tools/sn2gas.py` → `mipsel-elf-as`.
+3. `config/game.ld` is a single flat output section with `SUBALIGN(1)` listing every input
+   section in image order, so nothing is padded: the original linker did not word-align
+   consecutive modules' `.data` (a 15-byte version string is followed directly by the next
+   module's bytes), and the asm data chunks use `.4byte` for the same reason.
+4. `config/names.txt` pins the symbol names at the module's addresses so the C object exports
+   exactly what the surrounding assembly references (`crc`, `crctab`, `fsin`, ...).
+
+Current modules: `src/goose/crc.c` (text 0x801458C0, data 0x801A2A28) and `src/goose/sincos.c`
+(text 0x80145A00, literal pool 0x80175408, data 0x801A2E50). `tools/progress.py` reports the
+share of text/data built from C.
+
+Adding a module = find its three ranges in the image (text from the function files; rodata
+= its string/literal pool in link order; data = its `$Revision` string onward), add the
+line and the names, drop the source in `src/`, `make regen && make`.
+
 ## Build time
-Clean `make check` (3,428 objects) takes about 11 s.
+Clean `make` (2,600 asm objects + C modules through DOSBox-X) takes about 1.5 min; an
+incremental asm-only rebuild about 11 s.
 
 ## Next
-- Split the data image per original module so a C object can own its `.data`/`.rodata`
-  (e.g. crc.c's `crctab` + version string at 0x801A2A1C) and be linked in place of both its
-  code and its data; until then C substitution works for code-only functions.
-- Replace the first functions with compiled C (crc, sincos, print_processes) and make the
-  Makefile accept `src/**/*.c` through `tools/sncc.sh` + `tools/sn2gas.py`.
+- More GOOSE modules in C: the ones whose SDK revision matches the game, found via the
+  `$Revision` manifest (`config/game_revision_strings.txt`) and per-module link order.
+- process.c needs the revision-17 edits (create_process) before it can be a whole module.
 - Generate a DIAG.EXE build the same way (same container, load address 0x80100000).

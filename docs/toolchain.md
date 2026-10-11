@@ -13,6 +13,9 @@ GOOSE library sources tested so far:
 | `lib/goose/sincos.c` | `fcos` | 0x80145AFC | 0x80145654 | 100% (66 insns, `fsin` inlined) |
 | `lib/goose/process.c` | `print_processes` | 0x8014966C | 0x801491C4 | 100% (30 insns) — **-O0 profile**, see below |
 
+crc.c and sincos.c are now built from source inside `make` and the whole image stays
+byte-identical (see `docs/build.md`), which is the end-to-end proof of the toolchain.
+
 `tools/match.py` compares against `original/partition/GAME.EXE` (v1.0.3) by default; set
 `GAME_EXE=...` to compare against another build.
 
@@ -47,9 +50,14 @@ GNU as (`tools/mipsel-elf-binutils`, binutils 2.43 built with `--target=mipsel-e
    into a read-only literal area (no dedup, in order of first appearance, naturally aligned)
    and loads it with `lui $at` + `lwc1`/`ldc1`. GNU as with `-G0` would build the constant
    in registers instead.
-Other macros (`la`, `li`, `subu $sp`, `j $31`, `rem`/`div` with `break 7`/`break 6`
-checks) expand identically so far; the game's `div` sequences are the standard
-`div; bnez; nop; break 7; addiu $at,-1; bne; lui $at,0x8000; bne; nop; break 6` shape.
+3. **`move rd,rs` is `addu rd,rs,$0`** in asmmips (11,759 occurrences in the game vs 101
+   `or` forms, which come from hand-written or third-party code); gas encodes `move` as `or`.
+4. **`div`/`rem` macros** put the divide first, then `bnez t; nop; break 7`, then the
+   overflow check (`addiu $at,-1; bne; lui $at,0x8000; bne; nop; break 6`); gas puts the
+   divide in the `bnez` delay slot.
+Other macros (`la`, `li`, `subu $sp`, `j $31`) expand identically.
+`tools/match.py` compares instruction *words* with relocation fields masked (it used to
+compare alias text, which hid the `move` encoding difference).
 
 ## Preprocessing
 cc1 wants preprocessed input. `clang -E -P -nostdinc -I original/sdk/include -D__DJGPP__
