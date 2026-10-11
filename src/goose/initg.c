@@ -52,7 +52,7 @@ extern void	install_fpu_handler(int, void (*)(int *));
 extern void	install_int_div0_handler(void (*)());
 extern void	install_int_divo_handler(void (*)());
 extern int	vblank_handler(void), interrupt_ioasic_handler(void);
-extern void	galileo_dma0_handler(void), func_8014fdf0(void);
+extern void	game_dma0_handler(void), galileo_dma0_handler(void);
 extern void	div0_handler(int *), unimplemented_handler(int *);
 extern void	int_div0_handler(), int_divo_handler();
 extern void	main_proc(int *);
@@ -188,11 +188,11 @@ void main(void)
 	func_8014cd88();
 	graphics_init();
 	install_interrupt_handler(0, vblank_handler);
-	install_sys_handler(4, galileo_dma0_handler);
+	install_sys_handler(4, game_dma0_handler);	/* the game's own handler, replaced below by the library's */
 	func_8013f5b4();
 	install_interrupt_handler(3, interrupt_ioasic_handler);
 	install_fpu_handler(5, unimplemented_handler);
-	install_sys_handler(4, func_8014fdf0);
+	install_sys_handler(4, galileo_dma0_handler);
 	install_fpu_handler(3, div0_handler);
 	install_int_div0_handler(int_div0_handler);
 	install_int_divo_handler(int_divo_handler);

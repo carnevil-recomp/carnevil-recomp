@@ -180,13 +180,20 @@ def main():
             r=m[kind]
             if r and r[0]<=addr<r[1]: return m
     for m in modules:
-        for kind in ('text','rodata','data'):
-            r=m[kind]
-            if kind=='text' and r: assert r[0] in starts and (r[1] in starts or r[1]==code_end), "module %s text range must start/end on region boundaries"%m['name']
+        r=m['text']
+        if r: assert r[0] in starts, "module %s text range must start on a region boundary"%m['name']
+    def emit_words(fn, s, e):
+        """a run of raw words (e.g. the padding between a C module's end and the next region)"""
+        with open(os.path.join(a.outdir,fn),'w') as f:
+            f.write(".set noreorder\n.set noat\n.section .text\n")
+            for A in range(s,e,4): f.write("\t.word 0x%08x\n"%words[(A-LOAD)//4])
     for (s,e) in bounds:
         m=module_at(s,'text')
         if m:
             if s==m['text'][0]: order.append((s,"build/%s.o(.text)"%m['src'][:-2]))
+            if m['text'][1]<e:      # module ends inside this region: the rest is padding/unowned words
+                fn="functions/%08x_pad.s"%m['text'][1]; files.append(fn); order.append((m['text'][1],"build/asm/%s.o(.text)"%fn[:-2]))
+                emit_words(fn,m['text'][1],e)
             continue
         fn="functions/%08x_%s.s"%(s,label(s)); files.append(fn); order.append((s,"build/asm/%s.o(.text)"%fn[:-2]))
         with open(os.path.join(a.outdir,fn),'w') as f:
