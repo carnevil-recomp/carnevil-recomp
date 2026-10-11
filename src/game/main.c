@@ -6,7 +6,7 @@
 
 struct process_node;
 extern struct process_node *qcreate(char *, int, void (*)(), int, int, int, int);
-extern void	qyield(int);
+extern void	sleep(int);
 extern void	ide_set_partition(int);
 extern void	set_background_color(u32);
 extern void	func_800ca3a0(void), func_800c7570(void), func_800f1a20(void), func_800f1fa8(void), func_800f1d88(void), func_800e5014(void);
@@ -59,7 +59,7 @@ void main_proc(void)
 	{
 		while(1)
 		{
-			qyield(1);
+			sleep(1);
 		}
 	}
 	if(setup_cmos_800f2a28() == 0)
@@ -196,7 +196,7 @@ void main_proc(void)
 	load_flamethrower_model();
 	load_acid_model();
 	D_801fad10 = 0;
-	qyield(1);
+	sleep(1);
 	remove_game_object(hw_obj);
 	if(cmos_status == 2)
 	{
@@ -207,7 +207,7 @@ void main_proc(void)
 		D_80237404 = kss_reset_w_calib_();
 	}
 	hw_obj = add_object1_wrapper(0x20, hw_info_screen, 0, 0);
-	qyield(20);
+	sleep(20);
 	D_80212d98 = 0;
 	set_dcsw_handler(2, dispatch_start_proc);
 	set_dcsw_handler(5, dispatch_start_proc);

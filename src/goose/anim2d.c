@@ -28,7 +28,6 @@ char	goose_anim2d_c_version[] = {"$Revision: 14 $"};
 
 extern sprite_node_t	*sprite_node_list;
 extern sprite_node_t	*alpha_sprite_node_list;
-void	qyield(int);			/* mthread.c; rev 14 calls it directly */
 
 // do the actual animation on individual sprites
 void animate_2d(register sprite_node_t *s)
@@ -129,7 +128,7 @@ void animate_2d_proc(int *data)
 	{
 		animate_2d(sprite_node_list);
 		animate_2d(alpha_sprite_node_list);
-		qyield(1);	/* rev 14: direct qyield */
+		sleep(1);
 	}
 }
 

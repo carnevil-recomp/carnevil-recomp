@@ -115,6 +115,7 @@
 0x80149e8c get_pdata
 0x801a3100 goose_process_c_version
 0x8014a930 _proc_shell
+0x80151ac0 sleep
 # goose galhand.c (lib copy; the game has its own DMA handler at 0x800c611c), div0hand.c, anim2d.c, adjust.c
 0x800c611c game_dma0_handler
 0x8014fdf0 galileo_dma0_handler
@@ -256,3 +257,25 @@
 0x801a2e88 __use_49way
 0x801a2e8c I40_present
 0x801a2fa0 xlat_49to8
+# goose mthread.c (rev 13; 0x80151ac0 is the SDK's sleep(), previously labelled qyield)
+0x80151b50 die
+0x80151b90 clear_screen
+0x80151bc0 process_dispatch
+0x80151e90 ___sys_wake
+0x8015201c qcreate
+0x80152098 iqcreate
+0x80152114 set_frame_factor
+0x8015212c draw_enable
+0x8015217c mthread_enable_framerate
+0x80152190 mthread_disable_framerate
+0x801521a0 mthread_get_framerate
+0x801521b8 install_process_stall_func
+0x801a36a8 goose_mthread_c_version
+0x801a2fe8 got_interrupt
+0x801e0ebc got_interrupt_save
+0x8014fb78 load_gamma_table
+0x80168224 dma_start
+0x80152288 do_pre_proc
+0x801522cc do_post_proc
+0x8014cc94 draw_sprites
+0x80153814 draw_transition

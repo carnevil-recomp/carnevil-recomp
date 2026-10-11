@@ -13,3 +13,4 @@ cmos     src/goose/cmos.c     goose  0x80145c08 0x80146be8  -          -        
 bgnd     src/goose/bgnd.c     goose  0x80147f78 0x801485dc  0x801754a0 0x801754b0  0x801a30d0 0x801a30e8
 fonts    src/goose/fonts.c    goose  0x8014f378 0x8014fb78  -          -           0x801a32e0 0x801a32f4
 switch   src/goose/switch.c   goose  0x80146be8 0x801478c8  -          -           0x801a2e78 0x801a2fd1  0x801aaaa8 0x801aabf8
+mthread  src/goose/mthread.c  noopt  0x80151ac0 0x801521d0  -          -           0x801a36a8 0x801a36d0
