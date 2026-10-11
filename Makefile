@@ -39,6 +39,11 @@ build/%.s: build/%.sn.s tools/sn2gas.py
 build/%.o: build/%.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
+# assembly-source modules (SDK .S files transcribed to GNU as syntax, e.g. src/goose/pshell.s)
+build/%.o: %.s
+	@mkdir -p $(dir $@)
+	$(AS) $(ASFLAGS) -o $@ $<
+
 build/game.elf: $(ASM_OBJS) $(C_OBJS) config/game.ld config/symbols_abs.ld build/link_order.ld
 	@echo "LD $@ ($(words $(ASM_OBJS)) asm objects, $(words $(C_OBJS)) C modules)"
 	@$(LD) -EL -T config/game.ld -o $@ $(ASM_OBJS) $(C_OBJS)
@@ -52,7 +57,7 @@ build/GAME.EXE: build/game.bin
 # ---- native host build (the port) ----
 HOSTCC     := clang
 HOSTCFLAGS := -O2 -g -Wall -Wno-unused-result -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -DPORT_HOST -DSEATTLE -DRELEASE -Iinclude -include port/host/compat.h -idirafter $(SDK)/include -Wno-nonportable-include-path
-C_SRCS     := $(shell grep -v '^\#' config/modules.txt | awk 'NF {print $$2}')
+C_SRCS     := $(filter %.c,$(shell grep -v '^\#' config/modules.txt | awk 'NF {print $$2}'))
 
 HOST_LINK_SRCS := src/goose/crc.c src/goose/sincos.c     # modules the self-test links; the rest are compile-checked
 # mthread.c is the MIPS context switcher (register save/restore in inline asm); the port

@@ -26,3 +26,4 @@ trans    src/goose/trans.c    goose  0x80152310 0x80155a98  0x801762e0 0x8017631
 lockup   src/goose/lockup.c   goose  0x80150e00 0x80151a84  0x80175d80 0x801762e0  0x801a3548 0x801a35a0
 inthand  src/goose/inthand.c  goose  0x801478c8 0x80147968  -          -            0x801a2fd8 0x801a2ff4
 randper  src/goose/randper.c  goose  0x80147968 0x801479bc  -          -            0x801a2ff8 0x801a3008
+pshell   src/goose/pshell.s   asm    0x8014a930 0x8014a958  -          -            0x801a3128 0x801a3137

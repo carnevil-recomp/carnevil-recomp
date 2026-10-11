@@ -15,6 +15,6 @@ case "$PROF" in
   *) echo "profile?"; exit 2;;
 esac
 mkdir -p build/try; B=build/try/$(basename "$SRC" .c)
-clang -E -P -Wno-nonportable-include-path -nostdinc -Ioriginal/sdk/include -Iinclude -D__DJGPP__ -DSEATTLE -DRELEASE -x c "$SRC" -o $B.i
+clang -E -P -Wno-nonportable-include-path -nostdinc -Ioriginal/sdk/include -Iinclude $CPPEXTRA -D__DJGPP__ -DSEATTLE -DRELEASE -x c "$SRC" -o $B.i
 CC1FLAGS="$F" tools/sncc.sh $B.i $B.s 2>/dev/null
 python3 tools/modfit.py $B.s "$@" 2>&1 | grep -vE 'Warning: used \$at|Assembler messages'
