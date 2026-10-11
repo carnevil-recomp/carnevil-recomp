@@ -184,3 +184,28 @@
 0x80146a30 set_generic_record
 0x801453a0 read
 0x801454c8 write
+# goose bgnd.c (rev 7: verts always malloc'd, calls _generate_sprite_st)
+0x80147f78 _generate_background_sprite_verts
+0x801480d4 generate_background_sprite_verts
+0x80148104 beginbobj
+0x8014814c _beginbobj
+0x80148420 delbobj
+0x8014846c delb1c
+0x8014849c delete_all_background_sprites
+0x801484c8 draw_background
+0x801a30d0 goose_bgnd_c_version
+0x801a30e0 background_sprite_node_list
+0x8014ae70 _generate_sprite_st
+0x801a3150 free_sprite_node_list
+# bgnd.c callees (from call order in delbobj/delb1c/draw_background) and glide entry points
+0x801a30e4 do_draw_background
+0x80141638 memset
+0x8014bc38 unlink_snode
+0x8014bcb8 free_sprite_node
+0x8014bf30 _del1c
+0x8014c8f8 set_sprite_mode
+0x80155a98 grDrawTriangleDma
+0x8015e79c grAlphaBlendFunction
+0x8015f7b0 grDepthBufferFunction
+0x8015f940 grDepthMask
+0x8015ec5c grBufferClear

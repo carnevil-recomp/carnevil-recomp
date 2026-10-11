@@ -43,9 +43,9 @@ extern void	grGlideInit(void);
 extern int	grSstQueryHardware(int *);
 extern void	grSstSelect(int);
 extern int	grSstOpen(int, int, int, int, int, int);
-extern void	func_8015ec5c(u32, int, int);		/* grBufferClear */
+extern void	grBufferClear(u32, int, int);		/* grBufferClear */
 extern void	grTexCombineFunction(int, int);
-extern void	func_801669ac(int), func_8015f86c(int), func_8015f7b0(int), func_8015f940(int);
+extern void	func_801669ac(int), func_8015f86c(int), grDepthBufferFunction(int), grDepthMask(int);
 extern void	install_interrupt_handler(int, int (*)(void));
 extern void	install_sys_handler(int, void (*)(void));
 extern void	install_fpu_handler(int, void (*)(int *));
@@ -152,12 +152,12 @@ void graphics_init_body(void)
 	}
 	fprintf(stderr, " screen resolution\n");
 	fflush(stdout);
-	func_8015ec5c(0xff000000, 0, 0xffff);
+	grBufferClear(0xff000000, 0, 0xffff);
 	grTexCombineFunction(0, 1);
 	func_801669ac(1);
 	func_8015f86c(2);
-	func_8015f7b0(1);
-	func_8015f940(1);
+	grDepthBufferFunction(1);
+	grDepthMask(1);
 	gfx_scale = func_80157004();
 }
 
