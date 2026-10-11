@@ -8,17 +8,18 @@ ORIG     := original/partition/GAME.EXE
 LOAD     := 0x800c4000
 ASM_SRCS := $(shell cat asm/files.txt 2>/dev/null | sed 's|^|asm/|')
 OBJS     := $(patsubst asm/%.s,build/asm/%.o,$(ASM_SRCS))
+DISASM   := python3 tools/disasm.py $(ORIG) asm --functions config/functions_v103.txt --symbols config/binja_symbols.txt --word-fallback config/word_fallback.txt --nosym config/nosym.txt
 
 all: build/GAME.EXE check
 
 asm/files.txt:
-	python3 tools/disasm.py $(ORIG) asm --functions config/functions_v103.txt --word-fallback config/word_fallback.txt
+	$(DISASM)
 
 build/asm/%.o: asm/%.s
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) -o $@ $<
 
-build/game.elf: $(OBJS) config/game.ld
+build/game.elf: $(OBJS) config/game.ld config/symbols_abs.ld
 	$(LD) -EL -T config/game.ld -o $@ $(OBJS)
 
 build/game.bin: build/game.elf
@@ -34,7 +35,7 @@ verify: build/game.bin
 	python3 tools/verify.py $(ORIG) build/game.bin config/word_fallback.txt
 
 regen:
-	rm -rf asm && python3 tools/disasm.py $(ORIG) asm --functions config/functions_v103.txt --word-fallback config/word_fallback.txt
+	rm -rf asm && $(DISASM)
 
 clean:
 	rm -rf build
