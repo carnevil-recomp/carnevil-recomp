@@ -570,7 +570,7 @@ void suspend_self(void)
 		return;
 	}
 	cur_proc->process_sleep_time |= 0x8000;
-	sleep(1);
+	qyield(1);		/* rev 17: direct qyield, no sleep() wrapper */
 }
 
 /*****************************************************************************/

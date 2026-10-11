@@ -113,3 +113,4 @@
 0x80149e58 set_pid
 0x80149e8c get_pdata
 0x801a3100 goose_process_c_version
+0x8014a930 _proc_shell
