@@ -14,3 +14,4 @@ experiments/**/out/
 __pycache__/
 tools/mipsel-elf-binutils/
 experiments/**/work/
+asm/

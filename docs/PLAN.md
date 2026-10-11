@@ -148,6 +148,8 @@ Steps:
 
 Exit: `make` reassembles the raw disassembly and `sha1(GAME.EXE)` matches the original.
 Progress script reports 0% C, 100% asm.
+**Status 2026-10-10: done** — `make` rebuilds v1.0.3 GAME.EXE byte-exact (see `docs/build.md`);
+`tools/exe.py`, `tools/trap.py`, `tools/lfn32.py` exist; toolchain reproduced (`docs/toolchain.md`).
 
 ### Phase 1 — Toolchain reproduction (weeks 1-3, parallel with Phase 2)
 
