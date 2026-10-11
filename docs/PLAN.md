@@ -47,7 +47,9 @@ textures, two sound banks and a few textures (v1.0.3 adds `J.PRC`, drops `A.PRC`
 - Partition 1 (98.8 MB, type FATFS) = Midway **LFN32 flat filesystem** (Joe Linhoff's
   `FILESYS.C` in the BIOS source: no subdirectories, 16-bit FAT, 4 KB clusters, 24-byte
   directory entries with packed names, CRCs in `FILESYS.CHK` from `tools/genfchk`).
-  `tools/lfn32.py` lists/extracts it and reproduces the manual extraction byte for byte.
+  `tools/lfn32.py` lists/extracts it and reproduces the manual extraction byte for byte
+  (the original hand extractors are kept in `tools/legacy/`). Users extract their own disk:
+  `./setup.sh --raw IMAGE` or `--partition DIR`; the repo never contains game data.
 - Partitions 3–16 (`part2`..`part16` in the manual dump) = raw **movie streams** written straight to partitions by `tools/movie`
   (frame = 194 x 512-byte blocks: 192 pixel blocks + 2 palette blocks; 386 blocks when a
   Z-buffer layer is included). `main.c`/`foo/` in this dir is the user's working decoder.
