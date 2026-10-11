@@ -8,6 +8,9 @@ case "$PROF" in
   goose) F="-O3 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   game)  F="-O3 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   o2)    F="-O2 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
+  o2r5k) F="-O2 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
+  o1r5k) F="-O -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
+  o1)    F="-O -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   noopt) F="-mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   *) echo "profile?"; exit 2;;
 esac

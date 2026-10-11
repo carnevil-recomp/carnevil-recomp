@@ -58,7 +58,9 @@ A module rebuilt from C is one line: name, source, flag profile (`opt`/`noopt`, 
    exactly what the surrounding assembly references (`crc`, `crctab`, `fsin`, ...).
 
 Current modules (see `config/modules.txt`): crc, sincos, initg (GOOSE `main` +
-`graphics_init`), process (scheduler), galhand, div0hand, anim2d, adjust, object, cmos.
+`graphics_init`), process (scheduler), galhand, div0hand, anim2d, adjust, object, cmos, bgnd,
+fonts, switch, mthread, draw, prochook, unimhand, texture, sprites, ostrings and the DCS sound
+library (`src/sound/sound.c`, compiled at -O2).
 `tools/progress.py` reports the share of text/data built from C; `tools/secdiff.py <module>`
 compares an object's sections with the original bytes; `tools/fit.sh <file.c> <profile>`
 compiles a module and lets `modfit.py` locate and diff every function, `tools/trymatch.sh`

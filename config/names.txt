@@ -318,3 +318,8 @@
 0x8014e2d0 strtol
 0x80141764 _doprnt
 0x801a26d0 __dj_ctype_flags
+# sound.c (rev 34): COMMON stream handle lives in the linker-allocated common area
+0x801e5dd8 snd_stream_handle
+0x8016a9e8 snd_delay
+0x8016a290 snd_reset
+0x8016a160 snd_clear

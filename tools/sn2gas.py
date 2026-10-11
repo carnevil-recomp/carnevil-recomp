@@ -6,9 +6,12 @@ asmmips differs from GNU as in these ways, all emulated here:
   under .set noreorder and add the nops ourselves);
 - `move rd,rs` is encoded as `addu rd,rs,$0` (gas uses `or`);
 - `li.s`/`li.d` constants go to a literal pool loaded via lui/lwc1|ldc1 (no dedup);
-- `div`/`rem` macros put the divide before the zero check (gas puts it in the delay slot).
+- `div`/`rem` macros put the divide before the zero check (gas puts it in the delay slot);
+- `.lcomm` objects are aligned to min(16, size rounded up to a power of two) inside the
+  object's .bss (seen in switch, sprites, ostrings and sound: 800/960-byte arrays at 16).
 """
 import sys, re
+LCOMM=re.compile(r"^\s*\.lcomm\s+([^,\s]+)\s*,\s*(\d+)\s*$")
 BR=re.compile(r"^\s*(b|bal|beq|bne|beql|bnel|blez|bgtz|bltz|bgez|blezl|bgtzl|bltzl|bgezl|bltzal|bgezal|bc1t|bc1f|bc1tl|bc1fl|j|jal|jr|jalr)\b")
 LI=re.compile(r"^\s*li\.([sd])\s+(\$f\d+)\s*,\s*(\S+)")
 # load/store with a symbolic address plus a base register: asmmips expands through $at,
@@ -30,7 +33,7 @@ def expand_div(op,d,s,t,n):
 def convert(lines):
     """Also: asmmips puts every li.s/li.d constant (no dedup, in order of appearance) into a
     literal pool and loads it via lui $at / lwc1|ldc1, so do the same in .rdata."""
-    out=["\t.set\tnoreorder"]; reorder=True; lits=[]; n=0
+    out=["\t.set\tnoreorder"]; reorder=True; lits=[]; n=0; bss_off=0
     for line in lines:
         s=line.strip()
         m=re.match(r"\.set\s+(no)?reorder",s)
@@ -48,6 +51,13 @@ def convert(lines):
         m=DIVM.match(line)
         if m and m.group(2) not in ("$0","$zero"):
             out+=expand_div(*m.groups(),n); n+=1; continue
+        m=LCOMM.match(line)
+        if m:                                      # asmmips aligns each .lcomm to min(16, pow2ceil(size))
+            sym,size=m.group(1),int(m.group(2)); a=4   # relative to the object's .bss start; pad by hand so
+            while a<size and a<16: a*=2                # the section itself keeps alignment 1 and ld places it
+            pad=(-bss_off)%a; bss_off+=pad+size        # exactly where modules.txt says
+            out+=["\t.section\t.bss"]+(["\t.space\t%d"%pad] if pad else [])+["%s:"%sym,"\t.space\t%d"%size,"\t.previous"]
+            continue
         m=LI.match(line)
         if m:
             kind,reg,val=m.groups(); lab="$LC_sn%d"%n; n+=1

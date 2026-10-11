@@ -18,9 +18,6 @@ char	goose_ostrings_c_version[] = {"$Revision: 19 $"};
 char	*atoui(char *, unsigned int *, unsigned int);
 static char	*decode_escape(char *);
 static int	old_is_low_res;
-/* CarnEvil (rev 19) has an 8-byte static here that rev 24 no longer has: unreferenced, but it
-   keeps char_sprites at 0x801aad58 and str_buffer at 0x801ab078. */
-static int	rev19_unused[2];
 int			scale_font_size = 0;
 
 extern	float	hres, vres;

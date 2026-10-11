@@ -58,6 +58,11 @@ GNU as (`tools/mipsel-elf-binutils`, binutils 2.43 built with `--target=mipsel-e
    build the constant in registers instead. The pool is also flushed whenever cc1 itself
    switches to `.rdata` mid-function (a `switch` jump table): the constants used so far land
    before the table, the rest after it (sprites.c `_generate_sprite_st`).
+   **`.lcomm` layout**: inside an object's `.bss` asmmips aligns each `.lcomm` to
+   min(16, size rounded up to a power of two) (switch/sprites/ostrings/sound all confirm it:
+   800- and 960-byte arrays start at 16-byte offsets); the objects themselves are placed
+   8-aligned by the linker. `sn2gas.py` pads by hand so the section alignment stays 1 and ld
+   can put it at the address `config/modules.txt` names.
 3. **`move rd,rs` is `addu rd,rs,$0`** in asmmips (11,759 occurrences in the game vs 101
    `or` forms, which come from hand-written or third-party code); gas encodes `move` as `or`.
 4. **`div`/`rem` macros** put the divide first, then `bnez t; nop; break 7`, then the
