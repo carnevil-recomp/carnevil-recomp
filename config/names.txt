@@ -213,8 +213,10 @@
 0x8015ec5c grBufferClear
 0x801a3154 is_low_res
 0x801a2e48 background_color
-0x801459e0 set_background_color
-0x801459f0 get_background_color
+0x801459e0 set_bgnd_color
+0x801459f0 get_bgnd_color
+0x801a2e38 goose_draw_c_version
+0x801a2e4c draw_unused
 # goose fonts.c (rev 7: texture error path active)
 0x8014f378 create_font
 0x8014f590 create_font_from_memory
@@ -279,3 +281,9 @@
 0x801522cc do_post_proc
 0x8014cc94 draw_sprites
 0x80153814 draw_transition
+# goose prochook.c (rev 2: no pre-DMA hooks)
+0x801521d0 pre_proc_func
+0x8015222c post_proc_func
+0x801a36d0 goose_prochook_c_version
+0x801a36e0 __pre_proc_ptr
+0x801a36e4 __post_proc_ptr
