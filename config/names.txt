@@ -108,3 +108,8 @@
 0x80146748 set_adjustment
 0x80146c04 set_psw_handler
 0x801e7034 game_id
+# goose process.c rev 17 (SDK names)
+0x80149770 clear_process_list
+0x80149e58 set_pid
+0x80149e8c get_pdata
+0x801a3100 goose_process_c_version
