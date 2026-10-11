@@ -29,19 +29,31 @@ phases never block on earlier ones being "100%".
 | Security PIC | `486_carnevil.u96` (8 KB) — **still missing**; MAME needs it (or a stub) to boot |
 | Known emu gap | MAME comment: "Carnevil: lets you set the flash brightness; need to emulate that" |
 
-### 0.2 Disk layout (`../carn.raw`, 3.2 GB)
+### 0.2 Two versions, and the disk layout
 
-- Sector 0 starts with a `TRAP` partition table: 17 entries (start sector, length). These are
-  the `part0`..`part16` files already extracted.
-- `part0` (98.8 MB) = Midway **LFN32 flat filesystem** (Joe Linhoff's `FILESYS.C` in the BIOS
-  source: no subdirectories, 32-bit cluster FAT, CRCs stored in `FILESYS.CHK`, produced by
-  `tools/genfchk`). Already extracted to `_extracted_partition/` (1520 files).
-- `part2`..`part16` = raw **movie streams** written straight to partitions by `tools/movie`
+| | v1.0.3 (**project target**) | v1.0.1 |
+|---|---|---|
+| CHD | `carnevil.chd`, MAME parent set `carnevil` | `carnevi1.chd`, MAME `carnevil1`, flagged BAD_DUMP |
+| raw image | `~/Downloads/carnevil-chd/carnevil_103.raw` (chdman extractraw) | `~/Downloads/carnevil-chd/carn.raw` |
+| partition dir | `~/Downloads/carnevil-chd/v103/partition/` (1523 files) | `v101/partition/` = the manual `out/_extracted_partition/` (1520 files) |
+| GAME.EXE | 918,060 bytes, prints "CARNEVIL V1.0.3" | 915,212 bytes, prints "CARNEVIL V1.0.1" |
+| Binary Ninja db | `GAME.EXE-2.bndb` is this build (bytes verified) | — |
+
+The two builds differ in GAME.EXE, DIAG.EXE, the adjustment/audit scripts, the high-score
+textures, two sound banks and a few textures (v1.0.3 adds `J.PRC`, drops `A.PRC`/`TIMEZONE.PRC`).
+
+- Sector 0 holds a `TRAP` partition table (`tools/trap.py`, format from SDK `putil/lib/PD.H`):
+  entry 0 spans the whole drive, entries 1–16 are the real partitions (start, length, type).
+- Partition 1 (98.8 MB, type FATFS) = Midway **LFN32 flat filesystem** (Joe Linhoff's
+  `FILESYS.C` in the BIOS source: no subdirectories, 16-bit FAT, 4 KB clusters, 24-byte
+  directory entries with packed names, CRCs in `FILESYS.CHK` from `tools/genfchk`).
+  `tools/lfn32.py` lists/extracts it and reproduces the manual extraction byte for byte.
+- Partitions 3–16 (`part2`..`part16` in the manual dump) = raw **movie streams** written straight to partitions by `tools/movie`
   (frame = 194 x 512-byte blocks: 192 pixel blocks + 2 palette blocks; 386 blocks when a
   Z-buffer layer is included). `main.c`/`foo/` in this dir is the user's working decoder.
-- `part1` = stray DJGPP environment junk, not game data.
+- Partition 2 (`part1`) = stray DJGPP environment junk, not game data.
 
-### 0.3 Executable (`GAME.EXE`, 915,212 bytes)
+### 0.3 Executable (`GAME.EXE`; numbers below are from the v1.0.1 survey, v1.0.3 is 918,060 bytes with the same layout)
 
 - Format: 4-byte checksum/magic + 4-byte **load address 0x800C4000** + raw LE MIPS image
   (`tools/bin2exe`). `DIAG.EXE` is the same format, load address 0x80100000.
@@ -363,6 +375,5 @@ input remapping. All behind flags; default is faithful.
   / `grLfbLock` call sites in the hit-test path.)
 - Exact meaning of the first 4 bytes of `GAME.EXE` (checksum algorithm; see BIOS `EXEC.C`).
 - Is any Glide 2.03h3 source obtainable, or do we reconstruct from the Glide 2.x GPL release?
-- Which CHD was extracted here: `carnevil.chd` (v1.0.3) or `carnevi1.chd` (v1.0.1)? Pick one
-  target (recommend v1.0.3, MAME's parent set) and record SHA1s.
+- (answered) The manual extraction was v1.0.1; the project targets v1.0.3, see 0.2.
 - Psy-Q `asmmips`/`psylink` availability if GNU binutils cannot reproduce section layout.

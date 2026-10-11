@@ -5,13 +5,16 @@ The SDK's DOS build of **GCC 2.7.2.SN16.3.3** (`original/sdk/tools/bin/CC1MIPS.E
 DOSBox-X by `tools/sncc.sh`) reproduces GAME.EXE code **instruction-for-instruction** for the
 GOOSE library sources tested so far:
 
-| source | function | game address | match |
-|---|---|---|---|
-| `lib/goose/crc.c` | `cmos_crc` | 0x80145418 | 100% (36 insns) |
-| `lib/goose/crc.c` | `crc` | 0x801454A8 | 100% (36 insns) |
-| `lib/goose/sincos.c` | `fsin` | 0x80145558 | 100% (63 insns) |
-| `lib/goose/sincos.c` | `fcos` | 0x80145654 | 100% (66 insns, `fsin` inlined) |
-| `lib/goose/process.c` | `print_processes` | 0x801491C4 | 100% (30 insns) — **-O0 profile**, see below |
+| source | function | v1.0.3 address | v1.0.1 address | match |
+|---|---|---|---|---|
+| `lib/goose/crc.c` | `cmos_crc` | 0x801458C0 | 0x80145418 | 100% (36 insns) |
+| `lib/goose/crc.c` | `crc` | 0x80145950 | 0x801454A8 | 100% (36 insns) |
+| `lib/goose/sincos.c` | `fsin` | 0x80145A00 | 0x80145558 | 100% (63 insns) |
+| `lib/goose/sincos.c` | `fcos` | 0x80145AFC | 0x80145654 | 100% (66 insns, `fsin` inlined) |
+| `lib/goose/process.c` | `print_processes` | 0x8014966C | 0x801491C4 | 100% (30 insns) — **-O0 profile**, see below |
+
+`tools/match.py` compares against `original/partition/GAME.EXE` (v1.0.3) by default; set
+`GAME_EXE=...` to compare against another build.
 
 "100%" = every instruction identical after masking link-time relocations (hi16/lo16 of
 data addresses, jal targets). Byte-exact equality will follow once the link layout is
@@ -69,12 +72,12 @@ source: expect small per-module edits to reach the shipped revision. The game's 
 strings (50 of them, in .data order at 0x801A1F08–0x801A3628) are the module manifest for
 the whole statically linked library set; map them to modules as each one is identified.
 
-## Binary Ninja database caveat
-The user's `GAME.EXE-2.bndb` raw view is 0x3021ED bytes, not this file's 915,212, and its
-labels in the process module land on the wrong functions here (e.g. its
-`set_resource_control` address holds the game's `create_process`). The database was made
-from a different image (other version or a memory dump). Its names remain valuable but must
-be re-anchored by code signature, never by address.
+## Binary Ninja database
+`GAME.EXE-2.bndb` is the **v1.0.3** GAME.EXE (918,060 bytes; bytes verified over MCP), mapped
+with its 8-byte header at 0x800C3FF8 so code starts at 0x800C4000. Its addresses are exact
+for v1.0.3 (e.g. `print_processes` = 0x8014966C, `calculate_crc` = `crc` = 0x80145950) and
+do not apply to v1.0.1, which is what the first survey in `out/` was. The project targets
+v1.0.3; v1.0.1 addresses are kept in the table above only for reference.
 
 ## Not linked
 `randrng` (`randper.c`) has no counterpart in GAME.EXE: the library was linked as an archive,

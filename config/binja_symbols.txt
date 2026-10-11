@@ -1,5 +1,6 @@
 # Exported from ~/Downloads/GAME.EXE-2.bndb via MCP on 2026-10-10.
-# View maps GAME.EXE (incl. 8-byte header) at 0x800C3FF8, so code starts at 0x800C4000.
+# The database is GAME.EXE v1.0.3 (918,060 bytes) mapped with its 8-byte header at 0x800C3FF8; code starts at 0x800C4000.
+# Addresses are real v1.0.3 virtual addresses (no correction needed). They do NOT apply to v1.0.1.
 # format: address<TAB>kind<TAB>name<TAB>prototype-or-type
 0x800c3ff8	func	goose_init	void(void* gii)
 0x800c4154	func	_ioctl	int32_t()
