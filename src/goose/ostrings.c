@@ -13,11 +13,14 @@
 #include	<goose/lockup.h>
 #include	<goose/jmalloc.h>
 
-char	goose_ostrings_c_version[] = {"$Revision: 24 $"};
+char	goose_ostrings_c_version[] = {"$Revision: 19 $"};
 
 char	*atoui(char *, unsigned int *, unsigned int);
 static char	*decode_escape(char *);
 static int	old_is_low_res;
+/* CarnEvil (rev 19) has an 8-byte static here that rev 24 no longer has: unreferenced, but it
+   keeps char_sprites at 0x801aad58 and str_buffer at 0x801ab078. */
+static int	rev19_unused[2];
 int			scale_font_size = 0;
 
 extern	float	hres, vres;
@@ -181,11 +184,7 @@ static void set_char_sprite_info(sprite_info_t *si)
 	si->w_scale = text_state.w_scale;
 	si->state.constant_color = text_state.color;
 	si->state.chroma_color = text_state.bgnd_color;
-	if(!si->tn)
-	{
-		si->state.chroma_key_mode = GR_CHROMAKEY_DISABLE;
-	}
-	else if(si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_8 ||
+	if(si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_8 ||
 		si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_INTENSITY_44 ||
 		si->tn->texture_info.header.format == GR_TEXFMT_ARGB_8332 ||
 		si->tn->texture_info.header.format == GR_TEXFMT_AYIQ_8422 ||
@@ -204,20 +203,13 @@ static void set_char_sprite_info(sprite_info_t *si)
 	{
 		si->state.chroma_key_mode = GR_CHROMAKEY_DISABLE;
 	}
-	if(si->tn)
+	if(text_state.color & 0xffffff)
 	{
-		if(text_state.color & 0xffffff)
-		{
-			si->state.color_combiner_function = GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB;
-		}
-		else
-		{
-			si->state.color_combiner_function = GR_COLORCOMBINE_DECAL_TEXTURE;
-		}
+		si->state.color_combiner_function = GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB;
 	}
 	else
 	{
-		si->state.color_combiner_function = GR_COLORCOMBINE_CCRGB;
+		si->state.color_combiner_function = GR_COLORCOMBINE_DECAL_TEXTURE;
 	}
 	si->id = string_id;
 }
@@ -228,11 +220,7 @@ static void set_char_sprite_info_drop(sprite_info_t *si)
 	si->w_scale = text_state.w_scale;
 	si->state.constant_color = 0xff000000;
 	si->state.chroma_color = text_state.bgnd_color;
-	if(!si->tn)
-	{
-		si->state.chroma_key_mode = GR_CHROMAKEY_DISABLE;
-	}
-	else if(si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_8 ||
+	if(si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_8 ||
 		si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_INTENSITY_44 ||
 		si->tn->texture_info.header.format == GR_TEXFMT_ARGB_8332 ||
 		si->tn->texture_info.header.format == GR_TEXFMT_AYIQ_8422 ||
@@ -447,7 +435,6 @@ static void _oputs(char *str, ostring_t *string)
 					is_low_res = 3;
 				}
 				char_sprites[num_sprites] = _beginobj((void *)string, char_ii, width, 0.0F, z, 0);
-				char_sprites[num_sprites]->state.texture_filter_mode = GR_TEXTUREFILTER_POINT_SAMPLED;
 				is_low_res = old_is_low_res;
 				if(!char_sprites[num_sprites])
 				{
@@ -478,7 +465,6 @@ static void _oputs(char *str, ostring_t *string)
 					}
 
 					char_sprites[num_sprites] = _beginobj((void *)string, char_ii, width, 0.0F, z+0.0001f, 0);
-					char_sprites[num_sprites]->state.texture_filter_mode = GR_TEXTUREFILTER_POINT_SAMPLED;
 					is_low_res = old_is_low_res;
 					if(!char_sprites[num_sprites])
 					{
@@ -1006,26 +992,7 @@ void fade_string(ostring_t *os, int alpha)
 
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// change the constant_color field in the status of all sprites
-// matching a given parent.
-void change_string_cc( void *parent, int cc )
-{
-	register sprite_node_t	*snode = sprite_node_list;
-
-	// Walk a sprite list
-	while(snode)
-	{
-		// Node we are looking for ?
-		if(snode->si->parent == parent)
-		{
-			snode->si->state.constant_color = cc;
-		}
-
-		// Save the next node pointer
-		snode = snode->next;
-	}
-}
+/* change_string_cc() of SDK rev 24 is not part of CarnEvil's rev 19. */
 
 //////////////////////////////////////////////////////////////////////////////
 // END ostrings.c

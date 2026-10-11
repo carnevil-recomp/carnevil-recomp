@@ -312,3 +312,9 @@
 0x8015eb00 grAlphaTestFunction
 0x8015f86c grDepthBufferMode
 0x8015f70c grDepthBiasLevel
+# goose ostrings.c (rev 19) libc callees; __dj_ctype_flags is DJGPP's ctype table (indexed c+1, 2 bytes each)
+0x8014e260 vsprintf
+0x8014e2a8 atoi
+0x8014e2d0 strtol
+0x80141764 _doprnt
+0x801a26d0 __dj_ctype_flags
