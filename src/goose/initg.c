@@ -35,7 +35,7 @@ extern int	free_mem_left;
 
 extern int	read_dip_direct(void);
 extern int	func_80157004(void);
-extern void	switch_init(void), func_8014cd88(void), func_8013f5b4(void), func_800ca4a8(void);
+extern void	switch_init(void), init_sprites(void), func_8013f5b4(void), func_800ca4a8(void);
 extern void	install_sys_handlers(void);
 extern void	graphics_init(void);
 extern void	grSstVidMode(int, sst1VideoTimingStruct *);
@@ -45,7 +45,7 @@ extern void	grSstSelect(int);
 extern int	grSstOpen(int, int, int, int, int, int);
 extern void	grBufferClear(u32, int, int);		/* grBufferClear */
 extern void	grTexCombineFunction(int, int);
-extern void	func_801669ac(int), func_8015f86c(int), grDepthBufferFunction(int), grDepthMask(int);
+extern void	guColorCombineFunction(int), grDepthBufferMode(int), grDepthBufferFunction(int), grDepthMask(int);
 extern void	install_interrupt_handler(int, int (*)(void));
 extern void	install_sys_handler(int, void (*)(void));
 extern void	install_fpu_handler(int, void (*)(int *));
@@ -154,8 +154,8 @@ void graphics_init_body(void)
 	fflush(stdout);
 	grBufferClear(0xff000000, 0, 0xffff);
 	grTexCombineFunction(0, 1);
-	func_801669ac(1);
-	func_8015f86c(2);
+	guColorCombineFunction(1);
+	grDepthBufferMode(2);
 	grDepthBufferFunction(1);
 	grDepthMask(1);
 	gfx_scale = func_80157004();
@@ -185,7 +185,7 @@ void main(void)
 	dma_buffer1 = PHYS(dma_buffer1);
 	dma_buffer2 = PHYS(dma_buffer2);
 	switch_init();
-	func_8014cd88();
+	init_sprites();
 	graphics_init();
 	install_interrupt_handler(0, vblank_handler);
 	install_sys_handler(4, game_dma0_handler);	/* the game's own handler, replaced below by the library's */

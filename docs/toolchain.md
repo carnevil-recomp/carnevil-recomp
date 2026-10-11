@@ -55,7 +55,9 @@ GNU as (`tools/mipsel-elf-binutils`, binutils 2.43 built with `--target=mipsel-e
    into `.rdata` (no dedup, in order of first appearance, naturally aligned) **at the end of
    the function that uses it**, i.e. after that function's own string constants and before
    the next function's, and loads it with `lui $at` + `lwc1`/`ldc1`. GNU as with `-G0` would
-   build the constant in registers instead.
+   build the constant in registers instead. The pool is also flushed whenever cc1 itself
+   switches to `.rdata` mid-function (a `switch` jump table): the constants used so far land
+   before the table, the rest after it (sprites.c `_generate_sprite_st`).
 3. **`move rd,rs` is `addu rd,rs,$0`** in asmmips (11,759 occurrences in the game vs 101
    `or` forms, which come from hand-written or third-party code); gas encodes `move` as `or`.
 4. **`div`/`rem` macros** put the divide first, then `bnez t; nop; break 7`, then the

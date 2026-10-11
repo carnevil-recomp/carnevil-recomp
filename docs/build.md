@@ -60,8 +60,11 @@ A module rebuilt from C is one line: name, source, flag profile (`opt`/`noopt`, 
 Current modules (see `config/modules.txt`): crc, sincos, initg (GOOSE `main` +
 `graphics_init`), process (scheduler), galhand, div0hand, anim2d, adjust, object, cmos.
 `tools/progress.py` reports the share of text/data built from C; `tools/secdiff.py <module>`
-compares an object's sections with the original bytes; `tools/trymatch.sh` and `tools/fn.py`
-are the per-function decompilation loop.
+compares an object's sections with the original bytes; `tools/fit.sh <file.c> <profile>`
+compiles a module and lets `modfit.py` locate and diff every function, `tools/trymatch.sh`
+diffs named functions at given addresses, and `tools/fn.py` annotates one function. Those are
+the per-function decompilation loop. `secdiff.py` reads the object, so jump-table words show
+their unrelocated addends there; the linked image (`build/game.elf`) has them resolved.
 
 Adding a module = find its three ranges in the image (text from the function files; rodata
 = its string/literal pool in link order; data = its `$Revision` string onward), add the

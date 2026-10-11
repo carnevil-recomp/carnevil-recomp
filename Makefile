@@ -31,9 +31,9 @@ build/asm/%.o: asm/%.s
 build/%.i: %.c
 	@mkdir -p $(dir $@)
 	clang $(CPPFLAGS) -x c $< -o $@
-build/%.sn.s: build/%.i
+build/%.sn.s: build/%.i tools/sncc.sh
 	CC1FLAGS="$(CC1_$(PROFILE))" tools/sncc.sh $< $@
-build/%.s: build/%.sn.s
+build/%.s: build/%.sn.s tools/sn2gas.py
 	python3 tools/sn2gas.py $< $@
 build/%.o: build/%.s
 	$(AS) $(ASFLAGS) -o $@ $<

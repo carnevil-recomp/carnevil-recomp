@@ -57,6 +57,12 @@ def convert(lines):
             out.append("\t%s\t%s,%%lo(%s)($at)"%("lwc1" if kind=="s" else "ldc1",reg,lab))
             out.append("\t.set\tat")
             continue
+        if s.startswith(".rdata") and lits:        # asmmips also flushes pending literals when cc1
+            out.append("\t.rdata")                  # switches to .rdata mid-function (switch jump tables)
+            for kind,lab,val in lits:
+                out.append("\t.align\t%d"%(2 if kind=="s" else 3))
+                out.append("%s:\t.%s\t%s"%(lab,"float" if kind=="s" else "double",val))
+            lits=[]
         out.append(line.rstrip("\n"))
         if reorder and BR.match(line) and not s.startswith("#"):
             out.append("\tnop")

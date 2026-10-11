@@ -293,3 +293,22 @@
 0x8015db18 gu3dfGetInfo
 0x8015df70 gu3dfLoad
 0x80163df0 guTexMemReset
+# goose sprites.c (rev 20): functions and glide call targets (paired by call order in set_sprite_mode)
+0x8014b4bc change_sprite_alpha_state
+0x8014b6ac change_sprite_children_alpha
+0x8014b77c _beginobj
+0x8014c394 del_child_obj
+0x8014c65c delete_all_sprites
+0x8014cd88 init_sprites
+0x801a3168 scale_font_size
+0x80164180 guTexSource
+0x801668f0 guAlphaSource
+0x8015f620 grConstantColorValue
+0x8015f1dc grChromakeyValue
+0x80163a90 grTexFilterMode
+0x80163250 grTexClampMode
+0x801669ac guColorCombineFunction
+0x8015f118 grChromakeyMode
+0x8015eb00 grAlphaTestFunction
+0x8015f86c grDepthBufferMode
+0x8015f70c grDepthBiasLevel
