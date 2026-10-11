@@ -288,3 +288,8 @@
 0x801a36e0 __pre_proc_ptr
 0x801a36e4 __post_proc_ptr
 0x801a3528 goose_unimhand_c_version
+0x8014ce50 clear_free_sprite_list
+0x8014f310 strnicmp
+0x8015db18 gu3dfGetInfo
+0x8015df70 gu3dfLoad
+0x80163df0 guTexMemReset
