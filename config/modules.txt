@@ -16,3 +16,4 @@ switch   src/goose/switch.c   goose  0x80146be8 0x801478c8  -          -        
 mthread  src/goose/mthread.c  noopt  0x80151ac0 0x801521d0  -          -           0x801a36a8 0x801a36d0
 draw     src/goose/draw.c     goose  0x801459e0 0x80145a00  -          -           0x801a2e38 0x801a2e50
 prochook src/goose/prochook.c goose  0x801521d0 0x80152310  -          -           0x801a36d0 0x801a36e8
+unimhand src/goose/unimhand.c goose  0x80150860 0x80150dfc  0x801757e0 0x80175d7c  0x801a3528 0x801a3548

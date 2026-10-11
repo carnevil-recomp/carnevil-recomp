@@ -13,7 +13,7 @@ BR=re.compile(r"^\s*(b|bal|beq|bne|beql|bnel|blez|bgtz|bltz|bgez|blezl|bgtzl|blt
 LI=re.compile(r"^\s*li\.([sd])\s+(\$f\d+)\s*,\s*(\S+)")
 # load/store with a symbolic address plus a base register: asmmips expands through $at,
 # gas through the destination register (loads) -- so expand it ourselves the asmmips way
-SYMBASE=re.compile(r"^\s*(lw|sw|lh|lhu|lb|lbu|sh|sb|lwc1|swc1|ldc1|sdc1|lwl|lwr|swl|swr)\s+(\$\w+)\s*,\s*([A-Za-z_$][\w$]*(?:[+-]\d+)?)\((\$\w+)\)\s*$")
+SYMBASE=re.compile(r"^\s*(lw|sw|lh|lhu|lb|lbu|sh|sb|lwc1|swc1|ldc1|sdc1|lwl|lwr|swl|swr)\s+(\$\w+)\s*,\s*([A-Za-z_$][\w$.]*(?:[+-]\d+)?)\((\$\w+)\)\s*$")   # symbols may contain '.' (sz.2) or '$' ($L94)
 MOVE=re.compile(r"^\s*move\s+(\$\w+)\s*,\s*(\$\w+)\s*$")   # asmmips encodes move as addu rd,rs,$0 (gas would use or)
 DIVM=re.compile(r"^\s*(div|divu|rem|remu)\s+(\$\w+)\s*,\s*(\$\w+)\s*,\s*(\$\w+)\s*$")
 def expand_div(op,d,s,t,n):

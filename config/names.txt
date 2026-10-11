@@ -287,3 +287,4 @@
 0x801a36d0 goose_prochook_c_version
 0x801a36e0 __pre_proc_ptr
 0x801a36e4 __post_proc_ptr
+0x801a3528 goose_unimhand_c_version
