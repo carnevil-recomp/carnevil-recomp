@@ -39,6 +39,7 @@ def convert(lines):
         m=MOVE.match(line)
         if m:
             out.append("\taddu\t%s,%s,$0"%m.groups()); continue
+        if s.startswith(".def"): continue          # SDB debug records (.def/.val/.scl/.type/.endef): gas has no COFF debug
         m=SYMBASE.match(line)
         if m:
             op,rt,sym,base=m.groups()

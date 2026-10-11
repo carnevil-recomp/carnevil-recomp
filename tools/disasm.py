@@ -65,7 +65,7 @@ def main():
     def rdset(path):
         try: return {int(x,16) for x in open(path).read().split()}
         except (FileNotFoundError,TypeError): return set()
-    fallback=rdset(a.word_fallback); nosym=rdset(a.nosym)
+    fallback=rdset(a.word_fallback); nosym=rdset(a.nosym); pad_from_modules=set()
     # ---- names ----
     fnames={}; dnames={}; used=set(); bstarts=set(); override={}
     if a.names:
@@ -120,6 +120,15 @@ def main():
                 t=int(m.group(0),16)
                 if LOAD<=t<code_end: btargets.add(t)
     starts.add(LOAD); starts=sorted(starts)
+    # words between a C module's text end and the next region/module start are linker padding
+    # (garbage bytes): never decode them as instructions or branch targets
+    for m in modules:
+        r=m['text']
+        if not r: continue
+        nxt=min([x for x in starts if x>r[1]]+[code_end])
+        if nxt-r[1]<=16:
+            for A in range(r[1],nxt,4): fallback.add(A)
+    btargets=set(t for t in btargets if not any(i.address in fallback and i.id and re.search(r'0x%08x$'%t,i.op_str) for i in [ins[(A-LOAD)//4] for A in fallback]))
     region_of={}   # address -> region index
     bounds=[(s, starts[k+1] if k+1<len(starts) else code_end) for k,s in enumerate(starts)]
     for k,(s,e) in enumerate(bounds):
@@ -172,6 +181,8 @@ def main():
         if n: return n
         return ("L_%08x" if addr in glob_labels else ".L%08x")%addr
     for b in symaddrs: symname(b)
+    for x,n in override.items():          # named BSS symbols are always defined, referenced or not
+        if x>=END: abs_syms[x]=n
     # ---- emit code ----
     os.makedirs(os.path.join(a.outdir,'functions'),exist_ok=True); os.makedirs(os.path.join(a.outdir,'data'),exist_ok=True)
     files=[]; order=[]   # order: (addr, 'build/...o(section)') for the generated link order

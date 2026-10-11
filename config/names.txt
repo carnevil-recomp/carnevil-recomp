@@ -160,3 +160,27 @@
 0x801a30e8 goose_object_c_version
 0x801a30f8 olist
 0x801a30fc ofree
+# goose cmos.c (rev 4): globals (BSS mapped from config_cmos)
+0x801a2e60 goose_cmos_c_version
+0x801a2e70 cmos_configured
+0x802372e8 cmos_info
+0x8022b174 cmos_base_addr
+0x801e70f8 cmos_end_addr
+0x801e09f8 adjustment_base_addr
+0x801de8b0 audit_base_addr
+0x80237380 generic_record_base_addr
+0x802372c0 user_base_addr
+0x80145c08 cmos_read
+0x80145c8c cmos_write
+0x80145d14 config_cmos
+0x80145f30 get_cmos_user_address
+0x80145f50 get_cmos_user_size
+0x80145f80 check_audit
+0x80146038 check_audits
+0x80146134 clear_audits
+0x80146440 increment_audit
+0x80146564 check_adjustments
+0x801468d4 get_generic_record
+0x80146a30 set_generic_record
+0x801453a0 read
+0x801454c8 write
