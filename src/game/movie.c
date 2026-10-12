@@ -35,7 +35,7 @@ extern int	end_of_wave(void);
 extern void	increment_audit(int);
 extern float	func_800c9158(unsigned int *);	/* depth word -> distance */
 extern void	specific_gamma_load(float, float);
-extern void	func_800ec238(void), func_800ec1e0(int, char *);	/* sound cues */
+extern void	stop_level_cue_and_stream(void), play_level_cue(int, char *);
 extern void	func_800ebdbc(int, char *), func_800ebe34(int, char *), func_800ebd70(int, char *);
 extern void	func_800ebe6c(void), func_800ebe8c(void), func_800ebb44(void), func_800d4968(void);
 extern void	func_800ec370(int, int), func_800ec504(int);
@@ -246,8 +246,8 @@ int movie_load(int id)
 /* 0x800e8168: the ending movie, started from the game rather than the attract loop */
 void movie_load_ending(void)
 {
-	func_800ec238();
-	func_800ec1e0(1, "ending");
+	stop_level_cue_and_stream();
+	play_level_cue(1, "ending");
 	remove_all_objects();
 	set_frame_factor(2);
 	movie.partition = 14;

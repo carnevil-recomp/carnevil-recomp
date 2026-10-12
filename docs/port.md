@@ -6,7 +6,7 @@ linked with the host layer in `port/host/`.
 
 ```
 make port
-build/host/carnevil --partition original/partition [--raw IMAGE] [--frames N] [--fast] [-v]
+build/host/carnevil --partition original/partition [--raw IMAGE] [--wav FILE] [--frames N] [--fast] [-v]
 ```
 `--partition` is the directory with the extracted LFN32 partition (what `setup.sh` links as
 `original/partition`; `CARNEVIL_PARTITION` works too). `--frames N` stops after N display
@@ -95,3 +95,26 @@ positive scroll pushes the picture up). Without an image the frames are black an
 sequence still runs. The attract scripts are in `movie_scripts.c` (generated from
 0x801130b8-0x80113218); the level scripts (hhouse, freakshow, rickity, bigtop) are not
 extracted yet.
+
+## Sound (`port/host/dcs_board.cpp`, `port/third_party/dcsdecoder`, `src/game/soundio.c`)
+
+CarnEvil's DCS2 board is RAM based: the game's own sound library (src/sound/sound.c, byte-exact)
+resets it through the I/O ASIC sound control register, uploads the DCS operating system
+(`F_OSYS.BIN`, `F_COMP.BIN`, `F_DM_EXT.BIN`, `F_DM_INT.BIN` from the partition) word by word
+through the sound data port, builds a 4096-entry sound-call table in the board's DRAM, uploads
+each `*.BNK` bank behind it, and then sends sound calls as three words (call, volume/pan,
+priority). `port/host/dcs_board.cpp` is the board: it answers the monitor and OS protocol
+(checksums, 0x0A/0x0C acks, version 0x0223), keeps the DRAM image, runs the bank track programs
+(DCSExplorer's byte code: play stream, stop, levels, loops...) and uses Michael Roberts'
+native DCS decoder (vendored, BSD-3) as the codec. Output is mono 16-bit at 31250 Hz through
+CoreAudio (`audio_macos.m`); `--wav FILE` instead renders in lock step with the frame clock
+and writes the soundtrack of a headless run. Music streaming over the FIFO (`*.SND`) is parsed
+but not played yet.
+
+`src/game/soundio.c` has the game's sound start-up (main_init_sound) and the cue helpers; the
+attract wave's banks (select1, midway, intro4, attract) are loaded by the port's preload_wave
+stand-in until load_level_sounds is decompiled. The HAL now serves the BIOS timers in
+nanoseconds, a word-per-byte CMOS at a real address (GOOSE CRCs it directly), findfirst with
+file sizes, and defines a plain `_fopen` on macOS so the SDK-built objects hit the path mapping.
+Adjustments come from GOOSE's factory defaults when the CMOS is blank (attract sounds on, volume
+127); the game's own adjustment table and CMOS setup are not decompiled yet.

@@ -91,17 +91,27 @@ ifeq ($(shell uname),Darwin)
 PORT_ARCH    := -arch x86_64
 PORT_LDFLAGS := -Wl$(comma)-pagezero_size$(comma)0x4000 -framework Cocoa -framework OpenGL
 PORT_VIDEO   := port/host/video_macos.m
+PORT_AUDIO   := port/host/audio_macos.m
+PORT_LDFLAGS += -framework AudioToolbox
 else
 PORT_ARCH    :=
 PORT_LDFLAGS := -no-pie
 PORT_VIDEO   := port/host/video_null.c
+PORT_AUDIO   := port/host/audio_null.c
 endif
-PORT_SRCS := $(filter-out port/host/video_null.c,$(PORT_SRCS)) $(PORT_VIDEO)
+PORT_SRCS := $(filter-out port/host/video_null.c port/host/audio_null.c,$(PORT_SRCS)) $(PORT_VIDEO) $(PORT_AUDIO)
+# the virtual DCS sound board is C++ (it drives the vendored DCS decoder)
+PORT_CXX_SRCS := port/host/dcs_board.cpp port/third_party/dcsdecoder/DCSDecoder.cpp port/third_party/dcsdecoder/DCSDecoderNative.cpp
+PORT_CXX_OBJS := $(patsubst %.cpp,build/port/%.o,$(PORT_CXX_SRCS))
+HOSTCXX ?= clang++
+build/port/%.o: %.cpp port/host/dcs_board.h
+	@mkdir -p $(dir $@)
+	$(HOSTCXX) -std=c++17 -O2 $(PORT_ARCH) -Wno-deprecated-declarations -c -o $@ $<
 build/port/%.o: %.c include/types.h port/host/compat.h
 	@mkdir -p $(dir $@)
 	$(HOSTCC) $(HOSTCFLAGS) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -c -o $@ $<
-build/host/carnevil: $(PORT_OBJS) $(PORT_SRCS) port/host/hal.h port/host/video.h port/host/texture.h
-	$(HOSTCC) $(HOSTCFLAGS) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -Wno-deprecated-declarations $(PORT_LDFLAGS) -o $@ $(PORT_SRCS) $(PORT_OBJS)
+build/host/carnevil: $(PORT_OBJS) $(PORT_CXX_OBJS) $(PORT_SRCS) port/host/hal.h port/host/video.h port/host/texture.h port/host/audio.h
+	$(HOSTCC) $(HOSTCFLAGS) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -Wno-deprecated-declarations $(PORT_LDFLAGS) -lc++ -o $@ $(PORT_SRCS) $(PORT_OBJS) $(PORT_CXX_OBJS)
 port: build/host/carnevil
 
 check: build/GAME.EXE

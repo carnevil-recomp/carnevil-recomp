@@ -18,7 +18,7 @@ extern void sleep(int), die(int), set_frame_factor(int);
 extern int interrupt_handler(void);
 extern struct process_node *qcreate(char *, int, void (*)(), int, int, int, int);
 extern struct process_node *cur_proc;
-extern void game_proc(void), load_font_texmap(void);
+extern void game_proc(void), load_font_texmap(void), main_init_sound(void);
 extern void grDrawTriangleDma(MidVertex *, MidVertex *, MidVertex *, int);
 
 /* ---- globals the game code references ---- */
@@ -46,11 +46,10 @@ void func_800ebdbc(int a, char *s) { fprintf(stderr, "[stub] level sound %d \"%s
 void func_800ebe34(int a, char *s) { (void)a; (void)s; }
 void func_800ebd70(int a, char *s) { (void)a; (void)s; }
 void func_800ebe6c(void) { }
+void func_8013fb84(void) { }	/* stream stop (0x8013fb84) */
 void func_800ebe8c(void) { }
 void func_800ebb44(void) { }
 void func_800d4968(void) { }
-void func_800ec238(void) { }
-void func_800ec1e0(int a, char *s) { fprintf(stderr, "[stub] sound cue %d \"%s\"\n", a, s); }
 void func_800ec370(int a, int b) { (void)a; (void)b; }
 void func_800ec504(int a) { (void)a; }
 void func_801400a4(int a, int b) { (void)a; (void)b; }
@@ -61,12 +60,16 @@ int  end_of_wave(void) { return 0; }
 float func_800c9158(unsigned int *px) { return (float)(*px >> 16); }	/* depth word -> distance (placeholder scale) */
 int  player_stats[64], D_801e1084, D_801e6e70, D_8018db90;
 script_word_t hhouse_script[1], freakshow_script[1], rickity_town_script[1], bigtop_script[1];	/* level scripts: not extracted yet */
-void func_800ec260(int a, char *cue) { fprintf(stderr, "[stub] sound cue %d \"%s\"\n", a, cue); }
-void func_800ec2c8(void) { }
 int  func_800d4990(void) { return 0; }		/* I/O ASIC bit test */
 int  sub_800e4d90(int arg) { (void)arg; return 0; }	/* high-score reset screen */
 extern void load_attract_texmap(void), load_aamav_texmap(void);
-void preload_wave(int w) { fprintf(stderr, "[stub] preload_wave(%#x): level assets not loaded, attract texmaps only\n", w); load_attract_texmap(); load_aamav_texmap(); }
+extern int snd_bank_load_playing(char *);
+void preload_wave(int w)		/* 0x800f59dc: only the attract wave's banks and texmaps for now */
+{
+	fprintf(stderr, "[stub] preload_wave(%#x): level assets not loaded, attract texmaps and banks only\n", w);
+	load_attract_texmap(); load_aamav_texmap();
+	snd_bank_load_playing("select1"); snd_bank_load_playing("midway"); snd_bank_load_playing("intro4"); snd_bank_load_playing("attract");	/* load_level_sounds, wave 0xa0000 */
+}
 
 float get_screen_pos(int pos, float *out) { (void)pos; out[0] = out[1] = 0.0f; return -1.0f; }	/* 3D point -> screen: no camera yet */
 void graphical_printf(char *buf, char *fmt, ...) { va_list ap; va_start(ap, fmt); vsprintf(buf, fmt, ap); va_end(ap); }
@@ -122,11 +125,27 @@ static void game_init(void)			/* func_800ca3a0, the parts the port has */
 	create_object("BAR", 0, 0, 0, 0, think_pass);
 }
 
+/* CMOS layout from the game's setup_cmos (0x800f2a28): 8000 bytes, 182 audits, 110 adjustments,
+   one generic record table of 56-byte entries; the game's own adjustment table is not restored yet */
+extern int config_cmos(void *), check_adjustments(void), restore_factory_adjustments(int, void *);
+static void cmos_init(void)
+{
+	static int cfg[5 + 2 * 8] = { 0x1f40, 0xb6, 0x6e, 1, 0, 0x38, 1, 0xc, 1 };
+	config_cmos(cfg);
+	if(check_adjustments())
+	{
+		fprintf(stderr, "[port] adjustments invalid: restoring the GOOSE factory defaults\n");
+		restore_factory_adjustments(0, 0);
+	}
+}
+
 void main_proc(int *args)
 {
 	(void)args;
 	fprintf(stderr, "[port] main_proc: starting the attract process\n");
 	game_init();
+	cmos_init();
+	main_init_sound();
 	set_frame_factor(3);
 	qcreate("attract", 0x100, game_proc, 0, 0, 0, 0);
 	while(1) sleep(1);

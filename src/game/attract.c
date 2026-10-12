@@ -22,7 +22,7 @@ extern void	set_bgnd_color(unsigned int);
 extern void	sleep(int);
 extern void	set_frame_factor(int);
 extern void	func_800e74f0(void), func_800e7568(void);	/* movie play start / stop */
-extern void	func_800ec260(int, char *), func_800ec2c8(void);	/* sound cue start / stop */
+extern void	play_attract_cue(int, char *), stop_attract_cue(void);
 extern int	func_800d4990(void);
 extern int	sub_800e4d90(int);
 extern void	guTexSource(int), guColorCombineFunction(int);
@@ -226,14 +226,14 @@ int movie_load_intro(int arg)
 	movie_load(3);
 	set_frame_factor(2);
 	func_800e74f0();
-	func_800ec260(1, "intro4");
+	play_attract_cue(1, "intro4");
 	fade(1.0f, 10, 0);
 	while(!(movie.flags & 4))
 	{
 		sleep(1);
 	}
 	func_800e7568();
-	func_800ec2c8();
+	stop_attract_cue();
 	set_frame_factor(3);
 	return(0);
 }
@@ -248,14 +248,14 @@ int movie_load_attract(int arg)
 	movie_load(9);
 	set_frame_factor(2);
 	func_800e74f0();
-	func_800ec260(1, "attract");
+	play_attract_cue(1, "attract");
 	fade(1.0f, 10, 0);
 	while(!(movie.flags & 4))
 	{
 		sleep(1);
 	}
 	func_800e7568();
-	func_800ec2c8();
+	stop_attract_cue();
 	set_frame_factor(3);
 	return(0);
 }
@@ -265,14 +265,14 @@ int movie_load_midway(int arg)
 	sleep(6);
 	movie_load(4);
 	func_800e74f0();
-	func_800ec260(1, "midway");
+	play_attract_cue(1, "midway");
 	fade(1.0f, 10, 0);
 	while(!(movie.flags & 4))
 	{
 		sleep(1);
 	}
 	func_800e7568();
-	func_800ec2c8();
+	stop_attract_cue();
 	return(0);
 }
 
@@ -317,7 +317,7 @@ int attract_generic(int arg)
 	{
 		obj = add_object1_wrapper(0x20, draw_screen_7200, 0, 0);
 	}
-	func_800ec260(0x58, "generic1");
+	play_attract_cue(0x58, "generic1");
 	fade(1.0f, 5, 0);
 	sleep(5);
 	for(i = 0; i < frames; i++)
@@ -328,7 +328,7 @@ int attract_generic(int arg)
 	sleep(5);
 	remove_game_object(obj);
 	sleep(1);
-	func_800ec2c8();
+	stop_attract_cue();
 	return(1);
 }
 
