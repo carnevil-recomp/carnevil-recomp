@@ -14,7 +14,7 @@ extern int	snd_scall_bank(char *, unsigned int, unsigned int, unsigned int, unsi
 extern int	snd_stop_track(unsigned int);
 extern void	snd_delay(volatile int);
 extern int	get_adjustment(int, int *);
-extern void	func_8013fb84(void);
+extern void	stream_stop(void);			/* 0x8013fb84 */
 
 int		snd_opsys_ver;			/* 0x802373e4 */
 int		sound_init_pending;		/* 0x801e6ec0 */
@@ -101,7 +101,7 @@ void stop_level_cue(void)
 void stop_level_cue_and_stream(void)
 {
 	snd_stop_track(1);
-	func_8013fb84();
+	stream_stop();
 }
 
 /* 0x800ec260: attract-mode cue, only if the "attract sounds" adjustment is on */

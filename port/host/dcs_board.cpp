@@ -70,6 +70,19 @@ public:
 	};
 	Track		tracks[MAX_CHANNELS];
 	int		sample_in_frame = 0;
+	/* the I/O ASIC's sound FIFO (512 words on the board; a few frames deep here because the
+	   game's interrupt handler only runs between frames) carrying stereo 16-bit PCM */
+	enum { FIFO_WORDS = 8192 };
+	uint16_t	fifo[FIFO_WORDS];
+	unsigned	fifo_head = 0, fifo_tail = 0, fifo_count = 0;
+	bool		stream_on = false;
+	int		stream_volume = 255;
+	int		master_volume = 255;
+	unsigned long	stream_underruns = 0;
+	void fifo_reset() { fifo_head = fifo_tail = fifo_count = 0; }
+	unsigned fifo_space() { return FIFO_WORDS - fifo_count; }
+	void fifo_write(uint16_t w) { if(fifo_count < FIFO_WORDS) { fifo[fifo_tail] = w; fifo_tail = (fifo_tail + 1) % FIFO_WORDS; fifo_count++; } }
+	int16_t fifo_read() { int16_t w = (int16_t)fifo[fifo_head]; fifo_head = (fifo_head + 1) % FIFO_WORDS; fifo_count--; return w; }
 	int		host_level[MAX_CHANNELS];	/* 0..255 from the sound-call volume byte */
 
 	void reset()
@@ -178,10 +191,12 @@ public:
 			case 0x55B1: case 0x55B2: case 0x55B3: want(1); return;
 			case 0x55B0: sth.push_back(0x0400); return;			/* sync */
 			case 0x55E0: case 0x55E3: case 0x55E4: want(2); return;	/* engine/drone params */
-			case 0x55D6: case 0x55D7: case 0x55D8: case 0x55DB: case 0x55DC: case 0x55E7:
-				if(verbose) fprintf(stderr, "[dcs] stream command %04x (not implemented)\n", w);
-				return;
-			case 0x55D9: sth.push_back(8); return;				/* stream buffers free */
+			case 0x55D6: stream_on = true; if(verbose) fprintf(stderr, "[dcs] stream start\n"); return;
+			case 0x55D7: stream_on = false; if(verbose) fprintf(stderr, "[dcs] stream stop (%lu underruns)\n", stream_underruns); return;
+			case 0x55D8: fifo_reset(); if(verbose) fprintf(stderr, "[dcs] stream flush\n"); return;
+			case 0x55E7: return;						/* FIFO streaming mode: what the game uses */
+			case 0x55DB: case 0x55DC: return;
+			case 0x55D9: sth.push_back(0); return;				/* free stream buffers: none, the FIFO is the buffer */
 			case 0x55DA: if(verbose > 1) fprintf(stderr, "[dcs] stream buffer (dropped)\n"); sth.push_back(0xA1A1); st = DATA; data_count = SAMPLES_PER_FRAME * 2; data_pos = 0; checksum = 0; return;
 			default: if(verbose) fprintf(stderr, "[dcs] unknown command %04x\n", w); return;
 			}
@@ -214,7 +229,8 @@ public:
 			sth.push_back(sum & 0xffff);
 			return;
 		}
-		case 0x55AA: SetMasterVolume(args[0] >> 8); if(verbose) fprintf(stderr, "[dcs] master volume %d\n", args[0] >> 8); return;
+		case 0x55AA: master_volume = args[0] >> 8; SetMasterVolume(master_volume); if(verbose) fprintf(stderr, "[dcs] master volume %d\n", master_volume); return;
+		case 0x55B3: stream_volume = args[0] & 0xff; if(verbose) fprintf(stderr, "[dcs] stream volume %d\n", stream_volume); return;
 		case 0x55AB:			/* track volume: mask << 8 | volume */
 			for(int ch = 0; ch < MAX_CHANNELS; ch++) if((args[0] >> 8) & (1 << ch)) channel[ch].channelVolume = args[0] & 0xff;
 			return;
@@ -225,7 +241,7 @@ public:
 		case 0x55AD:			/* track priority: mask << 8 | priority */
 			for(int t = 0; t < MAX_CHANNELS; t++) if((args[0] >> 8) & (1 << t)) tracks[t].priority = args[0] & 0x7f;
 			return;
-		case 0x55AC: case 0x55B1: case 0x55B2: case 0x55B3:
+		case 0x55AC: case 0x55B1: case 0x55B2:
 		case 0x55E0: case 0x55E3: case 0x55E4:
 			return;
 		default:
@@ -370,7 +386,17 @@ public:
 		for(int i = 0; i < n; i++)
 		{
 			if(sample_in_frame == 0) frame_tick();
-			out[i] = GetNextSample();
+			int s = GetNextSample();
+			if(stream_on)
+			{
+				if(fifo_count >= 2)
+				{
+					int l = fifo_read(), r = fifo_read();
+					s += ((l + r) / 2) * stream_volume / 255 * master_volume / 255;
+				}
+				else stream_underruns++;
+			}
+			out[i] = s > 32767 ? 32767 : s < -32768 ? -32768 : s;
 			if(++sample_in_frame == SAMPLES_PER_FRAME) sample_in_frame = 0;
 		}
 	}
@@ -399,5 +425,8 @@ void dcs_clear_sth(void)
 	if(!b->sth.empty()) b->sth.pop_front();
 }
 void dcs_render(short *out, int n) { get()->render(out, n); }
+void dcs_fifo_write(unsigned int w) { Board *b = get(); std::lock_guard<std::mutex> g(b->lock); b->fifo_write((uint16_t)w); }
+unsigned dcs_fifo_space(void) { Board *b = get(); std::lock_guard<std::mutex> g(b->lock); return b->fifo_space(); }
+void dcs_fifo_reset(void) { Board *b = get(); std::lock_guard<std::mutex> g(b->lock); b->fifo_reset(); }
 void dcs_set_verbose(int on) { verbose = on; }
 }

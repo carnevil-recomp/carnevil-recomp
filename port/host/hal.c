@@ -37,6 +37,10 @@ static struct press	presses[64];
 static int		npresses;
 static void		parse_presses(const char *spec);
 static void		gun_update(void);
+static unsigned int	sound_control = 1, main_control;
+unsigned		dcs_fifo_space(void);
+void			dcs_fifo_reset(void);
+static int		fifo_int_pending(void);
 const char	*hal_raw_image = 0;
 int		hal_frame_limit = 0;
 int		hal_fast = 0;
@@ -192,6 +196,13 @@ void hal_wait_frame(int frames)
 		hal_frame_count++;
 		presses_update();
 		audio_wav_frame();
+		/* the I/O ASIC FIFO interrupt (handler 3): the game pushes 512 words per interrupt */
+		for(int guard = 0; guard < 32 && int_handler[3] && fifo_int_pending(); guard++)
+		{
+			unsigned before = dcs_fifo_space();
+			int_handler[3]();
+			if(dcs_fifo_space() == before) break;
+		}
 		if(int_handler[0]) int_handler[0]();	/* vertical retrace */
 		if(hal_frame_limit && hal_frame_count >= (unsigned long)hal_frame_limit)
 		{
@@ -215,7 +226,8 @@ void fp_div0_reboot(void) { fprintf(stderr, "[hal] FP divide-by-zero reboot requ
 
 /* ---- ioctl: device 4 = I/O ASIC (switches, sound port), device 5 = timers ---- */
 #define FIOC(c, n)	(((c) << 8) | (n))
-static unsigned int sound_control = 1, main_control;
+/* the ASIC raises its FIFO interrupt while the sound FIFO has room for a 512-word block */
+static int fifo_int_pending(void) { return (main_control & 8) && (main_control & 1) && dcs_fifo_space() >= 512; }
 static FILE *(*real_fopen)(const char *, const char *);
 #define CMOS_WORDS	0x2000				/* 32 KB of battery RAM, one byte stored per word */
 static unsigned int	cmos[CMOS_WORDS];
@@ -252,14 +264,15 @@ int _ioctl(int dev, int req, int arg)
 			case FIOC('i', 3): if(p) *p = 0xffff; return 0;			/* players 3 and 4: none */
 			case FIOC('i', 4): if(p) *p = 0; return 0;			/* coin meters */
 			case FIOC('i', 5): return 0;
-			case FIOC('i', 6):						/* sound control: bit 0 low->high resets the board */
+			case FIOC('i', 6):						/* sound control: bit 0 low->high resets the board, bits 1-3 reset the FIFO */
 				if((arg & 1) && !(sound_control & 1)) dcs_reset();
+				if((arg & 0xe) && !(sound_control & 0xe)) dcs_fifo_reset();
 				sound_control = arg; return 0;
 			case FIOC('i', 7): if(p) *p = sound_control; return 0;
 			case FIOC('i', 8): dcs_write(arg); return 0;			/* host -> sound data */
 			case FIOC('i', 9): if(p) *p = dcs_status(); return 0;
 			case FIOC('i', 10): if(p) *p = dcs_read(); return 0;
-			case FIOC('i', 14): if(p) *p = 0; return 0;			/* main status */
+			case FIOC('i', 14): if(p) *p = fifo_int_pending() ? 9 : 0; return 0;	/* main status: FIFO interrupt */
 			case FIOC('i', 15): main_control = arg; return 0;
 			case FIOC('i', 16): if(p) *p = main_control; return 0;
 			case FIOC('i', 17): dcs_clear_sth(); return 0;

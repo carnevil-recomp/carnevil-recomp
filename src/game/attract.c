@@ -133,6 +133,9 @@ void game_proc(void)
 		do
 		{
 			step = i & 7;
+#ifdef PORT_HOST
+			{ extern int port_trace; extern unsigned long hal_frame_count; if(port_trace) fprintf(stderr, "[attract] vblank %lu step %d\n", hal_frame_count, step); }
+#endif
 			attract_steps[step](i);
 			i++;
 		} while(step != 0);

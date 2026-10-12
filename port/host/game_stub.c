@@ -31,7 +31,6 @@ int	D_801fad10, D_801e0f10;
 
 /* ---- GOOSE main() callees ---- */
 void func_800ca4a8(void) { }					/* records get_free_mem_left() */
-void func_8013f5b4(void) { }					/* two I/O ASIC ioctls after graphics init */
 extern void scan_switches(void);
 extern int tick_counter, gfx_scale, got_interrupt, uptime;
 int  D_80212e60, D_801facc8, D_80179d50;
@@ -49,7 +48,6 @@ int  vblank_handler(void)
 	scan_switches();
 	return 1;
 }
-int  interrupt_ioasic_handler(void) { return 1; }
 void game_dma0_handler(void) { }
 void func_80162a10(int *a, int *b, int *c, int *d) { *a = *b = *c = *d = 0; }	/* memory statistics */
 
@@ -63,14 +61,11 @@ void func_800ebdbc(int a, char *s) { fprintf(stderr, "[stub] level sound %d \"%s
 void func_800ebe34(int a, char *s) { (void)a; (void)s; }
 void func_800ebd70(int a, char *s) { (void)a; (void)s; }
 void func_800ebe6c(void) { }
-void func_8013fb84(void) { }	/* stream stop (0x8013fb84) */
 void func_800ebe8c(void) { }
 void func_800ebb44(void) { }
 void func_800d4968(void) { }
 void func_800ec370(int a, int b) { (void)a; (void)b; }
 void func_800ec504(int a) { (void)a; }
-void func_801400a4(int a, int b) { (void)a; (void)b; }
-void func_801400dc(int a, int b, int c) { (void)a; (void)b; (void)c; }
 void *func_800d6758(int a) { (void)a; return 0; }
 void level_end_stats_wrapper(void) { }
 int  end_of_wave(void) { return 0; }
@@ -86,6 +81,17 @@ void preload_wave(int w)		/* 0x800f59dc: only the attract wave's banks and texma
 	fprintf(stderr, "[stub] preload_wave(%#x): level assets not loaded, attract texmaps and banks only\n", w);
 	load_attract_texmap(); load_aamav_texmap();
 	snd_bank_load_playing("select1"); snd_bank_load_playing("midway"); snd_bank_load_playing("intro4"); snd_bank_load_playing("attract");	/* load_level_sounds, wave 0xa0000 */
+	/* load_wave_proc starts the PCM music stream for the level waves (bit 24 set); the attract wave has none.
+	   CARNEVIL_STREAM_TEST=<wave> starts one anyway so the stream path can be heard before the levels exist. */
+	if(getenv("CARNEVIL_STREAM_TEST"))
+	{
+		extern void stop_level_cue(void), install_disk_info(void *, void *, void *), stream_start(void), stream_set_volume(int);
+		extern int stream_select_wave(int);
+		int wave = (int)strtoul(getenv("CARNEVIL_STREAM_TEST"), 0, 0);
+		fprintf(stderr, "[stub] CARNEVIL_STREAM_TEST: streaming the music of wave %#x\n", wave);
+		stop_level_cue(); install_disk_info(0, 0, 0); stream_set_volume(0xaa);
+		stream_select_wave(wave); sleep(3); stream_start();
+	}
 }
 
 float get_screen_pos(int pos, float *out) { (void)pos; out[0] = out[1] = 0.0f; return -1.0f; }	/* 3D point -> screen: no camera yet */

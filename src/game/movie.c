@@ -29,8 +29,8 @@ extern void	install_disk_callback(void (*)(int));
 extern void	install_disk_info(void *, void *, void *);
 extern void	*ide_get_partition_table(void);
 extern short	_SecReads(unsigned int sector, void *buf, unsigned int num);
-extern int	func_8013ff24(void);		/* disk queue kick: returns extra requests issued */
-extern void	func_8013fea4(void);		/* disk queue cleanup */
+extern int	stream_kick(void);		/* 0x8013ff24: queue the next music stream read, returns reads issued */
+extern void	stream_fill_done(void);		/* 0x8013fea4 */
 extern int	end_of_wave(void);
 extern void	increment_audit(int);
 extern float	func_800c9158(unsigned int *);	/* depth word -> distance */
@@ -39,7 +39,7 @@ extern void	stop_level_cue_and_stream(void), play_level_cue(int, char *);
 extern void	func_800ebdbc(int, char *), func_800ebe34(int, char *), func_800ebd70(int, char *);
 extern void	func_800ebe6c(void), func_800ebe8c(void), func_800ebb44(void), func_800d4968(void);
 extern void	func_800ec370(int, int), func_800ec504(int);
-extern void	func_801400a4(int, int), func_801400dc(int, int, int);
+extern void	stream_set_loop(int, int), stream_jump(int, int, int);	/* 0x801400a4, 0x801400dc */
 extern void	*func_800d6758(int);
 extern short	add_object1_wrapper(int, void (*)(), int, int);
 extern void	level_end_stats_wrapper();
@@ -367,7 +367,7 @@ void loadfram_proc(void)
 		table = ide_get_partition_table();
 		disk_pending = 1;
 		_SecReads(sector + table[2 + movie.partition * 3], buf->buffer, movie.sectors_per_frame);
-		extra = func_8013ff24();
+		extra = stream_kick();
 		disk_pending += extra;
 		do
 		{
@@ -381,7 +381,7 @@ void loadfram_proc(void)
 		movie.flags &= ~MOVIE_READING;
 		if(extra)
 		{
-			func_8013fea4();
+			stream_fill_done();
 		}
 		buf->state = 2;
 		buf->frame = movie.frame_number;
@@ -913,7 +913,7 @@ int do_script(int frame)
 		case 19:
 			arg = NEXT();
 			target = NEXT();
-			func_801400dc(arg, target, NEXT());
+			stream_jump(arg, target, NEXT());
 			break;
 		case 20:	/* audits */
 			switch((int)NEXT())
@@ -944,7 +944,7 @@ int do_script(int frame)
 			return(next);
 		case 25:
 			arg = NEXT();
-			func_801400a4(arg, NEXT());
+			stream_set_loop(arg, NEXT());
 			break;
 		case 26:
 			func_800ebdbc(NEXT(), "bigtop");

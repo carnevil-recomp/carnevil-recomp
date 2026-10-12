@@ -113,8 +113,15 @@ priority). `port/host/dcs_board.cpp` is the board: it answers the monitor and OS
 (DCSExplorer's byte code: play stream, stop, levels, loops...) and uses Michael Roberts'
 native DCS decoder (vendored, BSD-3) as the codec. Output is mono 16-bit at 31250 Hz through
 CoreAudio (`audio_macos.m`); `--wav FILE` instead renders in lock step with the frame clock
-and writes the soundtrack of a headless run. Music streaming over the FIFO (`*.SND`) is parsed
-but not played yet.
+and writes the soundtrack of a headless run. The level music is a second path: raw stereo 16-bit little-endian PCM in the disk's raw
+partitions (3, 5, 7, 9; the level waves select one in `stream_select_wave`), read in 32 KB
+pieces into a 96 KB ring by the movie player's disk process and pushed 512 words at a time
+into the I/O ASIC's sound FIFO from the ASIC's FIFO interrupt (`src/game/stream.c`,
+0x8013f508-0x8014012c); the board plays the FIFO after command 0x55D6. The HAL raises that
+interrupt between frames while the board's FIFO (a few frames deep here, 512 words on the
+hardware) has room, and the port's `FIFO_WRITE` seam replaces the register store. The
+attract mode never starts this stream; `CARNEVIL_STREAM_TEST=0x1040000` starts the haunted
+house music under the attract so the path can be heard.
 
 Tracks: the board has six tracks (= mixer channels). The host's priority word picks the track
 (SOUND.H: 0x8000 forces the track in bits 7-9, otherwise the board allocates a free one,
