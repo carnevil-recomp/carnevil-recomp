@@ -178,9 +178,11 @@ public:
 			case 0x55B1: case 0x55B2: case 0x55B3: want(1); return;
 			case 0x55B0: sth.push_back(0x0400); return;			/* sync */
 			case 0x55E0: case 0x55E3: case 0x55E4: want(2); return;	/* engine/drone params */
-			case 0x55D6: case 0x55D7: case 0x55D8: case 0x55DB: case 0x55DC: case 0x55E7: return;
+			case 0x55D6: case 0x55D7: case 0x55D8: case 0x55DB: case 0x55DC: case 0x55E7:
+				if(verbose) fprintf(stderr, "[dcs] stream command %04x (not implemented)\n", w);
+				return;
 			case 0x55D9: sth.push_back(8); return;				/* stream buffers free */
-			case 0x55DA: sth.push_back(0xA1A1); st = DATA; data_count = SAMPLES_PER_FRAME * 2; data_pos = 0; checksum = 0; return;
+			case 0x55DA: if(verbose > 1) fprintf(stderr, "[dcs] stream buffer (dropped)\n"); sth.push_back(0xA1A1); st = DATA; data_count = SAMPLES_PER_FRAME * 2; data_pos = 0; checksum = 0; return;
 			default: if(verbose) fprintf(stderr, "[dcs] unknown command %04x\n", w); return;
 			}
 		}
