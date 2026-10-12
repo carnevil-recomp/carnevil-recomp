@@ -32,16 +32,8 @@ void grChromakeyValue(unsigned int v) { (void)v; }
 void grConstantColorValue(unsigned int v) { (void)v; }
 void grTexClampMode(int tmu, int s, int t) { (void)tmu;(void)s;(void)t; }
 void grTexFilterMode(int tmu, int min, int mag) { (void)tmu;(void)min;(void)mag; }
-void grDrawTriangleDma(void *a, void *b, void *c) { (void)a;(void)b;(void)c; }
-void grFreeTexture(void *tn) { (void)tn; }
-void guTexMemReset(void) { STUB(guTexMemReset) }
-void *guLoadTextureDirect(const char *name, int id, int a, int b) { (void)id;(void)a;(void)b; fprintf(stderr, "[glide] guLoadTextureDirect(%s): no texture memory yet\n", name); return 0; }
-void *guLoadTextureDirectFromMemory(void *p, int id, int a, int b) { (void)p;(void)id;(void)a;(void)b; STUB(guLoadTextureDirectFromMemory) return 0; }
-int  gu3dfGetInfo(const char *name, void *info) { (void)info; fprintf(stderr, "[glide] gu3dfGetInfo(%s): .3df loading not implemented yet\n", name); return 0; }
-int  gu3dfLoad(const char *name, void *info) { (void)name;(void)info; return 0; }
-unsigned int get_mm_frag(int handle) { (void)handle; return 0; }
-unsigned int get_tmu_fragmentation(void) { return 0; }
-void show_tmu_map(void) { fprintf(stderr, "[glide] show_tmu_map (stub)\n"); }
+unsigned long port_triangles;
+void grDrawTriangleDma(void *a, void *b, void *c, int d) { (void)a;(void)b;(void)c;(void)d; port_triangles++; }
 void dma_start(void)		/* the Galileo DMA kick that sends the frame's commands to the Voodoo */
 {
 	static unsigned long n;

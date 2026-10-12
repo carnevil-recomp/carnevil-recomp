@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <goose/process.h>
+#include <goose/sprites.h>
+extern unsigned long port_triangles;
 #include "hal.h"
 
 extern void sleep(int), die(int);
@@ -30,15 +32,20 @@ static void child_proc(int *args)
 	fprintf(stderr, "[demo] child done\n");
 }
 
+static image_info_t demo_image = { "CLWNBALL.WMS", 8.0f, 8.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f };
+
 void main_proc(int *args)
 {
 	int	n = 0;
+	sprite_info_t	*sprite;
 	(void)args;
 	fprintf(stderr, "[demo] main_proc running in process \"%.8s\"\n", cur_proc->process_name);
 	qcreate("child", 1, child_proc, 3, 0, 0, 0);
+	sprite = beginobj(&demo_image, 100.0f, 100.0f, 10.0f, 0);
+	fprintf(stderr, "[demo] sprite %s\n", sprite ? "created" : "FAILED");
 	while(1)
 	{
-		if(n % 60 == 0) fprintf(stderr, "[demo] main_proc frame %lu\n", hal_frame_count);
+		if(n % 60 == 0) fprintf(stderr, "[demo] main_proc frame %lu, %lu triangles drawn so far\n", hal_frame_count, port_triangles);
 		n++;
 		sleep(1);
 	}

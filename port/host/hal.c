@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include "hal.h"
+void port_texture_verbose(int);
 
 const char	*hal_partition_root = ".";
 int		hal_frame_limit = 0;
@@ -37,17 +38,26 @@ int		free_mem_left;
 int		D_801de8ec;
 unsigned int	D_801a37b0[20] = { 0x19, 0x27c, 5, 0x1b2, 0x5a, 0x23, 400, 256, 0x60, 0, 0x100, 0x100, 8, 0x17, 1, 1 };
 
+#define CMOS_FD		3
+static void resolve(void);
+static int (*real_open)(const char *, int, ...);
+static int (*real_close)(int);
 void hal_init(int argc, char **argv)
 {
 	int	i;
 	const char *env = getenv("CARNEVIL_PARTITION");
+	int	nul;
 	if(env) hal_partition_root = env;
+	/* fd 3 is the BIOS CMOS device: park /dev/null there so no real file ever gets it */
+	resolve();
+	nul = real_open("/dev/null", O_RDONLY, 0);
+	if(nul >= 0 && nul != CMOS_FD) { dup2(nul, CMOS_FD); real_close(nul); }
 	for(i = 1; i < argc; i++)
 	{
 		if(!strcmp(argv[i], "--partition") && i + 1 < argc) hal_partition_root = argv[++i];
 		else if(!strcmp(argv[i], "--frames") && i + 1 < argc) hal_frame_limit = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--fast")) hal_fast = 1;
-		else if(!strcmp(argv[i], "-v")) verbose = 1;
+		else if(!strcmp(argv[i], "-v")) { verbose = 1; port_texture_verbose(1); }
 		else { fprintf(stderr, "usage: %s [--partition DIR] [--frames N] [--fast] [-v]\n", argv[0]); exit(2); }
 	}
 }
@@ -152,7 +162,6 @@ static int map_path(const char *path, char *out, size_t n)
 	return 0;
 }
 
-#define CMOS_FD		3
 #define CMOS_SIZE	0x8000
 static unsigned char	cmos[CMOS_SIZE];
 static long		cmos_pos;
@@ -172,11 +181,9 @@ static void cmos_save(void)
 	if(f) { fwrite(cmos, 1, sizeof cmos, f); fclose(f); }
 }
 
-static int (*real_open)(const char *, int, ...);
 static ssize_t (*real_read)(int, void *, size_t);
 static ssize_t (*real_write)(int, const void *, size_t);
 static off_t (*real_lseek)(int, off_t, int);
-static int (*real_close)(int);
 static FILE *(*real_fopen)(const char *, const char *);
 static void resolve(void)
 {
