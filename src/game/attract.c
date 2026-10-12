@@ -28,7 +28,7 @@ extern int	sub_800e4d90(int);
 extern void	guTexSource(int), guColorCombineFunction(int);
 extern void	draw_quad(float, float, float, float, float, float);
 extern int	violence_level;
-extern int	D_80212e14;
+extern int	game_mode;			/* 0x80212e14 */
 extern int	attract_cycles;		/* 0x80212d98 */
 extern void	grDepthBufferFunction(int), grDepthMask(int);
 extern int	check_for_freeplay(void), check_credits_to_start_mode(void), check_credits_to_continue_mode(void);
@@ -120,7 +120,7 @@ void game_proc(void)
 	}
 	preload_wave(0xa0000);
 	remove_all_objects();
-	D_80212e14 = 1;
+	game_mode = 1;
 	set_bgnd_color(0xff000000);
 	i = 0;
 	if(!attract_started)

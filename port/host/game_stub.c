@@ -13,17 +13,18 @@
 #include "../../src/game/objects.h"
 #include "../../src/game/texmap.h"
 #include "../../src/game/movie.h"
+#include "../../src/game/credits.h"
 
 extern void sleep(int), die(int), set_frame_factor(int);
 extern int interrupt_handler(void);
 extern struct process_node *qcreate(char *, int, void (*)(), int, int, int, int);
 extern struct process_node *cur_proc;
 extern void game_proc(void), load_font_texmap(void), main_init_sound(void);
+extern void *set_dcsw_handler(int, void (*)(int, int));
 extern void grDrawTriangleDma(MidVertex *, MidVertex *, MidVertex *, int);
 
 /* ---- globals the game code references ---- */
 int	violence_level = 3;
-int	D_80212e14;
 int	attract_cycles;
 int	debug_mode = 0;
 int	D_801fad10, D_801e0f10;
@@ -31,7 +32,23 @@ int	D_801fad10, D_801e0f10;
 /* ---- GOOSE main() callees ---- */
 void func_800ca4a8(void) { }					/* records get_free_mem_left() */
 void func_8013f5b4(void) { }					/* two I/O ASIC ioctls after graphics init */
-int  vblank_handler(void) { return interrupt_handler(); }	/* the game's handler wraps the library's */
+extern void scan_switches(void);
+extern int tick_counter, gfx_scale, got_interrupt, uptime;
+int  D_80212e60, D_801facc8, D_80179d50;
+/* 0x800c6030: the game's own vertical-retrace handler (it does not call the library's) */
+int  vblank_handler(void)
+{
+	tick_counter++;
+	got_interrupt++;
+	if(!(tick_counter % gfx_scale))
+	{
+		uptime++;
+		if(D_80212e60 != 1) D_801facc8++;
+	}
+	/* if(D_80212e50 == 1) { func_800d4f6c(); func_800d57b0(); }  gun sampling: later */
+	scan_switches();
+	return 1;
+}
 int  interrupt_ioasic_handler(void) { return 1; }
 void game_dma0_handler(void) { }
 void func_80162a10(int *a, int *b, int *c, int *d) { *a = *b = *c = *d = 0; }	/* memory statistics */
@@ -58,7 +75,7 @@ void *func_800d6758(int a) { (void)a; return 0; }
 void level_end_stats_wrapper(void) { }
 int  end_of_wave(void) { return 0; }
 float func_800c9158(unsigned int *px) { return (float)(*px >> 16); }	/* depth word -> distance (placeholder scale) */
-int  player_stats[64], D_801e1084, D_801e6e70, D_8018db90;
+int  D_801e6e70, D_8018db90;
 script_word_t hhouse_script[1], freakshow_script[1], rickity_town_script[1], bigtop_script[1];	/* level scripts: not extracted yet */
 int  func_800d4990(void) { return 0; }		/* I/O ASIC bit test */
 int  sub_800e4d90(int arg) { (void)arg; return 0; }	/* high-score reset screen */
@@ -73,18 +90,22 @@ void preload_wave(int w)		/* 0x800f59dc: only the attract wave's banks and texma
 
 float get_screen_pos(int pos, float *out) { (void)pos; out[0] = out[1] = 0.0f; return -1.0f; }	/* 3D point -> screen: no camera yet */
 void graphical_printf(char *buf, char *fmt, ...) { va_list ap; va_start(ap, fmt); vsprintf(buf, fmt, ap); va_end(ap); }
-int is_freeplay = 0, coins_needed_to_play = 2, num_credits_to_continue = 1;
-int check_for_freeplay(void) { return is_freeplay; }
-int check_credits_to_start_mode(void) { return coins_needed_to_play; }
-int check_credits_to_continue_mode(void) { return num_credits_to_continue; }
-char attract_text1[136] = "PRESS START", attract_text2[136] = "TO PLAY", attract_text3[136];
-int attract_text_state = 2;
+char attract_text1[136], attract_text2[136], attract_text3[136];	/* 0x8021eed0.. filled by something_todo_with_credits */
+int attract_text_state;
+/* the game proper: not decompiled yet */
+void init_player_stats(int p) { fprintf(stderr, "[stub] init_player_stats(%d)\n", p); }
+void init_main_game_proc(int p) { fprintf(stderr, "[stub] init_main_game_proc(%d): GAME START requested by player %d, credits now %d\n", p, p + 1, credits); }
+void play_level_cue_pri(int scall, char *bank, int pri) { extern unsigned int next_cue_priority(void); extern int snd_scall_bank(char *, unsigned, unsigned, unsigned, unsigned); snd_scall_bank(bank, scall, 0xe6, 0x80, (pri | next_cue_priority()) & 0xdfff); }	/* 0x800ebfa8 */
+void dispatch_diags_proc(int closed, int swid) { (void)closed; (void)swid; fprintf(stderr, "[stub] test switch: diagnostics not implemented\n"); }
+FILE *__dj_stderr;
 
 /* the triangle setup (0x800d1750) writes Voodoo commands; here it is a plain draw */
 void draw_tri(MidVertex *a, MidVertex *b, MidVertex *c) { grDrawTriangleDma(a, b, c, 0); }
 /* 0x800d1d8c / 0x800d2664: the same with iterated RGB / alpha vertices (iteration ignored for now) */
 void draw_tri_rgb(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
 void draw_tri_alpha(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
+/* 0x800d2174: a constant-colour triangle (the original sorts the vertices by y) */
+void draw_tri_flat(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
 
 /* ---- the per-frame passes the game installs as GOOSE objects in func_800ca3a0 ---- */
 static void think_pass(void *data)		/* "BAR": object_draw_func (0x800cca70) */
@@ -112,6 +133,10 @@ static void draw_pass(void *data)		/* "FOO": print_onscreen_debuginfo's object l
 		p = &objects[i];
 		if(p->draw) p->draw(p);
 	}
+	/* the overlays print_onscreen_debuginfo draws after the objects (0x800cc0ac..) */
+	grDepthBufferFunction(GR_CMP_ALWAYS);
+	show_volume_level();
+	if(game_mode == 1) attract_credit_lines();
 }
 
 static void game_init(void)			/* func_800ca3a0, the parts the port has */
@@ -145,7 +170,19 @@ void main_proc(int *args)
 	fprintf(stderr, "[port] main_proc: starting the attract process\n");
 	game_init();
 	cmos_init();
+	__dj_stderr = stderr;
+	init_credits();			/* 0x800c7570 */
 	main_init_sound();
+	/* the switch handlers main_proc installs (0x800c54b8-0x800c56cc) */
+	set_dcsw_handler(0, coin_handler); set_dcsw_handler(1, coin_handler); set_dcsw_handler(7, coin_handler);
+	set_dcsw_handler(8, coin_handler); set_dcsw_handler(15, coin_handler);
+	set_dcsw_handler(6, service_credit_handler);
+	set_dcsw_handler(3, dispatch_slam_proc);
+	set_dcsw_handler(11, volume_switch_handler); set_dcsw_handler(12, volume_switch_handler);
+	set_dcsw_handler(4, dispatch_diags_proc);
+	qcreate("volume", 0x8201, coin_volume_proc, 0, 0, 0, 0);
+	qcreate("ccproc", 0x8201, ccproc_proc, 0, 0, 0, 0);
+	set_dcsw_handler(2, dispatch_start_proc); set_dcsw_handler(5, dispatch_start_proc);
 	set_frame_factor(3);
 	qcreate("attract", 0x100, game_proc, 0, 0, 0, 0);
 	while(1) sleep(1);

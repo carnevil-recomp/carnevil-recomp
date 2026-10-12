@@ -3,6 +3,25 @@
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/gl.h>
 #include "video.h"
+#include "hal.h"
+
+static const char *key_name(NSEvent *ev)
+{
+	NSString *s = [ev charactersIgnoringModifiers];
+	unichar c = [s length] ? [s characterAtIndex:0] : 0;
+	switch(c)
+	{
+	case '5': case 'c': case 'C': return "coin";
+	case '1': return "start1";
+	case '2': return "start2";
+	case '9': return "service";
+	case '-': return "voldown";
+	case '=': return "volup";
+	case ' ': return "pump";
+	case NSF2FunctionKey: return "test";
+	default: return 0;
+	}
+}
 
 static NSWindow		*win;
 static NSOpenGLContext	*ctx;
@@ -49,7 +68,17 @@ void video_present(void)
 		NSEvent *ev;
 		[ctx flushBuffer];
 		while((ev = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:nil inMode:NSDefaultRunLoopMode dequeue:YES]))
+		{
+			NSEventType t = [ev type];
+			if((t == NSEventTypeKeyDown || t == NSEventTypeKeyUp) && ![ev isARepeat])
+			{
+				const char *k = key_name(ev);
+				if(k) { hal_key(k, t == NSEventTypeKeyDown); continue; }
+			}
+			else if(t == NSEventTypeFlagsChanged) { hal_key("trigger", ([ev modifierFlags] & NSEventModifierFlagControl) != 0); continue; }
+			else if(t == NSEventTypeLeftMouseDown || t == NSEventTypeLeftMouseUp) { hal_key("trigger", t == NSEventTypeLeftMouseDown); continue; }
 			[NSApp sendEvent:ev];
+		}
 		[ctx makeCurrentContext];
 	}
 }

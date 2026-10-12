@@ -46,8 +46,7 @@ extern void	level_end_stats_wrapper();
 extern unsigned int	background_color;
 extern int	do_draw_background;
 extern int	debug_mode;			/* 0x80212e20 */
-extern int	D_80212e14;			/* attract mode flag */
-extern int	player_stats[], D_801e1084;	/* 0x801e0f64, 0x801e1084: player state words */
+#include "credits.h"			/* game_mode (0x80212e14), player_stats (0x801e0f64) */
 extern int	D_801e6e70, D_8018db90;
 extern char	text_buffer[];
 
@@ -823,7 +822,7 @@ int do_script(int frame)
 	{
 		return(frame);
 	}
-	if(D_80212e14 != 1 && !(player_stats[0] & 0x44) && !(D_801e1084 & 0x44))
+	if(game_mode != 1 && !(player_stats[0].state & 0x44) && !(player_stats[1].state & 0x44))
 	{
 		return(frame);
 	}

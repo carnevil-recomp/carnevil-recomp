@@ -17,12 +17,24 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include "hal.h"
 #include "dcs_board.h"
 #include "audio.h"
 void port_texture_verbose(int);
 
 const char	*hal_partition_root = ".";
+/* cabinet switches: the I/O ASIC words are active low; keys and --press set bits here */
+static unsigned int	coin_held;		/* bits of the coin/start word currently closed */
+static unsigned int	player_held;		/* bits of the player 1/2 word currently closed */
+static unsigned int	gun_held;		/* bit 0/1 = P1 trigger/pump, 4/5 = P2 */
+static unsigned int	dipswitches = 0xffff;	/* all off */
+unsigned char	*hal_gun_regs;			/* the light-gun port at 0xb6800000 (0x16800000 kseg1) */
+struct press { unsigned long at; unsigned int coin, player, gun; int len; };
+static struct press	presses[64];
+static int		npresses;
+static void		parse_presses(const char *spec);
+static void		gun_update(void);
 const char	*hal_raw_image = 0;
 int		hal_frame_limit = 0;
 int		hal_fast = 0;
@@ -72,14 +84,81 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--dump") && i + 1 < argc) render_set_dump(argv[++i], 0);
 		else if(!strcmp(argv[i], "--dump-every") && i + 2 < argc) { render_set_dump(argv[i+1], atoi(argv[i+2])); i += 2; }
 		else if(!strcmp(argv[i], "--wav") && i + 1 < argc) wav_path = argv[++i];
+		else if(!strcmp(argv[i], "--press") && i + 1 < argc) parse_presses(argv[++i]);
 		else if(!strcmp(argv[i], "-v")) { verbose++; port_texture_verbose(1); dcs_set_verbose(1); }
-		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--wav FILE] [--frames N] [--fast] [--headless] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
+		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
+	hal_gun_regs = mmap((void *)0xb6800000, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
+	if(hal_gun_regs == MAP_FAILED) { fprintf(stderr, "[hal] cannot map the gun port at 0xb6800000\n"); hal_gun_regs = 0; }
+	else gun_update();
 	if(wav_path) { audio_wav_open(wav_path); atexit(audio_wav_close); }
 	else if(!hal_headless && !audio_start()) fprintf(stderr, "[audio] no audio output\n");
 }
 
 int hal_refresh_hz(void) { return refresh_hz; }
+
+/* ---- switches: switch ids follow goose/switch.h (coin word: 0 left coin, 1 right coin, 2 P1 start,
+   3 slam, 4 test, 5 P2 start, 6 service credit, 7 center coin, 8 extra coin, 11/12 volume
+   down/up, 14 coin door, 15 bill validator; player word: P1 A-D bits 4-7, P2 bits 12-15) ---- */
+static int name_to_bits(const char *name, unsigned int *coin, unsigned int *player, unsigned int *gun)
+{
+	static const struct { const char *n; int word; unsigned int bit; } t[] = {
+		{ "coin", 0, 1 << 0 }, { "coin2", 0, 1 << 1 }, { "start1", 0, 1 << 2 }, { "start2", 0, 1 << 5 },
+		{ "slam", 0, 1 << 3 }, { "test", 0, 1 << 4 }, { "service", 0, 1 << 6 }, { "coin3", 0, 1 << 7 },
+		{ "coin4", 0, 1 << 8 }, { "voldown", 0, 1 << 11 }, { "volup", 0, 1 << 12 }, { "bill", 0, 1 << 15 },
+		{ "p1a", 1, 1 << 4 }, { "p1b", 1, 1 << 5 }, { "p1c", 1, 1 << 6 }, { "p1d", 1, 1 << 7 },
+		{ "p2a", 1, 1 << 12 }, { "p2b", 1, 1 << 13 },
+		{ "trigger", 2, 1 }, { "pump", 2, 2 }, { "trigger2", 2, 0x10 }, { "pump2", 2, 0x20 } };
+	size_t i;
+	*coin = *player = *gun = 0;
+	for(i = 0; i < sizeof t / sizeof t[0]; i++)
+		if(!strcmp(t[i].n, name)) { (t[i].word == 0 ? coin : t[i].word == 1 ? player : gun)[0] = t[i].bit; return 1; }
+	return 0;
+}
+/* keyboard: 5 = coin, 1/2 = start, 9 = service credit, F2 = test, - and = volume, space = pump,
+   left ctrl / mouse button = trigger (the gun itself comes later) */
+void hal_key(const char *name, int down)
+{
+	unsigned int c, p, g;
+	if(!name_to_bits(name, &c, &p, &g)) return;
+	if(down) { coin_held |= c; player_held |= p; gun_held |= g; }
+	else { coin_held &= ~c; player_held &= ~p; gun_held &= ~g; }
+}
+static void gun_update(void)
+{
+	if(!hal_gun_regs) return;
+	/* MAME carnevil_gun_r layout, one byte per 32-bit slot: X low, X high | buttons | 0x40, Y low, Y high; P2 at +0x10 */
+	hal_gun_regs[0x00] = (128 << 4) & 0xff; hal_gun_regs[0x04] = (128 >> 4) | ((gun_held & 3) << 4) | 0x40;
+	hal_gun_regs[0x08] = (128 << 4) & 0xff; hal_gun_regs[0x0c] = 128 >> 4;
+	hal_gun_regs[0x10] = (128 << 4) & 0xff; hal_gun_regs[0x14] = (128 >> 4) | (gun_held & 0x30) | 0x40;
+	hal_gun_regs[0x18] = (128 << 4) & 0xff; hal_gun_regs[0x1c] = 128 >> 4;
+}
+static void presses_update(void)
+{
+	int i;
+	for(i = 0; i < npresses; i++)
+	{
+		struct press *q = &presses[i];
+		if(hal_frame_count == q->at) { coin_held |= q->coin; player_held |= q->player; gun_held |= q->gun; if(q->coin | q->player | q->gun) fprintf(stderr, "[hal] frame %lu: press %#x/%#x/%#x\n", hal_frame_count, q->coin, q->player, q->gun); }
+		if(hal_frame_count == q->at + q->len) { coin_held &= ~q->coin; player_held &= ~q->player; gun_held &= ~q->gun; }
+	}
+	gun_update();
+}
+static void parse_presses(const char *spec)		/* --press 300:coin,320:coin,400:start1 */
+{
+	char buf[1024], *s, *tok;
+	snprintf(buf, sizeof buf, "%s", spec);
+	for(s = buf; (tok = strsep(&s, ",")); )
+	{
+		char *colon = strchr(tok, ':');
+		struct press *q;
+		if(!colon || npresses >= 64) continue;
+		*colon = 0; q = &presses[npresses];
+		q->at = strtoul(tok, 0, 10); q->len = 6;
+		if(!name_to_bits(colon + 1, &q->coin, &q->player, &q->gun)) { fprintf(stderr, "[hal] unknown switch %s\n", colon + 1); continue; }
+		npresses++;
+	}
+}
 
 /* ---- frame pacing: one display refresh = one vblank interrupt ---- */
 void hal_wait_frame(int frames)
@@ -105,6 +184,7 @@ void hal_wait_frame(int frames)
 			else next = now;		/* fell behind: resynchronise */
 		}
 		hal_frame_count++;
+		presses_update();
 		audio_wav_frame();
 		if(int_handler[0]) int_handler[0]();	/* vertical retrace */
 		if(hal_frame_limit && hal_frame_count >= (unsigned long)hal_frame_limit)
@@ -158,9 +238,10 @@ int _ioctl(int dev, int req, int arg)
 	{
 		switch(req)
 		{
-			case FIOC('i', 0):		/* dipswitches */
-			case FIOC('i', 1): case FIOC('i', 2): case FIOC('i', 3):	/* player inputs: nothing pressed */
-				if(p) *p = 0xffffffff; return 0;
+			case FIOC('i', 0): if(p) *p = dipswitches; return 0;
+			case FIOC('i', 1): if(p) *p = 0xffff & ~coin_held; return 0;		/* coins, starts, service, test, volume: active low */
+			case FIOC('i', 2): if(p) *p = 0xffff & ~player_held; return 0;	/* player 1 and 2 buttons */
+			case FIOC('i', 3): if(p) *p = 0xffff; return 0;			/* players 3 and 4: none */
 			case FIOC('i', 4): if(p) *p = 0; return 0;			/* coin meters */
 			case FIOC('i', 5): return 0;
 			case FIOC('i', 6):						/* sound control: bit 0 low->high resets the board */
@@ -181,8 +262,8 @@ int _ioctl(int dev, int req, int arg)
 	{
 		switch(req)
 		{
-		case FIOC('c', 0): cmos_pos = (int)(arg - (int)(intptr_t)cmos) / 4; return 0;
-		case FIOC('c', 1): if(p) *p = (int)(intptr_t)cmos; return 0;
+		case FIOC('c', 0): cmos_load(); cmos_pos = (int)(arg - (int)(intptr_t)cmos) / 4; return 0;
+		case FIOC('c', 1): cmos_load(); if(p) *p = (int)(intptr_t)cmos; return 0;	/* GOOSE CRCs the words directly */
 		case FIOC('c', 2): if(p) *p = CMOS_WORDS; return 0;
 		default: return 0;
 		}

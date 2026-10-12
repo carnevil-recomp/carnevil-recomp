@@ -89,6 +89,13 @@ public:
 		for(int ch = 0; ch < MAX_CHANNELS; ch++) stop_channel(ch);
 		for(auto &t : tracks) t = Track();
 	}
+	void stop_track(int t)
+	{
+		if(t < 0 || t >= MAX_CHANNELS) return;
+		tracks[t] = Track();
+		for(int ch = 0; ch < MAX_CHANNELS; ch++) if(channel[ch].sourceChannel == t) stop_channel(ch);
+		if(verbose) fprintf(stderr, "[dcs] stop track %d\n", t);
+	}
 	void stop_channel(int ch)
 	{
 		if(ch < 0 || ch >= MAX_CHANNELS) return;
@@ -207,8 +214,8 @@ public:
 		case 0x55AB:			/* track volume: mask << 8 | volume */
 			for(int ch = 0; ch < MAX_CHANNELS; ch++) if((args[0] >> 8) & (1 << ch)) channel[ch].channelVolume = args[0] & 0xff;
 			return;
-		case 0x55AE:			/* stop tracks in mask */
-			for(int ch = 0; ch < MAX_CHANNELS; ch++) if((args[0] >> 8) & (1 << ch)) { stop_channel(ch); tracks[ch] = Track(); }
+		case 0x55AE:			/* stop the track programs in the mask and the streams they started */
+			for(int t = 0; t < MAX_CHANNELS; t++) if((args[0] >> 8) & (1 << t)) stop_track(t);
 			return;
 		case 0x55AC: case 0x55AD: case 0x55AF: case 0x55B1: case 0x55B2: case 0x55B3:
 		case 0x55E0: case 0x55E3: case 0x55E4:

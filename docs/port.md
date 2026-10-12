@@ -54,9 +54,8 @@ over) through `draw_quad` and the GL renderer. Verify with
 ```
 build/host/carnevil --partition original/partition --frames 1001 --fast --dump-every f 1000
 ```
-which leaves `f.001000.ppm`, the rating screen. Movies (`movie_load`, disk streaming from the
-raw partitions), the play-mode demo, fonts/text, sound and inputs are stubs in
-`port/host/game_stub.c`; they are the next milestones, each one decompiled from the game.
+which leaves `f.001000.ppm`, the rating screen. Movies, fonts/text, sound, inputs and credits are decompiled (sections below); the game
+proper (level scripts, 3D, the player state) is still stubbed in `port/host/game_stub.c`.
 
 ## Screen origin and texture orientation
 
@@ -118,3 +117,30 @@ nanoseconds, a word-per-byte CMOS at a real address (GOOSE CRCs it directly), fi
 file sizes, and defines a plain `_fopen` on macOS so the SDK-built objects hit the path mapping.
 Adjustments come from GOOSE's factory defaults when the CMOS is blank (attract sounds on, volume
 127); the game's own adjustment table and CMOS setup are not decompiled yet.
+
+## Inputs, coins and credits (`src/game/credits.c`, `port/host/hal.c`)
+
+The cabinet switches reach the game exactly as on the board: GOOSE's `scan_switches` (called
+from the game's own vertical-retrace handler, 0x800c6030, now in `game_stub.c`) reads the
+I/O ASIC words through ioctl 'i'0 (dips), 'i'1 (coins, starts, service, test, volume, slam),
+'i'2/'i'3 (player buttons), all active low, and calls the handlers `main_proc` installed.
+`src/game/credits.c` is that module (0x800c6a64-0x800c8198): coin and service-credit
+handlers, `add_coin` with the per-slot units, bonus credits and the max-credit clamp, the
+credit counter process ("ccproc", meter pulses through ioctl 'i'5), the slam lockout, the
+volume buttons and bar, `init_credits` (free play from dip or adjustment, pricing from the
+continent/country/price adjustments, the custom table or the dip switches; the 80 pricing
+records, continent tables, dip table and currency names are generated into
+`src/game/pricing_data.c` by `tools/gen_pricing.py`), `credit_info` (the "CREDITS: n" /
+"INSERT COIN" / "PRESS START" lines) and `start_proc`, which takes the credits and starts a
+player (the game proper, `init_player_stats` / `init_main_game_proc`, is still a stub that
+prints "GAME START requested"). Credits live in audit 10 in the CMOS (`cmos.bin` in the
+working directory, now loaded before GOOSE's first direct access, so adjustments survive a
+restart), as on the cabinet: credits you insert are still there on the next run.
+
+Keyboard (window build): `5` or `c` coin, `1`/`2` start, `9` service credit, `F2` test (stub),
+`-`/`=` volume down/up (hold: the bar and "VOLUME n" appear), space pump, left ctrl or the
+mouse button trigger. Scripted presses for headless tests:
+`--press 350:coin,360:coin,400:start1` (frame:name, each held 6 frames; names in
+`name_to_bits` in hal.c). The light-gun port (0x16800000, kseg1 0xb6800000, MAME's
+`carnevil_gun_r` layout) is a mapped page the HAL refreshes every frame with the trigger and
+pump bits and a centred position; aiming comes later.
