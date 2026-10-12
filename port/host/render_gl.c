@@ -95,8 +95,10 @@ static unsigned int upload(port_texture_t *t, int keyed, unsigned int key)
 		rgba = malloc(w * hh * 4);
 		for(i = 0; i < w * hh; i++)
 		{
-			texel_rgba(h->format, src + i * bpt, &t->table, rgba + i * 4);
-			if(keyed && rgba[i*4] == kr && rgba[i*4+1] == kg && rgba[i*4+2] == kb) rgba[i*4+3] = 0;
+			/* Glide's t runs bottom-up relative to the stored rows: flip so t=0 is the last row */
+			unsigned int o = ((hh - 1 - i / w) * w + i % w) * 4;
+			texel_rgba(h->format, src + i * bpt, &t->table, rgba + o);
+			if(keyed && rgba[o] == kr && rgba[o+1] == kg && rgba[o+2] == kb) rgba[o+3] = 0;
 		}
 		glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA8, w, hh, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
 		free(rgba);

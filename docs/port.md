@@ -45,8 +45,15 @@ own functions GOOSE main() needs and supplies a placeholder `main_proc` until th
 decompiled.
 
 ## Status
-The port boots through GOOSE main() (banner, DMA buffers, switch/sprite init, graphics init,
-handler installation), creates the main process and runs the dispatcher at the display rate;
-processes are created, sleep and die correctly. Nothing is drawn or heard yet: textures,
-rendering, sound and the game's `main_proc` are the next milestones, in that order with the
-game-code decompilation.
+The port boots through GOOSE main(), creates the main process and runs the dispatcher at the
+display rate. The game's attract process (`src/game/attract.c`, the real `game_proc`) runs on
+the decompiled object list and texmap modules: it loads the attract `.WMS` textures, cycles
+through the attract steps and draws the full-screen screens (AAMA rating, 3dfx/legal, game
+over) through `draw_quad` and the GL renderer. Verify with
+
+```
+build/host/carnevil --partition original/partition --frames 1001 --fast --dump-every f 1000
+```
+which leaves `f.001000.ppm`, the rating screen. Movies (`movie_load`, disk streaming from the
+raw partitions), the play-mode demo, fonts/text, sound and inputs are stubs in
+`port/host/game_stub.c`; they are the next milestones, each one decompiled from the game.
