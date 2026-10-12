@@ -267,7 +267,13 @@ static void dump_frame(void)
 {
 	unsigned char *px; FILE *f; int y; char name[1024];
 	if(!dump_path || !have_display) return;
-	if(dump_every && (hal_frame_count % dump_every)) return;
+	if(dump_every)
+	{
+		/* dump the first swap at or after every multiple of dump_every */
+		static unsigned long last_bucket;
+		if(hal_frame_count / dump_every == last_bucket) return;
+		last_bucket = hal_frame_count / dump_every;
+	}
 	if(getenv("CARNEVIL_TRACE")) fprintf(stderr, "[dump] frame %lu brightness %.2f triangles %lu tex %d\n", hal_frame_count, brightness, port_triangles, (int)st.tex);
 	px = malloc(win_w * win_h * 3);
 	glReadPixels(0, 0, win_w, win_h, GL_RGB, GL_UNSIGNED_BYTE, px);
@@ -291,6 +297,42 @@ static void apply_brightness(void)
 	glColor4f(0.0f, 0.0f, 0.0f, 1.0f - brightness);
 	glBegin(GL_QUADS); glVertex3f(0, 0, 0); glVertex3f(hres, 0, 0); glVertex3f(hres, vres, 0); glVertex3f(0, vres, 0); glEnd();
 }
+
+/* ---- the movie frame: 400x256 LFB words written with grLfbWriteMode(13) = RGB555 + depth;
+   row 0 is the bottom scan line ---- */
+static GLuint	movie_tex;
+void port_movie_blit(const unsigned int *buf, int scroll)
+{
+	static unsigned short	rgb[400 * 256];
+	int	i;
+	float	y0, y1;
+	if(!have_display) return;
+	frame_setup();
+	for(i = 0; i < 400 * 256; i++) rgb[i] = (unsigned short)buf[i];
+	if(!movie_tex) glGenTextures(1, &movie_tex);
+	glBindTexture(GL_TEXTURE_2D, movie_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 400, 256, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, rgb);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	glClearColor(0, 0, 0, 1); glDepthMask(GL_TRUE); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_TEXTURE_2D); glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glDisable(GL_DEPTH_TEST); glDepthMask(GL_FALSE); glDisable(GL_BLEND); glDisable(GL_ALPHA_TEST);
+	glColor4f(1, 1, 1, 1);
+	/* row 0 of the frame is the bottom line; a positive scroll inserts blank lines below it */
+	y0 = (float)scroll;		/* bottom edge */
+	y1 = y0 + (float)256;		/* top edge */
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, 0); glVertex3f(0, y0, 0);
+	glTexCoord2f(1, 0); glVertex3f((float)400, y0, 0);
+	glTexCoord2f(1, 1); glVertex3f((float)400, y1, 0);
+	glTexCoord2f(0, 1); glVertex3f(0, y1, 0);
+	glEnd();
+	glDepthMask(GL_TRUE);
+}
+
 void grBufferSwap(int interval) { (void)interval; if(have_display) { apply_brightness(); dump_frame(); video_present(); if(video_closed()) exit(0); } }
 void dma_start(void) { grBufferSwap(1); }			/* the DMA kick; the board swaps when it completes */
 

@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include "texmap.h"
+#include "movie.h"
 
 typedef struct game_object game_object_t;
 /* the attract code sees the object functions without prototypes: int results, cast to short */
@@ -19,7 +20,6 @@ extern void	fade(float, int, void (*)(void));
 extern void	preload_wave(int);
 extern void	set_bgnd_color(unsigned int);
 extern void	sleep(int);
-extern void	movie_load(int);
 extern void	set_frame_factor(int);
 extern void	func_800e74f0(void), func_800e7568(void);	/* movie play start / stop */
 extern void	func_800ec260(int, char *), func_800ec2c8(void);	/* sound cue start / stop */
@@ -28,7 +28,6 @@ extern int	sub_800e4d90(int);
 extern void	guTexSource(int), guColorCombineFunction(int);
 extern void	draw_quad(float, float, float, float, float, float);
 extern int	violence_level;
-extern int	D_801de900;		/* movie status: bit 2 = finished */
 extern int	D_80212e14;
 extern int	attract_cycles;		/* 0x80212d98 */
 extern void	grDepthBufferFunction(int), grDepthMask(int);
@@ -229,7 +228,7 @@ int movie_load_intro(int arg)
 	func_800e74f0();
 	func_800ec260(1, "intro4");
 	fade(1.0f, 10, 0);
-	while(!(D_801de900 & 4))
+	while(!(movie.flags & 4))
 	{
 		sleep(1);
 	}
@@ -251,7 +250,7 @@ int movie_load_attract(int arg)
 	func_800e74f0();
 	func_800ec260(1, "attract");
 	fade(1.0f, 10, 0);
-	while(!(D_801de900 & 4))
+	while(!(movie.flags & 4))
 	{
 		sleep(1);
 	}
@@ -268,7 +267,7 @@ int movie_load_midway(int arg)
 	func_800e74f0();
 	func_800ec260(1, "midway");
 	fade(1.0f, 10, 0);
-	while(!(D_801de900 & 4))
+	while(!(movie.flags & 4))
 	{
 		sleep(1);
 	}
@@ -290,7 +289,7 @@ int attract_movie_violence(int arg)
 	}
 	func_800e74f0();
 	fade(1.0f, 10, 0);
-	while(!(D_801de900 & 4))
+	while(!(movie.flags & 4))
 	{
 		sleep(1);
 	}

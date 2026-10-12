@@ -6,7 +6,7 @@ linked with the host layer in `port/host/`.
 
 ```
 make port
-build/host/carnevil --partition original/partition [--frames N] [--fast] [-v]
+build/host/carnevil --partition original/partition [--raw IMAGE] [--frames N] [--fast] [-v]
 ```
 `--partition` is the directory with the extracted LFN32 partition (what `setup.sh` links as
 `original/partition`; `CARNEVIL_PARTITION` works too). `--frames N` stops after N display
@@ -74,3 +74,24 @@ three glyph tables for FONT0001.WMS, `draw_string`, `draw_string_color`, `draw_s
 attract.c) draws the LEGAL1 texmap plus the credit lines with it. The per-frame buffer clear
 comes from the game's draw pass (show_debug_frame_data, 0x800e77ec, clears when no movie is
 playing); the port's stand-in draw pass does the same.
+
+## Movies (`src/game/movie.c`, `port/host/disk.c`)
+
+The attract sequences, the intro and ending, and every level's background are "movies":
+raw TRAP partitions of fixed-size frames (0xd0, 0xc9, 0x12e or 0x135 sectors). `movie_load(id)`
+picks the partition, the frame decoder and a script; the `loadfram` process reads one frame
+per tick with the BIOS `_SecReads` into three rotating disk buffers; `show_debug_frame_data`
+(first thing in the draw pass) decodes the oldest one into a 400x256 buffer of LFB words
+(RGB555 low half, depth high half) and DMAs it into the Voodoo frame buffer with
+`grLfbWriteMode(13)`; `do_script` walks the movie script (play-until, seek, goto, call,
+hold, sound cues, end) to pick the next frame. Level movies carry a per-pixel depth plane so
+3D objects sort against the background.
+
+The port needs the whole disk image for this: `--raw IMAGE` (or `CARNEVIL_RAW`, default
+`original/carn.raw`, which `setup.sh` links). `port/host/disk.c` parses the TRAP table and
+serves `_SecReads` synchronously, firing the game's completion callback before returning;
+`port_movie_blit` in render_gl.c draws the frame as a texture (row 0 is the bottom line, a
+positive scroll pushes the picture up). Without an image the frames are black and the
+sequence still runs. The attract scripts are in `movie_scripts.c` (generated from
+0x801130b8-0x80113218); the level scripts (hhouse, freakshow, rickity, bigtop) are not
+extracted yet.

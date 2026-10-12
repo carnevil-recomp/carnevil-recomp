@@ -21,6 +21,7 @@
 void port_texture_verbose(int);
 
 const char	*hal_partition_root = ".";
+const char	*hal_raw_image = 0;
 int		hal_frame_limit = 0;
 int		hal_fast = 0;
 int		hal_headless = 0;
@@ -30,6 +31,7 @@ static int	refresh_hz = 54;			/* 400x256 54Hz, the game's normal mode */
 static int	(*int_handler[8])(void);
 static void	(*sys_handler[8])(void);
 static int	verbose = 0;
+int		port_trace = 0;
 
 /* ---- data the library expects the surrounding image to define ---- */
 int		gt_fd;
@@ -50,6 +52,8 @@ void hal_init(int argc, char **argv)
 	const char *env = getenv("CARNEVIL_PARTITION");
 	int	nul;
 	if(env) hal_partition_root = env;
+	if(getenv("CARNEVIL_RAW")) hal_raw_image = getenv("CARNEVIL_RAW");
+	if(getenv("CARNEVIL_TRACE")) port_trace = 1;
 	/* fd 3 is the BIOS CMOS device: park /dev/null there so no real file ever gets it */
 	resolve();
 	nul = real_open("/dev/null", O_RDONLY, 0);
@@ -57,13 +61,14 @@ void hal_init(int argc, char **argv)
 	for(i = 1; i < argc; i++)
 	{
 		if(!strcmp(argv[i], "--partition") && i + 1 < argc) hal_partition_root = argv[++i];
+		else if(!strcmp(argv[i], "--raw") && i + 1 < argc) hal_raw_image = argv[++i];
 		else if(!strcmp(argv[i], "--frames") && i + 1 < argc) hal_frame_limit = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--fast")) hal_fast = 1;
 		else if(!strcmp(argv[i], "--headless")) hal_headless = 1;
 		else if(!strcmp(argv[i], "--dump") && i + 1 < argc) render_set_dump(argv[++i], 0);
 		else if(!strcmp(argv[i], "--dump-every") && i + 2 < argc) { render_set_dump(argv[i+1], atoi(argv[i+2])); i += 2; }
 		else if(!strcmp(argv[i], "-v")) { verbose = 1; port_texture_verbose(1); }
-		else { fprintf(stderr, "usage: %s [--partition DIR] [--frames N] [--fast] [--headless] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
+		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--frames N] [--fast] [--headless] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
 }
 
