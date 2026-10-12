@@ -85,7 +85,7 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--dump-every") && i + 2 < argc) { render_set_dump(argv[i+1], atoi(argv[i+2])); i += 2; }
 		else if(!strcmp(argv[i], "--wav") && i + 1 < argc) wav_path = argv[++i];
 		else if(!strcmp(argv[i], "--press") && i + 1 < argc) parse_presses(argv[++i]);
-		else if(!strcmp(argv[i], "-v")) { verbose++; port_texture_verbose(1); dcs_set_verbose(1); }
+		else if(!strcmp(argv[i], "-v")) { verbose++; port_texture_verbose(1); dcs_set_verbose(verbose); }
 		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
 	hal_gun_regs = mmap((void *)0xb6800000, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);

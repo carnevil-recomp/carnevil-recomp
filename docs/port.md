@@ -110,6 +110,16 @@ CoreAudio (`audio_macos.m`); `--wav FILE` instead renders in lock step with the 
 and writes the soundtrack of a headless run. Music streaming over the FIFO (`*.SND`) is parsed
 but not played yet.
 
+Tracks: the board has six tracks (= mixer channels). The host's priority word picks the track
+(SOUND.H: 0x8000 forces the track in bits 7-9, otherwise the board allocates a free one,
+0x2000 refuses to interrupt an equal or higher priority, low 7 bits are the priority), and a
+bank program's channel numbers are relative to that track (950 of the 953 programs in the
+game's banks are written for "channel 1 / stream 0"). The game runs the attract and level
+music on track 0 (0x8000/0x8010) and speech and effects on tracks 3-5 (next_cue_priority), so
+a coin sound no longer replaces the intro music. A program is {u16 wait, op, args}... and the
+op follows its wait: reading another wait after one expires ran the interpreter off the end
+of the coin program into the neighbouring weapon sounds of generic1 (fixed 2026-10-12).
+
 `src/game/soundio.c` has the game's sound start-up (main_init_sound) and the cue helpers; the
 attract wave's banks (select1, midway, intro4, attract) are loaded by the port's preload_wave
 stand-in until load_level_sounds is decompiled. The HAL now serves the BIOS timers in

@@ -60,9 +60,11 @@ public:
 	struct Track
 	{
 		bool		active = false;
-		int		channel = 0;
+		int		channel = 0;		/* the track number the host chose; the program's channels are relative to it */
+		int		priority = 0;		/* low 7 bits of the host priority word */
 		const uint8_t	*pc = 0;
 		int		counter = 0;
+		bool		op_next = false;	/* a wait was consumed: the next item is the opcode */
 		struct Loop { int count; const uint8_t *pos; };
 		std::vector<Loop> loops;
 	};
@@ -217,7 +219,11 @@ public:
 		case 0x55AE:			/* stop the track programs in the mask and the streams they started */
 			for(int t = 0; t < MAX_CHANNELS; t++) if((args[0] >> 8) & (1 << t)) stop_track(t);
 			return;
-		case 0x55AC: case 0x55AD: case 0x55AF: case 0x55B1: case 0x55B2: case 0x55B3:
+		case 0x55AF: reserved_mask = (args[0] >> 8) & 0x3f; return;		/* reserved track mask (not used by the allocator) */
+		case 0x55AD:			/* track priority: mask << 8 | priority */
+			for(int t = 0; t < MAX_CHANNELS; t++) if((args[0] >> 8) & (1 << t)) tracks[t].priority = args[0] & 0x7f;
+			return;
+		case 0x55AC: case 0x55B1: case 0x55B2: case 0x55B3:
 		case 0x55E0: case 0x55E3: case 0x55E4:
 			return;
 		default:
@@ -234,29 +240,49 @@ public:
 	}
 
 	/* ---- sound calls and track programs ---- */
+	/* The host priority word (SOUND.H): 0x8000 = force the track in bits 7-9, else allocate one;
+	   0x2000 = don't interrupt a track of equal or higher priority; low 7 bits = priority. */
+	int pick_track(unsigned priority)
+	{
+		int level = priority & 0x7f;
+		if(priority & 0x8000) return (priority >> 7) & 7;
+		for(int i = 0; i < MAX_CHANNELS; i++)
+			if(!(reserved_mask & (1 << i)) && !tracks[i].active && channel[i].sourceChannel != i) return i;
+		int best = -1;
+		for(int i = 0; i < MAX_CHANNELS; i++)
+			if(!(reserved_mask & (1 << i)) && tracks[i].priority <= level && (best < 0 || tracks[i].priority < tracks[best].priority)) best = i;
+		return best;
+	}
+	int reserved_mask = 0;
+
 	void sound_call(unsigned call, int volume, int pan, unsigned priority)
 	{
-		(void)pan; (void)priority;
-		if(call == 0) { stop_all(); if(verbose) fprintf(stderr, "[dcs] stop all\n"); return; }
+		(void)pan;
+		if(call == 0) { stop_all(); reserved_mask = 0; if(verbose) fprintf(stderr, "[dcs] stop all\n"); return; }
 		uint32_t entry = dram32(call * 4);
-		if(verbose) fprintf(stderr, "[dcs] sound call %u vol %d pan %d pri %04x -> %08x\n", call, volume, pan, priority, entry);
-		if(entry == 0xffffffff || entry + 2 >= dram.size()) return;
-		start_track(dram.data() + entry, volume);
+		int track = pick_track(priority);
+		if(verbose) fprintf(stderr, "[dcs] sound call %u vol %d pan %d pri %04x -> %08x track %d\n", call, volume, pan, priority, entry, track);
+		if(entry == 0xffffffff || entry + 2 >= dram.size() || track < 0 || track >= MAX_CHANNELS) return;
+		if(verbose > 1) { fprintf(stderr, "[dcs]   program:"); for(unsigned i = 0; i < 40 && entry + i < dram.size(); i++) fprintf(stderr, " %02x", dram[entry + i]); fprintf(stderr, "\n"); }
+		if((priority & 0x2000) && tracks[track].active && tracks[track].priority >= (int)(priority & 0x7f)) return;
+		start_track(track, priority & 0x7f, dram.data() + entry, volume);
 	}
 
-	void start_track(const uint8_t *p, int volume)
+	/* a bank program: type byte (1 = normal), number of channels it uses, then {u16 wait, op, args}...
+	   with every channel number relative to the track it runs on */
+	void start_track(int track, int priority, const uint8_t *p, int volume)
 	{
-		int type = p[0], ch = p[1];
-		if(type != 1 || ch < 0 || ch >= MAX_CHANNELS)
+		int type = p[0], nch = p[1];
+		if(type != 1)
 		{
-			if(verbose) fprintf(stderr, "[dcs] track type %d channel %d not handled\n", type, ch);
+			if(verbose) fprintf(stderr, "[dcs] track type %d (%d channels) not handled\n", type, nch);
 			return;
 		}
-		Track &t = tracks[ch];
-		t = Track();
-		t.active = true; t.channel = ch; t.pc = p + 2;
-		host_level[ch] = volume;
-		channel[ch].channelVolume = volume;
+		stop_track(track);
+		Track &t = tracks[track];
+		t.active = true; t.channel = track; t.priority = priority; t.pc = p + 2;
+		host_level[track] = volume;
+		for(int k = 0; k < nch && k < MAX_CHANNELS; k++) channel[(track + k) % MAX_CHANNELS].channelVolume = volume;
 		run(t);
 	}
 
@@ -269,19 +295,19 @@ public:
 		{
 			const uint8_t *&p = t.pc;
 			if(p < dram.data() || p + 3 > dram.data() + dram.size()) { t.active = false; return; }
-			if(t.counter == 0)
+			if(!t.op_next)
 			{
 				uint16_t wait = rd16(p);
-				if(wait) { t.counter = wait; return; }
+				if(wait) { t.counter = wait; t.op_next = true; return; }
 			}
-			t.counter = 0;
+			t.op_next = false;
 			uint8_t op = *p++;
 			switch(op)
 			{
 			case 0x00: t.active = false; return;
 			case 0x01:
 			{
-				int sch = *p++;
+				int sch = (t.channel + *p++) % MAX_CHANNELS;
 				const uint8_t *at = p;
 				uint32_t rel = ((uint32_t)p[0] << 16) | ((uint32_t)p[1] << 8) | p[2]; p += 3;
 				int repeats = *p++;
@@ -295,17 +321,17 @@ public:
 				}
 				break;
 			}
-			case 0x02: stop_channel(*p++); break;
+			case 0x02: stop_channel((t.channel + *p++) % MAX_CHANNELS); break;
 			case 0x03: { uint16_t call = rd16(p); sound_call(call, host_level[t.channel], 0x7f, 0); break; }
 			case 0x04: p += 3; break;			/* host event timer */
 			case 0x05: p += 1; break;			/* start deferred track */
 			case 0x06: p += 2; break;			/* set variable */
-			case 0x07: { int ch = *p++; int lvl = (int8_t)*p++; set_level(ch, t.channel, lvl); break; }
-			case 0x08: { int ch = *p++; int d = (int8_t)*p++; if(ch < MAX_CHANNELS) set_level(ch, t.channel, (channel[ch].mixer[t.channel].curLevel >> 6) + d); break; }
-			case 0x09: { int ch = *p++; int d = (int8_t)*p++; if(ch < MAX_CHANNELS) set_level(ch, t.channel, (channel[ch].mixer[t.channel].curLevel >> 6) - d); break; }
-			case 0x0a: { int ch = *p++; int lvl = (int8_t)*p++; p += 2; set_level(ch, t.channel, lvl); break; }
-			case 0x0b: { int ch = *p++; int d = (int8_t)*p++; p += 2; if(ch < MAX_CHANNELS) set_level(ch, t.channel, (channel[ch].mixer[t.channel].curLevel >> 6) + d); break; }
-			case 0x0c: { int ch = *p++; int d = (int8_t)*p++; p += 2; if(ch < MAX_CHANNELS) set_level(ch, t.channel, (channel[ch].mixer[t.channel].curLevel >> 6) - d); break; }
+			case 0x07: { int ch = (t.channel + *p++) % MAX_CHANNELS; int lvl = (int8_t)*p++; set_level(ch, t.channel, lvl); break; }
+			case 0x08: { int ch = (t.channel + *p++) % MAX_CHANNELS; int d = (int8_t)*p++; if(ch < MAX_CHANNELS) set_level(ch, t.channel, (channel[ch].mixer[t.channel].curLevel >> 6) + d); break; }
+			case 0x09: { int ch = (t.channel + *p++) % MAX_CHANNELS; int d = (int8_t)*p++; if(ch < MAX_CHANNELS) set_level(ch, t.channel, (channel[ch].mixer[t.channel].curLevel >> 6) - d); break; }
+			case 0x0a: { int ch = (t.channel + *p++) % MAX_CHANNELS; int lvl = (int8_t)*p++; p += 2; set_level(ch, t.channel, lvl); break; }
+			case 0x0b: { int ch = (t.channel + *p++) % MAX_CHANNELS; int d = (int8_t)*p++; p += 2; if(ch < MAX_CHANNELS) set_level(ch, t.channel, (channel[ch].mixer[t.channel].curLevel >> 6) + d); break; }
+			case 0x0c: { int ch = (t.channel + *p++) % MAX_CHANNELS; int d = (int8_t)*p++; p += 2; if(ch < MAX_CHANNELS) set_level(ch, t.channel, (channel[ch].mixer[t.channel].curLevel >> 6) - d); break; }
 			case 0x0d: break;
 			case 0x0e: { int n = *p++; t.loops.push_back({ n, p }); break; }
 			case 0x0f:
