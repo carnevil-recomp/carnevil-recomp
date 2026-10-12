@@ -22,7 +22,10 @@
 
 extern float	hres, vres;
 unsigned long	port_triangles;
+static unsigned long dump_every;
 static int	have_display;
+static int	origin_lower_left;
+static float	alpha_ref = 0.5f;
 static int	win_w, win_h;
 
 /* ---- Glide state ---- */
@@ -95,8 +98,8 @@ static unsigned int upload(port_texture_t *t, int keyed, unsigned int key)
 		rgba = malloc(w * hh * 4);
 		for(i = 0; i < w * hh; i++)
 		{
-			/* Glide's t runs bottom-up relative to the stored rows: flip so t=0 is the last row */
-			unsigned int o = ((hh - 1 - i / w) * w + i % w) * 4;
+			/* t = 0 is the first stored row (the game opens the screen GR_ORIGIN_LOWER_LEFT, see below) */
+			unsigned int o = i * 4;
 			texel_rgba(h->format, src + i * bpt, &t->table, rgba + o);
 			if(keyed && rgba[o] == kr && rgba[o+1] == kg && rgba[o+2] == kb) rgba[o+3] = 0;
 		}
@@ -189,7 +192,7 @@ static void apply_state(void)
 	else { glEnable(GL_DEPTH_TEST); glDepthFunc(cmp_func(st.depth_func)); }
 	glDepthMask(st.depth_mask ? GL_TRUE : GL_FALSE);
 	if(textured && st.chroma_mode == GR_CHROMAKEY_ENABLE) { glEnable(GL_ALPHA_TEST); glAlphaFunc(GL_GREATER, 0.0f); }
-	else if(st.alpha_test != GR_CMP_ALWAYS) { glEnable(GL_ALPHA_TEST); glAlphaFunc(cmp_func(st.alpha_test), 0.5f); }
+	else if(st.alpha_test != GR_CMP_ALWAYS) { glEnable(GL_ALPHA_TEST); glAlphaFunc(cmp_func(st.alpha_test), alpha_ref); }
 	else glDisable(GL_ALPHA_TEST);
 	glDisable(GL_CULL_FACE);
 }
@@ -205,7 +208,8 @@ static void frame_setup(void)
 		glViewport((win_w - vw) / 2, (win_h - vh) / 2, vw, vh);
 	}
 	glMatrixMode(GL_PROJECTION); glLoadIdentity();
-	glOrtho(0, hres, vres, 0, -1, 1);
+	/* GOOSE opens the Voodoo with GR_ORIGIN_LOWER_LEFT: y grows upward from the bottom edge */
+	if(origin_lower_left) glOrtho(0, hres, 0, vres, -1, 1); else glOrtho(0, hres, vres, 0, -1, 1);
 	glMatrixMode(GL_MODELVIEW); glLoadIdentity();
 }
 
@@ -233,6 +237,10 @@ void grDrawTriangleDma(MidVertex *a, MidVertex *b, MidVertex *c, int cull)
 	if(!have_display) return;
 	apply_state();
 	t = (st.tex != GR_NULL_MIPMAP_HANDLE) ? port_texture(st.tex) : 0;
+	if(dump_every && getenv("CARNEVIL_TRACE") && !(hal_frame_count % dump_every))
+		fprintf(stderr, "[tri] f%lu tex %d(%s) cc %d as %d col %08x blend %d/%d/%d/%d depth m%d f%d mask %d atest %d ref %.2f chroma %d  (%.1f,%.1f,%.3f s%.1f t%.1f) (%.1f,%.1f) (%.1f,%.1f)\n",
+			hal_frame_count, (int)st.tex, t ? t->name : "-", st.color_combine, st.alpha_source, st.const_color, st.blend_rgb_src, st.blend_rgb_dst, st.blend_a_src, st.blend_a_dst,
+			st.depth_mode, st.depth_func, st.depth_mask, st.alpha_test, alpha_ref, st.chroma_mode, a->x, a->y, a->oow, a->sow, a->tow, b->x, b->y, c->x, c->y);
 	glBegin(GL_TRIANGLES);
 	vertex(a, t); vertex(b, t); vertex(c, t);
 	glEnd();
@@ -253,13 +261,14 @@ void grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU16 depth)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+static float brightness = 1.0f;
 static const char *dump_path;
-static unsigned long dump_every;
 static void dump_frame(void)
 {
 	unsigned char *px; FILE *f; int y; char name[1024];
 	if(!dump_path || !have_display) return;
 	if(dump_every && (hal_frame_count % dump_every)) return;
+	if(getenv("CARNEVIL_TRACE")) fprintf(stderr, "[dump] frame %lu brightness %.2f triangles %lu tex %d\n", hal_frame_count, brightness, port_triangles, (int)st.tex);
 	px = malloc(win_w * win_h * 3);
 	glReadPixels(0, 0, win_w, win_h, GL_RGB, GL_UNSIGNED_BYTE, px);
 	if(dump_every) snprintf(name, sizeof name, "%s.%06lu.ppm", dump_path, hal_frame_count); else snprintf(name, sizeof name, "%s", dump_path);
@@ -273,7 +282,6 @@ static void dump_frame(void)
 }
 
 /* gamma RAM: the fader loads a ramp whose top entry is the screen brightness */
-static float brightness = 1.0f;
 void port_gamma_entry(int i, int g) { if(i == 255) brightness = g / 255.0f; }
 static void apply_brightness(void)
 {
@@ -302,6 +310,7 @@ void grDepthBufferMode(int m) { st.depth_mode = m; }
 void grDepthMask(int m) { st.depth_mask = m; }
 void grDepthBiasLevel(FxI16 l) { (void)l; }
 void grAlphaTestFunction(int f) { st.alpha_test = f; }
+void grAlphaTestReferenceValue(FxU8 v) { alpha_ref = v / 255.0f; }
 void grCullMode(int m) { st.cull = m; }
 void grLoadGammaTable(unsigned int n, unsigned int *r, unsigned int *g, unsigned int *b) { (void)n; (void)r; (void)g; (void)b; }
 void grColorCombine(int a, int b, int c, int d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; }
@@ -313,7 +322,8 @@ FxBool grSstQueryHardware(GrHwConfiguration *hw) { (void)hw; return 1; }
 void grSstSelect(int n) { (void)n; }
 int  grSstOpen(int res, int refresh, int fmt, int origin, int smooth, int nbuf)
 {
-	(void)res; (void)refresh; (void)fmt; (void)origin; (void)smooth; (void)nbuf;
+	(void)res; (void)refresh; (void)fmt; (void)smooth; (void)nbuf;
+	origin_lower_left = origin == GR_ORIGIN_LOWER_LEFT;
 	if(!hal_headless) have_display = video_open(800, 512, "CarnEvil");
 	if(!have_display) fprintf(stderr, "[render] no display: running headless\n");
 	return 1;

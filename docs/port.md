@@ -57,3 +57,20 @@ build/host/carnevil --partition original/partition --frames 1001 --fast --dump-e
 which leaves `f.001000.ppm`, the rating screen. Movies (`movie_load`, disk streaming from the
 raw partitions), the play-mode demo, fonts/text, sound and inputs are stubs in
 `port/host/game_stub.c`; they are the next milestones, each one decompiled from the game.
+
+## Screen origin and texture orientation
+
+GOOSE opens the Voodoo with `grSstOpen(2, 9, 0, 1, 1, 2)`: origin 1 is `GR_ORIGIN_LOWER_LEFT`,
+so screen y grows upward and Glide's t = 0 is the first row stored in a WMS file. The port
+mirrors this with a bottom-up `glOrtho` and uploads textures unflipped. (An earlier version
+flipped the rows and used an upper-left origin; full-screen quads looked right either way, but
+the font glyph tables index rows from the file top and came out blank.)
+
+## Text
+
+`src/game/text.c` is the game's own glyph renderer (it never uses GOOSE fonts/ostrings):
+three glyph tables for FONT0001.WMS, `draw_string`, `draw_string_color`, `draw_string_at`,
+`draw_string_centered`, `string_width`. The attract "play mode" screen (`do_play_mode` in
+attract.c) draws the LEGAL1 texmap plus the credit lines with it. The per-frame buffer clear
+comes from the game's draw pass (show_debug_frame_data, 0x800e77ec, clears when no movie is
+playing); the port's stand-in draw pass does the same.

@@ -382,3 +382,12 @@
 0x800d6d9c load_texmap_clamped
 0x801f8850 surfaces
 0x802374ac num_surfaces
+# Glide: writes alphaMode[31:24]
+0x8015ebb4 grAlphaTestReferenceValue
+# game text.c (0x800dbf58-0x800de800)
+0x800dbf9c draw_string
+0x800dc908 draw_string_color
+0x800dc5a4 draw_string_at
+0x800d07a8 get_screen_pos
+0x800d1750 draw_tri
+0x800d90c8 draw_quad

@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <goose/process.h>
 #include <goose/object.h>
 #include <glide/glide.h>
@@ -16,7 +17,7 @@ extern void sleep(int), die(int), set_frame_factor(int);
 extern int interrupt_handler(void);
 extern struct process_node *qcreate(char *, int, void (*)(), int, int, int, int);
 extern struct process_node *cur_proc;
-extern void game_proc(void);
+extern void game_proc(void), load_font_texmap(void);
 extern void grDrawTriangleDma(MidVertex *, MidVertex *, MidVertex *, int);
 
 /* ---- globals the game code references ---- */
@@ -46,7 +47,16 @@ int  func_800d4990(void) { return 0; }		/* I/O ASIC bit test */
 int  sub_800e4d90(int arg) { (void)arg; return 0; }	/* high-score reset screen */
 extern void load_attract_texmap(void), load_aamav_texmap(void);
 void preload_wave(int w) { fprintf(stderr, "[stub] preload_wave(%#x): level assets not loaded, attract texmaps only\n", w); load_attract_texmap(); load_aamav_texmap(); }
-void do_play_mode(game_object_t *o) { (void)o; }
+
+float get_screen_pos(int pos, float *out) { (void)pos; out[0] = out[1] = 0.0f; return -1.0f; }	/* 3D point -> screen: no camera yet */
+void graphical_printf(char *buf, char *fmt, ...) { va_list ap; va_start(ap, fmt); vsprintf(buf, fmt, ap); va_end(ap); }
+int is_freeplay = 0, coins_needed_to_play = 2, num_credits_to_continue = 1;
+int check_for_freeplay(void) { return is_freeplay; }
+int check_credits_to_start_mode(void) { return coins_needed_to_play; }
+int check_credits_to_continue_mode(void) { return num_credits_to_continue; }
+char credit_text[256];
+char attract_text1[136] = "PRESS START", attract_text2[136] = "TO PLAY", attract_text3[136];
+int attract_text_state = 2;
 
 /* the triangle setup (0x800d1750) writes Voodoo commands; here it is a plain draw */
 void draw_tri(MidVertex *a, MidVertex *b, MidVertex *c) { grDrawTriangleDma(a, b, c, 0); }
@@ -65,11 +75,15 @@ static void think_pass(void *data)		/* "BAR": object_draw_func (0x800cca70) */
 		if(p->think) p->think(p);
 	}
 }
+extern unsigned int background_color;
+
 static void draw_pass(void *data)		/* "FOO": print_onscreen_debuginfo's object loop */
 {
 	game_object_t	*p;
 	short		i;
 	(void)data;
+	/* show_debug_frame_data (0x800e77ec) blits the movie frame or, with no movie, clears the buffers */
+	grBufferClear(background_color, 0, 0xffff);
 	for(i = objects[0].next; i != OBJ_NONE; i = p->next)
 	{
 		p = &objects[i];
@@ -82,6 +96,7 @@ static void game_init(void)			/* func_800ca3a0, the parts the port has */
 	int	i;
 	init_objects();
 	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }
+	load_font_texmap();
 	create_object("FOO", 0, 0, 1, 0, draw_pass);
 	create_object("BAR", 0, 0, 0, 0, think_pass);
 }

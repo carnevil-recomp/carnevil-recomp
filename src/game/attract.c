@@ -25,13 +25,20 @@ extern void	func_800e74f0(void), func_800e7568(void);	/* movie play start / stop
 extern void	func_800ec260(int, char *), func_800ec2c8(void);	/* sound cue start / stop */
 extern int	func_800d4990(void);
 extern int	sub_800e4d90(int);
-extern void	do_play_mode(game_object_t *);
 extern void	guTexSource(int), guColorCombineFunction(int);
 extern void	draw_quad(float, float, float, float, float, float);
 extern int	violence_level;
 extern int	D_801de900;		/* movie status: bit 2 = finished */
 extern int	D_80212e14;
 extern int	attract_cycles;		/* 0x80212d98 */
+extern void	grDepthBufferFunction(int), grDepthMask(int);
+extern int	check_for_freeplay(void), check_credits_to_start_mode(void), check_credits_to_continue_mode(void);
+extern void	graphical_printf(char *, char *, ...);
+extern void	draw_string_centered(int, char *, float, float, unsigned int);
+extern char	credit_text[];		/* 0x801e7100 */
+extern char	attract_text1[], attract_text2[], attract_text3[];	/* 0x8021eed0, 0x8021ef58, 0x8021eff0 */
+extern int	attract_text_state;	/* 0x801fad18 */
+int		play_mode_timer = 0;	/* 0x80179d38 */
 
 texmap_t	disclaimer_texmap[3] =
 {
@@ -132,6 +139,63 @@ void game_proc(void)
 		} while(step != 0);
 		attract_cycles++;
 	}
+}
+
+/* 0x800cb800: the "play mode" attract screen: legal texmap, credits line, blinking messages */
+void do_play_mode(game_object_t *obj)
+{
+	guTexSource(find_surface(0x7204)->handle);
+	guColorCombineFunction(4);
+	draw_quad(200.0f, 128.0f, 400.0f, 256.0f, 255.0f, 255.0f);
+	grDepthBufferFunction(7);
+	grDepthMask(0);
+	if(check_for_freeplay())
+	{
+		draw_string_centered(1, "FREE PLAY", 200.0f, 140.0f, 0xff00);
+	}
+	else if(play_mode_timer < 40)
+	{
+		if(check_credits_to_start_mode() == 1)
+		{
+			graphical_printf(credit_text, "%d CREDIT TO START", check_credits_to_start_mode());
+		}
+		else
+		{
+			graphical_printf(credit_text, "%d CREDITS TO START", check_credits_to_start_mode());
+		}
+		draw_string_centered(1, credit_text, 200.0f, 140.0f, 0xaaaaaa);
+		if(check_credits_to_continue_mode() == 1)
+		{
+			graphical_printf(credit_text, "%d CREDIT TO CONTINUE", check_credits_to_continue_mode());
+		}
+		else
+		{
+			graphical_printf(credit_text, "%d CREDITS TO CONTINUE", check_credits_to_continue_mode());
+		}
+		draw_string_centered(1, credit_text, 200.0f, 110.0f, 0x999999);
+	}
+	else if(attract_text_state == 2)
+	{
+		draw_string_centered(1, attract_text1, 200.0f, 140.0f, 0x999999);
+		draw_string_centered(1, attract_text2, 200.0f, 110.0f, 0x999999);
+	}
+	else if(attract_text_state == 3)
+	{
+		draw_string_centered(1, attract_text1, 200.0f, 150.0f, 0x999999);
+		draw_string_centered(1, attract_text2, 200.0f, 125.0f, 0x999999);
+		draw_string_centered(1, attract_text3, 200.0f, 100.0f, 0x999999);
+	}
+	else
+	{
+		draw_string_centered(1, attract_text1, 200.0f, 125.0f, 0x999999);
+	}
+	play_mode_timer++;
+	if(play_mode_timer >= 81)
+	{
+		play_mode_timer = 0;
+	}
+	grDepthMask(1);
+	grDepthBufferFunction(3);
 }
 
 int attract_playmode(int arg)
