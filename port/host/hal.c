@@ -23,6 +23,8 @@ void port_texture_verbose(int);
 const char	*hal_partition_root = ".";
 int		hal_frame_limit = 0;
 int		hal_fast = 0;
+int		hal_headless = 0;
+void render_set_dump(const char *);
 unsigned long	hal_frame_count = 0;
 static int	refresh_hz = 54;			/* 400x256 54Hz, the game's normal mode */
 static int	(*int_handler[8])(void);
@@ -57,8 +59,10 @@ void hal_init(int argc, char **argv)
 		if(!strcmp(argv[i], "--partition") && i + 1 < argc) hal_partition_root = argv[++i];
 		else if(!strcmp(argv[i], "--frames") && i + 1 < argc) hal_frame_limit = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--fast")) hal_fast = 1;
+		else if(!strcmp(argv[i], "--headless")) hal_headless = 1;
+		else if(!strcmp(argv[i], "--dump") && i + 1 < argc) render_set_dump(argv[++i]);
 		else if(!strcmp(argv[i], "-v")) { verbose = 1; port_texture_verbose(1); }
-		else { fprintf(stderr, "usage: %s [--partition DIR] [--frames N] [--fast] [-v]\n", argv[0]); exit(2); }
+		else { fprintf(stderr, "usage: %s [--partition DIR] [--frames N] [--fast] [--headless] [--dump frame.ppm] [-v]\n", argv[0]); exit(2); }
 	}
 }
 

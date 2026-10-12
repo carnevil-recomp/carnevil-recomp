@@ -8,7 +8,9 @@ typedef struct {
 	unsigned int	bytes;
 	unsigned char	*data;		/* mip chain, largest level first, Glide texel formats */
 	char		name[16];
-	unsigned int	gl_name;	/* renderer's object, 0 = none */
+	GuTexTable	table;		/* palette / NCC table */
+	unsigned int	gl_name;	/* renderer's objects, 0 = none */
+	unsigned int	gl_keyed, gl_key;
 	int		gl_dirty;
 } port_texture_t;
 port_texture_t *port_texture(GrMipMapId_t handle);

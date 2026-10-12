@@ -86,15 +86,18 @@ comma := ,
 PORT_FORTIFY ?= 0     # libc fortification trips on ILP32 idioms; set 2 to debug with it
 ifeq ($(shell uname),Darwin)
 PORT_ARCH    := -arch x86_64
-PORT_LDFLAGS := -Wl$(comma)-pagezero_size$(comma)0x4000
+PORT_LDFLAGS := -Wl$(comma)-pagezero_size$(comma)0x4000 -framework Cocoa -framework OpenGL
+PORT_VIDEO   := port/host/video_macos.m
 else
 PORT_ARCH    :=
 PORT_LDFLAGS := -no-pie
+PORT_VIDEO   := port/host/video_null.c
 endif
+PORT_SRCS := $(filter-out port/host/video_null.c,$(PORT_SRCS)) $(PORT_VIDEO)
 build/port/%.o: %.c include/types.h port/host/compat.h
 	@mkdir -p $(dir $@)
 	$(HOSTCC) $(HOSTCFLAGS) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -c -o $@ $<
-build/host/carnevil: $(PORT_OBJS) $(PORT_SRCS) port/host/hal.h
+build/host/carnevil: $(PORT_OBJS) $(PORT_SRCS) port/host/hal.h port/host/video.h port/host/texture.h
 	$(HOSTCC) $(HOSTCFLAGS) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -Wno-deprecated-declarations $(PORT_LDFLAGS) -o $@ $(PORT_SRCS) $(PORT_OBJS)
 port: build/host/carnevil
 

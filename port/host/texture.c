@@ -89,6 +89,7 @@ static GrMipMapId_t download(const char *name, Gu3dfInfo *info, const unsigned c
 	}
 	tex[i].used = 1;
 	tex[i].header = info->header;
+	tex[i].table = info->table;
 	tex[i].bytes = info->mem_required;
 	tex[i].data = malloc(info->mem_required);
 	memcpy(tex[i].data, texels, info->mem_required);

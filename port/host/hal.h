@@ -7,5 +7,6 @@ int  hal_refresh_hz(void);
 extern const char *hal_partition_root;    /* directory holding the extracted LFN32 partition */
 extern int hal_frame_limit;               /* --frames N: stop after N frames (0 = run forever) */
 extern int hal_fast;                      /* --fast: do not sleep between frames */
+extern int hal_headless;                  /* --headless: no window */
 extern unsigned long hal_frame_count;
 #endif

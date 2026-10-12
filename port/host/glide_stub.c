@@ -1,42 +1,6 @@
-/*
- * glide_stub.c - the 3dfx Glide entry points the library calls, as no-ops that log their
- * first use. The real renderer (OpenGL) replaces this file; the Voodoo DMA path (dma_start)
- * becomes "present the frame".
- */
+/* Glide entry points not yet given a real implementation (see render_gl.c for the rest) */
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "hal.h"
-
-#define STUB(name) static int seen_##name; if(!seen_##name) { seen_##name = 1; fprintf(stderr, "[glide] %s (stub)\n", #name); }
-
-void grSstVidMode(int which, void *timing) { (void)which; (void)timing; STUB(grSstVidMode) }
-void grGlideInit(void) { STUB(grGlideInit) }
-int  grSstQueryHardware(int *hw) { (void)hw; STUB(grSstQueryHardware) return 1; }
-void grSstSelect(int n) { (void)n; }
-int  grSstOpen(int a, int b, int c, int d, int e, int f) { (void)a;(void)b;(void)c;(void)d;(void)e;(void)f; STUB(grSstOpen) return 1; }
-void grBufferClear(unsigned int color, int alpha, int depth) { (void)color;(void)alpha;(void)depth; }
-void grBufferSwap(int interval) { (void)interval; }
-void grTexCombineFunction(int tmu, int fn) { (void)tmu;(void)fn; }
-void guColorCombineFunction(int fn) { (void)fn; }
-void guAlphaSource(int s) { (void)s; }
-void guTexSource(int tmu, int addr, int even, void *info) { (void)tmu;(void)addr;(void)even;(void)info; }
-void grDepthBufferMode(int m) { (void)m; }
-void grDepthBufferFunction(int f) { (void)f; }
-void grDepthMask(int m) { (void)m; }
-void grDepthBiasLevel(float l) { (void)l; }
-void grAlphaBlendFunction(int a, int b, int c, int d) { (void)a;(void)b;(void)c;(void)d; }
-void grAlphaTestFunction(int f) { (void)f; }
-void grChromakeyMode(int m) { (void)m; }
-void grChromakeyValue(unsigned int v) { (void)v; }
-void grConstantColorValue(unsigned int v) { (void)v; }
-void grTexClampMode(int tmu, int s, int t) { (void)tmu;(void)s;(void)t; }
-void grTexFilterMode(int tmu, int min, int mag) { (void)tmu;(void)min;(void)mag; }
-unsigned long port_triangles;
-void grDrawTriangleDma(void *a, void *b, void *c, int d) { (void)a;(void)b;(void)c;(void)d; port_triangles++; }
-void dma_start(void)		/* the Galileo DMA kick that sends the frame's commands to the Voodoo */
-{
-	static unsigned long n;
-	if(++n == 1) fprintf(stderr, "[glide] dma_start: frames are not rendered yet\n");
-}
-int func_80157004(void) { return hal_refresh_hz(); }	/* Glide: current vertical refresh */
+void guTexDownloadMipMap(unsigned int h, const void *src, const void *tbl) { (void)h; (void)src; (void)tbl; }
+int  guTexAllocateMemory(void) { return -1; }
+void grDrawSprite(float *v) { (void)v; }
+void grVertexLayout(int a, int b, int c) { (void)a; (void)b; (void)c; }
