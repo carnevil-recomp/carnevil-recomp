@@ -72,10 +72,11 @@ Adding a module = find its three ranges in the image (text from the function fil
 = its string/literal pool in link order; data = its `$Revision` string onward), add the
 line and the names, drop the source in `src/`, `make regen && make`.
 
-## Host build (`make host`)
-The same `src/` compiled natively with clang (`-DPORT_HOST`) plus `port/`. Today that is
-`port/host/selftest`, which checks `crc()` against the GAME.EXE header word and
-`fsin`/`fcos` against libm. Rules learned so far:
+## Host build (`make host`, `make port`)
+The same `src/` compiled natively with clang (`-DPORT_HOST`) plus `port/`. `make host`
+builds `port/host/selftest`, which checks `crc()` against the GAME.EXE header word and
+`fsin`/`fcos` against libm; `make port` builds the playable port (see `docs/port.md`).
+Rules learned so far:
 - **Types.** The target is ILP32 (`long` = 32 bits), the host is LP64. Sources imported into
   `src/` use `u32`/`s32`/... from `include/types.h`, which map to `unsigned long` under the SN
   compiler (so matching is unaffected) and to `uint32_t` on the host. The unmodified crc.c

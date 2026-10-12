@@ -6,11 +6,14 @@ linked with the host layer in `port/host/`.
 
 ```
 make port
-build/host/carnevil --partition original/partition [--raw IMAGE] [--wav FILE] [--frames N] [--fast] [-v]
+build/host/carnevil --partition original/partition --raw original/carn.raw [--state DIR] [--wav FILE]
+    [--press F:switch,...] [--frames N] [--fast] [--headless] [--dump f.ppm | --dump-every prefix N] [-v]
 ```
 `--partition` is the directory with the extracted LFN32 partition (what `setup.sh` links as
-`original/partition`; `CARNEVIL_PARTITION` works too). `--frames N` stops after N display
-frames, `--fast` disables frame pacing, `-v` logs every ioctl and file open.
+`original/partition`; `CARNEVIL_PARTITION` works too), `--raw` the raw disk image the movies
+stream from. `--frames N` stops after N display frames, `--fast` disables frame pacing,
+`-v` logs file opens and sound-board traffic, twice also every ioctl. The README lists the
+keyboard controls and the `--press` switch names.
 
 ## How the original code runs on a PC
 
@@ -36,26 +39,29 @@ the new stack, exactly as the MIPS code expects), `sleep()` ORs the tick count a
 vblank wait, DMA kick, pre-proc, processes, post-proc, draws, sort) are the original.
 
 **Hardware.** `port/host/hal.c`: the extracted partition is the disk (paths resolve
-case-insensitively, `pci:` is a fake fd), fd 3 is the CMOS (a `cmos.bin` file in the working
-directory), ioctl devices 4 (I/O ASIC: switches, sound port) and 5 (timers) answer with idle
-values for now, interrupt handlers are recorded and the vblank one is called once per display
-refresh (54 Hz) by `hal_wait_frame()`. `port/host/glide_stub.c` stubs 3dfx Glide; the real
-renderer and `.3df` texture loader go there. `port/host/game_stub.c` stands in for the game's
-own functions GOOSE main() needs and supplies a placeholder `main_proc` until the game code is
-decompiled.
+case-insensitively; `pci:` and `pic:` are fake fds for the system controller and the
+security PIC), fd 3 is the CMOS (`cmos.bin` in the state directory, one byte per word as
+GOOSE expects), ioctl device 4 is the I/O ASIC (switch words from the keyboard or `--press`,
+the sound port wired to the virtual DCS board), device 5 the timers; the light-gun port and
+the gun board's control byte are mapped pages. Interrupt handlers are recorded and the
+vblank one is called once per display refresh (54 Hz) by `hal_wait_frame()`.
+`port/host/render_gl.c` is the Glide stand-in on OpenGL, `disk.c` the raw-partition reader
+for the movies, `dcs_board.cpp` the sound board, `audio_*.c` the output. `port/host/game_stub.c`
+holds what is still missing from the game code (the level assets and scripts, the game
+proper, diagnostics) as printing stubs.
 
 ## Status
-The port boots through GOOSE main(), creates the main process and runs the dispatcher at the
-display rate. The game's attract process (`src/game/attract.c`, the real `game_proc`) runs on
-the decompiled object list and texmap modules: it loads the attract `.WMS` textures, cycles
-through the attract steps and draws the full-screen screens (AAMA rating, 3dfx/legal, game
-over) through `draw_quad` and the GL renderer. Verify with
+The port boots through GOOSE main() into the game's real main process (boot sequence
+below), then the attract process (`src/game/attract.c`, the real `game_proc`) runs on the
+decompiled object list, texmap, text, movie, sound and credits modules. Verify with
 
 ```
-build/host/carnevil --partition original/partition --frames 1001 --fast --dump-every f 1000
+build/host/carnevil --partition original/partition --raw original/carn.raw --frames 1001 --fast --dump-every f 1000
 ```
-which leaves `f.001000.ppm`, the rating screen. Movies, fonts/text, sound, inputs and credits are decompiled (sections below); the game
-proper (level scripts, 3D, the player state) is still stubbed in `port/host/game_stub.c`.
+which leaves `f.001000.ppm`, a frame of the intro movie. The game proper (level scripts, 3D,
+the player state, the guns, diagnostics) is still stubbed in `port/host/game_stub.c`.
+Modules transcribed but not yet byte-matched: main.c, hwinfo.c, adjust.c, hiscore.c, gun.c,
+credits.c, soundio.c, movie.c, parts of attract.c and objects.c.
 
 ## Screen origin and texture orientation
 
