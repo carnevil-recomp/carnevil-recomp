@@ -154,3 +154,24 @@ mouse button trigger. Scripted presses for headless tests:
 `name_to_bits` in hal.c). The light-gun port (0x16800000, kseg1 0xb6800000, MAME's
 `carnevil_gun_r` layout) is a mapped page the HAL refreshes every frame with the trigger and
 pump bits and a centred position; aiming comes later.
+
+## Boot sequence (`src/game/main.c`, `hwinfo.c`, `adjust.c`, `hiscore.c`, `gun.c`)
+
+The port now runs the game's real main process (0x800c50ac). In order: game init, the
+security PIC's serial number through the BIOS `pic:` device (the HAL answers like MAME's
+simulated PIC: serial 123456, game number 486, made 12/11/98, since the PIC is not dumped),
+the hardware info screen as a draw object, the CMOS layout (`setup_cmos` writes `audits.fmt`
+and configures GOOSE's CMOS), the audit groups and the game's adjustments 0x30-0x3d (factory
+restore when the CMOS is blank, which also resets the high scores and copies the default
+high-score photos HSTDDFnn.WMS over HSTDnn.WMS), high scores, pricing, sound, the switch
+handlers, the level assets (stubs), the gun board reset (control byte at 0xb7f00000, a
+mapped page) and finally the attract process, whose first `remove_all_objects` takes the
+info screen down. So the boot shows "CARNEVIL V1.0.3 / SERIAL NUMBER / MANUFACTURE DATE /
+CMOS: OK / COINAGE: FROM DIPSWITCH / GUN: OK / DCS2: 0223" while the attract assets load,
+as the cabinet does; the BIOS's own power-on screen comes before GAME.EXE and is not part
+of the decompilation.
+
+Everything the game writes (its CMOS image, `audits.fmt`, the high-score photos, screen
+grabs) goes to the state directory (`--state DIR`, `CARNEVIL_STATE`, default `state/` in
+the working directory), which is also searched before the partition on reads, so the
+extracted partition is never modified. Delete it for a factory-fresh boot.

@@ -10,5 +10,6 @@ extern int hal_frame_limit;               /* --frames N: stop after N frames (0 
 extern int hal_fast;                      /* --fast: do not sleep between frames */
 extern int hal_headless;                  /* --headless: no window */
 extern unsigned long hal_frame_count;
+extern const char *hal_state_root;
 void hal_key(const char *name, int down);  /* a cabinet switch by name (see hal.c), pressed or released */
 #endif

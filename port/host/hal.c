@@ -24,6 +24,8 @@
 void port_texture_verbose(int);
 
 const char	*hal_partition_root = ".";
+const char	*hal_state_root = "state";		/* CMOS image and the files the game writes */
+unsigned char	*hal_gun_control;			/* the gun board control byte at 0xb7f00000 */
 /* cabinet switches: the I/O ASIC words are active low; keys and --press set bits here */
 static unsigned int	coin_held;		/* bits of the coin/start word currently closed */
 static unsigned int	player_held;		/* bits of the player 1/2 word currently closed */
@@ -69,6 +71,7 @@ void hal_init(int argc, char **argv)
 	int	nul;
 	if(env) hal_partition_root = env;
 	if(getenv("CARNEVIL_RAW")) hal_raw_image = getenv("CARNEVIL_RAW");
+	if(getenv("CARNEVIL_STATE")) hal_state_root = getenv("CARNEVIL_STATE");
 	if(getenv("CARNEVIL_TRACE")) port_trace = 1;
 	/* fd 3 is the BIOS CMOS device: park /dev/null there so no real file ever gets it */
 	resolve();
@@ -85,12 +88,15 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--dump-every") && i + 2 < argc) { render_set_dump(argv[i+1], atoi(argv[i+2])); i += 2; }
 		else if(!strcmp(argv[i], "--wav") && i + 1 < argc) wav_path = argv[++i];
 		else if(!strcmp(argv[i], "--press") && i + 1 < argc) parse_presses(argv[++i]);
+		else if(!strcmp(argv[i], "--state") && i + 1 < argc) hal_state_root = argv[++i];
 		else if(!strcmp(argv[i], "-v")) { verbose++; port_texture_verbose(1); dcs_set_verbose(verbose); }
-		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
+		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
 	hal_gun_regs = mmap((void *)0xb6800000, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
 	if(hal_gun_regs == MAP_FAILED) { fprintf(stderr, "[hal] cannot map the gun port at 0xb6800000\n"); hal_gun_regs = 0; }
 	else gun_update();
+	hal_gun_control = mmap((void *)0xb7f00000, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
+	if(hal_gun_control == MAP_FAILED) { fprintf(stderr, "[hal] cannot map the gun control byte at 0xb7f00000\n"); hal_gun_control = 0; }
 	if(wav_path) { audio_wav_open(wav_path); atexit(audio_wav_close); }
 	else if(!hal_headless && !audio_start()) fprintf(stderr, "[audio] no audio output\n");
 }
@@ -215,12 +221,14 @@ static FILE *(*real_fopen)(const char *, const char *);
 static unsigned int	cmos[CMOS_WORDS];
 static long		cmos_pos;
 static int		cmos_loaded;
-static const char	*cmos_file = "cmos.bin";
+static char		cmos_file[1024];
 static void cmos_load(void)
 {
 	FILE *f;
 	if(cmos_loaded) return;
 	cmos_loaded = 1;
+	mkdir(hal_state_root, 0755);
+	snprintf(cmos_file, sizeof cmos_file, "%s/cmos.bin", hal_state_root);
 	memset(cmos, 0xff, sizeof cmos);
 	if((f = real_fopen(cmos_file, "rb"))) { if(fread(cmos, 1, sizeof cmos, f) != sizeof cmos) memset(cmos, 0xff, sizeof cmos); fclose(f); }
 }
@@ -258,6 +266,16 @@ int _ioctl(int dev, int req, int arg)
 			default: return 0;
 		}
 	}
+	if(dev == 1001)					/* the security PIC, as MAME generates it: serial 123456, game 486, made 12/11/98 */
+	{
+		switch(req)
+		{
+		case FIOC('p', 0): if(p) *p = 123456; return 0;
+		case FIOC('p', 1): if(p) *p = 486; return 0;
+		case FIOC('p', 2): if(p) *p = (1998 - 1980) * 372 + (12 - 1) * 31 + 11; return 0;
+		default: return -1;
+		}
+	}
 	if(dev == 3)					/* CMOS: GOOSE works with int pointers into the word-per-byte RAM */
 	{
 		switch(req)
@@ -287,17 +305,32 @@ int _ioctl(int dev, int req, int arg)
 }
 int ioctl(int dev, int req, int arg) { return _ioctl(dev, req, arg); }
 
-/* ---- files: game paths resolve case-insensitively under the partition directory ---- */
+/* ---- files: game paths resolve case-insensitively under the partition directory; files the
+   game writes (audits.fmt, high-score photos, screen grabs) go to the state directory, which
+   is also searched first, so the extracted partition is never modified ---- */
+static void game_name(const char *path, char *name, size_t n)
+{
+	const char *p = path;
+	if(p[1] == ':') p += 2;
+	while(*p == '\\' || *p == '/') p++;
+	snprintf(name, n, "%s", p);
+	for(char *q = name; *q; q++) if(*q == '\\') *q = '/';
+}
+static void state_path(const char *path, char *out, size_t n)
+{
+	char	name[256];
+	game_name(path, name, sizeof name);
+	mkdir(hal_state_root, 0755);
+	snprintf(out, n, "%s/%s", hal_state_root, name);
+}
 static int map_path(const char *path, char *out, size_t n)
 {
 	char	name[256];
-	const char *p = path;
 	DIR	*d;
 	struct dirent *e;
-	if(p[1] == ':') p += 2;
-	while(*p == '\\' || *p == '/') p++;
-	snprintf(name, sizeof name, "%s", p);
-	for(char *q = name; *q; q++) if(*q == '\\') *q = '/';
+	game_name(path, name, sizeof name);
+	snprintf(out, n, "%s/%s", hal_state_root, name);
+	if(access(out, F_OK) == 0) return 1;
 	snprintf(out, n, "%s/%s", hal_partition_root, name);
 	if(access(out, F_OK) == 0) return 1;
 	d = opendir(hal_partition_root);
@@ -326,7 +359,10 @@ int open(const char *path, int flags, ...)
 	char	full[1024];
 	resolve();
 	if(!strcmp(path, "pci:")) return 1000;		/* the system controller device */
-	if(map_path(path, full, sizeof full)) path = full;
+	if(!strcmp(path, "pic:")) return 1001;		/* the security PIC (serial number) */
+	if(path[0] == '/') { }			/* a host path from the port itself */
+	else if(flags & (O_WRONLY | O_RDWR | O_CREAT)) state_path(path, full, sizeof full), path = full;
+	else if(map_path(path, full, sizeof full)) path = full;
 	if(verbose) fprintf(stderr, "[hal] open(%s)\n", path);
 	return real_open(path, flags & ~0x8000 /* O_BINARY */, 0644);
 }
@@ -334,7 +370,9 @@ FILE *fopen(const char *path, const char *mode)
 {
 	char	full[1024];
 	resolve();
-	if(map_path(path, full, sizeof full)) path = full;
+	if(path[0] == '/') { }			/* a host path from the port itself */
+	else if(strchr(mode, 'w') || strchr(mode, 'a') || strchr(mode, '+')) state_path(path, full, sizeof full), path = full;
+	else if(map_path(path, full, sizeof full)) path = full;
 	if(verbose) fprintf(stderr, "[hal] fopen(%s, %s)\n", path, mode);
 	return real_fopen(path, mode);
 }
@@ -383,7 +421,7 @@ off_t lseek(int fd, off_t off, int whence)
 int close(int fd)
 {
 	resolve();
-	if(fd == CMOS_FD || fd == 1000) return 0;
+	if(fd == CMOS_FD || fd == 1000 || fd == 1001) return 0;
 	return real_close(fd);
 }
 

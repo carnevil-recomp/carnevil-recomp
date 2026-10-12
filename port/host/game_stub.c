@@ -139,9 +139,10 @@ static void draw_pass(void *data)		/* "FOO": print_onscreen_debuginfo's object l
 	if(game_mode == 1) attract_credit_lines();
 }
 
-static void game_init(void)			/* func_800ca3a0, the parts the port has */
+void game_init(void)			/* func_800ca3a0, the parts the port has */
 {
 	int	i;
+	__dj_stderr = stderr;		/* DJGPP's stderr, as the game objects reference it */
 	init_objects();
 	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }
 	load_fram_wrapper();
@@ -150,40 +151,16 @@ static void game_init(void)			/* func_800ca3a0, the parts the port has */
 	create_object("BAR", 0, 0, 0, 0, think_pass);
 }
 
-/* CMOS layout from the game's setup_cmos (0x800f2a28): 8000 bytes, 182 audits, 110 adjustments,
-   one generic record table of 56-byte entries; the game's own adjustment table is not restored yet */
-extern int config_cmos(void *), check_adjustments(void), restore_factory_adjustments(int, void *);
-static void cmos_init(void)
-{
-	static int cfg[5 + 2 * 8] = { 0x1f40, 0xb6, 0x6e, 1, 0, 0x38, 1, 0xc, 1 };
-	config_cmos(cfg);
-	if(check_adjustments())
-	{
-		fprintf(stderr, "[port] adjustments invalid: restoring the GOOSE factory defaults\n");
-		restore_factory_adjustments(0, 0);
-	}
-}
-
-void main_proc(int *args)
-{
-	(void)args;
-	fprintf(stderr, "[port] main_proc: starting the attract process\n");
-	game_init();
-	cmos_init();
-	__dj_stderr = stderr;
-	init_credits();			/* 0x800c7570 */
-	main_init_sound();
-	/* the switch handlers main_proc installs (0x800c54b8-0x800c56cc) */
-	set_dcsw_handler(0, coin_handler); set_dcsw_handler(1, coin_handler); set_dcsw_handler(7, coin_handler);
-	set_dcsw_handler(8, coin_handler); set_dcsw_handler(15, coin_handler);
-	set_dcsw_handler(6, service_credit_handler);
-	set_dcsw_handler(3, dispatch_slam_proc);
-	set_dcsw_handler(11, volume_switch_handler); set_dcsw_handler(12, volume_switch_handler);
-	set_dcsw_handler(4, dispatch_diags_proc);
-	qcreate("volume", 0x8201, coin_volume_proc, 0, 0, 0, 0);
-	qcreate("ccproc", 0x8201, ccproc_proc, 0, 0, 0, 0);
-	set_dcsw_handler(2, dispatch_start_proc); set_dcsw_handler(5, dispatch_start_proc);
-	set_frame_factor(3);
-	qcreate("attract", 0x100, game_proc, 0, 0, 0, 0);
-	while(1) sleep(1);
-}
+/* the boot callees the port does not have yet: level assets, models, the gun calibration */
+void load_level_assets(void) { fprintf(stderr, "[stub] load_level_assets (0x800ca448): misc texmaps and models not loaded\n"); }
+#define LOAD_STUB(n) void n(void) { }
+LOAD_STUB(load_jester_texmap) LOAD_STUB(load_jester_model) LOAD_STUB(load_inng_texmap) LOAD_STUB(load_chnk_texmap)
+LOAD_STUB(load_chnk_model) LOAD_STUB(load_shotgun_texmap) LOAD_STUB(load_health_texmap) LOAD_STUB(load_ammmo_texmap)
+LOAD_STUB(load_machinegun_texmap) LOAD_STUB(load_flamethrower_texmap) LOAD_STUB(load_acid_texmap) LOAD_STUB(load_shotgun_model)
+LOAD_STUB(load_health_model) LOAD_STUB(load_ammo_model) LOAD_STUB(load_machinegun_model) LOAD_STUB(load_flamethrower_model)
+LOAD_STUB(load_acid_model)
+void cmos_calibration_(void) { fprintf(stderr, "[stub] cmos_calibration_ (0x800d4d00): gun calibration from CMOS not loaded\n"); }
+void startaudit(FILE *f) { (void)f; }					/* 0x800ef870: the audit names for audits.fmt */
+void game_proc2(void) { fprintf(stderr, "[stub] game_proc2: debug attract not implemented\n"); for(;;) sleep(1); }
+void ide_set_partition(int n) { (void)n; }				/* GOOSE IDE: the HAL maps partition 1 itself */
+int gfx_scale_from_refresh(void) { return 54; }				/* 0x80157004: frames per second of the display mode */

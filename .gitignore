@@ -15,3 +15,5 @@ __pycache__/
 tools/mipsel-elf-binutils/
 experiments/**/work/
 asm/
+# per-user save state of the port (CMOS, audits.fmt, high-score photos)
+state/

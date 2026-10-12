@@ -82,8 +82,8 @@ host: $(HOST_OBJS) build/host/selftest
 # macOS kernel refuses executables that map that low, so on macOS the port is an x86_64 binary
 # run under Rosetta (as Wine does); elsewhere it is native with -no-pie.
 PORT_SRCS := $(filter-out port/host/selftest.c,$(wildcard port/host/*.c))
-# game sources that are not byte-exact modules yet still run in the port (src/game/main.c is a draft)
-PORT_GAME_SRCS := $(filter-out src/game/main.c,$(wildcard src/game/*.c))
+# game sources that are not byte-exact modules yet still run in the port
+PORT_GAME_SRCS := $(wildcard src/game/*.c)
 PORT_OBJS := $(patsubst %.c,build/port/%.o,$(sort $(filter-out $(HOST_SKIP),$(C_SRCS)) $(PORT_GAME_SRCS)))
 comma := ,
 PORT_FORTIFY ?= 0     # libc fortification trips on ILP32 idioms; set 2 to debug with it
