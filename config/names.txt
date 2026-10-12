@@ -387,7 +387,24 @@
 # game text.c (0x800dbf58-0x800de800)
 0x800dbf9c draw_string
 0x800dc908 draw_string_color
-0x800dc5a4 draw_string_at
+0x800dc5a4 draw_string_at_color
 0x800d07a8 get_screen_pos
 0x800d1750 draw_tri
 0x800d90c8 draw_quad
+0x800dc24c draw_string_at
+0x800dcbcc draw_string_gradient
+0x800dd020 float_to_string
+0x800dd404 draw_vector_degrees
+0x800dd4e8 draw_vector
+0x800dd5a4 short_to_string
+0x800dd8c0 draw_string_old
+0x800dd990 draw_string_half
+0x800ddc90 draw_string_scaled_centered
+0x800ddff4 draw_string_centered_alpha
+0x800de118 draw_string_alpha
+0x800de3f0 draw_string_scaled
+0x800de6d8 draw_string_scaled_right
+0x800d1d8c draw_tri_rgb
+0x800d2664 draw_tri_alpha
+0x800e3de8 draw_highscore_screen
+0x801e7100 text_buffer

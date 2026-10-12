@@ -8,7 +8,7 @@
 
 typedef struct game_object game_object_t;
 /* the attract code sees the object functions without prototypes: int results, cast to short */
-extern int	add_object1_wrapper();
+extern short	add_object1_wrapper(int, void (*)(), int, int);
 extern void	remove_game_object(short);
 extern void	remove_all_objects(void);
 
@@ -35,7 +35,7 @@ extern void	grDepthBufferFunction(int), grDepthMask(int);
 extern int	check_for_freeplay(void), check_credits_to_start_mode(void), check_credits_to_continue_mode(void);
 extern void	graphical_printf(char *, char *, ...);
 extern void	draw_string_centered(int, char *, float, float, unsigned int);
-extern char	credit_text[];		/* 0x801e7100 */
+extern char	text_buffer[];		/* 0x801e7100 */
 extern char	attract_text1[], attract_text2[], attract_text3[];	/* 0x8021eed0, 0x8021ef58, 0x8021eff0 */
 extern int	attract_text_state;	/* 0x801fad18 */
 int		play_mode_timer = 0;	/* 0x80179d38 */
@@ -79,13 +79,13 @@ static void draw_screen_7201(game_object_t *);
 void load_attract_texmap(void)
 {
 	load_texmap(disclaimer_texmap, 3, "attract");
-	if(violence_level < 2)
+	if(violence_level >= 2)
 	{
-		load_texmap(attract_violent_texmap, 1, "attractnv");
+		load_texmap(attract_texmap, 1, "attractv");
 	}
 	else
 	{
-		load_texmap(attract_texmap, 1, "attractv");
+		load_texmap(attract_violent_texmap, 1, "attractnv");
 	}
 }
 
@@ -96,13 +96,13 @@ void load_aamav_texmap(void)
 
 void remove_attract_texmap(void)
 {
-	if(violence_level < 2)
+	if(violence_level >= 2)
 	{
-		remove_surface(attract_violent_texmap, 1);
+		remove_surface(attract_texmap, 1);
 	}
 	else
 	{
-		remove_surface(attract_texmap, 1);
+		remove_surface(attract_violent_texmap, 1);
 	}
 	remove_surface(disclaimer_texmap, 3);
 	remove_surface(preattract_texmap, 1);
@@ -157,37 +157,40 @@ void do_play_mode(game_object_t *obj)
 	{
 		if(check_credits_to_start_mode() == 1)
 		{
-			graphical_printf(credit_text, "%d CREDIT TO START", check_credits_to_start_mode());
+			graphical_printf(text_buffer, "%d CREDIT TO START", check_credits_to_start_mode());
 		}
 		else
 		{
-			graphical_printf(credit_text, "%d CREDITS TO START", check_credits_to_start_mode());
+			graphical_printf(text_buffer, "%d CREDITS TO START", check_credits_to_start_mode());
 		}
-		draw_string_centered(1, credit_text, 200.0f, 140.0f, 0xaaaaaa);
+		draw_string_centered(1, text_buffer, 200.0f, 140.0f, 0xaaaaaa);
 		if(check_credits_to_continue_mode() == 1)
 		{
-			graphical_printf(credit_text, "%d CREDIT TO CONTINUE", check_credits_to_continue_mode());
+			graphical_printf(text_buffer, "%d CREDIT TO CONTINUE", check_credits_to_continue_mode());
 		}
 		else
 		{
-			graphical_printf(credit_text, "%d CREDITS TO CONTINUE", check_credits_to_continue_mode());
+			graphical_printf(text_buffer, "%d CREDITS TO CONTINUE", check_credits_to_continue_mode());
 		}
-		draw_string_centered(1, credit_text, 200.0f, 110.0f, 0x999999);
-	}
-	else if(attract_text_state == 2)
-	{
-		draw_string_centered(1, attract_text1, 200.0f, 140.0f, 0x999999);
-		draw_string_centered(1, attract_text2, 200.0f, 110.0f, 0x999999);
-	}
-	else if(attract_text_state == 3)
-	{
-		draw_string_centered(1, attract_text1, 200.0f, 150.0f, 0x999999);
-		draw_string_centered(1, attract_text2, 200.0f, 125.0f, 0x999999);
-		draw_string_centered(1, attract_text3, 200.0f, 100.0f, 0x999999);
+		draw_string_centered(1, text_buffer, 200.0f, 110.0f, 0x999999);
 	}
 	else
 	{
-		draw_string_centered(1, attract_text1, 200.0f, 125.0f, 0x999999);
+		switch(attract_text_state)
+		{
+		case 3:
+			draw_string_centered(1, attract_text1, 200.0f, 150.0f, 0x999999);
+			draw_string_centered(1, attract_text2, 200.0f, 125.0f, 0x999999);
+			draw_string_centered(1, attract_text3, 200.0f, 100.0f, 0x999999);
+			break;
+		case 2:
+			draw_string_centered(1, attract_text1, 200.0f, 140.0f, 0x999999);
+			draw_string_centered(1, attract_text2, 200.0f, 110.0f, 0x999999);
+			break;
+		default:
+			draw_string_centered(1, attract_text1, 200.0f, 125.0f, 0x999999);
+			break;
+		}
 	}
 	play_mode_timer++;
 	if(play_mode_timer >= 81)
@@ -200,7 +203,7 @@ void do_play_mode(game_object_t *obj)
 
 int attract_playmode(int arg)
 {
-	short	obj;
+	int	obj;
 	int	i;
 
 	black_screen();
@@ -302,7 +305,7 @@ static void draw_screen_7203(game_object_t *);
 int attract_generic(int arg)
 {
 	int	frames = 120;
-	short	obj;
+	int	obj;
 	int	i;
 
 	black_screen();
@@ -332,7 +335,7 @@ int attract_generic(int arg)
 
 int attract_screen(int arg)
 {
-	short	obj;
+	int	obj;
 	int	i;
 
 	black_screen();

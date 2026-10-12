@@ -154,3 +154,39 @@ so unreferenced modules are absent. Do not expect every SDK function to appear.
 4. Add the names the object exports to `config/names.txt`, register, `make regen && make`.
 Imported so far: crc, sincos, initg, process, galhand, div0hand, anim2d, adjust, object, cmos.
 Profiles: `goose` for the library (process.c and mthread.c are `noopt`).
+
+## The game's own objects: `-fsigned-char`, `-mips3`, FPU compare hazard (found with text.c)
+
+Three things separate CarnEvil's own objects from the GOOSE library objects, all discovered
+while matching the text renderer (src/game/text.c) and all now in profile `game`:
+
+- **`-fsigned-char`.** This SN build of GCC defaults to *unsigned* `char`. The game was
+  compiled with signed chars: `while(*str)` on a `char *` compiles to `lb` (sign-extended
+  test) while the same byte used as a value is a separate `lbu` (GCC never merges the two),
+  and `(signed char)` casts are not needed. With unsigned chars GCC folds both loads into one
+  `lbu`, which is why every string loop matched at 0-15% before. A probe
+  (`int f(char *s){return *s;}`) shows the default: `lbu` without the flag, `lb` with it.
+- **No `-mips4`.** `float_to_string` does `v -= d * 0.1f`; with `-mips4` GCC emits `nmsub.s`,
+  the game has `mul.s`/`sub.s`. `-mips3` (or no ISA flag) matches; the GOOSE library keeps
+  `-mips4 -mcpu=r5000`.
+- **FPU compare hazard nops.** Every `c.cond.fmt` in game code is followed by a `nop` before
+  its `bc1t/bc1f` (627 sites); no library/Glide/libc object has one. asmmips inserted them
+  for the pre-R5000 target the game objects were assembled for. `tools/sn2gas.py --fpu-hazard`
+  (env `SN2GAS_FPU_HAZARD=1`) emulates it; the Makefile passes it for profile `game` only.
+
+Other lessons from text.c:
+- Separate `v0.oow = K; v1.oow = K; ...` statements store in v0..v3 order; a chained
+  assignment stores in reverse. Whether the constant lives in a variable (`k`) or is written
+  inline shows up as a `mov.s` copy in the loop prologue vs. a second literal load.
+- A width loop that walks the parameter itself and restores it (`start = str; while(*str)
+  ...; str = start;`) keeps the string in a callee-saved register and the copy in a temp;
+  a separate `p` gives the opposite allocation.
+- `short v; v %= 10000;` gives the magic-multiply quotient without the extra sign-extension
+  that `v -= d * 10000` with a `short d` produces.
+- A `switch` with `case 3`, `case 2`, `default` lays the blocks out as the game has them
+  (tests for 2 then 3 at the top, bodies 3/2/default); the equivalent if/else chains do not.
+- A `short`-returning function assigned to an `int` variable yields the `sll/sra` at the
+  assignment that `add_object1_wrapper()` callers show (declare the wrapper as returning
+  `short`, keep the local `int`).
+- GCC 2.7.2.3 source is a useful oracle for pass order and folding rules (jump2 cross-jumping
+  runs after sched2; `convert_to_integer` narrows arithmetic assigned to shorts).

@@ -9,8 +9,14 @@ asmmips differs from GNU as in these ways, all emulated here:
 - `div`/`rem` macros put the divide before the zero check (gas puts it in the delay slot);
 - `.lcomm` objects are aligned to min(16, size rounded up to a power of two) inside the
   object's .bss (seen in switch, sprites, ostrings and sound: 800/960-byte arrays at 16).
+- the game's own objects (profile `game`) were assembled for a CPU with the MIPS I-III FPU
+  compare hazard: asmmips put a nop between every c.cond.fmt and the bc1x that follows it
+  (627 sites in game code, none in the GOOSE/Glide/libc objects, which were assembled for
+  the R5000). Enabled with --fpu-hazard or SN2GAS_FPU_HAZARD=1.
 """
-import sys, re
+import sys, re, os
+CCOND=re.compile(r"^\s*c\.(f|un|eq|ueq|olt|ult|ole|ule|sf|ngle|seq|ngl|lt|nge|le|ngt)\.[sd]\b")
+BC1=re.compile(r"^\s*bc1(t|f|tl|fl)\b")
 BREAK=re.compile(r"^\s*break\s+(0x[0-9a-fA-F]+|\d+)\s*$")
 LCOMM=re.compile(r"^\s*\.lcomm\s+([^,\s]+)\s*,\s*(\d+)\s*$")
 BR=re.compile(r"^\s*(b|bal|beq|bne|beql|bnel|blez|bgtz|bltz|bgez|blezl|bgtzl|bltzl|bgezl|bltzal|bgezal|bc1t|bc1f|bc1tl|bc1fl|j|jal|jr|jalr)\b")
@@ -31,7 +37,7 @@ def expand_div(op,d,s,t,n):
               "\tbne\t%s,$at,$Ldo%d"%(s,n),"\tnop","\tbreak\t6","$Ldo%d:"%n,"\t.set\tat"]
     out.append("\t%s\t%s"%(res,d))
     return out
-def convert(lines):
+def convert(lines, fpu_hazard=None):
     """Also: asmmips puts every li.s/li.d constant (no dedup, in order of appearance) into a
     literal pool and loads it via lui $at / lwc1|ldc1, so do the same in .rdata."""
     out=["\t.set\tnoreorder"]; reorder=True; lits=[]; n=0; bss_off=0
@@ -87,7 +93,19 @@ def convert(lines):
                 out.append("\t.align\t%d"%(2 if kind=="s" else 3))
                 out.append("%s:\t.%s\t%s"%(lab,"float" if kind=="s" else "double",val))
             out.append("\t.text"); lits=[]
-    return "\n".join(mf_hazards(out))+"\n"
+    out=mf_hazards(out)
+    if fpu_hazard is None: fpu_hazard = os.environ.get("SN2GAS_FPU_HAZARD")=="1"
+    if fpu_hazard: out=fpu_hazards(out)
+    return "\n".join(out)+"\n"
+def fpu_hazards(lines):
+    """nop between c.cond.fmt and a directly following bc1x (asmmips for a pre-R5000 target)."""
+    out=[]; pending=False
+    for l in lines:
+        if INSN.match(l) and not l.lstrip().startswith("."):
+            if pending and BC1.match(l): out.append("\tnop")
+            pending = bool(CCOND.match(l))
+        out.append(l)
+    return out
 MF=re.compile(r"^\s*(mflo|mfhi)\b"); MULT=re.compile(r"^\s*(mult|multu|dmult|dmultu|div|divu|ddiv|ddivu)\b")
 INSN=re.compile(r"^\s*[a-z][a-z0-9.]*(\s|$)")
 def mf_hazards(lines):
@@ -102,4 +120,5 @@ def mf_hazards(lines):
         out.append(l)
     return out
 if __name__=="__main__":
-    src=open(sys.argv[1]).readlines(); open(sys.argv[2],"w").write(convert(src))
+    src=open(sys.argv[1]).readlines()
+    open(sys.argv[2],"w").write(convert(src, True if "--fpu-hazard" in sys.argv[3:] else None))

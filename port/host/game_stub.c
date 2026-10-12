@@ -54,12 +54,14 @@ int is_freeplay = 0, coins_needed_to_play = 2, num_credits_to_continue = 1;
 int check_for_freeplay(void) { return is_freeplay; }
 int check_credits_to_start_mode(void) { return coins_needed_to_play; }
 int check_credits_to_continue_mode(void) { return num_credits_to_continue; }
-char credit_text[256];
 char attract_text1[136] = "PRESS START", attract_text2[136] = "TO PLAY", attract_text3[136];
 int attract_text_state = 2;
 
 /* the triangle setup (0x800d1750) writes Voodoo commands; here it is a plain draw */
 void draw_tri(MidVertex *a, MidVertex *b, MidVertex *c) { grDrawTriangleDma(a, b, c, 0); }
+/* 0x800d1d8c / 0x800d2664: the same with iterated RGB / alpha vertices (iteration ignored for now) */
+void draw_tri_rgb(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
+void draw_tri_alpha(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
 
 /* ---- the per-frame passes the game installs as GOOSE objects in func_800ca3a0 ---- */
 static void think_pass(void *data)		/* "BAR": object_draw_func (0x800cca70) */

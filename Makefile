@@ -9,7 +9,7 @@ LOAD     := 0x800c4000
 SDK      := original/sdk
 CPPFLAGS := -E -P -Wno-nonportable-include-path -nostdinc -I$(SDK)/include -Iinclude -D__DJGPP__ -DSEATTLE -DRELEASE
 CC1_goose := -O3 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
-CC1_game  := -O3 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
+CC1_game  := -O3 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin   # game objects: signed char, pre-R5000 ISA (docs/toolchain.md)
 CC1_noopt := -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
 CC1_o2r5k := -O2 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin   # sound library (sound.mak: CC2)
 DISASM   := python3 tools/disasm.py $(ORIG) asm --functions config/functions_v103.txt --symbols config/binja_symbols.txt \
@@ -34,8 +34,9 @@ build/%.i: %.c
 	clang $(CPPFLAGS) -x c $< -o $@
 build/%.sn.s: build/%.i tools/sncc.sh
 	CC1FLAGS="$(CC1_$(PROFILE))" tools/sncc.sh $< $@
+SN2GAS_game := --fpu-hazard
 build/%.s: build/%.sn.s tools/sn2gas.py
-	python3 tools/sn2gas.py $< $@
+	python3 tools/sn2gas.py $< $@ $(SN2GAS_$(PROFILE))
 build/%.o: build/%.s
 	$(AS) $(ASFLAGS) -o $@ $<
 

@@ -6,7 +6,7 @@ SRC="$1"; PROF="$2"; shift 2
 HERE="$(cd "$(dirname "$0")/.." && pwd)"; cd "$HERE"
 case "$PROF" in
   goose) F="-O3 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
-  game)  F="-O3 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
+  game)  F="-O3 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;   # game objects: signed char, pre-R5000 ISA (see docs/toolchain.md)
   o2)    F="-O2 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   o2r5k) F="-O2 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   o1r5k) F="-O -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;

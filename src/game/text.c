@@ -6,6 +6,19 @@
 #include <glide/glide.h>
 #include "texmap.h"
 
+/* textured vertex with iterated RGB (the SDK header only has the ARGB form) */
+typedef struct
+{
+	float	x;
+	float	y;
+	float	oow;
+	float	sow;
+	float	tow;
+	float	r;
+	float	g;
+	float	b;
+} MidVertexWithTRGB;
+
 typedef struct glyph
 {
 	int	w;
@@ -176,6 +189,11 @@ int		font_texture_handle;		/* 0x801e6e00 */
 
 extern void	grAlphaTestReferenceValue(FxU8);
 extern void	draw_tri(MidVertex *, MidVertex *, MidVertex *);
+extern void	draw_tri_rgb(MidVertexWithTRGB *, MidVertexWithTRGB *, MidVertexWithTRGB *);	/* 0x800d1d8c */
+extern void	draw_tri_alpha(MidVertexWithTA *, MidVertexWithTA *, MidVertexWithTA *);	/* 0x800d2664 */
+extern float	get_screen_pos(int, float *);
+extern unsigned int strlen(char *);
+char		text_buffer[256];		/* 0x801e7100: scratch string shared with the attract credits */
 
 void load_font_texmap(void)
 {
@@ -186,13 +204,16 @@ void load_font_texmap(void)
 /* glyph quad: (x, y) top-left on screen, texel rectangle u..u+w, v-h..v (t runs upward) */
 #define GLYPH_INDEX(c)	((signed char)(c) - FIRST_GLYPH)
 #define IS_GLYPH(c)	((unsigned char)((c) - FIRST_GLYPH) < NUM_GLYPHS)
+#define OOW		0.90909088f	/* 1/w for every text vertex */
+
+float		string_width(int, char *);
+void		draw_string_alpha(int, char *, float, float, unsigned int, float);
 
 /* 0x800dbf9c: plain string at (x, y) */
 void draw_string(int font, char *str, float x, float y)
 {
 	MidVertex	v0, v1, v2, v3;
 	glyph_t		*g;
-	float		k;
 
 	guTexSource(find_surface(0x3ffe)->handle);
 	guColorCombineFunction(GR_COLORCOMBINE_DECAL_TEXTURE);
@@ -201,8 +222,10 @@ void draw_string(int font, char *str, float x, float y)
 	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
 	grAlphaTestFunction(GR_CMP_GREATER);
 	grAlphaTestReferenceValue(0x40);
-	k = 0.90909088f;
-	v0.oow = v1.oow = v2.oow = v3.oow = k;
+	v0.oow = OOW;
+	v1.oow = OOW;
+	v2.oow = OOW;
+	v3.oow = OOW;
 	while(*str)
 	{
 		if(IS_GLYPH(*str))
@@ -210,20 +233,175 @@ void draw_string(int font, char *str, float x, float y)
 			g = &font_glyphs[font][GLYPH_INDEX(*str)];
 			v0.x = x;
 			v0.y = y;
-			v0.sow = ((float)g->u + 0.5f) * k;
-			v2.tow = ((float)(g->v - g->h) + 1.55f) * k;
+			v0.sow = ((float)g->u + 0.5f) * OOW;
+			v2.tow = ((float)(g->v - g->h) + 1.55f) * OOW;
 			v1.x = x + (float)g->w;
 			v1.y = y;
-			v1.sow = ((float)(g->u + g->w) - 0.5f) * k;
-			v3.tow = ((float)(g->v - g->h) + 1.55f) * k;
+			v1.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v3.tow = ((float)(g->v - g->h) + 1.55f) * OOW;
 			v2.x = x;
 			v2.y = y + (float)g->h;
-			v2.sow = ((float)g->u + 0.5f) * k;
-			v0.tow = ((float)g->v - 0.55f) * k;
+			v2.sow = ((float)g->u + 0.5f) * OOW;
+			v0.tow = ((float)g->v - 0.55f) * OOW;
 			v3.x = x + (float)g->w;
 			v3.y = y + (float)g->h;
-			v3.sow = ((float)(g->u + g->w) - 0.5f) * k;
-			v1.tow = ((float)g->v - 0.55f) * k;
+			v3.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v1.tow = ((float)g->v - 0.55f) * OOW;
+			draw_tri(&v0, &v1, &v3);
+			draw_tri(&v0, &v3, &v2);
+			x += (float)g->w;
+		}
+		else
+		{
+			x += 10.0f;
+		}
+		str++;
+	}
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+}
+
+/* 0x800dc24c: plain string centred on a projected point */
+void draw_string_at(int font, char *str, int pos)
+{
+	MidVertex	v0, v1, v2, v3;
+	glyph_t		*g;
+	float		x, y;
+	float		width;
+	float		screen[3];	/* get_screen_pos writes x, y, w */
+	char		*start;
+
+	if(get_screen_pos(pos, screen) == -1.0f)
+	{
+		return;
+	}
+	guTexSource(find_surface(0x3ffe)->handle);
+	guColorCombineFunction(GR_COLORCOMBINE_DECAL_TEXTURE);
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+	guAlphaSource(GR_ALPHASOURCE_TEXTURE_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
+	grAlphaTestFunction(GR_CMP_GREATER);
+	grAlphaTestReferenceValue(0x40);
+	width = 0.0f;
+	v0.oow = OOW;
+	v1.oow = OOW;
+	v2.oow = OOW;
+	v3.oow = OOW;
+	start = str;
+	while(*str)
+	{
+		if(IS_GLYPH(*str))
+		{
+			g = &font_glyphs[font][GLYPH_INDEX(*str)];
+			width += (float)g->w;
+		}
+		else
+		{
+			width += 10.0f;
+		}
+		str++;
+	}
+	x = screen[0] - width * 0.5f;
+	str = start;
+	y = screen[1];
+	while(*str)
+	{
+		if(IS_GLYPH(*str))
+		{
+			g = &font_glyphs[font][GLYPH_INDEX(*str)];
+			v0.x = x;
+			v0.y = y;
+			v0.sow = ((float)g->u + 0.5f) * OOW;
+			v2.tow = ((float)(g->v - g->h) + 1.55f) * OOW;
+			v1.x = x + (float)g->w;
+			v1.y = y;
+			v1.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v3.tow = ((float)(g->v - g->h) + 1.55f) * OOW;
+			v2.x = x;
+			v2.y = y + (float)g->h;
+			v2.sow = ((float)g->u + 0.5f) * OOW;
+			v0.tow = ((float)g->v - 0.55f) * OOW;
+			v3.x = x + (float)g->w;
+			v3.y = y + (float)g->h;
+			v3.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v1.tow = ((float)g->v - 0.55f) * OOW;
+			draw_tri(&v0, &v1, &v3);
+			draw_tri(&v0, &v3, &v2);
+			x += (float)g->w;
+		}
+		else
+		{
+			x += 10.0f;
+		}
+		str++;
+	}
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+}
+
+/* 0x800dc5a4: coloured string centred on a projected point */
+void draw_string_at_color(int font, char *str, int pos, unsigned int color)
+{
+	MidVertex	v0, v1, v2, v3;
+	glyph_t		*g;
+	float		x, y;
+	float		width;
+	float		screen[3];	/* get_screen_pos writes x, y, w */
+	char		*start;
+
+	if(get_screen_pos(pos, screen) == -1.0f)
+	{
+		return;
+	}
+	guTexSource(find_surface(0x3ffe)->handle);
+	guColorCombineFunction(GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB);
+	grConstantColorValue(color);
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+	guAlphaSource(GR_ALPHASOURCE_TEXTURE_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
+	grAlphaTestFunction(GR_CMP_GREATER);
+	grAlphaTestReferenceValue(0x40);
+	width = 0.0f;
+	v0.oow = OOW;
+	v1.oow = OOW;
+	v2.oow = OOW;
+	v3.oow = OOW;
+	start = str;
+	while(*str)
+	{
+		if(IS_GLYPH(*str))
+		{
+			g = &font_glyphs[font][GLYPH_INDEX(*str)];
+			width += (float)g->w;
+		}
+		else
+		{
+			width += 10.0f;
+		}
+		str++;
+	}
+	x = screen[0] - width * 0.5f;
+	str = start;
+	y = screen[1];
+	while(*str)
+	{
+		if(IS_GLYPH(*str))
+		{
+			g = &font_glyphs[font][GLYPH_INDEX(*str)];
+			v0.x = x;
+			v0.y = y;
+			v0.sow = ((float)g->u + 0.5f) * OOW;
+			v2.tow = ((float)(g->v - g->h) + 1.55f) * OOW;
+			v1.x = x + (float)g->w;
+			v1.y = y;
+			v1.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v3.tow = ((float)(g->v - g->h) + 1.55f) * OOW;
+			v2.x = x;
+			v2.y = y + (float)g->h;
+			v2.sow = ((float)g->u + 0.5f) * OOW;
+			v0.tow = ((float)g->v - 0.55f) * OOW;
+			v3.x = x + (float)g->w;
+			v3.y = y + (float)g->h;
+			v3.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v1.tow = ((float)g->v - 0.55f) * OOW;
 			draw_tri(&v0, &v1, &v3);
 			draw_tri(&v0, &v3, &v2);
 			x += (float)g->w;
@@ -242,7 +420,6 @@ void draw_string_color(int font, char *str, float x, float y, unsigned int color
 {
 	MidVertex	v0, v1, v2, v3;
 	glyph_t		*g;
-	float		k;
 
 	guTexSource(find_surface(0x3ffe)->handle);
 	guColorCombineFunction(GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB);
@@ -252,8 +429,10 @@ void draw_string_color(int font, char *str, float x, float y, unsigned int color
 	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
 	grAlphaTestFunction(GR_CMP_GREATER);
 	grAlphaTestReferenceValue(0x40);
-	k = 0.90909088f;
-	v0.oow = v1.oow = v2.oow = v3.oow = k;
+	v0.oow = OOW;
+	v1.oow = OOW;
+	v2.oow = OOW;
+	v3.oow = OOW;
 	while(*str)
 	{
 		if(IS_GLYPH(*str))
@@ -261,20 +440,20 @@ void draw_string_color(int font, char *str, float x, float y, unsigned int color
 			g = &font_glyphs[font][GLYPH_INDEX(*str)];
 			v0.x = x;
 			v0.y = y;
-			v0.sow = ((float)g->u + 0.5f) * k;
-			v2.tow = ((float)(g->v - g->h) + 0.5f) * k;
+			v0.sow = ((float)g->u + 0.5f) * OOW;
+			v2.tow = ((float)(g->v - g->h) + 0.5f) * OOW;
 			v1.x = x + (float)g->w;
 			v1.y = y;
-			v1.sow = ((float)(g->u + g->w) - 0.5f) * k;
-			v3.tow = ((float)(g->v - g->h) + 0.5f) * k;
+			v1.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v3.tow = ((float)(g->v - g->h) + 0.5f) * OOW;
 			v2.x = x;
 			v2.y = y + (float)g->h;
-			v2.sow = ((float)g->u + 0.5f) * k;
-			v0.tow = ((float)g->v - 0.5f) * k;
+			v2.sow = ((float)g->u + 0.5f) * OOW;
+			v0.tow = ((float)g->v - 0.5f) * OOW;
 			v3.x = x + (float)g->w;
 			v3.y = y + (float)g->h;
-			v3.sow = ((float)(g->u + g->w) - 0.5f) * k;
-			v1.tow = ((float)g->v - 0.5f) * k;
+			v3.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v1.tow = ((float)g->v - 0.5f) * OOW;
 			draw_tri(&v0, &v1, &v3);
 			draw_tri(&v0, &v3, &v2);
 			x += (float)g->w + font_spacing[font];
@@ -290,45 +469,35 @@ void draw_string_color(int font, char *str, float x, float y, unsigned int color
 
 extern float	get_screen_pos(int, float *);		/* 0x800d07a8: world point -> screen x,y; -1 when off screen */
 
-/* 0x800dc5a4: coloured string centred on a projected point */
-void draw_string_at(int font, char *str, int pos, unsigned int color)
+/* 0x800dcbcc: string with a colour gradient: rgb[0..2]/[3..5] run along the top edge,
+   rgb[6..8]/[9..11] along the bottom (chroma-keyed, iterated RGB) */
+void draw_string_gradient(int font, char *str, float x, float y, float *rgb)
 {
-	MidVertex	v0, v1, v2, v3;
+	MidVertexWithTRGB	v0, v1, v2, v3;
 	glyph_t		*g;
 	float		k;
-	float		x, y;
-	float		width;
-	float		screen[2];
-	char		*p;
+	float		n;
+	float		t;
+	float		dr0, dg0, db0;
+	float		dr1, dg1, db1;
 
-	if(get_screen_pos(pos, screen) == -1.0f)
-	{
-		return;
-	}
+	grChromakeyMode(GR_CHROMAKEY_ENABLE);
+	grChromakeyValue(0x101010);
 	guTexSource(find_surface(0x3ffe)->handle);
-	guColorCombineFunction(GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB);
-	grConstantColorValue(color);
-	grChromakeyMode(GR_CHROMAKEY_DISABLE);
-	guAlphaSource(GR_ALPHASOURCE_TEXTURE_ALPHA);
-	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
-	grAlphaTestFunction(GR_CMP_GREATER);
-	grAlphaTestReferenceValue(0x40);
-	width = 0.0f;
-	k = 0.90909088f;
-	v0.oow = v1.oow = v2.oow = v3.oow = k;
-	for(p = str; *p; p++)
-	{
-		if(IS_GLYPH(*p))
-		{
-			width += (float)font_glyphs[font][GLYPH_INDEX(*p)].w;
-		}
-		else
-		{
-			width += 10.0f;
-		}
-	}
-	x = screen[0] - width * 0.5f;
-	y = screen[1];
+	guColorCombineFunction(GR_COLORCOMBINE_TEXTURE_TIMES_ITRGB);
+	k = OOW;
+	v0.oow = k;
+	v1.oow = k;
+	v2.oow = k;
+	v3.oow = k;
+	n = 1.0f / (float)strlen(str);
+	dr0 = (rgb[3] - rgb[0]) * n;
+	dg0 = (rgb[4] - rgb[1]) * n;
+	db0 = (rgb[5] - rgb[2]) * n;
+	dr1 = (rgb[9] - rgb[6]) * n;
+	dg1 = (rgb[10] - rgb[7]) * n;
+	db1 = (rgb[11] - rgb[8]) * n;
+	t = 0.0f;
 	while(*str)
 	{
 		if(IS_GLYPH(*str))
@@ -337,21 +506,36 @@ void draw_string_at(int font, char *str, int pos, unsigned int color)
 			v0.x = x;
 			v0.y = y;
 			v0.sow = ((float)g->u + 0.5f) * k;
-			v2.tow = ((float)(g->v - g->h) + 1.55f) * k;
+			v2.tow = ((float)(g->v - g->h) + 1.5f) * k;
+			v0.r = rgb[0] + t * dr0;
+			v0.g = rgb[1] + t * dg0;
+			v0.b = rgb[2] + t * db0;
 			v1.x = x + (float)g->w;
 			v1.y = y;
 			v1.sow = ((float)(g->u + g->w) - 0.5f) * k;
-			v3.tow = ((float)(g->v - g->h) + 1.55f) * k;
+			t += 1.0f;
+			v3.tow = ((float)(g->v - g->h) + 1.5f) * k;
+			v1.r = rgb[0] + t * dr0;
+			v1.g = rgb[1] + t * dg0;
+			v1.b = rgb[2] + t * db0;
 			v2.x = x;
 			v2.y = y + (float)g->h;
 			v2.sow = ((float)g->u + 0.5f) * k;
-			v0.tow = ((float)g->v - 0.55f) * k;
+			t -= 1.0f;
+			v0.tow = ((float)g->v - 1.5f) * k;
+			v2.r = rgb[6] + t * dr1;
+			v2.g = rgb[7] + t * dg1;
+			v2.b = rgb[8] + t * db1;
 			v3.x = x + (float)g->w;
 			v3.y = y + (float)g->h;
 			v3.sow = ((float)(g->u + g->w) - 0.5f) * k;
-			v1.tow = ((float)g->v - 0.55f) * k;
-			draw_tri(&v0, &v1, &v3);
-			draw_tri(&v0, &v3, &v2);
+			t += 1.0f;
+			v1.tow = ((float)g->v - 1.5f) * k;
+			v3.r = rgb[6] + t * dr1;
+			v3.g = rgb[7] + t * dg1;
+			v3.b = rgb[8] + t * db1;
+			draw_tri_rgb(&v0, &v1, &v3);
+			draw_tri_rgb(&v0, &v3, &v2);
 			x += (float)g->w;
 		}
 		else
@@ -363,13 +547,312 @@ void draw_string_at(int font, char *str, int pos, unsigned int color)
 	grChromakeyMode(GR_CHROMAKEY_DISABLE);
 }
 
-/* 0x800ddf74: coloured string centred on x */
-float string_width(int, char *);
+/* 0x800dd020: float -> "[-]ddddd.dddd" */
+void float_to_string(char *buf, float v)
+{
+	int	d;
 
+	if(v < 0.0f)
+	{
+		*buf++ = '-';
+		v = -v;
+	}
+	if(v >= 10000.0f)
+	{
+		d = v / 10000.0f;
+		v -= d * 10000;
+		*buf++ = d + '0';
+		d = v / 1000.0f;
+		v -= d * 1000;
+		*buf++ = d + '0';
+		d = v / 100.0f;
+		v -= d * 100;
+		*buf++ = d + '0';
+		d = v / 10.0f;
+		v -= d * 10;
+		*buf++ = d + '0';
+	}
+	else if(v >= 1000.0f)
+	{
+		d = v / 1000.0f;
+		v -= d * 1000;
+		*buf++ = d + '0';
+		d = v / 100.0f;
+		v -= d * 100;
+		*buf++ = d + '0';
+		d = v / 10.0f;
+		v -= d * 10;
+		*buf++ = d + '0';
+	}
+	else if(v >= 100.0f)
+	{
+		d = v / 100.0f;
+		v -= d * 100;
+		*buf++ = d + '0';
+		d = v / 10.0f;
+		v -= d * 10;
+		*buf++ = d + '0';
+	}
+	else if(v >= 10.0f)
+	{
+		d = v / 10.0f;
+		v -= d * 10;
+		*buf++ = d + '0';
+	}
+	else if(v < 1.0f)
+	{
+		*buf++ = '0';
+		goto fraction;
+	}
+	d = v;
+	*buf++ = d + '0';
+	v -= d;
+fraction:
+	*buf++ = '.';
+	d = v / 0.1f;
+	v -= d * 0.1f;
+	*buf++ = d + '0';
+	d = v / 0.01f;
+	v -= d * 0.01f;
+	*buf++ = d + '0';
+	d = v / 0.001f;
+	v -= d * 0.001f;
+	*buf++ = d + '0';
+	d = v / 0.0001f;
+	*buf++ = d + '0';
+	*buf = 0;
+}
+
+/* 0x800dd404: debug line: label then three angles (radians) printed in degrees */
+void draw_vector_degrees(char *label, float *v, int y)
+{
+	draw_string(0, label, 10.0f, (float)y);
+	float_to_string(text_buffer, v[0] * 57.2957f);
+	draw_string(0, text_buffer, 90.0f, (float)y);
+	float_to_string(text_buffer, v[1] * 57.2957f);
+	draw_string(0, text_buffer, 190.0f, (float)y);
+	float_to_string(text_buffer, v[2] * 57.2957f);
+	draw_string(0, text_buffer, 290.0f, (float)y);
+}
+
+/* 0x800dd4e8: debug line: label then three floats */
+void draw_vector(char *label, float *v, int y)
+{
+	draw_string(0, label, 10.0f, (float)y);
+	float_to_string(text_buffer, v[0]);
+	draw_string(0, text_buffer, 90.0f, (float)y);
+	float_to_string(text_buffer, v[1]);
+	draw_string(0, text_buffer, 190.0f, (float)y);
+	float_to_string(text_buffer, v[2]);
+	draw_string(0, text_buffer, 290.0f, (float)y);
+}
+
+/* 0x800dd5a4: short -> decimal string */
+void short_to_string(char *buf, short v)
+{
+	if(v < 0)
+	{
+		*buf++ = '-';
+		v = -v;
+	}
+	if(v >= 10000)
+	{
+		*buf++ = v / 10000 + '0';
+		v %= 10000;
+		*buf++ = v / 1000 + '0';
+		v %= 1000;
+		*buf++ = v / 100 + '0';
+		v %= 100;
+		*buf++ = v / 10 + '0';
+		v %= 10;
+		*buf++ = v + '0';
+	}
+	else if(v >= 1000)
+	{
+		*buf++ = v / 1000 + '0';
+		v %= 1000;
+		*buf++ = v / 100 + '0';
+		v %= 100;
+		*buf++ = v / 10 + '0';
+		v %= 10;
+		*buf++ = v + '0';
+	}
+	else if(v >= 100)
+	{
+		*buf++ = v / 100 + '0';
+		v %= 100;
+		*buf++ = v / 10 + '0';
+		v %= 10;
+		*buf++ = v + '0';
+	}
+	else if(v >= 10)
+	{
+		*buf++ = v / 10 + '0';
+		v %= 10;
+		*buf++ = v + '0';
+	}
+	else
+	{
+		*buf++ = v + '0';
+	}
+	*buf = 0;
+}
+
+/* 0x800dd8c0: leftover from an older fixed-width font: A-Z are 0..25, '-'..'9' are 26..38,
+   anything else 40; '.' (27) is 6 wide, the rest 10. Only draws when centred. */
+void draw_string_old(int font, char *str, float x, float y, int centered)
+{
+	float	width;
+	char	*start;
+	int	idx;
+
+	width = 0.0f;
+	start = str;
+	while(*str)
+	{
+		if((unsigned char)(*str - 'A') < 26)
+		{
+			idx = *str - 'A';
+		}
+		else if((unsigned char)(*str - '-') < 13)
+		{
+			idx = *str - '-' + 26;
+		}
+		else
+		{
+			idx = 40;
+		}
+		if(idx == 27)
+		{
+			width += 6.0f;
+		}
+		else
+		{
+			width += 10.0f;
+		}
+		str++;
+	}
+	if(centered & 1)
+	{
+		draw_string(0, start, x - width / 2.0f, y);
+	}
+}
+
+/* 0x800dd990: plain string at half size */
+void draw_string_half(int font, char *str, float x, float y)
+{
+	MidVertex	v0, v1, v2, v3;
+	glyph_t		*g;
+
+	guTexSource(find_surface(0x3ffe)->handle);
+	guColorCombineFunction(GR_COLORCOMBINE_DECAL_TEXTURE);
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+	guAlphaSource(GR_ALPHASOURCE_TEXTURE_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
+	grAlphaTestFunction(GR_CMP_GREATER);
+	grAlphaTestReferenceValue(0x40);
+	v0.oow = OOW;
+	v1.oow = OOW;
+	v2.oow = OOW;
+	v3.oow = OOW;
+	while(*str)
+	{
+		if(IS_GLYPH(*str))
+		{
+			g = &font_glyphs[font][GLYPH_INDEX(*str)];
+			v0.x = x;
+			v0.y = y;
+			v0.sow = ((float)g->u + 0.5f) * OOW;
+			v2.tow = ((float)(g->v - g->h) + 1.55f) * OOW;
+			v1.x = x + (float)(g->w / 2);
+			v1.y = y;
+			v1.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v3.tow = ((float)(g->v - g->h) + 1.55f) * OOW;
+			v2.x = x;
+			v2.y = y + (float)(g->h / 2);
+			v2.sow = ((float)g->u + 0.5f) * OOW;
+			v0.tow = ((float)g->v - 0.55f) * OOW;
+			v3.x = x + (float)(g->w / 2);
+			v3.y = y + (float)(g->h / 2);
+			v3.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v1.tow = ((float)g->v - 0.55f) * OOW;
+			draw_tri(&v0, &v1, &v3);
+			draw_tri(&v0, &v3, &v2);
+			x += (float)(g->w / 2);
+		}
+		else
+		{
+			x += 5.0f;
+		}
+		str++;
+	}
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+}
+
+/* 0x800ddc90: coloured, scaled string centred on x */
+void draw_string_scaled_centered(int font, char *str, float x, float y, unsigned int color, float scale)
+{
+	MidVertex	v0, v1, v2, v3;
+	glyph_t		*g;
+
+	x -= scale * string_width(font, str) / 2.0f;
+	guTexSource(find_surface(0x3ffe)->handle);
+	guColorCombineFunction(GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB);
+	grConstantColorValue(color);
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+	guAlphaSource(GR_ALPHASOURCE_TEXTURE_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
+	grAlphaTestFunction(GR_CMP_GREATER);
+	grAlphaTestReferenceValue(8);
+	v0.oow = OOW;
+	v1.oow = OOW;
+	v2.oow = OOW;
+	v3.oow = OOW;
+	while(*str)
+	{
+		if(IS_GLYPH(*str))
+		{
+			g = &font_glyphs[font][GLYPH_INDEX(*str)];
+			v0.x = x;
+			v0.y = y;
+			v0.sow = ((float)g->u + 0.5f) * OOW;
+			v2.tow = ((float)(g->v - g->h) + 1.5f) * OOW;
+			v1.x = x + (float)g->w * scale;
+			v1.y = y;
+			v1.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v3.tow = ((float)(g->v - g->h) + 1.5f) * OOW;
+			v2.x = x;
+			v2.y = y + (float)g->h * scale;
+			v2.sow = ((float)g->u + 0.5f) * OOW;
+			v0.tow = ((float)g->v - 1.5f) * OOW;
+			v3.x = x + (float)g->w * scale;
+			v3.y = y + (float)g->h * scale;
+			v3.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v1.tow = ((float)g->v - 1.5f) * OOW;
+			draw_tri(&v0, &v1, &v3);
+			draw_tri(&v0, &v3, &v2);
+			x += scale * (float)g->w;
+		}
+		else
+		{
+			x += scale * 10.0f;
+		}
+		str++;
+	}
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+}
+
+/* 0x800ddf74: coloured string centred on x */
 void draw_string_centered(int font, char *str, float x, float y, unsigned int color)
 {
 	x -= string_width(font, str) / 2.0f;
 	draw_string_color(font, str, x, y, color);
+}
+
+/* 0x800ddff4: coloured string with iterated alpha, centred on x */
+void draw_string_centered_alpha(int font, char *str, float x, float y, unsigned int color, float alpha)
+{
+	draw_string_alpha(font, str, x - string_width(font, str) / 2.0f, y, color, alpha);
 }
 
 /* 0x800de084: pixel width of a string in a font (glyph widths plus spacing, space width otherwise) */
@@ -392,4 +875,183 @@ float string_width(int font, char *str)
 		str++;
 	}
 	return(width);
+}
+
+/* 0x800de118: coloured string with iterated alpha */
+void draw_string_alpha(int font, char *str, float x, float y, unsigned int color, float alpha)
+{
+	MidVertexWithTA	v0, v1, v2, v3;
+	glyph_t		*g;
+
+	guTexSource(find_surface(0x3ffe)->handle);
+	guColorCombineFunction(GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB);
+	grConstantColorValue(color);
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+	guAlphaSource(GR_ALPHASOURCE_TEXTURE_ALPHA_TIMES_ITERATED_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
+	grAlphaTestFunction(GR_CMP_GREATER);
+	grAlphaTestReferenceValue(10);
+	v0.a = alpha;
+	v1.a = alpha;
+	v2.a = alpha;
+	v3.a = alpha;
+	v0.oow = OOW;
+	v1.oow = OOW;
+	v2.oow = OOW;
+	v3.oow = OOW;
+	while(*str)
+	{
+		if(IS_GLYPH(*str))
+		{
+			g = &font_glyphs[font][GLYPH_INDEX(*str)];
+			v0.x = x;
+			v0.y = y;
+			v0.sow = ((float)g->u + 0.5f) * OOW;
+			v2.tow = ((float)(g->v - g->h) + 0.5f) * OOW;
+			v1.x = x + (float)g->w;
+			v1.y = y;
+			v1.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v3.tow = ((float)(g->v - g->h) + 0.5f) * OOW;
+			v2.x = x;
+			v2.y = y + (float)g->h;
+			v2.sow = ((float)g->u + 0.5f) * OOW;
+			v0.tow = ((float)g->v - 0.5f) * OOW;
+			v3.x = x + (float)g->w;
+			v3.y = y + (float)g->h;
+			v3.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v1.tow = ((float)g->v - 0.5f) * OOW;
+			draw_tri_alpha(&v0, &v1, &v3);
+			draw_tri_alpha(&v0, &v3, &v2);
+			x += (float)g->w + font_spacing[font];
+		}
+		else
+		{
+			x += font_space_width[font];
+		}
+		str++;
+	}
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+}
+
+/* 0x800de3f0: coloured, scaled string */
+void draw_string_scaled(int font, char *str, float x, float y, unsigned int color, float scale)
+{
+	MidVertex	v0, v1, v2, v3;
+	glyph_t		*g;
+	char		*p;
+
+	for(p = str; *p; p++)
+	{
+	}
+	guTexSource(find_surface(0x3ffe)->handle);
+	guColorCombineFunction(GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB);
+	grConstantColorValue(color);
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+	guAlphaSource(GR_ALPHASOURCE_TEXTURE_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
+	grAlphaTestFunction(GR_CMP_GREATER);
+	grAlphaTestReferenceValue(8);
+	v0.oow = OOW;
+	v1.oow = OOW;
+	v2.oow = OOW;
+	v3.oow = OOW;
+	while(*str)
+	{
+		if(IS_GLYPH(*str))
+		{
+			g = &font_glyphs[font][GLYPH_INDEX(*str)];
+			v0.x = x;
+			v0.y = y;
+			v0.sow = ((float)g->u + 0.5f) * OOW;
+			v2.tow = ((float)(g->v - g->h) + 1.5f) * OOW;
+			v1.x = x + (float)g->w * scale;
+			v1.y = y;
+			v1.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v3.tow = ((float)(g->v - g->h) + 1.5f) * OOW;
+			v2.x = x;
+			v2.y = y + (float)g->h * scale;
+			v2.sow = ((float)g->u + 0.5f) * OOW;
+			v0.tow = ((float)g->v - 1.5f) * OOW;
+			v3.x = x + (float)g->w * scale;
+			v3.y = y + (float)g->h * scale;
+			v3.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v1.tow = ((float)g->v - 1.5f) * OOW;
+			draw_tri(&v0, &v1, &v3);
+			draw_tri(&v0, &v3, &v2);
+			x += scale * (float)g->w;
+		}
+		else
+		{
+			x += scale * 10.0f;
+		}
+		str++;
+	}
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+}
+
+/* 0x800de6d8: coloured, scaled string ending at x (right-aligned) */
+void draw_string_scaled_right(int font, char *str, float x, float y, unsigned int color, float scale)
+{
+	MidVertex	v0, v1, v2, v3;
+	glyph_t		*g;
+	float		width;
+	char		*p;
+
+	width = 0.0f;
+	for(p = str; *p; p++)
+	{
+		if(IS_GLYPH(*p))
+		{
+			width += (float)font_glyphs[font][GLYPH_INDEX(*p)].w + font_spacing[font];
+		}
+		else
+		{
+			width += font_space_width[font];
+		}
+	}
+	x -= scale * width;
+	guTexSource(find_surface(0x3ffe)->handle);
+	guColorCombineFunction(GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB);
+	grConstantColorValue(color);
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
+	guAlphaSource(GR_ALPHASOURCE_TEXTURE_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
+	grAlphaTestFunction(GR_CMP_GREATER);
+	grAlphaTestReferenceValue(8);
+	v0.oow = OOW;
+	v1.oow = OOW;
+	v2.oow = OOW;
+	v3.oow = OOW;
+	while(*str)
+	{
+		if(IS_GLYPH(*str))
+		{
+			g = &font_glyphs[font][GLYPH_INDEX(*str)];
+			v0.x = x;
+			v0.y = y;
+			v0.sow = ((float)g->u + 0.5f) * OOW;
+			v2.tow = ((float)(g->v - g->h) + 1.5f) * OOW;
+			v1.x = x + (float)g->w * scale;
+			v1.y = y;
+			v1.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v3.tow = ((float)(g->v - g->h) + 1.5f) * OOW;
+			v2.x = x;
+			v2.y = y + (float)g->h * scale;
+			v2.sow = ((float)g->u + 0.5f) * OOW;
+			v0.tow = ((float)g->v - 1.5f) * OOW;
+			v3.x = x + (float)g->w * scale;
+			v3.y = y + (float)g->h * scale;
+			v3.sow = ((float)(g->u + g->w) - 0.5f) * OOW;
+			v1.tow = ((float)g->v - 1.5f) * OOW;
+			draw_tri(&v0, &v1, &v3);
+			draw_tri(&v0, &v3, &v2);
+			x += scale * (float)g->w;
+		}
+		else
+		{
+			x += scale * 10.0f;
+		}
+		str++;
+	}
+	grChromakeyMode(GR_CHROMAKEY_DISABLE);
 }
