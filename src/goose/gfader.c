@@ -34,6 +34,9 @@ static float					target_intensity = 1.0f;
 static float					intensity_delta = 0.0f;
 static int						intensity_ticks = 0;
 static void						(*callback_func)(void) = (void (*)(void))0;
+#ifdef PORT_HOST
+extern void port_gamma_entry(int, int);
+#endif
 #ifdef VEGAS
 static unsigned long			g_gamma[GAMMA_TABLE_SIZE];
 #endif
@@ -77,7 +80,11 @@ void load_gamma_table(void)
 			g = (int)(gamma * 255.0f);
 			val = (i << 24);
 			val |= (((unsigned)g << 16) |	((unsigned)g << 8) |	(unsigned)g);
+#ifdef PORT_HOST
+			port_gamma_entry(i, g);		/* the port's renderer stands in for the Voodoo gamma RAM */
+#else
 			*((volatile int *)0xa8000228) = val;
+#endif
 #else
 			g_gamma[i] = (unsigned long)(gamma * 255.0f);
 #endif

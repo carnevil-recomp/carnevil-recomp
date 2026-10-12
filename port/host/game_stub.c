@@ -1,52 +1,97 @@
 /*
- * game_stub.c - stand-ins for the game-side symbols GOOSE main() needs before the game's
- * own code is decompiled. main_proc here is a placeholder that exercises the dispatcher;
- * src/game/main.c (the real main_proc) replaces it once its callees exist.
+ * game_stub.c - stand-ins for game-side code the port does not have in C yet, plus the port's
+ * main_proc: it runs the game's real attract process (src/game/attract.c) on top of the
+ * decompiled object/texmap modules. Each stub disappears as its function is decompiled.
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <goose/process.h>
-#include <goose/sprites.h>
-extern unsigned long port_triangles;
+#include <goose/object.h>
+#include <glide/glide.h>
 #include "hal.h"
+#include "../../src/game/objects.h"
+#include "../../src/game/texmap.h"
 
-extern void sleep(int), die(int);
+extern void sleep(int), die(int), set_frame_factor(int);
 extern int interrupt_handler(void);
 extern struct process_node *qcreate(char *, int, void (*)(), int, int, int, int);
 extern struct process_node *cur_proc;
+extern void game_proc(void);
+extern void grDrawTriangleDma(MidVertex *, MidVertex *, MidVertex *, int);
 
+/* ---- globals the game code references ---- */
+int	violence_level = 3;
+int	D_801de900;		/* movie status flags */
+int	D_80212e14;
+int	attract_cycles;
+int	debug_mode = 0;
+int	D_801fad10, D_801e0f10;
+
+/* ---- GOOSE main() callees ---- */
 void func_800ca4a8(void) { }					/* records get_free_mem_left() */
 void func_8013f5b4(void) { }					/* two I/O ASIC ioctls after graphics init */
 int  vblank_handler(void) { return interrupt_handler(); }	/* the game's handler wraps the library's */
 int  interrupt_ioasic_handler(void) { return 1; }
 void game_dma0_handler(void) { }
+void func_80162a10(int *a, int *b, int *c, int *d) { *a = *b = *c = *d = 0; }	/* memory statistics */
 
-static void child_proc(int *args)
+/* ---- attract-mode callees not decompiled yet ---- */
+static int movie_frames;
+void movie_load(int n) { fprintf(stderr, "[stub] movie_load(%d): movies not implemented, skipping\n", n); D_801de900 &= ~4; movie_frames = 0; }
+void func_800e74f0(void) { }			/* movie play start */
+void func_800e7568(void) { }			/* movie play stop */
+void func_800ec260(int a, char *cue) { fprintf(stderr, "[stub] sound cue %d \"%s\"\n", a, cue); }
+void func_800ec2c8(void) { }
+int  func_800d4990(void) { return 0; }		/* I/O ASIC bit test */
+int  sub_800e4d90(int arg) { (void)arg; return 0; }	/* high-score reset screen */
+extern void load_attract_texmap(void), load_aamav_texmap(void);
+void preload_wave(int w) { fprintf(stderr, "[stub] preload_wave(%#x): level assets not loaded, attract texmaps only\n", w); load_attract_texmap(); load_aamav_texmap(); }
+void do_play_mode(game_object_t *o) { (void)o; }
+
+/* the triangle setup (0x800d1750) writes Voodoo commands; here it is a plain draw */
+void draw_tri(MidVertex *a, MidVertex *b, MidVertex *c) { grDrawTriangleDma(a, b, c, 0); }
+
+/* ---- the per-frame passes the game installs as GOOSE objects in func_800ca3a0 ---- */
+static void think_pass(void *data)		/* "BAR": object_draw_func (0x800cca70) */
 {
-	int	i;
-	for(i = 0; i < args[0]; i++)
+	game_object_t	*p;
+	short		i;
+	(void)data;
+	/* movies finish instantly for now: raise the "done" bit a few frames after a load */
+	if(++movie_frames == 30) D_801de900 |= 4;
+	for(i = objects[0].next; i != OBJ_NONE; i = p->next)
 	{
-		fprintf(stderr, "[demo] child tick %d (frame %lu)\n", i, hal_frame_count);
-		sleep(1);
+		p = &objects[i];
+		if(p->think) p->think(p);
 	}
-	fprintf(stderr, "[demo] child done\n");
+}
+static void draw_pass(void *data)		/* "FOO": print_onscreen_debuginfo's object loop */
+{
+	game_object_t	*p;
+	short		i;
+	(void)data;
+	for(i = objects[0].next; i != OBJ_NONE; i = p->next)
+	{
+		p = &objects[i];
+		if(p->draw) p->draw(p);
+	}
 }
 
-static image_info_t demo_image = { "CLWNBALL.WMS", 8.0f, 8.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f };
+static void game_init(void)			/* func_800ca3a0, the parts the port has */
+{
+	int	i;
+	init_objects();
+	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }
+	create_object("FOO", 0, 0, 1, 0, draw_pass);
+	create_object("BAR", 0, 0, 0, 0, think_pass);
+}
 
 void main_proc(int *args)
 {
-	int	n = 0;
-	sprite_info_t	*sprite;
 	(void)args;
-	fprintf(stderr, "[demo] main_proc running in process \"%.8s\"\n", cur_proc->process_name);
-	qcreate("child", 1, child_proc, 3, 0, 0, 0);
-	sprite = beginobj(&demo_image, 100.0f, 100.0f, 10.0f, 0);
-	fprintf(stderr, "[demo] sprite %s\n", sprite ? "created" : "FAILED");
-	while(1)
-	{
-		if(n % 60 == 0) fprintf(stderr, "[demo] main_proc frame %lu, %lu triangles drawn so far\n", hal_frame_count, port_triangles);
-		n++;
-		sleep(1);
-	}
+	fprintf(stderr, "[port] main_proc: starting the attract process\n");
+	game_init();
+	set_frame_factor(3);
+	qcreate("attract", 0x100, game_proc, 0, 0, 0, 0);
+	while(1) sleep(1);
 }

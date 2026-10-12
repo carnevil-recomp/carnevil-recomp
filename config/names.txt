@@ -375,3 +375,10 @@
 0x80147e8c random
 # goose PSHELL.S (rev 2)
 0x801a3128 goose_pshell_s_version
+# game texmap.c (0x800d6814-0x800d6e60): texture map tables and surfaces
+0x800d6814 find_surface
+0x800d6960 remove_surface_entry
+0x800d6cd8 load_texmap_decal
+0x800d6d9c load_texmap_clamped
+0x801f8850 surfaces
+0x802374ac num_surfaces

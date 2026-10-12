@@ -252,13 +252,16 @@ void grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU16 depth)
 }
 
 static const char *dump_path;
+static unsigned long dump_every;
 static void dump_frame(void)
 {
-	unsigned char *px; FILE *f; int y;
+	unsigned char *px; FILE *f; int y; char name[1024];
 	if(!dump_path || !have_display) return;
+	if(dump_every && (hal_frame_count % dump_every)) return;
 	px = malloc(win_w * win_h * 3);
 	glReadPixels(0, 0, win_w, win_h, GL_RGB, GL_UNSIGNED_BYTE, px);
-	if((f = fopen(dump_path, "wb")))
+	if(dump_every) snprintf(name, sizeof name, "%s.%06lu.ppm", dump_path, hal_frame_count); else snprintf(name, sizeof name, "%s", dump_path);
+	if((f = fopen(name, "wb")))
 	{
 		fprintf(f, "P6\n%d %d\n255\n", win_w, win_h);
 		for(y = win_h - 1; y >= 0; y--) fwrite(px + y * win_w * 3, 1, win_w * 3, f);
@@ -267,7 +270,18 @@ static void dump_frame(void)
 	free(px);
 }
 
-void grBufferSwap(int interval) { (void)interval; if(have_display) { dump_frame(); video_present(); if(video_closed()) exit(0); } }
+/* gamma RAM: the fader loads a ramp whose top entry is the screen brightness */
+static float brightness = 1.0f;
+void port_gamma_entry(int i, int g) { if(i == 255) brightness = g / 255.0f; }
+static void apply_brightness(void)
+{
+	if(brightness >= 1.0f) return;
+	glDisable(GL_TEXTURE_2D); glDisable(GL_DEPTH_TEST); glDisable(GL_ALPHA_TEST);
+	glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glColor4f(0.0f, 0.0f, 0.0f, 1.0f - brightness);
+	glBegin(GL_QUADS); glVertex3f(0, 0, 0); glVertex3f(hres, 0, 0); glVertex3f(hres, vres, 0); glVertex3f(0, vres, 0); glEnd();
+}
+void grBufferSwap(int interval) { (void)interval; if(have_display) { apply_brightness(); dump_frame(); video_present(); if(video_closed()) exit(0); } }
 void dma_start(void) { grBufferSwap(1); }			/* the DMA kick; the board swaps when it completes */
 
 void guTexSource(GrMipMapId_t h) { st.tex = h; }
@@ -303,4 +317,4 @@ int  grSstOpen(int res, int refresh, int fmt, int origin, int smooth, int nbuf)
 	return 1;
 }
 int  func_80157004(void) { return hal_refresh_hz(); }	/* Glide: current vertical refresh */
-void render_set_dump(const char *path) { dump_path = path; }
+void render_set_dump(const char *path, unsigned long every) { dump_path = path; dump_every = every; }
