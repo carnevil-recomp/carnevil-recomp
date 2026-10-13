@@ -17,7 +17,15 @@ typedef struct spawn
 	short		min_lock;		/* 0x06: needs wave_lock + 1 >= this */
 	short		thr1;			/* 0x08: difficulty needed (one player) */
 	short		thr2;			/* 0x0a: difficulty needed (two players) */
-	int		rest[8];		/* 0x0c: type, position, ... (construct_and_spawn_object); word aligned */
+	unsigned short	type;			/* 0x0c: game object type (0x800 the level end, 0x1102.. enemies) */
+	unsigned short	state;			/* 0x0e: the enemy's first state */
+	short		unk10;
+	short		unk12;
+	float		x, y, z;		/* 0x14 */
+	float		ry;			/* 0x20 */
+	float		unk24;
+	short		path;			/* 0x28 */
+	short		unk2a;
 } spawn_t;					/* sizeof = 0x2c */
 
 typedef struct die

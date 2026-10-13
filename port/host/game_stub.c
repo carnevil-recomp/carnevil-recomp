@@ -73,6 +73,12 @@ void draw_tri_rgb(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
 void draw_tri_alpha(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
 /* 0x800d2174: a constant-colour triangle (the original sorts the vertices by y) */
 void draw_tri_flat(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
+/* the model drawers' triangle routines (0x800d1a38 flat lit, 0x800d299c and 0x800d3bf0 with alpha, 0x800d3834): the
+   vertices start with x, y, 1/w, s/w, t/w like MidVertex, so the port draws them all the same way */
+void func_800d1a38(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
+void func_800d299c(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
+void func_800d3834(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
+void func_800d3bf0(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
 
 /* ---- the per-frame passes (objects.c: draw_pass 0x800cbbb4, think_pass 0x800cca70) call
    into level code the port does not have yet; these keep them no-ops in the attract ---- */
@@ -101,7 +107,6 @@ extern unsigned int background_color;
 
 /* the spawn table's per-type constructor (0x800e9570) and the levels' spawn lists */
 #include "../../src/game/spawn.h"
-int construct_and_spawn_object(spawn_t *w, int index) { fprintf(stderr, "[stub] construct_and_spawn_object(%d)\n", index); return 0; }
 spawn_t hhouse_spawn_blob[1], freakshow_spawn_blob[1], rickity_spawn_blob[1], bigtop_spawn_blob[1];
 int D_801e0f0c;
 /* game_init (0x800ca3a0, scene.c) is real; the set-up calls it makes that the port lacks */
@@ -114,7 +119,6 @@ void init_surfaces(void)			/* 0x800d6768: the texmap surface table */
 }
 void func_800d78fc(void) { }
 void func_800c8a44(float x, float y, float w, float r, unsigned int c) { (void)x; (void)y; (void)w; (void)r; (void)c; }	/* a screen marker */
-void func_800cfda8(float *m, float *a) { (void)m; (void)a; }	/* rotation matrix from angles */
 /* load_level_assets (0x800ca448, scene.c) is real; its loaders are not */
 void func_800db148(void) { }
 void func_800db800(void) { }
@@ -133,6 +137,8 @@ LOAD_STUB(load_chnk_model) LOAD_STUB(load_shotgun_texmap) LOAD_STUB(load_health_
 LOAD_STUB(load_machinegun_texmap) LOAD_STUB(load_flamethrower_texmap) LOAD_STUB(load_acid_texmap) LOAD_STUB(load_shotgun_model)
 LOAD_STUB(load_health_model) LOAD_STUB(load_ammo_model) LOAD_STUB(load_machinegun_model) LOAD_STUB(load_flamethrower_model)
 LOAD_STUB(load_acid_model)
+extern int randrng(int);
+float func_800fe8dc(float range) { return (float)(randrng(10000) - 5000) / (5000.0f / range); }	/* 0x800fe8dc: a random float in +-range */
 void func_800ffa20(float *pos) { (void)pos; }					/* 0x800ffa20: drawn around the camera when camera_follow is set */
 void debug_move_camera(void) { }						/* 0x800c93c4: the player 3/4 switches move the camera (debug) */
 void load_backup_file(char *name) { fprintf(stderr, "[stub] load_backup_file(%s)\n", name); }	/* 0x800caf48 */

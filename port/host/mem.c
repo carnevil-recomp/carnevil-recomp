@@ -50,13 +50,15 @@ static void split(blk_t *b, size_t n)
 
 void *malloc(size_t n)
 {
+	/* fresh arcade memory is zero and the game relies on it here and there (records it does not
+	   fully initialise); the port zeroes every block */
 	blk_t *b;
 	arena_init();
 	n = (n + ALIGN - 1) & ~(size_t)(ALIGN - 1);
 	if(!n) n = ALIGN;
 	for(b = head; b; b = b->next)
 	{
-		if(b->free && b->size >= n) { split(b, n); b->free = 0; return b + 1; }
+		if(b->free && b->size >= n) { split(b, n); b->free = 0; memset(b + 1, 0, n); return b + 1; }
 	}
 	fprintf(stderr, "[mem] arena exhausted (%zu bytes requested)\n", n);
 	return 0;

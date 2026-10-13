@@ -694,3 +694,41 @@
 # shoot.c (0x800d4f6c-0x800d6768): the light-gun shots
 0x800d6718 set_player_gun
 0x801e70b0 guns
+# model.c (0x800deaa0-0x800e2d48): drawing an enemy's model
+0x800deaa0 draw_model
+0x800e00c0 shiver_vertices
+0x800e08c8 draw_faces_tex_or_const2
+0x800e0c68 draw_faces_tex_or_const3
+0x800e1008 draw_faces_one_key
+0x800e1304 draw_faces_tex
+0x800e167c draw_faces_tex_or_const
+0x800e1a1c draw_faces_tex_plain
+0x800e1d64 draw_faces_flat
+0x800e2220 draw_faces_alpha
+0x800e25bc draw_faces_alpha2
+0x801149b4 init_groups
+0x8022b1e8 proj_verts
+0x8021f100 proj_normals
+0x80212ea0 lit_colors
+0x800cf6dc mat_vec_mul
+0x800cf7ec vec_add
+0x800cf98c transform_vectors
+0x800cf304 project_vertices
+# lights.c (0x800d6ef0-): the level's lights
+0x800d7dfc light_vertices
+0x8017c1d8 light_flags
+0x8017c1e8 ambient_override
+0x8017c2a8 light_list
+# krinkle.c (0x80126410-0x80127e40): Krinkle
+0x80126410 krinkle_draw
+0x80126d98 krinkle_init
+0x80126f5c krinkle_remove
+0x80127c04 krinkle_setup
+0x801e5b38 krik_verts
+0x8021efd8 krik_faces
+0x801e57fc krik_normals
+0x802372e0 krik_path
+0x8019b0a0 krinkle_sounds
+0x800ce63c set_enemy_scale
+0x800ce294 get_target_player
+0x80179d48 next_target_second

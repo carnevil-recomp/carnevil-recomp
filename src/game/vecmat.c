@@ -263,6 +263,99 @@ void mat_unscale(float *m, float *scale)
 	mat_mul(s, m, m);
 }
 
+/* 0x800cf6dc: out = m * v (rows of m dotted with v; out may not alias v) */
+void mat_vec_mul(float *v, float *m, float *out)
+{
+	out[0] = v[0] * m[0] + v[1] * m[1] + v[2] * m[2];
+	out[1] = v[0] * m[3] + v[1] * m[4] + v[2] * m[5];
+	out[2] = v[0] * m[6] + v[1] * m[7] + v[2] * m[8];
+}
+
+/* 0x800cf7ec */
+void vec_add(float *a, float *b, float *out)
+{
+	out[0] = a[0] + b[0];
+	out[1] = a[1] + b[1];
+	out[2] = a[2] + b[2];
+}
+
+/* 0x800cf98c: out[i] = m * v[i] for n vectors (the normals of a submesh) */
+void transform_vectors(int n, float *out, float *v, float *m)
+{
+	int	i;
+
+	for(i = 0; i < n; i++)
+	{
+		out[0] = v[0] * m[0] + v[1] * m[1] + v[2] * m[2];
+		out[1] = v[0] * m[3] + v[1] * m[4] + v[2] * m[5];
+		out[2] = v[0] * m[6] + v[1] * m[7] + v[2] * m[8];
+		v += 3;
+		out += 3;
+	}
+}
+
+/* 0x800cf304: n model vertices through a placement (matrix m at position pos) and the
+   camera to the screen: out[i] = (x, y, 1/depth), or q = -1 when the vertex is too near, too
+   far or outside the (wide) view. Each takes three triangles' worth of the RTP count. The
+   2^21 add-and-subtract rounds the coordinates to the Voodoo's 1/8 pixel. */
+extern float	view_matrix[9], camera_neg_pos[3], cull_x, cull_y, proj_x, proj_y;
+extern int	half_height, RTP_val;
+void project_vertices(int n, float *v, float *out, float *m, float *pos)
+{
+	float	full[9];
+	float	p[3];
+	float	x, y, z, q;
+	int	i;
+
+	mat_mul(view_matrix, m, full);
+	p[0] = pos[0] + camera_neg_pos[0];
+	p[1] = pos[1] + camera_neg_pos[1];
+	p[2] = pos[2] + camera_neg_pos[2];
+	mat_vec_mul(p, view_matrix, p);
+	RTP_val += n;
+	for(i = 0; i < n; i++)
+	{
+		x = v[0] * full[0] + v[1] * full[1] + v[2] * full[2] + p[0];
+		y = v[0] * full[3] + v[1] * full[4] + v[2] * full[5] + p[1];
+		z = v[0] * full[6] + v[1] * full[7] + v[2] * full[8] + p[2];
+		if(z < 1.1f || z > 400.0f)
+		{
+			out[2] = -1.0f;
+		}
+		else
+		{
+			q = 1.0f / z;
+			x = x * q;
+			if(x > cull_x || x < -cull_x)
+			{
+				out[2] = -1.0f;
+			}
+			else
+			{
+				y = y * q;
+				if(y > cull_y || y < -cull_y)
+				{
+					out[2] = -1.0f;
+				}
+				else
+				{
+					x = x * proj_x + 200.0f;
+					y = y * proj_y + (float)half_height;
+					x = x + 2097152.0f;
+					y = y + 2097152.0f;
+					x = x - 2097152.0f;
+					y = y - 2097152.0f;
+					out[0] = x;
+					out[2] = q;
+					out[1] = y;
+				}
+			}
+		}
+		v += 3;
+		out += 3;
+	}
+}
+
 /* 0x800d0780 */
 void vec_negate(float *v, float *out)
 {

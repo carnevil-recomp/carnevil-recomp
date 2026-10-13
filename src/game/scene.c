@@ -17,7 +17,7 @@ extern void	graphical_printf(char *, char *, ...);
 extern void	draw_string(int, char *, float, float);
 extern float	get_screen_pos(float *, float *);		/* 0x800d07a8: -1 when off screen */
 extern void	func_800c8a44(float, float, float, float, unsigned int);	/* a screen marker */
-extern void	func_800cfda8(float *, float *);			/* a rotation matrix from three angles */
+extern void	rot_matrix_zyx(float *, float *);			/* a rotation matrix from three angles */
 extern void	func_800c836c(void), func_800c865c(void), init_surfaces(void), func_800d78fc(void);
 extern void	init_camera(void), rot_matrix_yxz(float *, float *), vec_negate(float *, float *);
 extern float	camera_x, camera_rx, view_matrix[9], camera_neg_pos[3];	/* camera.c */
@@ -259,7 +259,7 @@ void debug_move_point(float *p)
 	{
 		debug_angles[2] -= 0.01f;
 	}
-	func_800cfda8(p + 3, debug_angles);
+	rot_matrix_zyx(p + 3, debug_angles);
 }
 
 /* 0x800c81b8: the game's state at boot: attract (0x800), no wave, no debug, the camera at

@@ -23,7 +23,8 @@ extern void	show_volume_level(void);
 extern float	get_screen_pos(float *, float *);	/* 0x800d07a8 */
 extern void	sample_switches(void), debug_move_enemy(enemy_t *), debug_move_point(float *), debug_move_vectors(void);	/* scene.c */
 extern void	draw_marker(float *, float, unsigned int);
-extern void	update_camera(int), show_debug_light_(int);	/* camera.c, and the lights */
+extern void	update_camera(int), show_debug_light_(int);
+extern void	*camera_data;				/* camera.c: the level's camera file, 0 when none */	/* camera.c, and the lights */
 extern void	func_800d6e94(void), func_800ff418(void);
 extern player_stats_t *something_to_do_with_shooting_(player_stats_t *);	/* 0x800d5a84 */
 extern void	func_800ce2f8(float *, float, float *);
@@ -32,7 +33,6 @@ extern void	func_800dbb80(void), func_80100558(void), func_800e2fe4(void), func_
 extern void	func_800c9620(int), func_800c9bf0(void), print_heap_and_obj_info_onscreen(void);
 extern float	fsqrt(float);				/* 0x80144900 */
 extern int	free_mem_left;				/* 0x801e0ee8 */
-extern int	D_801e5cbc;				/* draw the level's 3D even without debug bit 0 */
 extern int	shown_frame;				/* 0x80212da0: the movie frame on screen */
 extern int	loaded_wave;				/* 0x80212e30 */
 extern short	nearest_enemy;				/* 0x80212d92: id of the enemy nearest the camera this frame */
@@ -91,7 +91,7 @@ void draw_pass(void)
 	}
 	shown_frame = frame;
 	sample_switches();
-	if(D_801e5cbc || (debug_mode & DEBUG_ON))
+	if(camera_data || (debug_mode & DEBUG_ON))
 	{
 		update_camera(frame);
 		show_debug_light_(frame);
@@ -594,4 +594,49 @@ short nearest_enemy_bigtop(void)
 		}
 	}
 	return(best);
+}
+
+
+/* 0x800ce63c: an enemy's scale: s times the model units' per-axis scale (-8.3333, 10, 8.3333:
+   the models' x and z run the other way), and its radius from its own base radius */
+void set_enemy_scale(enemy_t *e, float s)
+{
+	e->scale[0] = s * -8.3333f;
+	e->scale[1] = s * 10.0f;
+	e->scale[2] = s * 8.3333f;
+	e->radius = e->unkcc * e->scale[1];
+}
+
+/* 0x800ce294: the player the next enemy goes for: the two players in turn, each turn
+   falling back to the other when its player is not in the game */
+int	next_target_second;			/* 0x80179d48 (.data) */
+player_stats_t *get_target_player(void)
+{
+	player_stats_t	*p;
+
+	if(next_target_second == 0)
+	{
+		if(player_stats[0].state == 4)
+		{
+			p = &player_stats[0];
+		}
+		else
+		{
+			p = &player_stats[1];
+		}
+		next_target_second = 1;
+	}
+	else
+	{
+		if(player_stats[1].state == 4)
+		{
+			p = &player_stats[1];
+		}
+		else
+		{
+			p = &player_stats[0];
+		}
+		next_target_second = 0;
+	}
+	return(p);
 }
