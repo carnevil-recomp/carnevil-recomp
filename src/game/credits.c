@@ -460,8 +460,9 @@ static void setup_pricing(void)
 	{
 		if(continent == 6)
 		{
+			p = custom_pricing;
 			bad = 0;
-			for(p = custom_pricing, i = 0; i < 22; i++)
+			for(i = 0; i < 22; i++)
 			{
 				if(get_adjustment(4 + i, &p[i]))
 				{
@@ -643,14 +644,7 @@ void ccproc_proc(int *args)
 			{
 				increment_audit(i);
 				increment_audit(5);
-				if(coin_counter.unk != 1)
-				{
-					pulse_coin_counter(coin_counter.enabled[i]);
-				}
-				else
-				{
-					pulse_coin_counter(1);
-				}
+				pulse_coin_counter(coin_counter.unk == 1 ? 1 : coin_counter.enabled[i]);
 				coin_counter.pending[i]--;
 			}
 		}
@@ -838,11 +832,15 @@ typedef struct { float x, y, z, pad; } flat_vertex_t;
 void draw_hbar(float x0, float x1, float y, float h)
 {
 	flat_vertex_t	a, b, c, d;
+	float	half, top, bottom;
 
-	a.x = x0; a.y = y - h * 0.5f; a.z = 0.9090909f;
-	b.x = x1; b.y = y - h * 0.5f; b.z = 0.9090909f;
-	c.x = x0; c.y = y + h * 0.5f; c.z = 0.9090909f;
-	d.x = x1; d.y = y + h * 0.5f; d.z = 0.9090909f;
+	half = h * 0.5f;
+	top = y - half;
+	bottom = y + half;
+	a.x = x0; a.y = top; a.z = 0.9090909f;
+	b.x = x1; b.y = top; b.z = 0.9090909f;
+	c.x = x0; c.y = bottom; c.z = 0.9090909f;
+	d.x = x1; d.y = bottom; d.z = 0.9090909f;
 	draw_tri_flat(&a, &b, &d);
 	draw_tri_flat(&a, &d, &c);
 }

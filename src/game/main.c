@@ -57,7 +57,6 @@ void utime_proc(void)
 	int	last, delta;
 	int	total, part;
 
-	part = 0;
 	if(get_audit(7, &uptime))
 	{
 		uptime = 0;
@@ -72,15 +71,15 @@ void utime_proc(void)
 		if((player_stats[0].state & 0x1d) || (player_stats[1].state & 0x1d))
 		{
 			get_audit(8, &total);
-			if(part < 0)
-			{
-				total = 0;
-				set_audit(8, 0);
-			}
-			else
+			if(part >= 0)
 			{
 				total += delta;
 				set_audit(8, total);
+			}
+			else
+			{
+				total = 0;
+				set_audit(8, 0);
 			}
 			set_percent_audit(8, 7, 9);
 			if((player_stats[0].state & 0x1d) && (player_stats[1].state & 0x1d))
@@ -162,9 +161,9 @@ void main_proc(void)
 		{
 			cmos_status = 1;
 			printf("Adjustment failure %d\n", val);
+			restored = 1;
 			restore_game_adjustments();
 			clear_all_audits();
-			restored = 1;
 			set_adjustment(0x52, 8888);
 			set_adjustment(0x2e, 0);
 		}
@@ -172,9 +171,9 @@ void main_proc(void)
 		{
 			cmos_status = 1;
 			printf("Factory restore adjustment %d\n", val);
-			restored = 1;
 			restore_game_adjustments();
 			clear_all_audits();
+			restored = 1;
 			set_adjustment(0x52, 8888);
 			set_adjustment(0x2e, 0);
 		}

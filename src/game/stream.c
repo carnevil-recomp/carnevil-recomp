@@ -432,8 +432,8 @@ void stream_jump(int a, int b, int c)
 {
 	int	sector, cur;
 
-	sector = segment[b][0];
 	cur = segment[a][0];
+	sector = segment[b][0];
 	loop_start = sector;
 	sector = segment[c][1];
 	stream_sector = cur;

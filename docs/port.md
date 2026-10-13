@@ -71,8 +71,8 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | hiscore.c | game0 (-O0, `register`) | 4 of 4 |
 | soundio.c | game2 | 9 of 10; cue_priority 42% |
 | stream.c | game2 | 19 of 23; stream_select_wave 86%, stream_debug_display 96%, stream_jump 60%, stream_fill 52% |
-| gun.c | game2 | 0 of 2 (32%, 18%) |
-| main.c | ? | main_proc 39%, utime_proc 10% |
+| gun.c | game2 | 0 of 2 (32%, 18%: the control-byte load keeps its address in a register, not yet reproduced) |
+| main.c | game2 | 2 of 2 (main_proc and utime_proc) |
 | movie.c, attract.c (game_proc 63%), objects.c (add_object 43%) | game2 | not revisited yet |
 
 None of these is registered in `config/modules.txt` yet; a module is registered once every
