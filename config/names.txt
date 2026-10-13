@@ -440,3 +440,13 @@
 0x800f1bac check_all_audits
 0x800f1c14 set_percent_audit_inc
 0x800f1cd4 set_percent_audit
+# game movie.c (0x800e70b0-0x800e8f88): names by what the functions do (the Binary Ninja
+# guesses were decompress_movie/decoode_movie2/show_debug_frame_data/load_fram_wrapper)
+0x800e75ac movie_init
+0x800e77ec movie_draw_frame
+0x800e7c6c movie_depth_at
+0x800e7cf8 movie_disk_callback
+0x800e82c8 decode_movie_1pal
+0x800e8510 decode_movie_8pal
+0x800e878c decode_movie_1pal_depth
+0x800e8b78 decode_movie_8pal_depth

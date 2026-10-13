@@ -83,6 +83,30 @@ the flags and a set of source idioms. `MATCH_MAXDIFF=N` lengthens the diff it pr
   dip word (`srl`) and loop index (`sltiu`); `x0 = 100.0f` held across a call in the volume
   bar; the SDK's `cmos_config_info_t` (16 record tables) as the CMOS set-up local; `remove()`
   then `malloc(0x10000)` and a 40-byte header in `file_copy`; `stderr` is `&__dj_stderr`.
+- **movie.c (24 of 25 exact)**: the DMA descriptor list in the draw pass is built through a
+  file-scope `register unsigned int *dma asm("gp");` (the game is `-G 0`, so `$gp` is free;
+  the local-variable form is silently ignored by this cc1, and `asm("$gp")` makes a memory
+  variable called `$gp`). The decoders reuse one index `i` for the palette and pixel loops
+  and one `tab` pointer for the table fill and the pixel lookups (`tab = movie_depth_table`
+  twice); the depth decoders compute `dp = cp + width * 256`, `dtab = (unsigned short *)dp`,
+  `dpb = dp + 0x200`, then reuse `dp = dpb` as the first row's plane pointer (the copy is
+  what keeps the `addu t1,a3,zero` in the prologue), with `cols` assigned after that. DMA
+  words are stored in order `dma[0..3]`, then `lfb += 0x1000`, `src += width`, `dma += 4`.
+  The screen grab splits a pixel into three `unsigned char b, g, r` locals (declared in
+  that order) and `fwrite(&r, 1, 1, f)` each. The script interpreter reads the keyword into
+  a local (it is the second printf argument of the "Unknown keyword" message, already in
+  a1), tests `frame < stop_frame` once before the opcode loop, loads every operand into one
+  `arg` local (`arg2`, `arg3` for the stream jump) and `target` for the goto cases, and its
+  cases are in the jump-table order 1, 3, 2, 5, 6, 19, 25, 12, 14, 16, 17, 21, 22, 23, 26,
+  29, 27, 28, 15, 18, 13, 7, 8, 4, 10, 24, 11, 20. The loader process has no `buf` local
+  (`movie.load->` everywhere), steps the partition table pointer (`table += partition * 3`)
+  and uses one `n` for the sector and the stream read count; its if/else puts the `sleep`
+  at the end.
+- **Transcription errors the matcher found in movie.c**: the audit opcode's sub-cases are
+  20, 30-33, 40-43 (not 20-28); the debug frame text prints `frame, movie.frame_number`;
+  `grLfbReadRegion(..., fb, 800)`; `grDitherMode(0)` (not `grTexCombineFunction(0, 0)`)
+  before the LFB write; `enable_flag = 0` is stored before the decoder pointer in every
+  single-buffered `movie_load` case and `height` last in `movie_init`.
 - Per-function matching status lives in `docs/port.md`.
 
 ## Assembler behaviour (`tools/sn2gas.py`)

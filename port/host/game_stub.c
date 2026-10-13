@@ -132,7 +132,7 @@ static void draw_pass(void *data)		/* "FOO": print_onscreen_debuginfo's object l
 	short		i;
 	(void)data;
 	/* 0x800e77ec: put the movie frame up, or clear when no movie is playing */
-	show_debug_frame_data();
+	movie_draw_frame();
 	for(i = objects[0].next; i != OBJ_NONE; i = p->next)
 	{
 		p = &objects[i];
@@ -149,7 +149,7 @@ void game_init(void)			/* func_800ca3a0, the parts the port has */
 	int	i;
 	init_objects();
 	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }
-	load_fram_wrapper();
+	movie_init();
 	load_font_texmap();
 	create_object("FOO", 0, 0, 1, 0, draw_pass);
 	create_object("BAR", 0, 0, 0, 0, think_pass);

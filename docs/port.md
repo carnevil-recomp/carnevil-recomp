@@ -73,13 +73,24 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | stream.c | game2 | 19 of 23; stream_select_wave 86%, stream_debug_display 96%, stream_jump 60%, stream_fill 52% |
 | gun.c | game2 | 0 of 2 (32%, 18%: the control-byte load keeps its address in a register, not yet reproduced) |
 | main.c | game2 | 2 of 2 (main_proc and utime_proc) |
-| movie.c, attract.c (game_proc 63%), objects.c (add_object 43%) | game2 | not revisited yet |
+| movie.c | game2 | 24 of 25 at 100% (every decoder, the draw pass, the script interpreter); loadfram_proc 74% (only the s0/s1/s2 assignment differs) |
+| attract.c (game_proc 63%), objects.c (add_object 43%) | game2 | not revisited yet |
 
 A module is registered in `config/modules.txt` once every function in its source file's
 address range matches and its data is laid out in the file's order (the audit file was the
 first: its text ends at a stray literal word at 0x800f1d84, and the adjustment table that
 follows its tables in `.data` belongs to the next file). The main/credits file
 (0x800c4f18-0x800c82xx) and the high-score file still contain undecompiled functions.
+movie.c is three original files (the player at 0x800e70b0-0x800e8f88, the scroll update at
+0x800f3580 and the script interpreter at 0x80110270-0x80110ad8); the player file still has
+func_800e70b0/7130/7184/7f3c/8f88 and the gamma presets' neighbours to decompile before it
+can be registered.
+
+Function names are ours and describe what the code does; where they replace a Binary
+Ninja guess (`decompress_movie` -> `decode_movie_8pal`, `decoode_movie2` ->
+`decode_movie_8pal_depth`, `show_debug_frame_data` -> `movie_draw_frame`,
+`load_fram_wrapper` -> `movie_init`) the override lives in `config/names.txt` and the
+original guess stays in `config/functions_v103.txt`.
 
 ## Screen origin and texture orientation
 
@@ -95,7 +106,7 @@ the font glyph tables index rows from the file top and came out blank.)
 three glyph tables for FONT0001.WMS, `draw_string`, `draw_string_color`, `draw_string_at`,
 `draw_string_centered`, `string_width`. The attract "play mode" screen (`do_play_mode` in
 attract.c) draws the LEGAL1 texmap plus the credit lines with it. The per-frame buffer clear
-comes from the game's draw pass (show_debug_frame_data, 0x800e77ec, clears when no movie is
+comes from the game's draw pass (movie_draw_frame, 0x800e77ec, clears when no movie is
 playing); the port's stand-in draw pass does the same.
 
 ## Movies (`src/game/movie.c`, `port/host/disk.c`)
@@ -103,7 +114,7 @@ playing); the port's stand-in draw pass does the same.
 The attract sequences, the intro and ending, and every level's background are "movies":
 raw TRAP partitions of fixed-size frames (0xd0, 0xc9, 0x12e or 0x135 sectors). `movie_load(id)`
 picks the partition, the frame decoder and a script; the `loadfram` process reads one frame
-per tick with the BIOS `_SecReads` into three rotating disk buffers; `show_debug_frame_data`
+per tick with the BIOS `_SecReads` into three rotating disk buffers; `movie_draw_frame`
 (first thing in the draw pass) decodes the oldest one into a 400x256 buffer of LFB words
 (RGB555 low half, depth high half) and DMAs it into the Voodoo frame buffer with
 `grLfbWriteMode(13)`; `do_script` walks the movie script (play-until, seek, goto, call,

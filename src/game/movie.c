@@ -3,13 +3,13 @@
  * 0x800f3580, script interpreter at 0x80110270-0x80110ad8). See movie.h for the design.
  *
  * Frame formats (one frame = sectors_per_frame x 512 bytes in a raw TRAP partition):
- *   decompress_movie     8 palettes of 256 RGB565 (0x1000 bytes) then 400x256 indices in
+ *   decode_movie_8pal     8 palettes of 256 RGB565 (0x1000 bytes) then 400x256 indices in
  *                        32 strips of 8 rows; row r of a strip uses palette 7-r. (attract,
  *                        intro, ending: 0xd0 sectors)
- *   decoode_movie2       as above plus a 256-entry depth table and a 400x128 depth index
+ *   decode_movie_8pal_depth       as above plus a 256-entry depth table and a 400x128 depth index
  *                        plane, each depth row serving two image rows (levels: 0x135 sectors)
- *   decode_movie_flat    one palette (0x200 bytes) then 400x256 indices (midway: 0xc9)
- *   decode_movie_flat_depth  one palette, indices, depth table, depth plane (0x12e)
+ *   decode_movie_1pal    one palette (0x200 bytes) then 400x256 indices (midway: 0xc9)
+ *   decode_movie_1pal_depth  one palette, indices, depth table, depth plane (0x12e)
  * Every output pixel is a 32-bit LFB word: RGB565 in the low half, depth in the high half
  * (0xffff = farthest for the flat formats), written with grLfbWriteMode(13).
  */
@@ -38,7 +38,7 @@ extern void	specific_gamma_load(float, float);
 extern void	stop_level_cue_and_stream(void), play_level_cue(int, char *);
 extern void	func_800ebdbc(int, char *), func_800ebe34(int, char *), func_800ebd70(int, char *);
 extern void	func_800ebe6c(void), func_800ebe8c(void), func_800ebb44(void), func_800d4968(void);
-extern void	func_800ec370(int, int), func_800ec504(int);
+extern void	play_bigtop_cue(int, int), func_800ec504(int);
 extern void	stream_set_loop(int, int), stream_jump(int, int, int);	/* 0x801400a4, 0x801400dc */
 extern void	*func_800d6758(int);
 extern short	add_object1_wrapper(int, void (*)(), int, int);
@@ -132,7 +132,7 @@ int movie_load(int id)
 		movie.enable_flag = 1;
 		movie.unk34 = 100;
 		movie.sectors_per_frame = 0x135;
-		movie.decode = decoode_movie2;
+		movie.decode = decode_movie_8pal_depth;
 		break;
 	case 2:
 		movie_script_init(freakshow_script);
@@ -140,7 +140,7 @@ int movie_load(int id)
 		movie.enable_flag = 1;
 		movie.unk34 = 100;
 		movie.sectors_per_frame = 0x135;
-		movie.decode = decoode_movie2;
+		movie.decode = decode_movie_8pal_depth;
 		break;
 	case 5:
 		movie_script_init(rickity_town_script);
@@ -148,7 +148,7 @@ int movie_load(int id)
 		movie.enable_flag = 1;
 		movie.unk34 = 1800;
 		movie.sectors_per_frame = 0x135;
-		movie.decode = decoode_movie2;
+		movie.decode = decode_movie_8pal_depth;
 		break;
 	case 7:
 		movie_script_init(bigtop_script);
@@ -156,31 +156,31 @@ int movie_load(int id)
 		movie.enable_flag = 1;
 		movie.unk34 = 1800;
 		movie.sectors_per_frame = 0x135;
-		movie.decode = decoode_movie2;
+		movie.decode = decode_movie_8pal_depth;
 		break;
 	case 3:
 		movie_script_init(&movie_scripts[INTRO_SCRIPT_OFFSET]);
 		movie.partition = 13;
 		movie.unk34 = 100;
 		movie.sectors_per_frame = 0xd0;
-		movie.decode = decompress_movie;
 		movie.enable_flag = 0;
+		movie.decode = decode_movie_8pal;
 		break;
 	case 9:
 		movie_script_init(&movie_scripts[ATTRACT2_SCRIPT_OFFSET]);
 		movie.partition = 12;
 		movie.unk34 = 700;
 		movie.sectors_per_frame = 0xd0;
-		movie.decode = decompress_movie;
 		movie.enable_flag = 0;
+		movie.decode = decode_movie_8pal;
 		break;
 	case 4:
 		movie_script_init(&movie_scripts[MIDWAY_SCRIPT_OFFSET]);
 		movie.partition = 2;
 		movie.unk34 = 100;
 		movie.sectors_per_frame = 0xc9;
-		movie.decode = decode_movie_flat;
 		movie.enable_flag = 0;
+		movie.decode = decode_movie_1pal;
 		break;
 	case 8:
 		movie_script_init(&movie_scripts[GALLERY_SCRIPT_OFFSET]);
@@ -188,15 +188,15 @@ int movie_load(int id)
 		movie.enable_flag = 1;
 		movie.unk34 = 62;
 		movie.sectors_per_frame = 0x135;
-		movie.decode = decoode_movie2;
+		movie.decode = decode_movie_8pal_depth;
 		break;
 	case 10:
 		movie_script_init(&movie_scripts[END_SCRIPT_OFFSET]);
 		movie.partition = 14;
 		movie.unk34 = 700;
 		movie.sectors_per_frame = 0xd0;
-		movie.decode = decompress_movie;
 		movie.enable_flag = 0;
+		movie.decode = decode_movie_8pal;
 		break;
 	case 6:
 		movie_script_init(&movie_scripts[ATTRACT_SCRIPT_OFFSET]);
@@ -204,7 +204,7 @@ int movie_load(int id)
 		movie.enable_flag = 1;
 		movie.unk34 = 100;
 		movie.sectors_per_frame = 0xd0;
-		movie.decode = decompress_movie;
+		movie.decode = decode_movie_8pal;
 		break;
 	case 11:
 		movie_script_init(&movie_scripts[ATTRACT3_SCRIPT_OFFSET]);
@@ -212,7 +212,7 @@ int movie_load(int id)
 		movie.enable_flag = 1;
 		movie.unk34 = 100;
 		movie.sectors_per_frame = 0xd0;
-		movie.decode = decompress_movie;
+		movie.decode = decode_movie_8pal;
 		break;
 	default:
 		printf("Movie_load: don't know movie %d\n", id);
@@ -253,7 +253,7 @@ void movie_load_ending(void)
 	movie.unk34 = 700;
 	movie.sectors_per_frame = 0xd0;
 	movie.enable_flag = 0;
-	movie.decode = decompress_movie;
+	movie.decode = decode_movie_8pal;
 }
 
 /* 0x800e81e4-0x800e82a0: gamma presets used by the scripts */
@@ -264,7 +264,7 @@ void movie_gamma_75(void) { specific_gamma_load(0.75f, 1.0f); }
 void movie_gamma_100(void) { specific_gamma_load(1.0f, 1.0f); }
 
 /* 0x800e75ac: allocate the buffers and start the loader process (called once at game init) */
-void load_fram_wrapper(void)
+void movie_init(void)
 {
 	unsigned int	*p;
 	int		i;
@@ -315,7 +315,6 @@ void load_fram_wrapper(void)
 	movie.unk34 = 100;
 	movie.sectors_per_frame = 0x12e;
 	movie.width = MOVIE_WIDTH;
-	movie.height = MOVIE_HEIGHT;
 	mdb2.state = 0;
 	mdb3.state = 0;
 	mdb1.frame = 0;
@@ -325,6 +324,7 @@ void load_fram_wrapper(void)
 	movie.flags = 0;
 	movie.scan_plane = 0;
 	movie.disk_error = 0;
+	movie.height = MOVIE_HEIGHT;
 	qcreate("loadfram", 0x400, loadfram_proc, 0, 0, 0, 0);
 }
 
@@ -343,67 +343,67 @@ void movie_disk_callback(int err)
    buffer, then let the script decide which frame comes next */
 void loadfram_proc(void)
 {
-	movie_buf_t	*buf;
-	int		*table;
-	int		sector;
-	int		extra;
-	int		i;
+	int	*table;
+	int	n;			/* the frame's first sector, then the music stream reads issued */
+	int	i;
 
 	disk_pending = 0;
 	for(;;)
 	{
-		if(movie_paused || (movie.flags & MOVIE_READING) || movie.load->state != 0
-			|| !(movie.flags & MOVIE_PLAYING))
+		if(!movie_paused && !(movie.flags & MOVIE_READING) && movie.load->state == 0
+			&& (movie.flags & MOVIE_PLAYING))
 		{
-			sleep(1);
-			continue;
-		}
-		buf = movie.load;
-		movie.flags |= MOVIE_READING;
-		buf->state = 1;
-		install_disk_callback(movie_disk_callback);
-		sector = movie.frame_number * movie.sectors_per_frame;
-		i = 0;
-		table = ide_get_partition_table();
-		disk_pending = 1;
-		_SecReads(sector + table[2 + movie.partition * 3], buf->buffer, movie.sectors_per_frame);
-		extra = stream_kick();
-		disk_pending += extra;
-		do
-		{
-			sleep(1);
-			i++;
-			if(i >= 201)
+			movie.flags |= MOVIE_READING;
+			movie.load->state = 1;
+			install_disk_callback(movie_disk_callback);
+			n = movie.frame_number * movie.sectors_per_frame;
+			i = 0;
+			table = ide_get_partition_table();
+			disk_pending = 1;
+			table += movie.partition * 3;
+			_SecReads(n + table[2], movie.load->buffer, movie.sectors_per_frame);
+			n = stream_kick();
+			disk_pending += n;
+			do
 			{
-				disk_pending = 0;
+				sleep(1);
+				i++;
+				if(i >= 201)
+				{
+					disk_pending = 0;
+				}
+			} while(disk_pending > 0 && (movie.flags & MOVIE_PLAYING));
+			movie.flags &= ~MOVIE_READING;
+			if(n)
+			{
+				stream_fill_done();
 			}
-		} while(disk_pending > 0 && (movie.flags & MOVIE_PLAYING));
-		movie.flags &= ~MOVIE_READING;
-		if(extra)
-		{
-			stream_fill_done();
-		}
-		buf->state = 2;
-		buf->frame = movie.frame_number;
+			movie.load->state = 2;
+			movie.load->frame = movie.frame_number;
 #ifdef PORT_HOST
-		{ extern int port_trace; if(port_trace && (movie.frame_number < 12 || !(movie.frame_number % 300))) { extern unsigned long hal_frame_count; fprintf(stderr, "[movie] vblank %lu partition %d frame %d stop %d\n", hal_frame_count, movie.partition, movie.frame_number, script_stop_frame); } }	/* PORT_TRACE_FRAME */
+			{ extern int port_trace; if(port_trace && (movie.frame_number < 12 || !(movie.frame_number % 300))) { extern unsigned long hal_frame_count; fprintf(stderr, "[movie] vblank %lu partition %d frame %d stop %d\n", hal_frame_count, movie.partition, movie.frame_number, script_stop_frame); } }	/* PORT_TRACE_FRAME */
 #endif
-		movie.frame_number = do_script(movie.frame_number);
-		if(movie.frame_number == MOVIE_END)
-		{
-			movie.flags = (movie.flags & ~MOVIE_PLAYING) | MOVIE_DONE;
-		}
-		if(movie.load == &mdb1)
-		{
-			movie.load = &mdb2;
-		}
-		else if(movie.load == &mdb2)
-		{
-			movie.load = &mdb3;
+			movie.frame_number = do_script(movie.frame_number);
+			if(movie.frame_number == MOVIE_END)
+			{
+				movie.flags = (movie.flags & ~MOVIE_PLAYING) | MOVIE_DONE;
+			}
+			if(movie.load == &mdb1)
+			{
+				movie.load = &mdb2;
+			}
+			else if(movie.load == &mdb2)
+			{
+				movie.load = &mdb3;
+			}
+			else
+			{
+				movie.load = &mdb1;
+			}
 		}
 		else
 		{
-			movie.load = &mdb1;
+			sleep(1);
 		}
 	}
 }
@@ -449,9 +449,9 @@ void grab_request_screen(void)
 void grab_save_screen(char *name)
 {
 	FILE		*f;
-	unsigned char	rgb[3];
+	unsigned char	b, g, r;
 	unsigned short	*fb;
-	unsigned short	v;
+	unsigned int	v;
 	int		x, y, row;
 
 	printf("grab_save_screen(): begin\n");
@@ -469,26 +469,25 @@ void grab_save_screen(char *name)
 	grLfbWriteMode(0);
 	grLfbOrigin(1);
 	grLfbBypassMode(0);
-	grLfbReadRegion(0, 0, MOVIE_WIDTH, MOVIE_HEIGHT, 800, fb);
+	grLfbReadRegion(0, 0, MOVIE_WIDTH, MOVIE_HEIGHT, fb, 800);
 	grLfbEnd();
 	printf("read region\n");
-	row = 0x18e70;
-	for(y = 255; y >= 0; y--)
+	for(y = 255, row = 0x18e70; y >= 0; y--)
 	{
 		for(x = 0; x < MOVIE_WIDTH; x++)
 		{
 			v = fb[row + x];
-			rgb[0] = (v >> 11) << 3;
-			rgb[1] = (v >> 3) & 0xfc;
-			rgb[2] = (v & 0x1f) << 3;
-			fwrite(&rgb[0], 1, 1, f);
-			fwrite(&rgb[1], 1, 1, f);
-			fwrite(&rgb[2], 1, 1, f);
+			r = (v >> 11) << 3;
+			g = (v >> 3) & 0xfc;
+			b = (v & 0x1f) << 3;
+			fwrite(&r, 1, 1, f);
+			fwrite(&g, 1, 1, f);
+			fwrite(&b, 1, 1, f);
 		}
 		row -= MOVIE_WIDTH;
 	}
 #else
-	(void)fb; (void)v; (void)x; (void)y; (void)row; (void)rgb;
+	(void)fb; (void)v; (void)r; (void)g; (void)b; (void)x; (void)y; (void)row;
 #endif
 	fclose(f);
 	printf("grab_save_screen(): end\n");
@@ -497,20 +496,28 @@ void grab_save_screen(char *name)
 /* 0x800e7c6c: distance of the movie pixel under (x, y), 300 when no movie is up */
 float movie_depth_at(float x, float y)
 {
-	if(movie.disp->state == 2 && (movie.flags & MOVIE_PLAYING))
+	int	ix, iy;
+
+	if(movie.disp->state != 2 || !(movie.flags & MOVIE_PLAYING))
 	{
-		return(func_800c9158((unsigned int *)movie.disp->buffer + (int)y * MOVIE_WIDTH + (int)x));
+		return(300.0f);
 	}
-	return(300.0f);
+	ix = (int)x;
+	iy = (int)y;
+	return(func_800c9158(&((unsigned int *)movie.disp->buffer)[iy * MOVIE_WIDTH + ix]));
 }
 
 #ifdef PORT_HOST
 extern void	port_movie_blit(const unsigned int *buf, int scroll);
+#else
+/* the DMA descriptor list is built through the global pointer register (the game is
+   compiled with -G 0, so $gp is otherwise unused) */
+register unsigned int	*dma asm("gp");
 #endif
 
 /* 0x800e77ec: the draw pass' first job: put the current frame on screen (or clear), then
    decode the next frame and rotate the buffers. Returns the frame number shown. */
-int show_debug_frame_data(void)
+int movie_draw_frame(void)
 {
 	int		frame = 0;
 	int		state;
@@ -528,14 +535,13 @@ int show_debug_frame_data(void)
 		port_movie_blit((unsigned int *)movie.disp->buffer, movie.scroll);
 #else
 		{
-			register unsigned int	*dma asm("$gp");
 			unsigned int	*src;
 			unsigned int	lfb;
 			int		rows, top, bottom, i;
 
 			grDepthBufferMode(GR_DEPTHBUFFER_DISABLE);
 			grDisableAllEffects();
-			grTexCombineFunction(0, 0);
+			grDitherMode(GR_DITHER_DISABLE);
 			grLfbWriteMode(13);
 			grLfbConstantAlpha(0xff);
 			grConstantColorValue(0xff000000);
@@ -559,32 +565,33 @@ int show_debug_frame_data(void)
 				rows = movie.scroll + MOVIE_HEIGHT;
 				top = 0;
 			}
+			/* one descriptor per scan line: byte count, source, LFB destination, next */
 			for(i = 0; i < top; i++)
 			{
-				dma[2] = lfb & 0x1fffffff;
-				lfb += 0x1000;
 				dma[0] = movie.width << 2;
-				dma[3] = (unsigned int)(dma + 4);
 				dma[1] = (unsigned int)blank_row & 0x1fffffff;
+				dma[2] = lfb & 0x1fffffff;
+				dma[3] = (unsigned int)(dma + 4);
+				lfb += 0x1000;
 				dma += 4;
 			}
 			for(i = 0; i < rows; i++)
 			{
-				dma[2] = lfb & 0x1fffffff;
-				lfb += 0x1000;
-				dma[1] = (unsigned int)src & 0x1fffffff;
-				dma[3] = (unsigned int)(dma + 4);
 				dma[0] = movie.width << 2;
+				dma[1] = (unsigned int)src & 0x1fffffff;
+				dma[2] = lfb & 0x1fffffff;
+				dma[3] = (unsigned int)(dma + 4);
+				lfb += 0x1000;
 				src += movie.width;
 				dma += 4;
 			}
 			for(i = 0; i < bottom; i++)
 			{
-				dma[2] = lfb & 0x1fffffff;
-				lfb += 0x1000;
 				dma[0] = movie.width << 2;
-				dma[3] = (unsigned int)(dma + 4);
 				dma[1] = (unsigned int)blank_row & 0x1fffffff;
+				dma[2] = lfb & 0x1fffffff;
+				dma[3] = (unsigned int)(dma + 4);
+				lfb += 0x1000;
 				dma += 4;
 			}
 			grLfbEnd();
@@ -648,11 +655,11 @@ int show_debug_frame_data(void)
 		grDepthMask(FXFALSE);
 		if(!D_801e6e70)
 		{
-			graphical_printf(text_buffer, "FRAME %d   %d %d", movie.frame_number, frame, 0);
+			graphical_printf(text_buffer, "FRAME %d   %d %d", frame, movie.frame_number, 0);
 		}
 		else
 		{
-			graphical_printf(text_buffer, "FRAME %d   %d LOCK %d %d", movie.frame_number, frame, D_8018db90, D_801e6e70);
+			graphical_printf(text_buffer, "FRAME %d   %d LOCK %d %d", frame, movie.frame_number, D_8018db90, D_801e6e70);
 		}
 		draw_string(0, text_buffer, 0.0f, 220.0f);
 		grDepthMask(FXTRUE);
@@ -661,23 +668,25 @@ int show_debug_frame_data(void)
 	return(frame);
 }
 
-/* ---- the decoders: src is the raw frame, dst the 400x256 buffer of LFB words ---- */
+/* ---- the decoders: src is the raw frame, dst the 400x256 buffer of LFB words ----
+   (one index variable and one table pointer serve every loop of a decoder, and the depth
+   plane base is reused as the first row's pointer: that is how the original was written) */
 
 #define PIX(tab, p)	*dst++ = tab[*p++]
 #define PIX16(tab, p)	PIX(tab, p); PIX(tab, p); PIX(tab, p); PIX(tab, p); PIX(tab, p); PIX(tab, p); PIX(tab, p); PIX(tab, p); \
 			PIX(tab, p); PIX(tab, p); PIX(tab, p); PIX(tab, p); PIX(tab, p); PIX(tab, p); PIX(tab, p); PIX(tab, p)
-#define DPIX(pal, cp, dp)	*dst++ = pal[*cp++] | movie_depth_table[*dp++]
+#define DPIX(pal, cp, dp)	*dst++ = pal[*cp++] | tab[*dp++]
 #define DPIX8(pal, cp, dp)	DPIX(pal, cp, dp); DPIX(pal, cp, dp); DPIX(pal, cp, dp); DPIX(pal, cp, dp); \
 				DPIX(pal, cp, dp); DPIX(pal, cp, dp); DPIX(pal, cp, dp); DPIX(pal, cp, dp)
 
 /* 0x800e8510 */
-void decompress_movie(unsigned char *src, unsigned int *dst)
+void decode_movie_8pal(unsigned char *src, unsigned int *dst)
 {
 	unsigned short	*pal = (unsigned short *)src;
 	unsigned char	*p = src + 0x1000;
 	unsigned int	*tab;
 	int		cols = movie.width / 16;
-	int		strip, t, i, c;
+	int		strip, t, i;
 
 	for(t = 0; t < 8; t++)
 	{
@@ -692,7 +701,7 @@ void decompress_movie(unsigned char *src, unsigned int *dst)
 		for(t = 7; t >= 0; t--)
 		{
 			tab = movie_palette[t];
-			for(c = 0; c < cols; c++)
+			for(i = 0; i < cols; i++)
 			{
 				PIX16(tab, p);
 			}
@@ -701,32 +710,37 @@ void decompress_movie(unsigned char *src, unsigned int *dst)
 }
 
 /* 0x800e8b78: eight palettes plus a depth table and a half-height depth plane */
-void decoode_movie2(unsigned char *src, unsigned int *dst)
+void decode_movie_8pal_depth(unsigned char *src, unsigned int *dst)
 {
 	unsigned char	*cp = src + 0x1000;
-	unsigned short	*dtab = (unsigned short *)(cp + movie.width * 256);
-	unsigned char	*dpa = (unsigned char *)dtab + 0x200;
-	unsigned char	*dpb = dpa;
+	unsigned char	*dp = cp + movie.width * 256;
+	unsigned short	*dtab = (unsigned short *)dp;
+	unsigned char	*dpb = dp + 0x200;
 	unsigned short	*pal;
-	int		cols = movie.width / 8;
-	int		strip, t, i, c;
+	unsigned int	*tab;
+	int		cols;
+	int		strip, t, i;
 
+	dp = dpb;
+	cols = movie.width / 8;
+	tab = movie_depth_table;
 	for(i = 0; i < 256; i++)
 	{
-		movie_depth_table[i] = (unsigned int)dtab[i] << 16;
+		*tab++ = (unsigned int)*dtab++ << 16;
 	}
+	tab = movie_depth_table;
 	for(strip = 0; strip < 32; strip++)
 	{
 		for(t = 7; t >= 0; t--)
 		{
 			pal = (unsigned short *)(src + t * 0x200);
-			for(c = 0; c < cols; c++)
+			for(i = 0; i < cols; i++)
 			{
-				DPIX8(pal, cp, dpa);
+				DPIX8(pal, cp, dp);
 			}
 			t--;
 			pal = (unsigned short *)(src + t * 0x200);
-			for(c = 0; c < cols; c++)
+			for(i = 0; i < cols; i++)
 			{
 				DPIX8(pal, cp, dpb);
 			}
@@ -735,48 +749,56 @@ void decoode_movie2(unsigned char *src, unsigned int *dst)
 }
 
 /* 0x800e82c8: one palette, no depth */
-void decode_movie_flat(unsigned char *src, unsigned int *dst)
+void decode_movie_1pal(unsigned char *src, unsigned int *dst)
 {
 	unsigned short	*pal = (unsigned short *)src;
 	unsigned char	*p = src + 0x200;
+	unsigned int	*tab;
 	int		cols = movie.width / 8;
-	int		i, r, c;
+	int		r, i;
 
+	tab = movie_flat_palette;
 	for(i = 0; i < 256; i++)
 	{
-		movie_flat_palette[i] = *pal++ | 0xffff0000;
+		*tab++ = *pal++ | 0xffff0000;
 	}
+	tab = movie_flat_palette;
 	for(r = 0; r < 128; r++)
 	{
-		for(c = 0; c < cols; c++)
+		for(i = 0; i < cols; i++)
 		{
-			PIX16(movie_flat_palette, p);
+			PIX16(tab, p);
 		}
 	}
 }
 
 /* 0x800e878c: one palette plus the depth table and plane */
-void decode_movie_flat_depth(unsigned char *src, unsigned int *dst)
+void decode_movie_1pal_depth(unsigned char *src, unsigned int *dst)
 {
 	unsigned short	*pal = (unsigned short *)src;
 	unsigned char	*cp = src + 0x200;
-	unsigned short	*dtab = (unsigned short *)(cp + movie.width * 256);
-	unsigned char	*dpa = (unsigned char *)dtab + 0x200;
-	unsigned char	*dpb = dpa;
-	int		cols = movie.width / 8;
-	int		i, r, c;
+	unsigned char	*dp = cp + movie.width * 256;
+	unsigned short	*dtab = (unsigned short *)dp;
+	unsigned char	*dpb = dp + 0x200;
+	unsigned int	*tab;
+	int		cols;
+	int		r, i;
 
+	dp = dpb;
+	cols = movie.width / 8;
+	tab = movie_depth_table;
 	for(i = 0; i < 256; i++)
 	{
-		movie_depth_table[i] = (unsigned int)dtab[i] << 16;
+		*tab++ = (unsigned int)*dtab++ << 16;
 	}
+	tab = movie_depth_table;
 	for(r = 0; r < 128; r++)
 	{
-		for(c = 0; c < cols; c++)
+		for(i = 0; i < cols; i++)
 		{
-			DPIX8(pal, cp, dpa);
+			DPIX8(pal, cp, dp);
 		}
-		for(c = 0; c < cols; c++)
+		for(i = 0; i < cols; i++)
 		{
 			DPIX8(pal, cp, dpb);
 		}
@@ -805,13 +827,15 @@ void script_fade_out_90(void) { fade(0.0f, 90, 0); }
 
 #define NEXT()		(*movie_script_g2++)
 
-/* returns the frame to read next, MOVIE_END when the movie is over */
+/* returns the frame to read next, MOVIE_END when the movie is over. The cases are in the
+   original's order (its jump table is indexed by opcode) */
 int do_script(int frame)
 {
 	script_word_t	target;
-	script_word_t	arg;
+	script_word_t	arg, arg2, arg3;
 	int		(*fn)();
 	int		next;
+	int		keyword;
 
 	if(script_abort)
 	{
@@ -837,98 +861,53 @@ int do_script(int frame)
 		script_skip = 0;
 	}
 	next = frame + 1;
+	if(frame < script_stop_frame)
+	{
+		return(next);
+	}
 	for(;;)
 	{
-		if(frame < script_stop_frame)
-		{
-			return(next);
-		}
-		switch((int)NEXT())
+		keyword = NEXT();
+		switch(keyword)
 		{
 		case 1:		/* play until frame N */
 			script_stop_frame = NEXT();
 			return(next);
-		case 2:		/* goto */
-			movie_script_g2 = (script_word_t *)NEXT();
-			break;
 		case 3:		/* seek */
 			next = NEXT();
 			break;
-		case 4:		/* if(*var) goto */
-			arg = NEXT();
+		case 2:		/* goto */
 			target = NEXT();
-			if(*(int *)arg)
-			{
-				movie_script_g2 = (script_word_t *)target;
-			}
+			movie_script_g2 = (script_word_t *)target;
 			break;
 		case 5:		/* call */
-			fn = (int (*)())NEXT();
-			fn();
+			((void (*)())NEXT())();
 			break;
 		case 6:
 			func_800ebdbc(NEXT(), "generic1");
 			break;
-		case 7:		/* *var = 0 */
-			*(int *)NEXT() = 0;
+		case 19:
+			arg = NEXT();
+			arg2 = NEXT();
+			arg3 = NEXT();
+			stream_jump(arg, arg2, arg3);
 			break;
-		case 8:		/* (*var)++ */
-			(*(int *)NEXT())++;
-			break;
-		case 9:		/* end */
-			return(MOVIE_END);
-		case 10:	/* hold N ticks with the loader paused */
-			script_delay = NEXT();
-			movie_pause();
-			return(next);
-		case 11:	/* if(fn()) goto */
-			fn = (int (*)())NEXT();
-			target = NEXT();
-			if(fn())
-			{
-				movie_script_g2 = (script_word_t *)target;
-			}
+		case 25:
+			arg = NEXT();
+			arg2 = NEXT();
+			stream_set_loop(arg, arg2);
 			break;
 		case 12:
 			func_800ebdbc(NEXT(), "hhouse1");
 			break;
-		case 13:
-			func_800ebdbc(NEXT(), "chastity");
-			break;
 		case 14:
 			func_800ebdbc(NEXT(), "freaksho");
-			break;
-		case 15:
-			func_800ebe6c();
 			break;
 		case 16:
 			func_800ebe34(NEXT(), "freaksho");
 			break;
 		case 17:
 			func_800ebd70(NEXT(), "freaksho");
-			break;
-		case 18:
-			func_800ebe8c();
-			break;
-		case 19:
-			arg = NEXT();
-			target = NEXT();
-			stream_jump(arg, target, NEXT());
-			break;
-		case 20:	/* audits */
-			switch((int)NEXT())
-			{
-			case 0x14: increment_audit(0x3b); break;
-			case 0x15: increment_audit(0x41); break;
-			case 0x16: increment_audit(0x42); break;
-			case 0x17: increment_audit(0x43); break;
-			case 0x18: increment_audit(0x44); break;
-			case 0x19: increment_audit(0x48); break;
-			case 0x1a: increment_audit(0x49); break;
-			case 0x1b: increment_audit(0x4a); break;
-			case 0x1c: increment_audit(0x4b); break;
-			default: break;
-			}
 			break;
 		case 21:
 			func_800ebdbc(NEXT(), "rickity");
@@ -939,21 +918,8 @@ int do_script(int frame)
 		case 23:
 			func_800ebd70(NEXT(), "rickity");
 			break;
-		case 24:	/* hold N ticks */
-			script_delay = NEXT();
-			return(next);
-		case 25:
-			arg = NEXT();
-			stream_set_loop(arg, NEXT());
-			break;
 		case 26:
 			func_800ebdbc(NEXT(), "bigtop");
-			break;
-		case 27:
-			func_800ebd70(NEXT(), "bigtop");
-			break;
-		case 28:
-			func_800ec370(NEXT(), 0);
 			break;
 		case 29:
 			arg = NEXT();
@@ -966,8 +932,73 @@ int do_script(int frame)
 				func_800ebdbc(arg, "bigtop2");
 			}
 			break;
+		case 27:
+			func_800ebd70(NEXT(), "bigtop");
+			break;
+		case 28:
+			play_bigtop_cue(NEXT(), 0);
+			break;
+		case 15:
+			func_800ebe6c();
+			break;
+		case 18:
+			func_800ebe8c();
+			break;
+		case 13:
+			func_800ebdbc(NEXT(), "chastity");
+			break;
+		case 7:		/* *var = 0 */
+			arg = NEXT();
+			*(int *)arg = 0;
+			break;
+		case 8:		/* (*var)++ */
+			arg = NEXT();
+			(*(int *)arg)++;
+			break;
+		case 4:		/* if(*var) goto */
+			arg = NEXT();
+			target = NEXT();
+			if(*(int *)arg)
+			{
+				movie_script_g2 = (script_word_t *)target;
+			}
+			break;
+		case 10:	/* hold N ticks with the loader paused */
+			arg = NEXT();
+			script_delay = arg;
+			movie_pause();
+			return(next);
+		case 24:	/* hold N ticks */
+			arg = NEXT();
+			script_delay = arg;
+			return(next);
+		case 11:	/* if(fn()) goto */
+			fn = (int (*)())NEXT();
+			target = NEXT();
+			if(fn())
+			{
+				movie_script_g2 = (script_word_t *)target;
+			}
+			break;
+		case 20:	/* audits: the level reached and the ending seen */
+			arg = NEXT();
+			switch((int)arg)
+			{
+			case 20: increment_audit(0x3b); break;
+			case 30: increment_audit(0x41); break;
+			case 31: increment_audit(0x42); break;
+			case 32: increment_audit(0x43); break;
+			case 33: increment_audit(0x44); break;
+			case 40: increment_audit(0x48); break;
+			case 41: increment_audit(0x49); break;
+			case 42: increment_audit(0x4a); break;
+			case 43: increment_audit(0x4b); break;
+			}
+			break;
+		case 9:		/* end */
+			return(MOVIE_END);
 		default:
-			printf("Unknown keyword %d in movie script\n", (int)movie_script_g2[-1]);
+			printf("Unknown keyword %d in movie script\n", keyword);
 			break;
 		}
 	}

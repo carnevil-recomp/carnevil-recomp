@@ -81,15 +81,15 @@ int	movie_start(void);
 int	movie_pause(void);
 int	movie_resume(void);
 int	movie_stop(void);
-void	load_fram_wrapper(void);
+void	movie_init(void);
 void	loadfram_proc(void);
-int	show_debug_frame_data(void);
+int	movie_draw_frame(void);
 float	movie_depth_at(float x, float y);
 void	movie_script_init(script_word_t *script);
 int	do_script(int frame);
-void	decompress_movie(unsigned char *src, unsigned int *dst);
-void	decoode_movie2(unsigned char *src, unsigned int *dst);
-void	decode_movie_flat(unsigned char *src, unsigned int *dst);
-void	decode_movie_flat_depth(unsigned char *src, unsigned int *dst);
+void	decode_movie_8pal(unsigned char *src, unsigned int *dst);
+void	decode_movie_8pal_depth(unsigned char *src, unsigned int *dst);
+void	decode_movie_1pal(unsigned char *src, unsigned int *dst);
+void	decode_movie_1pal_depth(unsigned char *src, unsigned int *dst);
 
 #endif
