@@ -26,6 +26,7 @@ void port_texture_verbose(int);
 const char	*hal_partition_root = ".";
 const char	*hal_state_root = "state";		/* CMOS image and the files the game writes */
 unsigned char	*hal_gun_control;			/* the gun board control byte at 0xb7f00000 */
+signed char	nss_control;				/* the same byte as the variable camera.c's kss_ routines use */
 /* cabinet switches: the I/O ASIC words are active low; keys and --press set bits here */
 static unsigned int	coin_held;		/* bits of the coin/start word currently closed */
 static unsigned int	player_held;		/* bits of the player 1/2 word currently closed */

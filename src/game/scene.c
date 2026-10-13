@@ -18,14 +18,21 @@ extern void	draw_string(int, char *, float, float);
 extern float	get_screen_pos(float *, float *);		/* 0x800d07a8: -1 when off screen */
 extern void	func_800c8a44(float, float, float, float, unsigned int);	/* a screen marker */
 extern void	func_800cfda8(float *, float *);			/* a rotation matrix from three angles */
-extern void	func_800c836c(void), func_800c81b8(void), func_800c865c(void), init_surfaces(void), func_800d78fc(void);
+extern void	func_800c836c(void), func_800c865c(void), init_surfaces(void), func_800d78fc(void);
+extern void	init_camera(void), rot_matrix_yxz(float *, float *), vec_negate(float *, float *);
+extern float	camera_x, camera_rx, view_matrix[9], camera_neg_pos[3];	/* camera.c */
+extern void	func_800e2f08(int player);
+extern int	read_player12_direct(void);
+extern int	wave_id_g2;					/* 0x80212e30 */
+int		D_80212e60, D_80212e28, D_80212e24, D_80212e2c, D_802372b8;
+int		D_801e0960;					/* the player 1/2 switches at boot, inverted */
 extern void	load_font_texmap(void);
 extern void	func_800db148(void), func_800db800(void), load_misc_texmaps(void), func_800ff0b0(void), func_800fe440(void);
 extern void	func_800fedd8(void), func_800ffb08(void), func_80100478(void), func_8013f6d8(void);
 extern void	draw_pass(void), think_pass(void *);
 extern int	free_mem_left;					/* 0x801e0ee8 */
 extern char	text_buffer[];
-float		marker_scale;					/* 0x801e5db0: world-to-screen size factor of the markers */
+float		proj_x;					/* 0x801e5db0: world-to-screen size factor of the markers */
 
 volatile int	switches12_prev, switches34_prev;		/* 0x801e5d94, 0x801e6e94: last frame's words */
 volatile int	switches12, switches34;				/* 0x8022b170, 0x80237450: players 1-2 and 3-4 switch words, active high */
@@ -33,7 +40,6 @@ enemy_t		*debug_enemy = 0;				/* 0x80179bfc: the enemy the debug overlay follows
 float		debug_p1x = 10.0f, debug_p1y = 0.1f, debug_p1z = 10.0f;	/* 0x80179c00: two debug points (separate variables: */
 float		debug_p2x = 0.1f, debug_p2y = 0.0f, debug_p2z = 0.0f;		/* 0x80179c0c  their stores are not through one address) */
 float		debug_angles[3];				/* 0x80179c44 */
-float		camera_pos[3];					/* 0x801de8f0 */
 float		*D_80194650;					/* a positioned thing the debug overlay can nudge */
 short		nearest_enemy;					/* 0x80212d92 */
 
@@ -46,7 +52,7 @@ void draw_marker(float *pt, float size, unsigned int color)
 	{
 		return;
 	}
-	func_800c8a44(scr[0], scr[1], scr[2], size * scr[2] * marker_scale, color);
+	func_800c8a44(scr[0], scr[1], scr[2], size * scr[2] * proj_x, color);
 }
 
 /* 0x800c9908: sample the switches once a frame; a press of player 3/4's bit 5 toggles the
@@ -256,13 +262,37 @@ void debug_move_point(float *p)
 	func_800cfda8(p + 3, debug_angles);
 }
 
+/* 0x800c81b8: the game's state at boot: attract (0x800), no wave, no debug, the camera at
+   the origin, both players reset */
+void init_game_state(void)
+{
+	int	i;
+
+	game_state[0] = 0x800;
+	wave_id_g2 = 0;
+	D_80212e60 = 0;
+	debug_mode = 0;
+	D_80212e28 = 0;
+	D_80212e24 = 0;
+	D_80212e2c = 0;
+	init_camera();
+	rot_matrix_yxz(view_matrix, &camera_rx);
+	vec_negate(&camera_x, camera_neg_pos);
+	D_802372b8 = 0;
+	for(i = 0; i < 2; i++)
+	{
+		func_800e2f08(i);
+	}
+	D_801e0960 = ~read_player12_direct();
+}
+
 /* 0x800ca3a0: the game's set-up at boot: the movie player, the object list, the fonts, and
    the two GOOSE objects that run the draw and think passes every frame */
 void game_init(void)
 {
 	func_800c836c();
 	movie_init();
-	func_800c81b8();
+	init_game_state();
 	func_800c865c();
 	init_objects();
 	init_surfaces();

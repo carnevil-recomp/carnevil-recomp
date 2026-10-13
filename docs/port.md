@@ -72,15 +72,17 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | soundio.c | game2 | 2 of 2 (main_init_sound, check_sound_os; the cue helpers moved to levelsnd.c) |
 | levelsnd.c | game2 | 36 of 36, registered in modules.txt (text 0x800ebb18-0x800ec53c, rodata 0x80170f08-0x80170f40, data 0x8018e038-0x8018e050) |
 | stream.c | game2 | 19 of 23; stream_select_wave 86%, stream_debug_display 96%, stream_jump 60%, stream_fill 52% |
-| gun.c | game2 | 0 of 2 (32%, 18%: the control-byte load keeps its address in a register, not yet reproduced) |
 | main.c | game2 | 2 of 2 (main_proc and utime_proc) |
 | movie.c | game2 | 24 of 26 at 100% (every decoder, the draw pass, the loader set-up); loadfram_proc 74% (only the s0/s1/s2 assignment differs), decode_movie_rgb16 44% (an unused decoder, register names) |
 | script.c | game2 | 10 of 10, registered in modules.txt (text 0x80110270-0x80110b04, rodata 0x80173318-0x8017345c) |
 | shake.c | game2 | 1 of 1 (update_movie_scroll; the rest of its file, 0x800f3420-0x800f37ac, is not decompiled) |
 | attract.c | game2 | 18 of 18, registered in modules.txt (text 0x800caf80-0x800cbb6c, rodata 0x8016f600-0x8016f704, data 0x80179c50-0x80179d40) |
-| scene.c | game2 | 9 of 9 (the switch sampler, the debug nudges, the heap display, game_init, load_level_assets); the rest of that file (0x800c8280-0x800ca4d0: screen markers, 3D helpers) is still assembly |
+| scene.c | game2 | 10 of 10 (the switch sampler, the debug nudges, the heap display, init_game_state, game_init, load_level_assets); the rest of that file (0x800c8280-0x800ca4d0: screen markers, 3D helpers) is still assembly |
 | spawn.c | game2 | 11 of 12 exact; add_die 38% (its failure return is laid out differently); the port runs spawn_wave_enemies with construct_and_spawn_object (0x800e9570, 3.8 KB) stubbed |
-| objects.c | game2 | 17 of 18: the list routines, the per-frame draw pass (0x800cbbb4, `draw_pass`), think pass (0x800cca70) and the four nearest-enemy searches exact; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20). The port runs the real passes; the level routines they call are stubs |
+| objects.c | game2 | 17 of 18 (re-verified after the camera moved to camera.c): the list routines, the per-frame draw pass (0x800cbbb4, `draw_pass`), think pass (0x800cca70) and the four nearest-enemy searches exact; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20). The port runs the real passes; the level routines they call are stubs |
+| camera.c | game2 | 17 of 23 exact (update_camera, update_view_matrix, get_camera_pos, the file loader's callers, the gun pollers, kss_reset_w_calib_, take_calibration_request, default_calibration ...); set_field_of_view 67% and init_camera 12% / load_level_camera 5% (the original combines the field-of-view constants at run time where our compiler folds them: 67.74+10 is an `add.s` in the game), kss_reset_ 59%, gun_board_reset 89% (one scheduling swap), the two `&&`/`\|\|` gun tests 53-60% (register choice). Absorbs the old gun.c: the file at 0x800d4070-0x800d4f6c holds the camera and the light guns |
+| vecmat.c | game2 | 23 of 23 exact (0x800cfb18-0x800d1370: 3x3 matrices, the twelve rotation-order products, fatan, ftan); the rest of the file (get_screen_pos, the projection helpers, draw_tri) is still assembly |
+| loaders.c | game2 | 0 of 1 (load_camera_file 4%: the retry loop's two counters are allocated differently; the port uses it as is) |
 
 A module is registered in `config/modules.txt` once every function in its source file's
 address range matches and its data is laid out in the file's order (the audit file was the

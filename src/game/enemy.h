@@ -30,6 +30,8 @@ typedef struct enemy
 	unsigned char	pad8[0x14];
 } enemy_t;					/* sizeof = 0xec */
 
-extern float	camera_pos[3];			/* 0x801de8f0: the view point the enemies are measured from */
+extern float	camera_pos[3];			/* 0x801de8f0: the view point the enemies are measured from. camera.c
+						   defines it as the scalars camera_x/y/z (its code needs them so) and the
+						   link aliases the two names; see docs/toolchain.md */
 
 #endif

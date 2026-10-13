@@ -33,7 +33,8 @@ int	D_801fad10, D_801e0f10;
 /* ---- GOOSE main() callees ---- */
 extern void scan_switches(void);
 extern int tick_counter, gfx_scale, got_interrupt, uptime;
-int  D_80212e60, D_801facc8, D_80179d50;
+int  D_801facc8, D_80179d50;
+extern int D_80212e60;
 /* 0x800c6030: the game's own vertical-retrace handler (it does not call the library's) */
 int  vblank_handler(void)
 {
@@ -109,7 +110,6 @@ void draw_pass(void);
 void think_pass(void *);
 int  get_free_mem_left(void) { return 0x400000; }			/* GOOSE 0x80143e90 */
 float fsqrt(float x) { return sqrtf(x); }				/* 0x80144900: sqrt.s */
-void func_800d41b4(int f) { (void)f; }					/* the level's 3D draws */
 int *show_debug_light_(int f) { (void)f; return 0; }
 void func_800d6e94(void) { }
 void func_800ff418(void) { }
@@ -136,7 +136,7 @@ spawn_t hhouse_spawn_blob[1], freakshow_spawn_blob[1], rickity_spawn_blob[1], bi
 int D_801e0f0c;
 /* game_init (0x800ca3a0, scene.c) is real; the set-up calls it makes that the port lacks */
 void func_800c836c(void) { }
-void func_800c81b8(void) { }
+void func_800e2f08(int player) { (void)player; }					/* 0x800e2f08: a player reset at boot */
 void func_800c865c(void) { }
 void init_surfaces(void)			/* 0x800d6768: the texmap surface table */
 {
@@ -164,6 +164,11 @@ LOAD_STUB(load_chnk_model) LOAD_STUB(load_shotgun_texmap) LOAD_STUB(load_health_
 LOAD_STUB(load_machinegun_texmap) LOAD_STUB(load_flamethrower_texmap) LOAD_STUB(load_acid_texmap) LOAD_STUB(load_shotgun_model)
 LOAD_STUB(load_health_model) LOAD_STUB(load_ammo_model) LOAD_STUB(load_machinegun_model) LOAD_STUB(load_flamethrower_model)
 LOAD_STUB(load_acid_model)
+void func_800ffa20(float *pos) { (void)pos; }					/* 0x800ffa20: drawn around the camera when camera_follow is set */
+void debug_move_camera(void) { }						/* 0x800c93c4: the player 3/4 switches move the camera (debug) */
+void load_backup_file(char *name) { fprintf(stderr, "[stub] load_backup_file(%s)\n", name); }	/* 0x800caf48 */
+void func_800d5478(int player, int bit) { (void)player; (void)bit; }		/* 0x800d5478: a gun switch bit for a player */
+void func_800d6038(player_stats_t *player, int bit) { (void)player; (void)bit; }		/* 0x800d6038: the other gun switch bit */
 void cmos_calibration_(void) { fprintf(stderr, "[stub] cmos_calibration_ (0x800d4d00): gun calibration from CMOS not loaded\n"); }
 void startaudit(FILE *f) { (void)f; }					/* 0x800ef870: the audit names for audits.fmt */
 void game_proc2(void) { fprintf(stderr, "[stub] game_proc2: debug attract not implemented\n"); for(;;) sleep(1); }

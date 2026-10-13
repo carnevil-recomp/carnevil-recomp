@@ -112,12 +112,14 @@ PORT_FORTIFY ?= 0     # libc fortification trips on ILP32 idioms; set 2 to debug
 ifeq ($(shell uname),Darwin)
 PORT_ARCH    := -arch x86_64
 PORT_LDFLAGS := -Wl$(comma)-pagezero_size$(comma)0x4000 -framework Cocoa -framework OpenGL
+# camera.c defines the camera position as three scalars, objects.c reads it as an array (docs/toolchain.md)
+PORT_LDFLAGS += -Wl$(comma)-alias$(comma)_camera_x$(comma)_camera_pos
 PORT_VIDEO   := port/host/video_macos.m
 PORT_AUDIO   := port/host/audio_macos.m
 PORT_LDFLAGS += -framework AudioToolbox
 else
 PORT_ARCH    :=
-PORT_LDFLAGS := -no-pie
+PORT_LDFLAGS := -no-pie -Wl$(comma)--defsym=camera_pos=camera_x
 PORT_VIDEO   := port/host/video_null.c
 PORT_AUDIO   := port/host/audio_null.c
 endif

@@ -23,7 +23,7 @@ extern void	sleep(int);
 extern void	set_frame_factor(int);
 extern void	func_800e74f0(void), func_800e7568(void);	/* movie play start / stop */
 extern void	play_attract_cue(int, char *), stop_attract_cue(void);
-extern int	func_800d4990(void);
+extern int	both_guns_bit4(void);
 extern int	attract_high_scores(int);
 extern void	guTexSource(int), guColorCombineFunction(int);
 extern void	draw_quad(float, float, float, float, float, float);
@@ -256,7 +256,7 @@ int attract_generic(int arg)
 	int	i;
 
 	black_screen();
-	if(func_800d4990())
+	if(both_guns_bit4())
 	{
 		frames = 600;
 		obj = add_object1_wrapper(0x20, draw_screen_7203, 0, 0);
@@ -301,11 +301,11 @@ int attract_screen(int arg)
 }
 
 /* 0x800cb61c: an unused step: after ten frames of the test switch, reload the credits */
-extern int	func_800d49c4(void);			/* a switch-page test */
+extern int	both_guns_bit5(void);			/* a switch-page test */
 extern void	load_credits(void);
 int attract_credits_step(int arg)
 {
-	if(func_800d49c4())
+	if(both_guns_bit5())
 	{
 		credits_step_counter = 10;
 	}

@@ -37,7 +37,7 @@ extern float	func_800c9158(unsigned int *);	/* depth word -> distance */
 extern void	specific_gamma_load(float, float);
 extern void	stop_level_cue_and_stream(void), play_level_cue(int, char *);
 extern void	play_level_music(int, char *), play_level_speech(int, char *), start_level_music(int, char *);
-extern void	stop_level_music(void), fade_out_level_music(void), fade_out_level_stream(void), func_800d4968(void);
+extern void	stop_level_music(void), fade_out_level_music(void), fade_out_level_stream(void), disable_guns(void);
 extern void	play_bigtop_cue(int, int), play_bigtop2_cue(int);
 extern void	stream_set_loop(int, int), stream_jump(int, int, int);	/* 0x801400a4, 0x801400dc */
 extern void	*func_800d6758(int);

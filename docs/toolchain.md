@@ -311,3 +311,35 @@ Other lessons from text.c:
   `short`, keep the local `int`).
 - GCC 2.7.2.3 source is a useful oracle for pass order and folding rules (jump2 cross-jumping
   runs after sched2; `convert_to_integer` narrows arithmetic assigned to shorts).
+
+Lessons from camera.c and vecmat.c (the camera, the 3D helpers):
+- **Array/struct element stores vs scalars.** `memory_address()` passes every constant
+  address of an element access (`camera_pos[1] = v`, `cam.y = v`) through a pseudo "to get
+  a chance to cse them"; a scalar global's `DECL_RTL` is used as is. The pseudo is folded
+  back by combine when used once, but if the same symbol is also a call argument
+  (`vec_negate(camera_pos, ...)`) cse shares one pseudo, which then lives across the calls in
+  an `s` register. update_camera has no such register, so its position and angles are the
+  scalars camera_x/y/z and camera_rx/ry/rz; objects.c's nearest-enemy loops need the loads to
+  be element accesses (see the next point), so enemy.h declares `camera_pos[3]` and the port
+  link aliases the two names (`-alias`/`--defsym`). Which declaration the original used in
+  which file is not known.
+- **`MEM_IN_STRUCT_P` and the scheduler.** sched lets a load move past a store when one is
+  an element access with a varying address and the other a plain scalar with a fixed one.
+  `p->x`, `p[1]`, `*(p + 1)` are element accesses (any `+` under the `*`); `*(float *)(p + 4)`
+  is not (the cast hides the `+`), and neither is `*p`. update_camera's sequential
+  load/multiply/store order needs the cast form with `char *p`.
+- **Integer-first addresses.** `frame * 28 + (long)camera_data` gives `addu v0, (mult), base`;
+  pointer arithmetic (`camera_data + frame * 28`, `&camera_data[frame]`) puts the base first.
+- **A `char` local** loaded and passed to printf is loaded straight into `a1` and copied to
+  `s0` in the delay slot, and reserves 8 bytes of frame; an `int` is loaded into `s0` first.
+- **Hardware registers.** The kss_ routines reach the gun control byte as a global
+  (`extern signed char nss_control`, an absolute symbol): a global's load and store are not
+  CSE'd into a shared address register, a `*(char *)0xb7f00000` pair is. gun_board_reset does
+  use a pointer. The gun switch ports are `*(volatile unsigned char *)0xb6800004` (lui/ori
+  into a register, `lbu 0(reg)`); without volatile GCC folds the constant into the load.
+- **`&&`/`||` as a return value.** `return a && b;` gives the second test as `sltu`
+  (jump2's store-flag), `return a || b;` keeps both as branches to a shared `return 1`.
+- **Float constants are not folded in init_camera/load_level_camera** of the original
+  (`67.74 + 10.0` is computed at run time from literal-pool loads); our compiler folds them
+  in every form tried (literals, `static const`, inline functions, macros reading the globals
+  just stored). Unexplained; those two functions stay at 12% / 5%.
