@@ -535,3 +535,42 @@
 # the player records start 4 bytes before the Binary Ninja player_stats symbol (0x800cbbb4 passes 0x801e0f60/0x801e1080)
 0x801e0f60 player_stats
 0x801e0f64 player1_state
+# game scene.c (0x800c8280-0x800ca4d0): the 3D scene helpers and debug displays (partly decompiled)
+0x800c8ef0 draw_marker
+0x800c9908 sample_switches
+0x800c9d54 debug_move_enemy
+0x800c9f4c debug_move_vectors
+0x800ca194 debug_move_point
+0x800ca3a0 game_init
+0x800ca448 load_level_assets
+0x800ca4a8 record_free_mem
+0x80144900 fsqrt
+0x801e5d94 switches12_prev
+0x8022b170 switches12
+0x801e6e94 switches34_prev
+0x80237450 switches34
+0x80179bfc debug_enemy
+0x80179c00 debug_p1x
+0x80179c04 debug_p1y
+0x80179c08 debug_p1z
+0x80179c0c debug_p2x
+0x80179c10 debug_p2y
+0x80179c14 debug_p2z
+0x80179c44 debug_angles
+0x801de8f0 camera_pos
+0x801e5db0 marker_scale
+0x80212d92 nearest_enemy
+0x801e5bfc movie_draw_disabled
+0x80212da0 shown_frame
+0x801e7050 please_wait_timer
+0x80179d40 debug_blink
+# game objects.c (0x800cbb70-...): the object list, the draw and think passes, the nearest-enemy searches
+0x800cbb70 disable_movie_draw
+0x800cbb84 enable_movie_draw
+0x800cbb94 object_screen_pos
+0x800cbbb4 draw_pass
+0x800cca70 think_pass
+0x800cd1f8 nearest_enemy_hhouse
+0x800cd4ac nearest_enemy_freakshow
+0x800cd7a0 nearest_enemy_rickity
+0x800cdaa0 nearest_enemy_bigtop

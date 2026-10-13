@@ -6,6 +6,7 @@
 #include <glide/glide.h>
 
 #include "objects.h"
+#include "enemy.h"
 #include "credits.h"			/* game_mode, player_stats */
 #include "levelsnd.h"
 #include "movie.h"
@@ -18,44 +19,29 @@ extern void	draw_string_centered(int, char *, float, float, unsigned int);
 extern void	attract_credit_lines(void);
 extern void	show_volume_level(void);
 extern float	get_screen_pos(float *, float *);	/* 0x800d07a8 */
-extern void	func_800c9908(void);			/* per frame after the movie: reads the players' switches */
+extern void	sample_switches(void), debug_move_enemy(enemy_t *), debug_move_point(float *), debug_move_vectors(void);	/* scene.c */
+extern void	draw_marker(float *, float, unsigned int);
 extern void	func_800d41b4(int), show_debug_light_(int), func_800e9140(int);	/* the level's 3D draws (enemies, light, stats) */
 extern void	func_800d6e94(void), func_800ff418(void);
 extern player_stats_t *something_to_do_with_shooting_(player_stats_t *);	/* 0x800d5a84 */
-extern void	func_800c9d54(void *), func_800ca194(void *), func_800c9f4c(void);	/* debug draws */
-extern void	func_800ce2f8(float *, float, float *), func_800c8ef0(float *, float, unsigned int);
+extern void	func_800ce2f8(float *, float, float *);
 extern void	func_800fe580(void), func_800fef18(void), func_800ffbdc(void), func_800fe1fc(void);
 extern void	func_800dbb80(void), func_80100558(void), func_800e2fe4(void), func_800db4b8(void), func_800c83bc(void);
 extern void	func_800c9620(int), func_800c9bf0(void), print_heap_and_obj_info_onscreen(void);
-extern short	func_800cd1f8(void), func_800cd4ac(void), func_800cd7a0(void), func_800cdaa0(void);	/* per-wave think */
+extern float	fsqrt(float);				/* 0x80144900 */
 extern int	free_mem_left;				/* 0x801e0ee8 */
 extern int	D_801e5cbc;				/* draw the level's 3D even without debug bit 0 */
 extern int	shown_frame;				/* 0x80212da0: the movie frame on screen */
 extern int	wave_id_g2;				/* 0x80212e30 */
-extern short	D_80212d92;
+extern short	nearest_enemy;				/* 0x80212d92: id of the enemy nearest the camera this frame */
+short	nearest_enemy_hhouse(void), nearest_enemy_freakshow(void), nearest_enemy_rickity(void), nearest_enemy_bigtop(void);
 extern int	RTP_val, DMA_val, D_801e0ecc;		/* 0x80237508, 0x80237414: per-frame triangle/DMA counters */
 extern volatile int got_interrupt_save;		/* 0x801e0ebc: vblanks since the last frame, counted by the interrupt handler */
 extern int	please_wait_timer;			/* 0x801e7050 */
-extern float	D_801de8f0[3];				/* a world point shown by the debug overlay */
-extern float	D_80179c00[6], D_80179c44[3];		/* debug vectors */
+extern float	debug_p1x, debug_p1y, debug_p1z, debug_p2x, debug_p2y, debug_p2z, debug_angles[3];	/* scene.c */
 extern char	text_buffer[];
 
-/* the enemy record fields the debug overlay prints */
-typedef struct debug_object
-{
-	unsigned char	pad0[8];
-	short		frame;			/* 0x08 */
-	unsigned char	pad1[0xa];
-	unsigned short	ai_state;		/* 0x14 */
-	unsigned char	pad2[2];
-	short		num;			/* 0x18 */
-	unsigned char	pad3[0xa];
-	float		x, y, z;		/* 0x24 */
-	float		rx, ry, rz;		/* 0x30 */
-	unsigned char	pad4[0x58];
-	short		path;			/* 0x94 */
-} debug_object_t;
-extern debug_object_t	*D_80179bfc;			/* the enemy being debugged */
+extern enemy_t	*debug_enemy;				/* 0x80179bfc: the enemy being debugged (scene.c) */
 extern float		*D_80194650;
 
 game_object_t	objects[MAX_OBJECTS];
@@ -76,7 +62,7 @@ void enable_movie_draw(void)
 }
 
 /* 0x800cbb94: screen position of an enemy's origin */
-float object_screen_pos(debug_object_t *obj, float *out)
+float object_screen_pos(enemy_t *obj, float *out)
 {
 	return(get_screen_pos(&obj->x, out));
 }
@@ -102,7 +88,7 @@ void draw_pass(void)
 		frame = 0;
 	}
 	shown_frame = frame;
-	func_800c9908();
+	sample_switches();
 	if(D_801e5cbc || (debug_mode & 1))
 	{
 		func_800d41b4(frame);
@@ -131,36 +117,36 @@ void draw_pass(void)
 	}
 	if(debug_mode & 0x10000)
 	{
-		if(D_80179bfc)
+		if(debug_enemy)
 		{
-			func_800c9d54(D_80179bfc);
-			graphical_printf(text_buffer, "%d XYZ %f %f %f", D_80179bfc->num, D_80179bfc->x, D_80179bfc->y, D_80179bfc->z);
+			debug_move_enemy(debug_enemy);
+			graphical_printf(text_buffer, "%d XYZ %f %f %f", debug_enemy->num, debug_enemy->x, debug_enemy->y, debug_enemy->z);
 			draw_string_color(0, text_buffer, 0.0f, 186.0f, 0xff00);
-			graphical_printf(text_buffer, "ROT %f %f %f", D_80179bfc->rx, D_80179bfc->ry, D_80179bfc->rz);
+			graphical_printf(text_buffer, "ROT %f %f %f", debug_enemy->rx, debug_enemy->ry, debug_enemy->rz);
 			draw_string_color(0, text_buffer, 0.0f, 166.0f, 0xff00);
-			graphical_printf(text_buffer, "AI 0X%04X FRAME %d PATH %d", D_80179bfc->ai_state, D_80179bfc->frame, D_80179bfc->path);
+			graphical_printf(text_buffer, "AI 0X%04X FRAME %d PATH %d", debug_enemy->ai_state, debug_enemy->frame, debug_enemy->path);
 			draw_string_color(0, text_buffer, 0.0f, 146.0f, 0xff00);
 		}
-		func_800ce2f8(D_801de8f0, -30.0f, pt);
-		func_800c8ef0(pt, 1.0f, 0xffff00ff);
+		func_800ce2f8(camera_pos, -30.0f, pt);
+		draw_marker(pt, 1.0f, 0xffff00ff);
 		graphical_printf(text_buffer, "XYZ %f %f %f", pt[0], pt[1], pt[2]);
 		draw_string_color(0, text_buffer, 40.0f, 20.0f, 0xffffff);
 		draw_string_color(0, text_buffer, 40.0f, 0.0f, 0);
 	}
 	if((debug_mode & 0x20000) && D_80194650)
 	{
-		func_800ca194(D_80194650);
+		debug_move_point(D_80194650);
 		graphical_printf(text_buffer, "XYZ %f %f %f", D_80194650[0], D_80194650[1], D_80194650[2]);
 		draw_string_color(0, text_buffer, 0.0f, 80.0f, 0xff00);
-		graphical_printf(text_buffer, "ROT %f %f %f", D_80179c44[0], D_80179c44[1], D_80179c44[2]);
+		graphical_printf(text_buffer, "ROT %f %f %f", debug_angles[0], debug_angles[1], debug_angles[2]);
 		draw_string_color(0, text_buffer, 0.0f, 60.0f, 0xff00);
 	}
 	if(debug_mode & 0x80000)
 	{
-		func_800c9f4c();
-		graphical_printf(text_buffer, "XYZ %f %f %f", D_80179c00[0], D_80179c00[1], D_80179c00[2]);
+		debug_move_vectors();
+		graphical_printf(text_buffer, "XYZ %f %f %f", debug_p1x, debug_p1y, debug_p1z);
 		draw_string_color(0, text_buffer, 0.0f, 30.0f, 0xff00);
-		graphical_printf(text_buffer, "XYZ %f %f %f", D_80179c00[3], D_80179c00[4], D_80179c00[5]);
+		graphical_printf(text_buffer, "XYZ %f %f %f", debug_p2x, debug_p2y, debug_p2z);
 		draw_string_color(0, text_buffer, 0.0f, 10.0f, 0xff00);
 	}
 	func_800fe580();
@@ -457,19 +443,19 @@ void think_pass(void *data)
 	switch(wave_id_g2)
 	{
 	case 0x1020000:
-		D_80212d92 = func_800cd1f8();
+		nearest_enemy = nearest_enemy_hhouse();
 		break;
 	case 0x1060000:
-		D_80212d92 = func_800cd4ac();
+		nearest_enemy = nearest_enemy_freakshow();
 		break;
 	case 0x1040000:
-		D_80212d92 = func_800cd7a0();
+		nearest_enemy = nearest_enemy_rickity();
 		break;
 	case 0x1070000:
-		D_80212d92 = func_800cdaa0();
+		nearest_enemy = nearest_enemy_bigtop();
 		break;
 	default:
-		D_80212d92 = 0;
+		nearest_enemy = 0;
 		break;
 	}
 	level_sound_fades();
@@ -483,4 +469,127 @@ void think_pass(void *data)
 			p->think(p);
 		}
 	}
+}
+
+/* 0x800cd1f8-0x800cdaa0: the id of the nearest live enemy of the level's kinds within
+   1000 units of the camera (in x and z), 0 when none */
+short nearest_enemy_hhouse(void)
+{
+	game_object_t	*p;
+	enemy_t		*e;
+	short		i, best;
+	float		range, d;
+
+	best = 0;
+	range = 1000.0f;
+	i = objects[0].next;
+	while(i != OBJ_NONE)
+	{
+		p = &objects[i];
+		i = p->next;
+		if(p->type == 0x1102 || p->type == 0x200c)
+		{
+			e = (enemy_t *)p->data;
+			d = fsqrt((e->x - camera_pos[0]) * (e->x - camera_pos[0]) + (e->z - camera_pos[2]) * (e->z - camera_pos[2]));
+			if(d < range)
+			{
+				range = d;
+				best = p->id;
+			}
+		}
+	}
+	return(best);
+}
+
+short nearest_enemy_freakshow(void)
+{
+	game_object_t	*p;
+	enemy_t		*e;
+	short		i, best;
+	float		range, d;
+
+	best = 0;
+	range = 1000.0f;
+	i = objects[0].next;
+	while(i != OBJ_NONE)
+	{
+		p = &objects[i];
+		i = p->next;
+		if(p->type == 0x2029 || p->type == 0x2024 || p->type == 0x2020 || p->type == 0x2022 || p->type == 0x2026)
+		{
+			e = (enemy_t *)p->data;
+			if(!(e->ai_state & 0x6000))
+			{
+				d = fsqrt((e->x - camera_pos[0]) * (e->x - camera_pos[0]) + (e->z - camera_pos[2]) * (e->z - camera_pos[2]));
+				if(d < range)
+				{
+					range = d;
+					best = p->id;
+				}
+			}
+		}
+	}
+	return(best);
+}
+
+short nearest_enemy_rickity(void)
+{
+	game_object_t	*p;
+	enemy_t		*e;
+	short		i, best;
+	float		range, d;
+
+	best = 0;
+	range = 1000.0f;
+	i = objects[0].next;
+	while(i != OBJ_NONE)
+	{
+		p = &objects[i];
+		i = p->next;
+		if(p->type == 0x2041 || p->type == 0x2044 || p->type == 0x2042 || p->type == 0x2045 || p->type == 0x2040)
+		{
+			e = (enemy_t *)p->data;
+			if(!(e->ai_state & 0x6000))
+			{
+				d = fsqrt((e->x - camera_pos[0]) * (e->x - camera_pos[0]) + (e->z - camera_pos[2]) * (e->z - camera_pos[2]));
+				if(d < range)
+				{
+					range = d;
+					best = p->id;
+				}
+			}
+		}
+	}
+	return(best);
+}
+
+short nearest_enemy_bigtop(void)
+{
+	game_object_t	*p;
+	enemy_t		*e;
+	short		i, best;
+	float		range, d;
+
+	best = 0;
+	range = 1000.0f;
+	i = objects[0].next;
+	while(i != OBJ_NONE)
+	{
+		p = &objects[i];
+		i = p->next;
+		if(p->type == 0x2065 || p->type == 0x2061 || p->type == 0x2062 || p->type == 0x2063 || p->type == 0x2064 || p->type == 0x2060 || p->type == 0x2068)
+		{
+			e = (enemy_t *)p->data;
+			if(!(e->ai_state & 0x6000))
+			{
+				d = fsqrt((e->x - camera_pos[0]) * (e->x - camera_pos[0]) + (e->z - camera_pos[2]) * (e->z - camera_pos[2]));
+				if(d < range)
+				{
+					range = d;
+					best = p->id;
+				}
+			}
+		}
+	}
+	return(best);
 }

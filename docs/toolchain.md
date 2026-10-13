@@ -143,6 +143,15 @@ the flags and a set of source idioms. `MATCH_MAXDIFF=N` lengthens the diff it pr
   `time_to_continue` at +0xf4. Its object loop reads `i = p->next` before calling `p->draw(p)`
   with no null check; the think pass checks. The wait-timer decrement is inside the `> 0`
   test; the FPS colour is green under 3, red at 4 or more, plain for 3.
+- **scene.c / the nearest-enemy searches**: the switch words (`switches12`, `switches34`
+  and their previous values) are `volatile`; the two debug points the player 3/4 switches
+  nudge are six scalar floats, not an array (their read-modify-write would otherwise
+  materialise one address), while the three debug angles are an array; a step constant
+  used six times is a local (`step = 0.01f`), the ones used once are literals;
+  `get_free_mem_left() / 1024` as a printf argument is computed through a local (the call
+  alone is precomputed, the division happens while the arguments are evaluated).
+  The nearest-enemy loops read `i = p->next` before the body like the draw pass and keep
+  `range = 1000.0f` as a float local; `fsqrt` is the one-instruction sqrt.s wrapper.
 - **Naming**: functions and data are named by what they do; Binary Ninja's guesses stay in
   `config/functions_v103.txt`/`binja_symbols.txt` and `config/names.txt` carries the
   override (also for symbols the port already names, e.g. `draw_string_centered` for

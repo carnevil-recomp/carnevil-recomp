@@ -4,6 +4,7 @@
  * decompiled object/texmap modules. Each stub disappears as its function is decompiled.
  */
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <goose/process.h>
@@ -30,7 +31,6 @@ int	attract_cycles;
 int	D_801fad10, D_801e0f10;
 
 /* ---- GOOSE main() callees ---- */
-void func_800ca4a8(void) { }					/* records get_free_mem_left() */
 extern void scan_switches(void);
 extern int tick_counter, gfx_scale, got_interrupt, uptime;
 int  D_80212e60, D_801facc8, D_80179d50;
@@ -108,18 +108,14 @@ void draw_tri_flat(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
 void draw_pass(void);
 void think_pass(void *);
 int  get_free_mem_left(void) { return 0x400000; }			/* GOOSE 0x80143e90 */
-void func_800c9908(void) { }						/* switch sampling after the movie draw */
+float fsqrt(float x) { return sqrtf(x); }				/* 0x80144900: sqrt.s */
 void func_800d41b4(int f) { (void)f; }					/* the level's 3D draws */
 int *show_debug_light_(int f) { (void)f; return 0; }
 void func_800e9140(int f) { (void)f; }					/* enemy stats */
 void func_800d6e94(void) { }
 void func_800ff418(void) { }
 player_stats_t *something_to_do_with_shooting_(player_stats_t *p) { return p; }
-void func_800c9d54(void *o) { (void)o; }
-void func_800ca194(void *o) { (void)o; }
-void func_800c9f4c(void) { }
 void func_800ce2f8(float *a, float b, float *c) { (void)a; (void)b; c[0] = c[1] = c[2] = 0.0f; }
-void func_800c8ef0(float *a, float b, unsigned int c) { (void)a; (void)b; (void)c; }
 void func_800fe580(void) { }
 void func_800fef18(void) { }
 void func_800ffbdc(void) { }
@@ -131,31 +127,33 @@ void func_800db4b8(void) { }
 void func_800c83bc(void) { }
 void func_800c9620(int a) { (void)a; }
 void func_800c9bf0(void) { }
-void print_heap_and_obj_info_onscreen(void) { }
-short func_800cd1f8(void) { return 0; }
-short func_800cd4ac(void) { return 0; }
-short func_800cd7a0(void) { return 0; }
-short func_800cdaa0(void) { return 0; }
 int	D_801e5cbc, shown_frame, wave_id_g2, RTP_val, DMA_val, D_801e0ecc, please_wait_timer;
-short	D_80212d92;
-float	D_801de8f0[3], D_80179c00[6], D_80179c44[3];
-void	*D_80179bfc;
-float	*D_80194650;
 extern unsigned int background_color;
 
-void game_init(void)			/* func_800ca3a0, the parts the port has */
+/* game_init (0x800ca3a0, scene.c) is real; the set-up calls it makes that the port lacks */
+void func_800c836c(void) { }
+void func_800c81b8(void) { }
+void func_800c865c(void) { }
+void func_800d6768(void)			/* 0x800d6768: the texmap surface table */
 {
 	int	i;
-	init_objects();
 	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }
-	movie_init();
-	load_font_texmap();
-	create_object("FOO", 0, 0, 1, 0, (void (*)(void *))draw_pass);
-	create_object("BAR", 0, 0, 0, 0, think_pass);
 }
+void func_800d78fc(void) { }
+void func_800c8a44(float x, float y, float w, float r, unsigned int c) { (void)x; (void)y; (void)w; (void)r; (void)c; }	/* a screen marker */
+void func_800cfda8(float *m, float *a) { (void)m; (void)a; }	/* rotation matrix from angles */
+/* load_level_assets (0x800ca448, scene.c) is real; its loaders are not */
+void func_800db148(void) { }
+void func_800db800(void) { }
+void load_misc_texmaps(void) { fprintf(stderr, "[stub] load_misc_texmaps (0x800d8c60): level texmaps not loaded\n"); }
+void func_800ff0b0(void) { }
+void func_800fe440(void) { }
+void func_800fedd8(void) { }
+void func_800ffb08(void) { }
+void func_80100478(void) { }
+void func_8013f6d8(void) { }
 
 /* the boot callees the port does not have yet: level assets, models, the gun calibration */
-void load_level_assets(void) { fprintf(stderr, "[stub] load_level_assets (0x800ca448): misc texmaps and models not loaded\n"); }
 #define LOAD_STUB(n) void n(void) { }
 LOAD_STUB(load_jester_texmap) LOAD_STUB(load_jester_model) LOAD_STUB(load_inng_texmap) LOAD_STUB(load_chnk_texmap)
 LOAD_STUB(load_chnk_model) LOAD_STUB(load_shotgun_texmap) LOAD_STUB(load_health_texmap) LOAD_STUB(load_ammmo_texmap)

@@ -71,7 +71,7 @@
 +
 +extern int	read_dip_direct(void);
 +extern int	func_80157004(void);
-+extern void	switch_init(void), init_sprites(void), func_8013f5b4(void), func_800ca4a8(void);
++extern void	switch_init(void), init_sprites(void), func_8013f5b4(void), record_free_mem(void);
 +extern void	install_sys_handlers(void);
 +extern void	graphics_init(void);
 +extern void	grSstVidMode(int, sst1VideoTimingStruct *);
@@ -315,7 +315,7 @@
 +		exit(0);
 +	}
 +	print_banner();
-+	func_800ca4a8();
++	record_free_mem();
 +	dma_buffer1 = malloc((DMA_BUFFER_SIZE * 2) + 32);
  	if(dma_buffer1 == NULL)
  	{

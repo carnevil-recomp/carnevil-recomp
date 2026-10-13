@@ -78,7 +78,8 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | script.c | game2 | 10 of 10, registered in modules.txt (text 0x80110270-0x80110b04, rodata 0x80173318-0x8017345c) |
 | shake.c | game2 | 1 of 1 (update_movie_scroll; the rest of its file, 0x800f3420-0x800f37ac, is not decompiled) |
 | attract.c | game2 | 18 of 18, registered in modules.txt (text 0x800caf80-0x800cbb6c, rodata 0x8016f600-0x8016f704, data 0x80179c50-0x80179d40) |
-| objects.c | game2 | 13 of 14: the list routines, the per-frame draw pass (0x800cbbb4, `draw_pass`) and think pass (0x800cca70) exact; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20). The port runs the real passes; the level routines they call are stubs |
+| scene.c | game2 | 9 of 9 (the switch sampler, the debug nudges, the heap display, game_init, load_level_assets); the rest of that file (0x800c8280-0x800ca4d0: screen markers, 3D helpers) is still assembly |
+| objects.c | game2 | 17 of 18: the list routines, the per-frame draw pass (0x800cbbb4, `draw_pass`), think pass (0x800cca70) and the four nearest-enemy searches exact; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20). The port runs the real passes; the level routines they call are stubs |
 
 A module is registered in `config/modules.txt` once every function in its source file's
 address range matches and its data is laid out in the file's order (the audit file was the
