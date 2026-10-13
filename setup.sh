@@ -6,7 +6,10 @@
 #                                     extractor or by tools/lfn32.py
 #   ./setup.sh --raw IMAGE.raw        a raw dump of the CarnEvil hard disk (e.g. chdman extractraw
 #                                     of carnevil.chd); the partition is extracted with tools/lfn32.py
-#   ./setup.sh                        defaults for this machine (see below)
+#   ./setup.sh --sdk DIR              your clone of github.com/historicalsource/midwayvideo
+#   ./setup.sh --roms DIR             (optional) the boot/sound ROM dumps for the MAME-based tests
+#   ./setup.sh                        defaults from CARNEVIL_PARTITION / CARNEVIL_RAW / MIDWAY_SDK /
+#                                     CARNEVIL_ROMS, else the original developer's paths below
 #
 # The build needs GAME.EXE from CarnEvil v1.0.3 (MAME set "carnevil"). It also links the Midway
 # Seattle SDK (github.com/historicalsource/midwayvideo) for the original compiler and headers,

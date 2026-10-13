@@ -22,9 +22,18 @@ ASM_SRCS := $(shell cat asm/files.txt 2>/dev/null | sed 's|^|asm/|')
 ASM_OBJS := $(patsubst asm/%.s,build/asm/%.o,$(ASM_SRCS))
 -include build/modules.mk
 
-all: build/GAME.EXE check
+all: prereqs build/GAME.EXE check
 
-asm/files.txt build/link_order.ld build/modules.mk:
+# what each build needs (see README "Getting started"): the port needs the SDK checkout for its
+# headers; the byte-exact rebuild also needs your GAME.EXE, the binutils and DOSBox-X
+prereqs-sdk:
+	@test -d $(SDK)/include || { echo "*** $(SDK) is missing: ./setup.sh --sdk /path/to/midwayvideo (git clone https://github.com/historicalsource/midwayvideo)"; exit 1; }
+prereqs: prereqs-sdk
+	@test -f $(ORIG) || { echo "*** $(ORIG) is missing: ./setup.sh --raw IMAGE or --partition DIR (your own dump of CarnEvil v1.0.3)"; exit 1; }
+	@test -x $(AS) || { echo "*** $(AS) is missing: run tools/get-binutils.sh once"; exit 1; }
+	@command -v dosbox-x >/dev/null 2>&1 || command -v dosbox >/dev/null 2>&1 || echo "*** warning: DOSBox-X not on the PATH; C modules cannot be compiled (the SDK's compiler is a DOS program)"
+
+asm/files.txt build/link_order.ld build/modules.mk: | prereqs
 	$(DISASM)
 
 build/asm/%.o: asm/%.s
@@ -80,7 +89,7 @@ build/host/selftest: port/host/selftest.c $(HOST_LINK_SRCS) include/types.h port
 	@mkdir -p build/host
 	$(HOSTCC) $(HOSTCFLAGS) -o $@ port/host/selftest.c $(HOST_LINK_SRCS)
 
-host: $(HOST_OBJS) build/host/selftest
+host: prereqs-sdk $(HOST_OBJS) build/host/selftest
 	./build/host/selftest $(ORIG)
 
 # ---- the playable port: GOOSE + game modules with the host HAL (port/host/*.c) ----
@@ -118,7 +127,7 @@ build/port/%.o: %.c include/types.h port/host/compat.h
 	$(HOSTCC) $(HOSTCFLAGS) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -c -o $@ $<
 build/host/carnevil: $(PORT_OBJS) $(PORT_CXX_OBJS) $(PORT_SRCS) port/host/hal.h port/host/video.h port/host/texture.h port/host/audio.h
 	$(HOSTCC) $(HOSTCFLAGS) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -Wno-deprecated-declarations $(PORT_LDFLAGS) -lc++ -o $@ $(PORT_SRCS) $(PORT_OBJS) $(PORT_CXX_OBJS)
-port: build/host/carnevil
+port: prereqs-sdk build/host/carnevil
 
 check: build/GAME.EXE
 	@cmp $(ORIG) build/GAME.EXE && echo "OK: build/GAME.EXE is byte-identical to $(ORIG)"
@@ -131,5 +140,5 @@ regen:
 
 clean:
 	rm -rf build/asm build/game.* build/GAME.EXE build/src
-.PHONY: all check verify regen clean host port
+.PHONY: all check verify regen clean host port prereqs prereqs-sdk
 .SECONDARY:

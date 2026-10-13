@@ -26,23 +26,37 @@ vendored DCS decoder), `test/` oracle data, `experiments/` throwaway investigati
 `original/` (git-ignored) holds your game data and SDK checkout via `setup.sh`.
 
 ## Getting started
-The repository contains no game data. You need your own dump of the CarnEvil v1.0.3 hard
-disk. The port needs both the extracted filesystem partition (the game's files) and the raw
-disk image (the movies are stored as raw partitions outside the filesystem).
+The repository contains no game data and no SDK. Three things come from elsewhere, and
+`setup.sh` only links to them (the links live in the git-ignored `original/`):
 
+1. **Your own dump of the CarnEvil v1.0.3 hard disk** (MAME set `carnevil`), as a raw
+   image (`chdman extractraw`). The port needs both the game's files and the raw image (the
+   movies are raw partitions outside the filesystem); `setup.sh` extracts the files for you.
+2. **The Midway Seattle SDK**: `git clone https://github.com/historicalsource/midwayvideo`
+   (18 MB). The port only needs its headers; the byte-exact rebuild also runs its original
+   DOS compiler.
+3. **This repository.**
+
+### Play the port
+Needs python3, clang and make (macOS today; Linux and Windows are planned).
 ```
-./setup.sh --raw /path/to/carnevil.raw              # extracts the filesystem with tools/lfn32.py, or
-./setup.sh --partition /path/to/extracted/files     # if you already extracted it yourself
-./setup.sh --sdk /path/to/midwayvideo               # git clone https://github.com/historicalsource/midwayvideo
-tools/get-binutils.sh                               # builds mipsel-elf as/ld into tools/ (once)
-make            # rebuild GAME.EXE from asm/ + src/ and check it is byte-identical
-make host       # native compile of every C module + self-test
-make port       # the PC port -> build/host/carnevil
+git clone https://github.com/historicalsource/midwayvideo ../midwayvideo
+./setup.sh --raw /path/to/carnevil.raw --sdk ../midwayvideo
+make port
+build/host/carnevil --partition original/partition --raw original/carn.raw
 ```
-Prerequisites: python3 with capstone (`pip install capstone`), clang/make, and for the
-matching build DOSBox-X on the PATH (it runs the SDK's original DOS compiler) and the SDK
-checkout. `tools/legacy/` has the original stand-alone extractors (`split_raw_img.py`,
-`split_partition.py`) for a disk image if you prefer them.
+`./setup.sh --partition DIR` works instead of `--raw` if you extracted the files yourself
+(`tools/legacy/` has the stand-alone extractors); add `--raw` as well for the movies.
+
+### Verify the byte-exact rebuild (for working on the decompilation)
+Additionally needs python3's capstone (`pip install capstone`), DOSBox-X on the PATH (it
+runs the SDK's DOS compiler for the C modules) and the MIPS binutils, built once:
+```
+tools/get-binutils.sh      # mipsel-elf as/ld into tools/ (git-ignored)
+make                       # rebuild GAME.EXE from asm/ + src/ and check it is byte-identical
+make host                  # native compile of every C module + self-test
+```
+`make` and `make port` stop with a message naming the missing piece if a link is absent.
 
 ## Running the port
 ```
