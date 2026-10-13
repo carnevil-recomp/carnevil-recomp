@@ -1,0 +1,29 @@
+# library sources generated from the SDK checkout: <our path> <path under original/sdk>
+# (CR line endings stripped, then patches/<our path>.patch applied when present); tools/sdksrc.py
+src/goose/adjust.c lib/goose/adjust.c
+src/goose/anim2d.c lib/goose/anim2d.c
+src/goose/bgnd.c lib/goose/bgnd.c
+src/goose/cmos.c lib/goose/cmos.c
+src/goose/crc.c lib/goose/crc.c
+src/goose/div0hand.c lib/goose/div0hand.c
+src/goose/draw.c lib/goose/draw.c
+src/goose/fonts.c lib/goose/fonts.c
+src/goose/galhand.c lib/goose/galhand.c
+src/goose/gfader.c lib/goose/GFADER.C
+src/goose/initg.c lib/goose/INITG.C
+src/goose/inthand.c lib/goose/inthand.c
+src/goose/lockup.c lib/goose/LOCKUP.C
+src/goose/mthread.c lib/goose/mthread.c
+src/goose/object.c lib/goose/object.c
+src/goose/ostrings.c lib/goose/ostrings.c
+src/goose/process.c lib/goose/process.c
+src/goose/prochook.c lib/goose/prochook.c
+src/goose/pshell.s lib/goose/PSHELL.S
+src/goose/randper.c lib/goose/randper.c
+src/goose/sincos.c lib/goose/sincos.c
+src/goose/sprites.c lib/goose/sprites.c
+src/goose/switch.c lib/goose/switch.c
+src/goose/texture.c lib/goose/texture.c
+src/goose/trans.c lib/goose/TRANS.C
+src/goose/unimhand.c lib/goose/unimhand.c
+src/sound/sound.c lib/sound/sound.c

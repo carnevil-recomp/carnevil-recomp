@@ -1,0 +1,37 @@
+--- sdk/lib/goose/object.c
++++ src/goose/object.c
+@@ -26,7 +26,7 @@
+ 
+ extern int	resource_mode;
+ 
+-char	goose_object_c_version[] = {"$Revision: 11 $"};
++char	goose_object_c_version[] = {"$Revision: 9 $"};
+ 
+ #define ALLOC_NUM	32
+ 
+@@ -35,7 +35,6 @@
+ 
+ struct object_node	*olist = (struct object_node *)0;
+ struct object_node	*ofree = (struct object_node *)0;
+-struct object_node	*current_3dobj = (struct object_node *)0;
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ // add_object_block() - This function is used to add object nodes to the
+@@ -384,7 +383,6 @@
+ 
+ 	pobj = olist;
+ 
+-	current_3dobj = pobj;
+ 
+ 	while( pobj )
+ 	{
+@@ -399,8 +397,7 @@
+ 		pobj->time = end_time - start_time;
+ #endif
+ 		pobj = pobj->next;
+-		current_3dobj = pobj;
+-	}
++		}
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////

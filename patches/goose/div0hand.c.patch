@@ -1,0 +1,11 @@
+--- sdk/lib/goose/div0hand.c
++++ src/goose/div0hand.c
+@@ -13,7 +13,7 @@
+ 
+ extern int	fp0_time;
+ 
+-char	goose_div0hand_c_version[] = {"$Revision: 6 $"};
++char	goose_div0hand_c_version[] = {"$Revision: 4 $"};
+ 
+ #define	SINGLE_PREC_FLOAT	16
+ #define	DOUBLE_PREC_FLOAT	17

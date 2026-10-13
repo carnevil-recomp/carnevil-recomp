@@ -1,0 +1,118 @@
+--- sdk/lib/goose/ostrings.c
++++ src/goose/ostrings.c
+@@ -13,7 +13,7 @@
+ #include	<goose/lockup.h>
+ #include	<goose/jmalloc.h>
+ 
+-char	goose_ostrings_c_version[] = {"$Revision: 24 $"};
++char	goose_ostrings_c_version[] = {"$Revision: 19 $"};
+ 
+ char	*atoui(char *, unsigned int *, unsigned int);
+ static char	*decode_escape(char *);
+@@ -56,11 +56,6 @@
+ void set_text_font(int font_id)
+ {
+ 	text_state.font_node = get_font_handle(font_id);
+-	if(!text_state.font_node)
+-	{
+-		scale_font_size = 10;
+-		return;
+-	}
+ 	scale_font_size = text_state.font_node->font_info->scale_size;
+ }
+ 
+@@ -186,11 +181,7 @@
+ 	si->w_scale = text_state.w_scale;
+ 	si->state.constant_color = text_state.color;
+ 	si->state.chroma_color = text_state.bgnd_color;
+-	if(!si->tn)
+-	{
+-		si->state.chroma_key_mode = GR_CHROMAKEY_DISABLE;
+-	}
+-	else if(si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_8 ||
++	if(si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_8 ||
+ 		si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_INTENSITY_44 ||
+ 		si->tn->texture_info.header.format == GR_TEXFMT_ARGB_8332 ||
+ 		si->tn->texture_info.header.format == GR_TEXFMT_AYIQ_8422 ||
+@@ -209,20 +200,13 @@
+ 	{
+ 		si->state.chroma_key_mode = GR_CHROMAKEY_DISABLE;
+ 	}
+-	if(si->tn)
+-	{
+-		if(text_state.color & 0xffffff)
+-		{
+-			si->state.color_combiner_function = GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB;
+-		}
+-		else
+-		{
+-			si->state.color_combiner_function = GR_COLORCOMBINE_DECAL_TEXTURE;
+-		}
++	if(text_state.color & 0xffffff)
++	{
++		si->state.color_combiner_function = GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB;
+ 	}
+ 	else
+ 	{
+-		si->state.color_combiner_function = GR_COLORCOMBINE_CCRGB;
++		si->state.color_combiner_function = GR_COLORCOMBINE_DECAL_TEXTURE;
+ 	}
+ 	si->id = string_id;
+ }
+@@ -233,11 +217,7 @@
+ 	si->w_scale = text_state.w_scale;
+ 	si->state.constant_color = 0xff000000;
+ 	si->state.chroma_color = text_state.bgnd_color;
+-	if(!si->tn)
+-	{
+-		si->state.chroma_key_mode = GR_CHROMAKEY_DISABLE;
+-	}
+-	else if(si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_8 ||
++	if(si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_8 ||
+ 		si->tn->texture_info.header.format == GR_TEXFMT_ALPHA_INTENSITY_44 ||
+ 		si->tn->texture_info.header.format == GR_TEXFMT_ARGB_8332 ||
+ 		si->tn->texture_info.header.format == GR_TEXFMT_AYIQ_8422 ||
+@@ -452,7 +432,6 @@
+ 					is_low_res = 3;
+ 				}
+ 				char_sprites[num_sprites] = _beginobj((void *)string, char_ii, width, 0.0F, z, 0);
+-				char_sprites[num_sprites]->state.texture_filter_mode = GR_TEXTUREFILTER_POINT_SAMPLED;
+ 				is_low_res = old_is_low_res;
+ 				if(!char_sprites[num_sprites])
+ 				{
+@@ -483,7 +462,6 @@
+ 					}
+ 
+ 					char_sprites[num_sprites] = _beginobj((void *)string, char_ii, width, 0.0F, z+0.0001f, 0);
+-					char_sprites[num_sprites]->state.texture_filter_mode = GR_TEXTUREFILTER_POINT_SAMPLED;
+ 					is_low_res = old_is_low_res;
+ 					if(!char_sprites[num_sprites])
+ 					{
+@@ -1011,26 +989,7 @@
+ 
+ }
+ 
+-//////////////////////////////////////////////////////////////////////////////
+-// change the constant_color field in the status of all sprites
+-// matching a given parent.
+-void change_string_cc( void *parent, int cc )
+-{
+-	register sprite_node_t	*snode = sprite_node_list;
+-
+-	// Walk a sprite list
+-	while(snode)
+-	{
+-		// Node we are looking for ?
+-		if(snode->si->parent == parent)
+-		{
+-			snode->si->state.constant_color = cc;
+-		}
+-
+-		// Save the next node pointer
+-		snode = snode->next;
+-	}
+-}
++/* change_string_cc() of SDK rev 24 is not part of CarnEvil's rev 19. */
+ 
+ //////////////////////////////////////////////////////////////////////////////
+ // END ostrings.c

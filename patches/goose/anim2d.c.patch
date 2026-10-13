@@ -1,0 +1,11 @@
+--- sdk/lib/goose/anim2d.c
++++ src/goose/anim2d.c
+@@ -24,7 +24,7 @@
+ #include <goose/anim2d.h>
+ #include	<goose/lockup.h>
+ 
+-char	goose_anim2d_c_version[] = {"$Revision: 15 $"};
++char	goose_anim2d_c_version[] = {"$Revision: 14 $"};
+ 
+ extern sprite_node_t	*sprite_node_list;
+ extern sprite_node_t	*alpha_sprite_node_list;

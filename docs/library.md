@@ -3,6 +3,14 @@
 Every SDK library source and what CarnEvil v1.0.3 links. "rev" is the `$Revision$` string the
 game carries (the SDK clone is newer); differences are commented in the module source.
 
+The library sources are not committed: `make` generates `src/goose/*.c`, `src/goose/pshell.s`
+and `src/sound/sound.c` from your SDK checkout (`config/sdk_sources.txt` maps each file;
+`tools/sdksrc.py` strips the CR line endings and applies `patches/<file>.patch`). The patches
+are the differences between the SDK's revision of a file and the one CarnEvil links, plus
+the build fixes; three files (adjust.c, cmos.c, sincos.c) need none. `python3 tools/sdksrc.py
+--check` reports a generated file that was edited by hand: edit the patch instead
+(`make sdksrc` regenerates), or regenerate the patch from the edited file with difflib.
+
 | SDK source | game rev | SDK rev | module (profile) | notes |
 |---|---|---|---|---|
 | adjust.c | - | - | src/goose/adjust.c (goose) | |

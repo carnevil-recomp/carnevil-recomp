@@ -1,0 +1,11 @@
+--- sdk/lib/goose/TRANS.C
++++ src/goose/trans.c
+@@ -11,7 +11,7 @@
+ #include	<dir.h>
+ #include	<goose/goose.h>
+ 
+-char	goose_trans_c_version[] = {"$Revision: 4 $"};
++char	goose_trans_c_version[] = {"$Revision: 3 $"};
+ 
+ extern float	hres, vres;
+ 

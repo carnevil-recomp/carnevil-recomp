@@ -1,0 +1,63 @@
+--- sdk/lib/goose/bgnd.c
++++ src/goose/bgnd.c
+@@ -20,7 +20,7 @@
+ 
+ extern int	resource_mode;
+ 
+-char	goose_bgnd_c_version[] = {"$Revision: 10 $"};
++char	goose_bgnd_c_version[] = {"$Revision: 7 $"};
+ 
+ /* Number of sprite nodes to allocate at a time */
+ #define	ALLOC_NUM	32
+@@ -58,6 +58,7 @@
+ void notify_check(sprite_info_t *sprite);
+ 
+ static sprite_info_t *_beginbobj(void *parent, image_info_t *ii, float x, float y, float z, int tid);
++void _generate_sprite_st(register sprite_info_t *sprite);
+ 
+ /*
+ ** generate_background_sprite_verts() - This function generates geometry fro
+@@ -297,21 +298,8 @@
+ 		tn = (struct texture_node *)0;
+ 	}
+ 
+-	if(!sprite->vert_mem)
+-	{
+-		// Allocate memory for the vertices for the sprite
+-#if defined(SEATTLE)
+-		verts = (MidVertex *)malloc((sizeof(MidVertex) * 4) + 32);
+-#elif defined(VEGAS)
+-		verts = (SpriteVertex *)malloc((sizeof(SpriteVertex) * 4) + 32);
+-#else
+-#error Environment variable TARGET_SYS not defined
+-#endif
+-	}
+-	else
+-	{
+-		verts = sprite->vert_mem;
+-	}
++	/* older revision (as linked in CarnEvil): vertices are always freshly allocated */
++	verts = (MidVertex *)malloc((sizeof(MidVertex) * 4) + 32);
+ 
+ 	// Allocated OK
+ 	if(!verts)
+@@ -474,7 +462,8 @@
+ 	}
+ 
+ 	// Generate the geometry for the sprite
+-	generate_background_sprite_verts(sprite);
++	_generate_background_sprite_verts(sprite);
++	_generate_sprite_st(sprite);
+ 
+ 	// Set the node ptr for the sprite
+ 	sprite->node_ptr = (void *)snode;
+@@ -593,7 +582,8 @@
+ 				sprite->y += sprite->y_vel;
+ 
+ 				// Generate new vertices for sprite
+-				generate_background_sprite_verts(sprite);
++				_generate_background_sprite_verts(sprite);
++				_generate_sprite_st(sprite);
+ 			}
+ 
+ 			// Set mode

@@ -1,0 +1,11 @@
+--- sdk/lib/goose/galhand.c
++++ src/goose/galhand.c
+@@ -19,7 +19,7 @@
+ #include	<ioctl.h>
+ #include	<glide/glide.h>
+ 
+-char	goose_galhand_c_version[] = {"$Revision: 5 $"};
++char	goose_galhand_c_version[] = {"$Revision: 4 $"};
+ 
+ #ifndef DEBUG
+ void start_timeout_timer(void);

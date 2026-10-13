@@ -1,0 +1,59 @@
+--- sdk/lib/goose/prochook.c
++++ src/goose/prochook.c
+@@ -17,36 +17,15 @@
+ /****************************************************************************/
+ #include	<stdlib.h>
+ 
+-char	goose_prochook_c_version[] = {"$Revision: 3 $"};
++char	goose_prochook_c_version[] = {"$Revision: 2 $"};
+ 
+ struct __proc_func {
+ 	struct	__proc_func	*__next;
+ 	void		(*__function)(void);
+ };
+ 
+-static struct __proc_func	*__pre_dma_proc_ptr = 0;
+ static struct __proc_func	*__pre_proc_ptr = 0;
+ static struct __proc_func	*__post_proc_ptr = 0;
+-
+-
+-int pre_dma_proc_func(void (*a)(void))
+-{
+-	struct __proc_func	*pp;
+-
+-	if(!a)
+-	{
+-		return(-1);
+-	}
+-	pp = (struct __proc_func *)malloc(sizeof(struct __proc_func));
+-	if(!pp)
+-	{
+-		return(-1);
+-	}
+-	pp->__next = __pre_dma_proc_ptr;
+-	pp->__function = a;
+-	__pre_dma_proc_ptr = pp;
+-	return(0);
+-}
+ 
+ int pre_proc_func(void (*a)(void))
+ {
+@@ -86,18 +65,6 @@
+ 	return(0);
+ }
+ 
+-
+-void do_pre_dma_proc(void)
+-{
+-	struct __proc_func	*pp = __pre_dma_proc_ptr;
+-
+-	while(pp)
+-	{
+-		(pp->__function)();
+-		pp = pp->__next;
+-	}
+-}
+-
+ void do_pre_proc(void)
+ {
+ 	struct __proc_func	*pp = __pre_proc_ptr;

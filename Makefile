@@ -40,6 +40,13 @@ build/asm/%.o: asm/%.s
 	@mkdir -p $(dir $@)
 	@$(AS) $(ASFLAGS) -o $@ $<
 
+# the GOOSE and sound library sources are generated from the SDK checkout plus our patches
+# (config/sdk_sources.txt, patches/, tools/sdksrc.py); they are not committed
+SDK_GEN := $(shell awk '!/^\#/ && NF {print $$1}' config/sdk_sources.txt)
+$(SDK_GEN): tools/sdksrc.py config/sdk_sources.txt $(wildcard patches/*/*.patch) | prereqs-sdk
+	@python3 tools/sdksrc.py
+sdksrc: $(SDK_GEN)
+
 # C modules: preprocess with clang, compile with the SN cc1 under DOSBox-X, fix up for gas, assemble
 build/%.i: %.c
 	@mkdir -p $(dir $@)
@@ -140,5 +147,5 @@ regen:
 
 clean:
 	rm -rf build/asm build/game.* build/GAME.EXE build/src
-.PHONY: all check verify regen clean host port prereqs prereqs-sdk
+.PHONY: all check verify regen clean host port prereqs prereqs-sdk sdksrc sdksrc
 .SECONDARY:

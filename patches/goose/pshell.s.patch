@@ -1,0 +1,56 @@
+--- sdk/lib/goose/PSHELL.S
++++ src/goose/pshell.s
+@@ -1,33 +1,24 @@
+-; $Revision: 2 $
+-	section	.data
++# PSHELL.S ($Revision: 2 $) - the process shell every GOOSE process starts in.
++# GNU as transcription of original/sdk/lib/goose/PSHELL.S (asmmips syntax: section/xdef/xref/db,
++# r-numbered registers). Byte-exact with CarnEvil: text 0x8014a930, version string 0x801a3128.
++	.set	noreorder
++	.data
++	.globl	goose_pshell_s_version
++goose_pshell_s_version:
++	.asciz	"$Revision: 2 $"
+ 
+-	xdef	goose_pshell_s_version
+-goose_pshell_s_version
+-	db	"$Revision: 2 $",0
+-
+-	xref	cur_proc
+-	xref	die
+-
+-	section	.text
+-
+-	; r4 = argument ptr
+-	; r5 = function ptr
+-	xdef	_proc_shell
++	.text
++	# $a0 = argument ptr, $a1 = function ptr (unused: both come from the process node)
++	.globl	_proc_shell
+ _proc_shell:
+-	la	r8,cur_proc
+-	lw	r8,0(r8)		; Get current process pointer
++	lui	$t0, %hi(cur_proc)
++	addiu	$t0, $t0, %lo(cur_proc)
++	lw	$t0, 0($t0)		# current process pointer
+ 	nop
+-
+-	;
+-	; NOTE - if the process structure changes this offset will
+-	; also need to be changed
+-	;
+-;;;	lw	r9,2080(r8)		; Get entry point address
+-	lw	r9,36(r8)		; Get entry point address
+-
+-;;;	addi	r4,r8,16		; Get pointer to arguments
+-	lw	r4,16(r8)
+-	jalr	r9
++	# NOTE - if the process structure changes these offsets also need to change
++	lw	$t1, 36($t0)		# entry point address
++	lw	$a0, 16($t0)		# argument pointer
++	jalr	$t1
+ 	nop
+-	j	die			; If it returns - die
+-	li	r4,1
++	j	die			# if it returns - die
++	addiu	$a0, $zero, 1

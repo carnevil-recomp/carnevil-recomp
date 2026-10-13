@@ -1,0 +1,909 @@
+--- sdk/lib/goose/sprites.c
++++ src/goose/sprites.c
+@@ -36,7 +36,7 @@
+ #endif
+ #endif
+ 
+-char	goose_sprites_c_version[] = {"$Revision: 32 $"};
++char	goose_sprites_c_version[] = {"$Revision: 20 $"};
+ 
+ /* Turn this on if you want to display the sprite drawing timing */
+ /* info on the debug output terminal */
+@@ -130,276 +130,119 @@
+ */
+ static void _generate_sprite_verts(register sprite_info_t *sprite)
+ {
+-	register float			tx, ty;
+-#if defined(SEATTLE)
+-	register MidVertex	*vert = sprite->verts;
+-#elif defined(VEGAS)
+-	register SpriteVertex	*vert = sprite->verts;
+-#else
+-#error Environment variable TARGET_SYS not set
+-#endif
+-
+-	// Is the Z position of the sprite < 1.0
++	/* CarnEvil's revision: angles are normalised first (double arithmetic), there is no
++	   un-rotated fast path and only oow is written here (_generate_sprite_st fills sow/tow). */
++	register int	i;
++	register float	tx, ty;
++	register float	cos_a;
++	register float	sin_a;
++	register float	oow;
++	float				x[4];
++	float				y[4];
++
+ 	if(sprite->z < 1.0f)
+ 	{
+-		// Set the sprites mode to hidded
+ 		((sprite_node_t *)sprite->node_ptr)->mode |= HIDE_SPRITE;
+-
+-		// Return because there is no point in calculating
+-		// this stuff for a hidden sprite
+ 		return;
+ 	}
+ 
+-	// Is sprite rotated ?
+-// This should work but doesn't - I don't know why - so I replaced it with
+-// the line below it
+-//	if(sprite->x_angle == sprite->y_angle == sprite->z_angle == 0.0f)
++	if(sprite->x_angle >= (2.0 * M_PI))
++	{
++		sprite->x_angle -= (2.0 * M_PI);
++	}
++	else if(sprite->x_angle <= (-2.0 * M_PI))
++	{
++		sprite->x_angle += (2.0 * M_PI);
++	}
++
++	if(sprite->y_angle >= (2.0 * M_PI))
++	{
++		sprite->y_angle -= (2.0 * M_PI);
++	}
++	else if(sprite->y_angle <= (-2.0 * M_PI))
++	{
++		sprite->x_angle += (2.0 * M_PI);
++	}
++
++	if(sprite->z_angle >= (2.0 * M_PI))
++	{
++		sprite->z_angle -= (2.0 * M_PI);
++	}
++	else if(sprite->z_angle <= (-2.0 * M_PI))
++	{
++		sprite->z_angle += (2.0 * M_PI);
++	}
++
+ 	if(sprite->x_angle == 0.0f && sprite->y_angle == 0.0f && sprite->z_angle == 0.0f)
+ 	{
+-		register float			sw;
+-		register float			sh;
+-		register	float			oow;
+-
+-		// Reset rotated mode bit
+ 		sprite->mode &= ~ROTATED;
+-
+-		// Calculate the OOW value for the sprite
+-		oow = 1.0F/sprite->z;
+-
+-		// Calculate left X
+-		tx = sprite->x - (sprite->ii->ax * sprite->w_scale);
+-
+-		// Calculate bottom Y
+-		ty = sprite->y + (sprite->ii->ay * sprite->h_scale);
+-
+-		// Calculate right X
+-		sw = tx + (sprite->ii->w * sprite->w_scale);
+-
+-		// Calculate top Y
+-		sh = ty + (sprite->ii->h * sprite->h_scale);
+-
+-		// Set low res y position scaling factor
++	}
++	else
++	{
++		sprite->mode |= ROTATED;
++	}
++
++	x[1] = x[2] = sprite->w_scale * (float)(sprite->ii->w - sprite->ii->ax);
++	x[0] = x[3] = x[1] - (sprite->w_scale * (float)sprite->ii->w);
++	y[2] = y[3] = sprite->h_scale * (float)(sprite->ii->h + sprite->ii->ay);
++	y[0] = y[1] = y[2] - (sprite->h_scale * (float)sprite->ii->h);
++
++	/* Apply x, y, and z rotations to x0-x3, y0-y3, and z0-z3 */
++	cos_a = fcos(-sprite->x_angle);
++	sin_a = fsin(-sprite->x_angle);
++	x_mat[5] = x_mat[10] = cos_a;
++	x_mat[6] = sin_a;
++	x_mat[9] = -sin_a;
++
++	cos_a = fcos(-sprite->y_angle);
++	sin_a = fsin(-sprite->y_angle);
++	y_mat[0] = y_mat[10] = cos_a;
++	y_mat[8] = sin_a;
++	y_mat[2] = -sin_a;
++
++	cos_a = fcos(-sprite->z_angle);
++	sin_a = fsin(-sprite->z_angle);
++	z_mat[0] = z_mat[5] = cos_a;
++	z_mat[1] = sin_a;
++	z_mat[4] = -sin_a;
++
++	mxm(c_mat, x_mat, y_mat);
++	mxm(t_mat, c_mat, z_mat);
++
++	for(i = 0; i < 4; i++)
++	{
++		tx = x[i]*t_mat[0] + y[i]*t_mat[4] + sprite->x;
++		ty = x[i]*t_mat[1] + y[i]*t_mat[5] + sprite->y;
+ 		if(is_low_res)
+ 		{
+-			ty *= 0.66666666f;
+-			sh *= 0.66666666f;
+-		}
+-
+-		// Snap vertices to .25 pixels
+-		tx += (1<<21);
+-		ty += (1<<21);
+-		sw += (1<<21);
+-		sh += (1<<21);
+-
+-		tx -= (1<<21);
+-		ty -= (1<<21);
+-		sw -= (1<<21);
+-		sh -= (1<<21);
+-
+-		// Set bottom left vertex
+-		vert[0].x = tx;
+-		vert[0].y = ty;
+-
+-		// Set bottom right vertex
+-		vert[1].x = sw;
+-		vert[1].y = ty;
+-
+-		// Set top right vertex
+-		vert[2].x = sw;
+-		vert[2].y = sh;
+-
+-		// Set top left vertex
+-		vert[3].x = tx;
+-		vert[3].y = sh;
+-//#ifndef VEGAS
+-#if 1
+-		vert[0].oow =
+-			vert[1].oow =
+-			vert[2].oow =
+-			vert[3].oow =
+-			vert[0].tow =
+-			vert[1].tow =
+-			vert[2].tow =
+-			vert[3].tow =
+-			vert[0].sow =
+-			vert[1].sow =
+-			vert[2].sow =
+-			vert[3].sow = oow;
+-#else
+-		vert[0].oow =
+-			vert[1].oow =
+-			vert[2].oow =
+-			vert[3].oow =
+-			vert[0].tmuvtx[0].oow =
+-			vert[1].tmuvtx[0].oow =
+-			vert[2].tmuvtx[0].oow =
+-			vert[3].tmuvtx[0].oow =
+-			vert[0].tmuvtx[1].oow =
+-			vert[1].tmuvtx[1].oow =
+-			vert[2].tmuvtx[1].oow =
+-			vert[3].tmuvtx[1].oow =
+-			vert[0].tmuvtx[0].tow =
+-			vert[1].tmuvtx[0].tow =
+-			vert[2].tmuvtx[0].tow =
+-			vert[3].tmuvtx[0].tow =
+-			vert[0].tmuvtx[1].tow =
+-			vert[1].tmuvtx[1].tow =
+-			vert[2].tmuvtx[1].tow =
+-			vert[3].tmuvtx[1].tow =
+-			vert[0].tmuvtx[0].sow =
+-			vert[1].tmuvtx[0].sow =
+-			vert[2].tmuvtx[0].sow =
+-			vert[3].tmuvtx[0].sow =
+-			vert[0].tmuvtx[1].sow =
+-			vert[1].tmuvtx[1].sow =
+-			vert[2].tmuvtx[1].sow =
+-			vert[3].tmuvtx[1].sow = oow;
+-#endif
+-	}
+-	else
+-	{
+-		register int	i;
+-		register float	cos_a;
+-		register float	sin_a;
+-		register float	oow;
+-		float				x[4];
+-		float				y[4];
+-
+-		// Normalize X axis rotation angle to <= 2PI && >= 2PI
+-		if(sprite->x_angle >= (2.0F * (float)M_PI))
+-		{
+-			sprite->x_angle -= (2.0F * (float)M_PI);
+-		}
+-		else if(sprite->x_angle <= (-2.0F * (float)M_PI))
+-		{
+-			sprite->x_angle += (2.0F * (float)M_PI);
+-		}
+-
+-		// Normalize Y axis rotation angle to <= 2PI && >= 2PI
+-		if(sprite->y_angle >= (2.0F * (float)M_PI))
+-		{
+-			sprite->y_angle -= (2.0F * (float)M_PI);
+-		}
+-		else if(sprite->y_angle <= (-2.0F * (float)M_PI))
+-		{
+-			sprite->x_angle += (2.0F * (float)M_PI);
+-		}
+-
+-		// Normalize Z axis rotation angle to <= 2PI && >= 2PI
+-		if(sprite->z_angle >= (2.0F * (float)M_PI))
+-		{
+-			sprite->z_angle -= (2.0F * (float)M_PI);
+-		}
+-		else if(sprite->z_angle <= (-2.0F * (float)M_PI))
+-		{
+-			sprite->z_angle += (2.0F * (float)M_PI);
+-		}
+-
+-		// Set rotated mode bit
+-		sprite->mode |= ROTATED;
+-
+-		// Now generate the vertices (scaled)
+-		x[1] = x[2] = sprite->w_scale * (float)(sprite->ii->w - sprite->ii->ax);
+-		x[0] = x[3] = x[1] - (sprite->w_scale * (float)sprite->ii->w);
+-	
+-		y[2] = y[3] = sprite->h_scale * (float)(sprite->ii->h + sprite->ii->ay);
+-		y[0] = y[1] = y[2] - (sprite->h_scale * (float)sprite->ii->h);
+-
+-		/* Apply x, y, and z rotations to x0-x3, y0-y3, and z0-z3 */
+-		// X axis rotation matrix
+-		cos_a = fcos(-sprite->x_angle);
+-		sin_a = fsin(-sprite->x_angle);
+-		x_mat[5] = x_mat[10] = cos_a;
+-		x_mat[6] = sin_a;
+-		x_mat[9] = -sin_a;
+-
+-		// Y axis rotation matrix
+-		cos_a = fcos(-sprite->y_angle);
+-		sin_a = fsin(-sprite->y_angle);
+-		y_mat[0] = y_mat[10] = cos_a;
+-		y_mat[8] = sin_a;
+-		y_mat[2] = -sin_a;
+-
+-		// Z axis rotation matrix
+-		cos_a = fcos(-sprite->z_angle);
+-		sin_a = fsin(-sprite->z_angle);
+-		z_mat[0] = z_mat[5] = cos_a;
+-		z_mat[1] = sin_a;
+-		z_mat[4] = -sin_a;
+-
+-		// Contatenate the rotation matrices
+-		mxm(c_mat, x_mat, y_mat);
+-		mxm(t_mat, c_mat, z_mat);
+-
+-		// Apply the composite transform to the vertices
+-		for(i = 0; i < 4; i++)
+-		{
+-			// Calculate X
+-			tx = x[i]*t_mat[0] + y[i]*t_mat[4] + sprite->x;
+-
+-			// Calculate Y
+-			ty = x[i]*t_mat[1] + y[i]*t_mat[5] + sprite->y;
+-
+-			// Is it low res ?
+-			if(is_low_res)
+-			{
+-				// YES - scale the position
+-				ty *= 0.6666666f;
+-			}
+-
+-			// Perspective projection
+-			if(sprite->mode & PER_PROJECT)
+-			{
+-				// Calculate OOW
+-				oow = 1.0F/(x[i]*t_mat[2] + y[i]*t_mat[6] + sprite->z);
+-
+-				// Tell user this isn't supported yet
++			ty *= 0.6666666f;
++		}
++		if(sprite->mode & PER_PROJECT)
++		{
++			oow = 1.0F/(x[i]*t_mat[2] + y[i]*t_mat[6] + sprite->z);
+ #if defined(DEBUG)
+-				fprintf(stderr, "Perspective Projection not yet supported for sprites\r\n");
+-				lockup();
+-#endif
+-				oow = 1.0F/sprite->z;
+-			}
+-
+-			// Parallel projection
+-			else
+-			{
+-				// Calculate OOW
+-				oow = 1.0F/sprite->z;
+-			}
+-
+-			// Snap x to .25
+-			tx += (float)(1<<21);
+-			tx -= (float)(1<<21);
+-	
+-			// Snap y to .25
+-			ty += (float)(1<<21);
+-			ty -= (float)(1<<21);
+-	
+-			// Set the vertex points
+-			vert[i].x = tx;
+-			vert[i].y = ty;
+-//#ifndef VEGAS
+-#if 1
+-			vert[i].oow = vert[i].tow = vert[i].sow = oow;
+-#else
+-			vert[i].oow = 
+-				vert[i].tmuvtx[0].oow = 
+-				vert[i].tmuvtx[0].tow = 
+-				vert[i].tmuvtx[0].sow = 
+-				vert[i].tmuvtx[1].oow = 
+-				vert[i].tmuvtx[1].tow = 
+-				vert[i].tmuvtx[1].sow = oow;
+-#endif
+-		}
+-	}
+-
+-	// This is for fonts - if in low res mode we scale the position of the
+-	// character but NOT its size
++			fprintf(stderr, "Perspective Projection not yet supported for sprites\r\n");
++			lockup();
++#endif
++			oow = 1.0F/sprite->z;
++		}
++		else
++		{
++			oow = 1.0F/sprite->z;
++		}
++		tx += (float)(1<<21);
++		tx -= (float)(1<<21);
++		ty += (float)(1<<21);
++		ty -= (float)(1<<21);
++		sprite->verts[i].x = tx;
++		sprite->verts[i].y = ty;
++		sprite->verts[i].oow = oow;
++	}
++
+ 	if(is_low_res == 3 && !scale_font_size)
+ 	{
+-		vert[0].y = vert[1].y -= (float)((int)((sprite->ii->h - (vert[2].y - vert[0].y)) / 2.0f));
+-		vert[2].y = vert[3].y = vert[0].y + sprite->ii->h;
++		sprite->verts[0].y = sprite->verts[1].y -= (float)((int)((sprite->ii->h - (sprite->verts[2].y - sprite->verts[0].y)) / 2.0f));
++		sprite->verts[2].y = sprite->verts[3].y = sprite->verts[0].y + sprite->ii->h;
+ 	}
+ }
+ 
+@@ -407,14 +250,6 @@
+ {
+ 	register float				s_start, s_end;
+ 	register float				t_start, t_end;
+-#if defined(SEATTLE)
+-	register MidVertex		*vert = sprite->verts;
+-#elif defined(VEGAS)
+-	register SpriteVertex		*vert = sprite->verts;
+-#else
+-#error Environment variable TARGET_SYS not set
+-#endif
+-	register image_info_t	*ii = sprite->ii;
+ 
+ 	// Textured sprite
+ 	if(sprite->tn)
+@@ -430,10 +265,10 @@
+ 		}
+ 
+ 		// Get starting and ending S and T values adjusted for tiling
+-		s_start = ii->s_start * sprite->tile_x;
+-		t_start = ii->t_start * sprite->tile_y;
+-		s_end = ii->s_end * sprite->tile_x;
+-		t_end = ii->t_end * sprite->tile_y;
++		s_start = sprite->ii->s_start * sprite->tile_x;
++		t_start = sprite->ii->t_start * sprite->tile_y;
++		s_end = sprite->ii->s_end * sprite->tile_x;
++		t_end = sprite->ii->t_end * sprite->tile_y;
+ 
+ 		// Multiply out based on aspect ratio of texture
+ 		switch(sprite->tn->texture_info.header.aspect_ratio)
+@@ -501,15 +336,15 @@
+ 		{
+ //#ifndef VEGAS
+ #if 1
+-			vert[0].tow = vert[0].oow * t_end;
+-			vert[1].tow = vert[1].oow * t_end;
+-			vert[2].tow = vert[2].oow * t_start;
+-			vert[3].tow = vert[3].oow * t_start;
++			sprite->verts[0].tow = sprite->verts[0].oow * t_end;
++			sprite->verts[1].tow = sprite->verts[1].oow * t_end;
++			sprite->verts[2].tow = sprite->verts[2].oow * t_start;
++			sprite->verts[3].tow = sprite->verts[3].oow * t_start;
+ #else
+-			vert[0].tmuvtx[0].tow = vert[0].oow * t_end;
+-			vert[1].tmuvtx[0].tow = vert[1].oow * t_end;
+-			vert[2].tmuvtx[0].tow = vert[2].oow * t_start;
+-			vert[3].tmuvtx[0].tow = vert[3].oow * t_start;
++			sprite->verts[0].tmuvtx[0].tow = sprite->verts[0].oow * t_end;
++			sprite->verts[1].tmuvtx[0].tow = sprite->verts[1].oow * t_end;
++			sprite->verts[2].tmuvtx[0].tow = sprite->verts[2].oow * t_start;
++			sprite->verts[3].tmuvtx[0].tow = sprite->verts[3].oow * t_start;
+ #endif
+ 		}
+ 
+@@ -518,15 +353,15 @@
+ 		{
+ //#ifndef VEGAS
+ #if 1
+-			vert[0].tow = vert[0].oow * t_start;
+-			vert[1].tow = vert[1].oow * t_start;
+-			vert[2].tow = vert[2].oow * t_end;
+-			vert[3].tow = vert[3].oow * t_end;
++			sprite->verts[0].tow = sprite->verts[0].oow * t_start;
++			sprite->verts[1].tow = sprite->verts[1].oow * t_start;
++			sprite->verts[2].tow = sprite->verts[2].oow * t_end;
++			sprite->verts[3].tow = sprite->verts[3].oow * t_end;
+ #else
+-			vert[0].tmuvtx[0].tow = vert[0].oow * t_start;
+-			vert[1].tmuvtx[0].tow = vert[1].oow * t_start;
+-			vert[2].tmuvtx[0].tow = vert[2].oow * t_end;
+-			vert[3].tmuvtx[0].tow = vert[3].oow * t_end;
++			sprite->verts[0].tmuvtx[0].tow = sprite->verts[0].oow * t_start;
++			sprite->verts[1].tmuvtx[0].tow = sprite->verts[1].oow * t_start;
++			sprite->verts[2].tmuvtx[0].tow = sprite->verts[2].oow * t_end;
++			sprite->verts[3].tmuvtx[0].tow = sprite->verts[3].oow * t_end;
+ #endif
+ 		}
+ 
+@@ -535,15 +370,15 @@
+ 		{
+ //#ifndef VEGAS
+ #if 1
+-			vert[0].sow = vert[0].oow * s_start;
+-			vert[1].sow = vert[1].oow * s_end;
+-			vert[2].sow = vert[2].oow * s_end;
+-			vert[3].sow = vert[3].oow * s_start;
++			sprite->verts[0].sow = sprite->verts[0].oow * s_start;
++			sprite->verts[1].sow = sprite->verts[1].oow * s_end;
++			sprite->verts[2].sow = sprite->verts[2].oow * s_end;
++			sprite->verts[3].sow = sprite->verts[3].oow * s_start;
+ #else
+-			vert[0].tmuvtx[0].sow = vert[0].oow * s_start;
+-			vert[1].tmuvtx[0].sow = vert[1].oow * s_end;
+-			vert[2].tmuvtx[0].sow = vert[2].oow * s_end;
+-			vert[3].tmuvtx[0].sow = vert[3].oow * s_start;
++			sprite->verts[0].tmuvtx[0].sow = sprite->verts[0].oow * s_start;
++			sprite->verts[1].tmuvtx[0].sow = sprite->verts[1].oow * s_end;
++			sprite->verts[2].tmuvtx[0].sow = sprite->verts[2].oow * s_end;
++			sprite->verts[3].tmuvtx[0].sow = sprite->verts[3].oow * s_start;
+ #endif
+ 		}
+ 
+@@ -552,27 +387,27 @@
+ 		{
+ //#ifndef VEGAS
+ #if 1
+-			vert[0].sow = vert[0].oow * s_end;
+-			vert[1].sow = vert[1].oow * s_start;
+-			vert[2].sow = vert[2].oow * s_start;
+-			vert[3].sow = vert[3].oow * s_end;
++			sprite->verts[0].sow = sprite->verts[0].oow * s_end;
++			sprite->verts[1].sow = sprite->verts[1].oow * s_start;
++			sprite->verts[2].sow = sprite->verts[2].oow * s_start;
++			sprite->verts[3].sow = sprite->verts[3].oow * s_end;
+ #else
+-			vert[0].tmuvtx[0].sow = vert[0].oow * s_end;
+-			vert[1].tmuvtx[0].sow = vert[1].oow * s_start;
+-			vert[2].tmuvtx[0].sow = vert[2].oow * s_start;
+-			vert[3].tmuvtx[0].sow = vert[3].oow * s_end;
++			sprite->verts[0].tmuvtx[0].sow = sprite->verts[0].oow * s_end;
++			sprite->verts[1].tmuvtx[0].sow = sprite->verts[1].oow * s_start;
++			sprite->verts[2].tmuvtx[0].sow = sprite->verts[2].oow * s_start;
++			sprite->verts[3].tmuvtx[0].sow = sprite->verts[3].oow * s_end;
+ #endif
+ 		}
+ //#ifdef VEGAS
+ #if 0
+-		vert[0].tmuvtx[1].sow = vert[0].tmuvtx[0].sow;
+-		vert[1].tmuvtx[1].sow = vert[1].tmuvtx[0].sow;
+-		vert[2].tmuvtx[1].sow = vert[2].tmuvtx[0].sow;
+-		vert[3].tmuvtx[1].sow = vert[3].tmuvtx[0].sow;
+-		vert[0].tmuvtx[1].tow = vert[0].tmuvtx[0].tow;
+-		vert[1].tmuvtx[1].tow = vert[1].tmuvtx[0].tow;
+-		vert[2].tmuvtx[1].tow = vert[2].tmuvtx[0].tow;
+-		vert[3].tmuvtx[1].tow = vert[3].tmuvtx[0].tow;
++		sprite->verts[0].tmuvtx[1].sow = sprite->verts[0].tmuvtx[0].sow;
++		sprite->verts[1].tmuvtx[1].sow = sprite->verts[1].tmuvtx[0].sow;
++		sprite->verts[2].tmuvtx[1].sow = sprite->verts[2].tmuvtx[0].sow;
++		sprite->verts[3].tmuvtx[1].sow = sprite->verts[3].tmuvtx[0].sow;
++		sprite->verts[0].tmuvtx[1].tow = sprite->verts[0].tmuvtx[0].tow;
++		sprite->verts[1].tmuvtx[1].tow = sprite->verts[1].tmuvtx[0].tow;
++		sprite->verts[2].tmuvtx[1].tow = sprite->verts[2].tmuvtx[0].tow;
++		sprite->verts[3].tmuvtx[1].tow = sprite->verts[3].tmuvtx[0].tow;
+ #endif
+ 	}
+ }
+@@ -1079,64 +914,6 @@
+ 	return(rv);
+ }
+ 
+-static sprite_node_t	*get_snode(void)
+-{
+-	register sprite_node_t			*snode;
+-
+-	// Any sprite nodes available on the free list
+-	if(!free_sprite_node_list)
+-	{
+-		// Get sprite nodes
+-		free_sprite_node_list = alloc_sprite_nodes();
+-
+-		// Allocation OK
+-		if(!free_sprite_node_list)
+-		{
+-			// NOPE - Inform user of allocation error
+-#if defined(DEBUG)
+-			fprintf(stderr, "Could not allocate memory for free sprites\r\n");
+-			lockup();
+-#endif
+-			return((sprite_node_t *)0);
+-		}
+-
+-		// Initialize the newly allocated nodes
+-		snode = free_sprite_node_list;
+-
+-		// Initialize the fields of the newly allocate sprite nodes
+-		while(snode)
+-		{
+-			snode->si = (sprite_info_t *)0;
+-			snode = snode->next;
+-		}
+-	}
+-
+-	// Get a free sprite node from the beginning of the
+-	// free sprite node list
+-	snode = free_sprite_node_list;
+-
+-	// Has memory already been allocated for the sprite information
+-	if(!snode->si)
+-	{
+-		// NOPE - allocate memory for the sprite information
+-		snode->si = malloc(sizeof(sprite_info_t));
+-
+-		// Was memory allocated
+-		if(!snode->si)
+-		{
+-			// NOPE - inform user of allocation error
+-#if defined(DEBUG)
+-			fprintf(stderr, "Could not allocate memory for sprite information\r\n");
+-			lockup();
+-#endif
+-			return((sprite_node_t *)0);
+-		}
+-
+-		snode->si->vert_mem = (void *)0;
+-	}
+-
+-	return(snode);
+-}
+ 
+ static void sprite_clear(register sprite_info_t *s)
+ {
+@@ -1157,7 +934,7 @@
+ {
+ 	register sprite_node_t			*snode;
+ 	register sprite_info_t			*sprite;
+-	register struct texture_node	*tn = (struct texture_node *)0;
++	register struct texture_node	*tn;
+ #if defined(SEATTLE)
+ 	register MidVertex				*verts;
+ #elif defined(VEGAS)
+@@ -1166,16 +943,38 @@
+ #error Environment variable TARGET_SYS not set
+ #endif
+ 	register int						i;
+-	register state_info_t			*state;
+-
+-	// Get a sprite node
+-	snode = get_snode();
+-
+-	// Did we get one ?
+-	if(!snode)
+-	{
+-		// NOPE - Return failure
+-		return((sprite_info_t *)0);
++
++	// Get a sprite node (CarnEvil: the SDK's get_snode() written out here, failures return directly)
++	if(!free_sprite_node_list)
++	{
++		free_sprite_node_list = alloc_sprite_nodes();
++		if(!free_sprite_node_list)
++		{
++#if defined(DEBUG)
++			fprintf(stderr, "Could not allocate memory for free sprites\r\n");
++			lockup();
++#endif
++			return((sprite_info_t *)0);
++		}
++		snode = free_sprite_node_list;
++		while(snode)
++		{
++			snode->si = (sprite_info_t *)0;
++			snode = snode->next;
++		}
++	}
++	snode = free_sprite_node_list;
++	if(!snode->si)
++	{
++		snode->si = malloc(sizeof(sprite_info_t));
++		if(!snode->si)
++		{
++#if defined(DEBUG)
++			fprintf(stderr, "Could not allocate memory for sprite information\r\n");
++			lockup();
++#endif
++			return((sprite_info_t *)0);
++		}
+ 	}
+ 
+ 	// Initialize the new sprites mode
+@@ -1195,6 +994,7 @@
+ 	}
+ 
+ 	// Image information exists
++	tn = (struct texture_node *)0;
+ 	if(ii)
+ 	{
+ 		// Textured
+@@ -1223,21 +1023,14 @@
+ 		}
+ 	}
+ 
+-	if(!sprite->vert_mem)
+-	{
+-		// Allocate memory for the vertices for the sprite
++	// Allocate memory for the vertices for the sprite (CarnEvil: always, never reused)
+ #if defined(SEATTLE)
+-		verts = (MidVertex *)malloc((sizeof(MidVertex) * 4) + 32);
++	verts = (MidVertex *)malloc((sizeof(MidVertex) * 4) + 32);
+ #elif defined(VEGAS)
+-		verts = (SpriteVertex *)malloc((sizeof(SpriteVertex) * 4) + 32);
++	verts = (SpriteVertex *)malloc((sizeof(SpriteVertex) * 4) + 32);
+ #else
+ #error Environment variable TARGET_SYS not set
+ #endif
+-	}
+-	else
+-	{
+-		verts = sprite->vert_mem;
+-	}
+ 
+ 	// Allocated OK
+ 	if(!verts)
+@@ -1271,7 +1064,7 @@
+ 
+ 	// Clear out the sprite information
+ //	memset(sprite, 0, sizeof(sprite_info_t));
+-	sprite_clear(sprite);
++	memset(sprite, 0, sizeof(sprite_info_t));
+ 
+ 	// Set the current sprite X position
+ 	sprite->x = x;
+@@ -1303,21 +1096,17 @@
+ 	// Save the pointer to the allocated memory for the vertices
+ 	sprite->vert_mem = (void *)verts;
+ 
+-	// Default the sprite id to 0
+-	sprite->id = 0;
+-
+-	// Set the sprites parent pointer
+-	sprite->parent = parent;
++
+ 
+ 	// Is the vertex memory cache page aligned
+-	if((int)verts & 0x1c)
++	if((int)verts & 0x18)
+ 	{
+ 		// NOPE - Get it cache page aligned
+ 		int	*ptr = (int *)verts;
+ 		do
+ 		{
+ 			++ptr;
+-		} while((int)ptr & 0x1c);
++		} while((int)ptr & 0x18);
+ #if defined(SEATTLE)
+ 		verts = (MidVertex *)ptr;
+ #elif defined(VEGAS)
+@@ -1329,6 +1118,8 @@
+ 
+ 	// Set the sprites vertex array pointer
+ 	sprite->verts = verts;
++	sprite->id = 0;
++	sprite->parent = parent;
+ 
+ #ifndef VEGAS
+ #if ((SPRITE_RGB & 1) || !(USE_MID_VERTEX & 1))
+@@ -1342,46 +1133,44 @@
+ #endif
+ #endif
+ 
+-	// Set pointer to sprite state information
+-	state = &sprite->state;
+ 
+ 	// Default the sprite cull mode to OFF
+-	state->cull_mode = GR_CULL_DISABLE;
++	sprite->state.cull_mode = GR_CULL_DISABLE;
+ 
+ #if (!(MULTIPART_IMAGES & 1))
+ 	// Set the default chroma keying color to BLACK
+-	state->chroma_color = 0;
++	sprite->state.chroma_color = 0;
+ #endif
+ 
+ 	// Textured sprite
+-	if(tn)
++	if(sprite->tn)
+ 	{
+ 		// YES - default texture combiner to DECAL
+-		state->texture_combiner_function = GR_TEXTURECOMBINE_DECAL;
++		sprite->state.texture_combiner_function = GR_TEXTURECOMBINE_DECAL;
+ 	}
+ 
+ 	// Non-Textured sprite
+ 	else
+ 	{
+ 		// NO - Default texture combiner to ONE
+-		state->texture_combiner_function = GR_TEXTURECOMBINE_ONE;
++		sprite->state.texture_combiner_function = GR_TEXTURECOMBINE_ONE;
+ 	}
+ 
+ 	// Set default texture filter mode
+-	state->texture_filter_mode = GR_TEXTUREFILTER_BILINEAR;
++	sprite->state.texture_filter_mode = GR_TEXTUREFILTER_POINT_SAMPLED;
+ 
+ 	// Set default texture clamping mode
+-	state->texture_clamp_mode = GR_TEXTURECLAMP_CLAMP;
++	sprite->state.texture_clamp_mode = GR_TEXTURECLAMP_CLAMP;
+ 
+ 	// Set the default constant color to WHITE
+-	state->constant_color = 0xffffffff;
++	sprite->state.constant_color = 0xffffffff;
+ 
+ 	// Generate the vertices for the sprite
+ 	_generate_sprite_verts(sprite);
+ 
+ 
+ 	// Textured sprite
+-	if(tn)
++	if(sprite->tn)
+ 	{
+ 		// Texture without embedded alpha information
+ 		if(tn->texture_info.header.format == GR_TEXFMT_RGB_332 ||
+@@ -1391,25 +1180,25 @@
+ 			tn->texture_info.header.format == GR_TEXFMT_RGB_565)
+ 		{
+ 			// Set the default alpha source
+-			state->alpha_source = GR_ALPHASOURCE_CC_ALPHA;
++			sprite->state.alpha_source = GR_ALPHASOURCE_CC_ALPHA;
+ 
+ 			// Set the default SRC RGB blending function
+-			state->alpha_rgb_src_function = GR_BLEND_ONE;
++			sprite->state.alpha_rgb_src_function = GR_BLEND_ONE;
+ 
+ 			// Set the default DST RGB blending function
+-			state->alpha_rgb_dst_function = GR_BLEND_ZERO;
++			sprite->state.alpha_rgb_dst_function = GR_BLEND_ZERO;
+ 
+ 			// Set the default SRC Alpha blending function
+-			state->alpha_a_src_function = GR_BLEND_ONE;
++			sprite->state.alpha_a_src_function = GR_BLEND_ONE;
+ 
+ 			// Set the default DST Alpha blending function
+-			state->alpha_a_dst_function = GR_BLEND_ZERO;
++			sprite->state.alpha_a_dst_function = GR_BLEND_ZERO;
+ 
+ 			// Set the default color combiner function the DECAL
+-			state->color_combiner_function = GR_COLORCOMBINE_DECAL_TEXTURE;
++			sprite->state.color_combiner_function = GR_COLORCOMBINE_DECAL_TEXTURE;
+ 	
+ 			// Set the default chroma key mode to ON
+-			state->chroma_key_mode = GR_CHROMAKEY_ENABLE;
++			sprite->state.chroma_key_mode = GR_CHROMAKEY_ENABLE;
+ 	
+ 			// Link the new node to the the non-alpha blended sprite list
+ 			snode->next = sprite_node_list;
+@@ -1432,25 +1221,25 @@
+ 		else
+ 		{
+ 			// Set the default alpha source
+-			state->alpha_source = GR_ALPHASOURCE_TEXTURE_ALPHA_TIMES_CONSTANT_ALPHA;
++			sprite->state.alpha_source = GR_ALPHASOURCE_TEXTURE_ALPHA_TIMES_CONSTANT_ALPHA;
+ 	
+ 			// Set the default SRC RGB blending function
+-			state->alpha_rgb_src_function = GR_BLEND_SRC_ALPHA;
++			sprite->state.alpha_rgb_src_function = GR_BLEND_SRC_ALPHA;
+ 
+ 			// Set the default DST RGB blending function
+-			state->alpha_rgb_dst_function = GR_BLEND_ONE_MINUS_SRC_ALPHA;
++			sprite->state.alpha_rgb_dst_function = GR_BLEND_ONE_MINUS_SRC_ALPHA;
+ 
+ 			// Set the default SRC Alpha blending function
+-			state->alpha_a_src_function = GR_BLEND_SRC_ALPHA;
++			sprite->state.alpha_a_src_function = GR_BLEND_SRC_ALPHA;
+ 
+ 			// Set the default DST Alpha blending function
+-			state->alpha_a_dst_function = GR_BLEND_ONE_MINUS_SRC_ALPHA;
++			sprite->state.alpha_a_dst_function = GR_BLEND_ONE_MINUS_SRC_ALPHA;
+ 
+ 			// Set the color combiner to alpha blend
+-			state->color_combiner_function = GR_COLORCOMBINE_TEXTURE_TIMES_ALPHA;
++			sprite->state.color_combiner_function = GR_COLORCOMBINE_TEXTURE_TIMES_ALPHA;
+ 
+ 			// Set the default chroma key mode to OFF
+-			state->chroma_key_mode = GR_CHROMAKEY_DISABLE;
++			sprite->state.chroma_key_mode = GR_CHROMAKEY_DISABLE;
+ 	
+ 			// Insert the sprite into the alpha sprite list in descending Z order
+ 			insert_node(snode);
+@@ -1467,32 +1256,32 @@
+ 	else
+ 	{
+ 		// Set the default alpha source
+-		state->alpha_source = GR_ALPHASOURCE_CC_ALPHA;
++		sprite->state.alpha_source = GR_ALPHASOURCE_CC_ALPHA;
+ 
+ 		// Set the default SRC RGB blending function
+-		state->alpha_rgb_src_function = GR_BLEND_ONE;
++		sprite->state.alpha_rgb_src_function = GR_BLEND_ONE;
+ 
+ 		// Set the default DST RGB blending function
+-		state->alpha_rgb_dst_function = GR_BLEND_ZERO;
++		sprite->state.alpha_rgb_dst_function = GR_BLEND_ZERO;
+ 
+ 		// Set the default SRC Alpha blending function
+-		state->alpha_a_src_function = GR_BLEND_ONE;
++		sprite->state.alpha_a_src_function = GR_BLEND_ONE;
+ 
+ 		// Set the default DST Alpha blending function
+-		state->alpha_a_dst_function = GR_BLEND_ZERO;
++		sprite->state.alpha_a_dst_function = GR_BLEND_ZERO;
+ 
+ 		// Set the default color combiner function to texture time ccrgb
+ #ifndef VEGAS
+-		state->color_combiner_function = GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB;
++		sprite->state.color_combiner_function = GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB;
+ #else
+-		state->color_combiner_function = GR_COLORCOMBINE_CCRGB;
++		sprite->state.color_combiner_function = GR_COLORCOMBINE_CCRGB;
+ #endif
+ 	
+ 		// Set the default chroma key mode to OFF
+-		state->chroma_key_mode = GR_CHROMAKEY_DISABLE;
++		sprite->state.chroma_key_mode = GR_CHROMAKEY_DISABLE;
+ 
+ 		// Set the default constant color to WHITE
+-		state->constant_color = WHITE;
++		sprite->state.constant_color = WHITE;
+ 	
+ 		// Link the new node to the the non-alpha blended sprite list
+ 		snode->next = sprite_node_list;
+@@ -1649,9 +1438,9 @@
+ 	}
+ 
+ 	// Free the memory used for the vertices
+-//	free(snode->si->vert_mem);
+-
+-//	snode->si->vert_mem = (void *)0;
++	free(snode->si->vert_mem);
++
++	snode->si->vert_mem = (void *)0;
+ 
+ 	if(resource_mode == NO_FREE_MEMORY)
+ 	{

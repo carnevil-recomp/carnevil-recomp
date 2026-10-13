@@ -1,0 +1,93 @@
+--- sdk/lib/goose/process.c
++++ src/goose/process.c
+@@ -14,7 +14,7 @@
+ #include	<stdlib.h>
+ #include	<goose/goose.h>
+ 
+-char	goose_process_c_version[] = {"$Revision: 19 $"};
++char	goose_process_c_version[] = {"$Revision: 17 $"};	/* CarnEvil links revision 17 (SDK: 19): no kill_current(), malloc() for process stacks, delete_process() always frees the stack */
+ 
+ void	_proc_shell(int *);
+ 
+@@ -167,7 +167,7 @@
+ //	{
+ //		pn->process_data = malloc(DEFAULT_PDATA_SIZE + astack);
+ //	}
+-	pn->process_data = realloc(pn->process_data, DEFAULT_PDATA_SIZE + astack);
++	pn->process_data = malloc(DEFAULT_PDATA_SIZE + astack);
+ 	if(!pn->process_data)
+ 	{
+ #if defined(DEBUG)
+@@ -210,7 +210,7 @@
+ 		*pdata++ = *args++;
+ 		*pdata++ = *args++;
+ 	}
+-	(int)pn->process_exit = 0;
++	pn->process_exit = 0;
+ 	strncpy((char *)pn->process_name, name, sizeof(pn->process_name));
+ 
+ 	// Set the default process run level
+@@ -244,7 +244,7 @@
+ //	{
+ //		pn->process_data = malloc(DEFAULT_PDATA_SIZE + astack);
+ //	}
+-	pn->process_data = realloc(pn->process_data, DEFAULT_PDATA_SIZE + astack);
++	pn->process_data = malloc(DEFAULT_PDATA_SIZE + astack);
+ 	if(!pn->process_data)
+ 	{
+ #if defined(DEBUG)
+@@ -294,7 +294,7 @@
+ 		*pdata++ = *args++;
+ 		*pdata++ = *args++;
+ 	}
+-	(int)pn->process_exit = 0;
++	pn->process_exit = 0;
+ 	strncpy((char *)pn->process_name, name, sizeof(pn->process_name));
+ 
+ 	// Set the default process run level
+@@ -316,7 +316,7 @@
+ 	}
+ 
+ 	/* Remove this process from the active process list */
+-	if((int)pn == (int)plist)
++	if(pn == plist)
+ 	{
+ 		/* Remove first node from active process list */
+ 		plist = pn->next;
+@@ -347,8 +347,8 @@
+ 			pfree->prev = pn;
+ 		}
+ 		pfree = pn;
+-//		free(pn->process_data);
+-//		pn->process_data = (void *)0;
++		free(pn->process_data);
++		pn->process_data = (void *)0;
+ 	}
+ 	else
+ 	{
+@@ -688,7 +688,7 @@
+ 	p_list = plist;
+ 	while(p_list)
+ 	{
+-		if((int)proc == (int)p_list)
++		if(proc == p_list)
+ 		{
+ 			is_on_list = 1;
+ 			break;
+@@ -713,16 +713,6 @@
+ 
+ 	delete_process(proc);
+ }
+-
+-void kill_current(int cause)
+-{
+-	if(cur_proc->process_exit)
+-	{
+-		cur_proc->process_exit(cur_proc, cause);
+-	}
+-	delete_process(cur_proc);
+-}
+-
+ /*****************************************************************************/
+ /*                                                                           */
+ /* kill all processes except self that match 'process_id' and 'mask'.               */

@@ -1,0 +1,28 @@
+--- sdk/lib/goose/fonts.c
++++ src/goose/fonts.c
+@@ -12,7 +12,7 @@
+ #include	<goose/process.h>
+ #include	<goose/lockup.h>
+ 
+-char	goose_fonts_c_version[] = {"$Revision: 8 $"};
++char	goose_fonts_c_version[] = {"$Revision: 7 $"};
+ 
+ /* This is the loaded fonts list */
+ font_node_t	*font_list = (font_node_t *)0;
+@@ -110,7 +110,6 @@
+ 			GR_TEXTURECLAMP_CLAMP,
+ 			GR_TEXTUREFILTER_POINT_SAMPLED,
+ 			GR_TEXTUREFILTER_POINT_SAMPLED);
+-#if 0
+ 		if(!fn->tn[i])
+ 		{
+ #if defined(DEBUG)
+@@ -133,8 +132,6 @@
+ 			// Return fail
+ 			return((font_node_t *)0);
+ 		}
+-#endif
+-if(fn->tn[i])
+ 		// Lock the texture
+ 		lock_texture(fn->tn[i]);
+ 	}

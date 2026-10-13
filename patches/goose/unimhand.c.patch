@@ -1,0 +1,22 @@
+--- sdk/lib/goose/unimhand.c
++++ src/goose/unimhand.c
+@@ -13,7 +13,7 @@
+ #include	<math.h>
+ #include	<goose/goose.h>
+ 
+-char	goose_unimhand_c_version[] = {"$Revision: 10 $"};
++char	goose_unimhand_c_version[] = {"$Revision: 7 $"};
+ extern int	unim_time;
+ #ifdef PROFILE
+ static int	ustart_time;
+@@ -494,10 +494,6 @@
+ 	}
+ 	fprintf(stderr, "unimplemented_handler() - %s; addr: %08X\r\n",
+ 		psz,r_save[PC]+((in_bd_slot)?4:0));
+-#ifndef DEBUG
+-	// If not in debugging mode - wait for the watchdog to catch us
+-	while(1) ;
+-#endif
+ #ifdef PROFILE
+ 	GET_TIME(uend_time);
+ 	unim_time += (uend_time - ustart_time);

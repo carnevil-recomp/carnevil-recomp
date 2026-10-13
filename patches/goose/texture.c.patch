@@ -1,0 +1,52 @@
+--- sdk/lib/goose/texture.c
++++ src/goose/texture.c
+@@ -27,7 +27,11 @@
+ #include	<glide.h>
+ #endif
+ 
+-char	goose_texture_c_version[] = {"$Revision: 16 $"};
++/* CarnEvil links revision 12: no TEXTURE_DBG_MSG machinery, two explicit texture_debug prints instead */
++#undef TEXTURE_DBG_MSG
++#define TEXTURE_DBG_MSG(level, fatal, args...)
++
++char	goose_texture_c_version[] = {"$Revision: 12 $"};
+ 
+ int	texture_debug = 0;
+ int	texture_load_in_progress = 0;
+@@ -250,16 +254,15 @@
+ //JMS
+ 
+ 	// Is disk info installed and a texture already being loaded ?
+-	if(texture_load_in_progress)
+-	{
+-		TEXTURE_DBG_MSG(DEBUG_FAILS, 1, "Multiple texture loads\n");
+-		return((struct texture_node *)0);
+-	}
++	tn = tfree;
+ 
+ 	// Set flag saying texture load is in progress
+ 	texture_load_in_progress = 1;
+ 
+-	tn = tfree;
++	if(texture_debug)
++	{
++		fprintf(stderr, "create_texture(): guLoadTextureDirect(%s, ...) - id: %d\r\n", name, id);
++	}
+ 
+ 	tn->texture_handle = guLoadTextureDirect(
+ 		(const char *)name,
+@@ -538,9 +541,12 @@
+ 
+ 	// Was it on the list of valid textures ?
+ 	if(!is_valid)
+-	{				   
++	{
+ 		// NOPE - Return
+-		TEXTURE_DBG_MSG(DEBUG_MSGS, 0, "Attempt to delete non-existant texture node\n");
++		if(texture_debug)
++		{
++			fprintf(stderr, "Attempt to delete non-existant texture node\r\n");
++		}
+ 		return;
+ 	}
+ 

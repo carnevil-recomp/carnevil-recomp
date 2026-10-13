@@ -1,0 +1,119 @@
+--- sdk/lib/sound/sound.c
++++ src/sound/sound.c
+@@ -41,6 +41,9 @@
+ /* use this to trace streaming functions */
+ #define SND_DEBUG_STREAMING 0
+ 
++/* CarnEvil links revision 34: snd_bank_showlist() prints the per-field form */
++#define LONG_DISPLAY
++
+ /* use this to debug sample-playback engine functions */
+ #define SND_DEBUG_ENGINE 0
+ 
+@@ -65,7 +68,7 @@
+ unsigned int get_timer_val(void);
+ #endif
+ 
+-char	sound_sound_c_version[] = {"$Revision: 42 $"};
++char	sound_sound_c_version[] = {"$Revision: 34 $"};
+ 
+ /***** LOCAL DEFINES *******************************************************/
+ 
+@@ -175,8 +178,8 @@
+ #define SND_CMD_SYNC             0x55B0  /* put a sync word in the queue */
+ #define SND_CMD_OUTPUT_MONO      0x55B1  /* set output mode to mono */
+ #define SND_CMD_OUTPUT_STEREO    0x55B2  /* set output mode to stereo */ 
+-#define SND_CMD_STEREO_SAFETY    0xAA55  /* safety 2nd word */
+-#define SND_CMD_MONO_SAFETY      0xBB44  /* safety 2nd word */
++#define SND_CMD_STEREO_SAFETY    0xBB44  /* safety 2nd word (CarnEvil: swapped vs SDK rev 42) */
++#define SND_CMD_MONO_SAFETY      0xAA55  /* safety 2nd word (CarnEvil: swapped vs SDK rev 42) */
+ 
+ /* "engine" sound sample playback cmds */
+ #define SND_CMD_DRONE1_CTRL      0x55E3  /* params for drone snd #1 */
+@@ -233,8 +236,8 @@
+ #define SND_DRAM_SIZE    0x200000        /* 2 megabytes of D/RAM */
+ #endif
+ 
+-static snd_bank_addr = SND_TABLE_SIZE;
+-static snd_table_addr = SND_TABLE_FIRST;
++static int snd_bank_addr = SND_TABLE_SIZE;   /* (implicit int in the SDK text) */
++static int snd_table_addr = SND_TABLE_FIRST;
+ 
+ #define SAMPLE_ENTRY_SIZE 4      /* 4 bytes for each address */
+ #define SAMPLE_TABLE_SIZE SND_MAX_SAMPLES * (SAMPLE_ENTRY_SIZE * 2)
+@@ -4471,6 +4474,8 @@
+  for (j= 0; j < size; j++)
+      {
+ 
++    if (!(j & 0x1fff))
++       sleep (1);
+ 	/* wait until the sound DSP is not busy */
+ 
+     status = snd_send_data_realtime (buffer[k]);
+@@ -4941,7 +4946,6 @@
+ #if DEBUG
+ 	fprintf(stderr,"snd_load_bank(): Bank will not fit in D/RAM\n");
+ #endif
+-	free (data_buffer);
+ 	return ERROR;
+     }
+ 
+@@ -5020,7 +5024,6 @@
+     fprintf (stderr, "snd_load_bank(): ERROR downloading sound call table.\r\n");
+ #endif
+     free (data_buffer);
+-	snd_bank_lockout(FALSE);
+     return ERROR;
+     }
+ 
+@@ -5048,7 +5051,6 @@
+ #ifdef DEBUG
+     fprintf (stderr, "snd_load_bank(): ERROR downloading bank data.\r\n");
+ #endif
+-	snd_bank_lockout(FALSE);
+     return ERROR;
+     }
+ 
+@@ -5203,7 +5205,6 @@
+     fprintf (stderr, "snd_load_bank_from_memory(): ERROR downloading sound call table.\r\n");
+ #endif
+     free (data_buffer);
+-	snd_bank_lockout(FALSE);
+     return ERROR;
+     }
+ 
+@@ -5231,7 +5232,6 @@
+ #ifdef DEBUG
+     fprintf (stderr, "snd_load_bank_from_memory(): ERROR downloading bank data.\r\n");
+ #endif
+-	snd_bank_lockout(FALSE);
+     return ERROR;
+     }
+ 
+@@ -5326,9 +5326,8 @@
+            | (data_buffer[33] & SND_MASK16) << 16;
+ 
+  if (bank_size + snd_bank_addr >= SND_DRAM_SIZE) {
+-#if DEBUG
+ 	fprintf(stderr,"snd_load_bank_playing(): Bank will not fit in D/RAM\n");
+-#endif
++	free (data_buffer);
+ 	return ERROR;
+     }
+ 
+@@ -5407,7 +5406,6 @@
+     fprintf (stderr, "snd_load_bank_playing(): ERROR downloading sound call table.\r\n");
+ #endif
+     free (data_buffer);
+-	snd_bank_lockout(FALSE);
+     return ERROR;
+     }
+ 
+@@ -5435,7 +5433,6 @@
+ #ifdef DEBUG
+     fprintf (stderr, "snd_load_bank_playing(): ERROR downloading bank data.\r\n");
+ #endif
+-	snd_bank_lockout(FALSE);
+     return ERROR;
+     }
+ 

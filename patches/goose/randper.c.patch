@@ -1,0 +1,17 @@
+--- sdk/lib/goose/randper.c
++++ src/goose/randper.c
+@@ -5,12 +5,10 @@
+ //
+ #include	<stdlib.h>
+ 
+-char	goose_randper_c_version[] = {"$Revision: 4 $"};
++char	goose_randper_c_version[] = {"$Revision: 3 $"};
+ 
+ int randrng(int val)
+ {
+-	if (val == 0)
+-		return 0;
+-
++	/* CarnEvil's revision 3 has no zero guard */
+ 	return((random() % val));
+ }

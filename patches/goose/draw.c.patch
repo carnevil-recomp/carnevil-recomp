@@ -1,0 +1,10 @@
+--- sdk/lib/goose/draw.c
++++ src/goose/draw.c
+@@ -3,6 +3,7 @@
+ char	goose_draw_c_version[] = {"$Revision: 2 $"};
+ 
+ int	background_color = 0xff000000;
++int	draw_unused = 0x73;		/* present in the game's .data (revision 2 of this file); not referenced by any code */
+ 
+ void set_bgnd_color(int color)
+ {

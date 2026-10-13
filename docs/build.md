@@ -4,7 +4,7 @@
 `original/partition/GAME.EXE` (v1.0.3). Status: **byte-exact** since 2026-10-10.
 
 ```
-make            # assemble asm/*.s -> link (config/game.ld) -> objcopy -> tools/exe.py pack -> cmp
+make            # generate the library sources from the SDK (tools/sdksrc.py), assemble asm/*.s -> link (config/game.ld) -> objcopy -> tools/exe.py pack -> cmp
 make regen      # regenerate asm/ from the original with tools/disasm.py (asm/ is git-ignored: derived from the game binary)
 make verify     # list differing words (add --add to extend config/word_fallback.txt: bootstrap only)
 python3 tools/bootstrap.py   # the full disasm/assemble/compare loop used to reach byte-exact
