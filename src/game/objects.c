@@ -10,6 +10,7 @@
 #include "credits.h"			/* game_mode, player_stats */
 #include "levelsnd.h"
 #include "movie.h"
+#include "spawn.h"
 
 extern int	get_free_mem_left(void);		/* 0x80143e90 */
 extern void	graphical_printf(char *, char *, ...);
@@ -21,7 +22,7 @@ extern void	show_volume_level(void);
 extern float	get_screen_pos(float *, float *);	/* 0x800d07a8 */
 extern void	sample_switches(void), debug_move_enemy(enemy_t *), debug_move_point(float *), debug_move_vectors(void);	/* scene.c */
 extern void	draw_marker(float *, float, unsigned int);
-extern void	func_800d41b4(int), show_debug_light_(int), func_800e9140(int);	/* the level's 3D draws (enemies, light, stats) */
+extern void	func_800d41b4(int), show_debug_light_(int);	/* the camera update and the lights */
 extern void	func_800d6e94(void), func_800ff418(void);
 extern player_stats_t *something_to_do_with_shooting_(player_stats_t *);	/* 0x800d5a84 */
 extern void	func_800ce2f8(float *, float, float *);
@@ -93,7 +94,7 @@ void draw_pass(void)
 	{
 		func_800d41b4(frame);
 		show_debug_light_(frame);
-		func_800e9140(frame);
+		spawn_wave_enemies(frame);
 	}
 	grDepthBufferMode(GR_DEPTHBUFFER_WBUFFER);
 	grDepthBufferFunction(GR_CMP_LEQUAL);

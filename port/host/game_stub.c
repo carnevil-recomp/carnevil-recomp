@@ -111,7 +111,6 @@ int  get_free_mem_left(void) { return 0x400000; }			/* GOOSE 0x80143e90 */
 float fsqrt(float x) { return sqrtf(x); }				/* 0x80144900: sqrt.s */
 void func_800d41b4(int f) { (void)f; }					/* the level's 3D draws */
 int *show_debug_light_(int f) { (void)f; return 0; }
-void func_800e9140(int f) { (void)f; }					/* enemy stats */
 void func_800d6e94(void) { }
 void func_800ff418(void) { }
 player_stats_t *something_to_do_with_shooting_(player_stats_t *p) { return p; }
@@ -130,11 +129,16 @@ void func_800c9bf0(void) { }
 int	D_801e5cbc, shown_frame, wave_id_g2, RTP_val, DMA_val, D_801e0ecc, please_wait_timer;
 extern unsigned int background_color;
 
+/* the spawn table's per-type constructor (0x800e9570) and the levels' spawn lists */
+#include "../../src/game/spawn.h"
+int construct_and_spawn_object(spawn_t *w, int index) { fprintf(stderr, "[stub] construct_and_spawn_object(%d)\n", index); return 0; }
+spawn_t hhouse_spawn_blob[1], freakshow_spawn_blob[1], rickity_spawn_blob[1], bigtop_spawn_blob[1];
+int D_801e0f0c;
 /* game_init (0x800ca3a0, scene.c) is real; the set-up calls it makes that the port lacks */
 void func_800c836c(void) { }
 void func_800c81b8(void) { }
 void func_800c865c(void) { }
-void func_800d6768(void)			/* 0x800d6768: the texmap surface table */
+void init_surfaces(void)			/* 0x800d6768: the texmap surface table */
 {
 	int	i;
 	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }

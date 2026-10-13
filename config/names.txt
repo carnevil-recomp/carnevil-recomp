@@ -574,3 +574,26 @@
 0x800cd4ac nearest_enemy_freakshow
 0x800cd7a0 nearest_enemy_rickity
 0x800cdaa0 nearest_enemy_bigtop
+# game spawn.c (0x800e9140-0x800ea8e8): the spawn table and die list (partly matched)
+0x800e9140 spawn_wave_enemies
+0x800e94dc reload_spawn_table
+0x800e9560 disable_spawning
+0x800ea484 remove_die
+0x800ea55c mark_die
+0x800ea5a0 wave_slot_done
+0x800ea660 reset_wave_lock
+0x800ea670 add_die
+0x800ea6e4 add_die_like
+0x800ea7a4 die_check_outdated
+0x800ea870 free_die_list
+0x801e1790 spawn_table
+0x8018db8c spawn_enabled
+0x8021f0fc level_wave_id
+0x801e6b6c enemies_alive
+0x801e6e70 wave_lock
+0x801e7068 die_list_head
+# read but not yet decompiled: named by what they do
+0x800d6768 init_surfaces
+0x8015fd7c grFogMode
+0x8015fe50 grFogColorValue
+0x8015fee4 grFogTable
