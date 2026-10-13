@@ -6,7 +6,7 @@
 ```
 make            # assemble asm/*.s -> link (config/game.ld) -> objcopy -> tools/exe.py pack -> cmp
 make regen      # regenerate asm/ from the original with tools/disasm.py (asm/ is git-ignored: derived from the game binary)
-make verify     # list differing words and add them to config/word_fallback.txt
+make verify     # list differing words (add --add to extend config/word_fallback.txt: bootstrap only)
 python3 tools/bootstrap.py   # the full disasm/assemble/compare loop used to reach byte-exact
 ```
 

@@ -749,10 +749,9 @@ void decode_movie_1pal_depth(unsigned char *src, unsigned int *dst)
 }
 
 /* 0x800e8f88: raw RGB565 frames (no palette), each row shown twice; not selected by
-   movie_load(), kept because it is part of the file (and not yet exact: 44%) */
+   movie_load(), kept because it is part of the file (and not yet exact: 56%) */
 void decode_movie_rgb16(unsigned char *src, unsigned int *dst)
 {
-	unsigned char	*cp;
 	unsigned short	*p, *q;
 	int		cols;
 	int		r, i;
@@ -762,8 +761,8 @@ void decode_movie_rgb16(unsigned char *src, unsigned int *dst)
 #else
 	unsigned int	*dma = dst;
 #endif
-	cp = src + 0x200;
-	p = (unsigned short *)(cp + movie.width * 256);
+	src += 0x200;
+	p = (unsigned short *)(src + movie.width * 256);
 	q = p;
 	cols = movie.width / 8;
 	for(r = 0; r < 128; r++)
