@@ -4,7 +4,7 @@
  */
 #include <stdio.h>
 
-extern int	get_audit(int, int *), set_audit(int, int);
+extern int	get_audit(int, int *), set_audit(int, int), increment_audit(int);
 
 /* audit id groups (0x8018ea60..) */
 static int	audits_coins[11] = { 0, 1, 2, 4, 5, 3, 0xb, 0xc, 0xd, 0x21, 0x22 };
@@ -30,6 +30,23 @@ static void clear_audits(int n, int *ids)
 	}
 }
 
+/* 0x800f1948-0x800f19f8 */
+void clear_coin_audits(void)	{ clear_audits(11, audits_coins); }
+void clear_credit_audits(void)	{ clear_audits(1, audits_credits); }
+void clear_game_audits(void)	{ clear_audits(0x2c, audits_general); clear_audits(0x3d, audits_levels); }
+void clear_system_audits(void)	{ clear_audits(0x15, audits_system); }
+void clear_weapon_audits(void)	{ clear_audits(0x30, audits_weapons); }
+
+/* 0x800f1a20 */
+void clear_all_audits(void)
+{
+	clear_coin_audits();
+	clear_credit_audits();
+	clear_game_audits();
+	clear_system_audits();
+	clear_weapon_audits();
+}
+
 /* 0x800f1a60: every audit in the group must be readable, clearing those that are not; 0 = failure */
 static int check_audits(int n, int *ids)
 {
@@ -50,23 +67,6 @@ static int check_audits(int n, int *ids)
 	return(1);
 }
 
-/* 0x800f1948-0x800f19f8 */
-void clear_coin_audits(void)	{ clear_audits(11, audits_coins); }
-void clear_credit_audits(void)	{ clear_audits(1, audits_credits); }
-void clear_game_audits(void)	{ clear_audits(0x2c, audits_general); clear_audits(0x3d, audits_levels); }
-void clear_system_audits(void)	{ clear_audits(0x15, audits_system); }
-void clear_weapon_audits(void)	{ clear_audits(0x30, audits_weapons); }
-
-/* 0x800f1a20 */
-void clear_all_audits(void)
-{
-	clear_coin_audits();
-	clear_credit_audits();
-	clear_game_audits();
-	clear_system_audits();
-	clear_weapon_audits();
-}
-
 /* 0x800f1ae4-0x800f1b84 */
 int check_coin_audits(void)	{ return(check_audits(11, audits_coins)); }
 int check_credit_audits(void)	{ return(check_audits(1, audits_credits)); }
@@ -85,6 +85,21 @@ int check_all_audits(void)
 	if(check_system_audits() == 0) ok = 0;
 	if(check_weapon_audits() == 0) ok = 0;
 	return(ok);
+}
+
+/* 0x800f1c14: count audit a, then audit c = audit a as a percentage of audit b */
+void set_percent_audit_inc(int a, int b, int c)
+{
+	int	total, part;
+
+	increment_audit(a);
+	if(get_audit(b, &total) == 0 && total > 0)
+	{
+		get_audit(a, &part);
+		part = part * 100;
+		part = part / total;
+		set_audit(c, part);
+	}
 }
 
 /* 0x800f1cd4: audit c = audit a as a percentage of audit b */

@@ -66,7 +66,7 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 |---|---|---|
 | credits.c | game2 (-O2) | 28 of 32 at 100%; credit_info 99%, setup_pricing 98%, ccproc_proc 98%, draw_hbar 78%, start_proc 7% (a branch the compiler turns into `sltu`) |
 | hwinfo.c | game2 | 2 of 2 |
-| audits.c | game1 (-O) | 15 of 15 |
+| audits.c | game1 (-O) | 16 of 16, registered in modules.txt (text 0x800f18e0-0x800f1d84, data 0x8018ea60-0x8018ed48) |
 | adjust.c | game2 | 2 of 3; game_setup_cmos 98% |
 | hiscore.c | game0 (-O0, `register`) | 4 of 4 |
 | soundio.c | game2 | 9 of 10; cue_priority 42% |
@@ -75,8 +75,11 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | main.c | game2 | 2 of 2 (main_proc and utime_proc) |
 | movie.c, attract.c (game_proc 63%), objects.c (add_object 43%) | game2 | not revisited yet |
 
-None of these is registered in `config/modules.txt` yet; a module is registered once every
-function in its address range matches.
+A module is registered in `config/modules.txt` once every function in its source file's
+address range matches and its data is laid out in the file's order (the audit file was the
+first: its text ends at a stray literal word at 0x800f1d84, and the adjustment table that
+follows its tables in `.data` belongs to the next file). The main/credits file
+(0x800c4f18-0x800c82xx) and the high-score file still contain undecompiled functions.
 
 ## Screen origin and texture orientation
 

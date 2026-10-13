@@ -423,3 +423,20 @@
 0x801e6ec0 sound_init_pending
 0x801de954 stereo_output
 0x8018e04c cue_priority_rotor
+# game audits.c (0x800f18e0-0x800f1d84, -O): audit groups, built from src/game/audits.c
+0x800f18e0 clear_audits
+0x800f1948 clear_coin_audits
+0x800f1970 clear_credit_audits
+0x800f1998 clear_game_audits
+0x800f19d0 clear_system_audits
+0x800f19f8 clear_weapon_audits
+0x800f1a20 clear_all_audits
+0x800f1a60 check_audits
+0x800f1ae4 check_coin_audits
+0x800f1b0c check_credit_audits
+0x800f1b34 check_game_audits
+0x800f1b5c check_system_audits
+0x800f1b84 check_weapon_audits
+0x800f1bac check_all_audits
+0x800f1c14 set_percent_audit_inc
+0x800f1cd4 set_percent_audit

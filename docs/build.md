@@ -57,7 +57,7 @@ A module rebuilt from C is one line: name, source, flag profile (`opt`/`noopt`, 
 4. `config/names.txt` pins the symbol names at the module's addresses so the C object exports
    exactly what the surrounding assembly references (`crc`, `crctab`, `fsin`, ...).
 
-Current modules (see `config/modules.txt`): crc, sincos, initg (GOOSE `main` +
+Current modules (see `config/modules.txt`): the game's audits.c (profile game1), crc, sincos, initg (GOOSE `main` +
 `graphics_init`), process (scheduler), galhand, div0hand, anim2d, adjust, object, cmos, bgnd,
 fonts, switch, mthread, draw, prochook, unimhand, texture, sprites, ostrings, gfader, trans,
 lockup, inthand, randper and the DCS sound library (`src/sound/sound.c`, compiled at -O2).
