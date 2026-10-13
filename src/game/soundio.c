@@ -3,6 +3,7 @@
  * 0x800c5e50) and the cue helpers the attract mode and levels use (0x800ec1e0-0x800ec3a0).
  */
 #include <stdio.h>
+#include "soundio.h"
 
 extern int	snd_init_multi(int);
 extern unsigned int snd_get_opsys_ver(void);
@@ -17,9 +18,7 @@ extern int	get_adjustment(int, int *);
 extern void	stream_stop(void);			/* 0x8013fb84 */
 
 int		snd_opsys_ver;			/* 0x802373e4 */
-int		sound_init_pending;		/* 0x801e6ec0 */
-int		sound_unk6ec4;			/* 0x801e6ec4 */
-int		volume;				/* 0x801e6ec8 */
+sound_state_t	sound_state;			/* 0x801e6ec0 */
 int		stereo_output;			/* 0x801de954 */
 int		sound_retry_audit;		/* 0x80179be8 */
 int		cue_priority_rotor;		/* 0x8018e04c */
@@ -31,23 +30,24 @@ void main_init_sound(void)
 	int	err;
 
 	err = snd_init_multi(1);
-	while(err)
+again:
+	if(err)
 	{
 		printf("\nmain_init_sound(): ERROR initializing sound system.\n");
 		tries++;
 		snd_delay(20);
 		printf("retrying the motherfucker\n");
 		err = snd_init_multi(1);
-		if(tries >= 3)
+		if(tries < 3)
 		{
-			break;
+			goto again;
 		}
 	}
 	if(err)
 	{
 		printf("fuck this shit... Aborting\n");
 		snd_opsys_ver = 0xbad;
-		volume = 0;
+		sound_state.volume = 0;
 		sound_init_pending = 1;
 		return;
 	}
@@ -59,11 +59,11 @@ void main_init_sound(void)
 	snd_bank_load("generic1");
 	snd_bank_load("wavinmus");
 	snd_bank_load("girl");
-	if(get_adjustment(3, &volume))
+	if(get_adjustment(3, &sound_state.volume))
 	{
-		volume = 200;
+		sound_state.volume = 200;
 	}
-	snd_master_volume(volume);
+	snd_master_volume(sound_state.volume);
 	if(stereo_output)
 	{
 		snd_output_stereo();
@@ -147,7 +147,11 @@ unsigned int cue_priority(int slot)
 	}
 	if(slot < 5)
 	{
-		return(slot == 3 ? 0xe280 : 0xe180);
+		if(slot == 3)
+		{
+			return(0xe180);
+		}
+		return(0xe280);
 	}
 	return(0xe280);
 }

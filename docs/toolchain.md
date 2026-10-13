@@ -45,6 +45,46 @@ at a glance (`sw $a0,0x20($sp)` prologues and `lw $v0,0x10($sp)` reloads = noopt
 - The game's own code may use different flags; verify per module when game functions are
   attempted.
 
+## Game code: what the matcher taught us (2026-10-13)
+Matching the first game modules (credits, hwinfo, adjust/audits, hiscore, gun, soundio, stream,
+main) against the original with `tools/trymatch.sh <file> <profile> name=0xaddr ...` settled
+the flags and a set of source idioms. `MATCH_MAXDIFF=N` lengthens the diff it prints.
+- **Game objects are `-O2`, not `-O3`** (`game2` profile: `-O2 -mips3 -fsigned-char ...`).
+  text.c and objects.c match identically at either level because they have no inlinable
+  callees; stream.c and credits.c only match at -O2. `-O3` would inline the small helpers that
+  the original calls (`fifo_restart`, `stream_ring_reset`).
+- **Levels differ per source file.** The audit helpers (0x800f18e0-0x800f1d6c) are `-O`
+  (`game1`): their prologues are unscheduled. The high-score file (0x800e4eac-0x800e62a8)
+  is `-O0` with `register int i` loop variables (`game0`): `$fp` saved, loops tested at the
+  top, locals in stack slots in declaration order. Everything else so far is -O2.
+- **`inline` and file order.** `have_credits_to_start`, `have_credits_to_continue` and
+  `player_can_start` carry GNU `inline`: the compiler inlines them into callers defined
+  *after* them in the file and emits a global copy too. So functions must be kept in the
+  original address order (which is the original source order), and callers earlier in the
+  file get a `jal`.
+- **A load-and-store pair on the same object in one block materialises its address**
+  (`lui/addiu` then 0-offset accesses) when the object is an array element or struct member,
+  and uses `lui`+`%lo` accesses when it is a plain global. That tells the declaration: the
+  credit counters (0x801de8d8), the coin meters (0x80237458), the coin lockout words
+  (0x801e0970), the sound state (0x801e6ec0) and the game mode words (0x80212e14) are structs
+  or arrays; `credits.h` / `soundio.h` declare them that way.
+- **Stores through a `volatile` pointer are never placed in a branch delay slot**; the FIFO
+  port pointer is a plain `unsigned int *`.
+- **Loops**: `while(n--)` for the audit groups; `i = 0x1ff; do {...} while(--i >= 0)` for
+  the 512-word FIFO pushes; a countdown `for(i = 4; i >= 0; i--)` for the meters; the
+  attract-text splitter is three copies of copy / upcase / advance with `while((c = *p) != 0)`.
+- **The sound start-up retries with a label and `goto`**: a `while` loop duplicates the exit
+  test at the bottom at every -O level, the original does not.
+- **switch**: four or more cases compile to a compare tree (pivot, then `slt` split); the
+  bodies are laid out in source order (`cmos_status` is written `case 3, 1, 2`; `gun_status`
+  `case 2, 1`). A `goto` out of a case turns the dispatch into a linear chain.
+- Small things that cost instructions: a `needed` local when a difference is printed after
+  being compared; `changed = 0` before the switch read in the volume process; an `unsigned`
+  dip word (`srl`) and loop index (`sltiu`); `x0 = 100.0f` held across a call in the volume
+  bar; the SDK's `cmos_config_info_t` (16 record tables) as the CMOS set-up local; `remove()`
+  then `malloc(0x10000)` and a 40-byte header in `file_copy`; `stderr` is `&__dj_stderr`.
+- Per-function matching status lives in `docs/port.md`.
+
 ## Assembler behaviour (`tools/sn2gas.py`)
 The original assembler was SN's `asmmips`, not GNU as. Two behaviours must be emulated for
 GNU as (`tools/mipsel-elf-binutils`, binutils 2.43 built with `--target=mipsel-elf`):

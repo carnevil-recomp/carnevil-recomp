@@ -11,6 +11,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include "credits.h"
+#include "soundio.h"
+
+#ifdef PORT_HOST
+#define INLINE
+#else
+#define INLINE inline
+#endif
 
 extern int	get_adjustment(int, int *), set_adjustment(int, int);
 extern int	get_audit(int, int *), set_audit(int, int), increment_audit(int);
@@ -24,184 +31,152 @@ extern int	_ioctl(int, int, int);
 extern void	init_player_stats(int);				/* 0x800e2d48 */
 extern void	init_main_game_proc(int);			/* 0x800c5748 */
 extern int	debug_mode;					/* 0x80212e20 */
-extern int	sound_init_pending, volume, sound_unk6ec4;	/* 0x801e6ec0, 0x801e6ec8, 0x801e6ec4 */
-extern FILE	*__dj_stderr;
 extern void	guAlphaSource(int), guColorCombineFunction(int), grConstantColorValue(unsigned int);
 extern void	grDepthBufferFunction(int), grDepthMask(int);
 extern void	draw_string_centered(int, char *, float, float, unsigned int);	/* 0x800ddf74 (add_to_print_) */
 extern void	draw_tri_flat(void *, void *, void *);				/* 0x800d2174 */
 extern char	text_buffer[];							/* 0x801e7100 */
 
-/* credit state */
-int		credits;				/* 0x801de8d8 */
-int		service_credits;			/* 0x801de8dc */
-int		coin_units;				/* 0x801de8e0 units towards the next credit */
-int		bonus_count;				/* 0x801de8e4 coins towards the bonus credit */
-int		bonus_units;				/* 0x801de8e8 */
-int		slam_active;				/* 0x801e0970 */
-int		coin_lock_unused;			/* 0x801e0974 */
-int		is_freeplay;				/* 0x801e0978 */
-int		unk_801e097c, unk_801e0980;
+/* credit state: one block at 0x801de8d8 (the compiler addresses its members as a block) */
+credit_count_t	credit_count;
+#define credits		credit_count.credits
+#define service_credits	credit_count.service_credits
+#define coin_units	credit_count.coin_units		/* units towards the next credit */
+#define bonus_count	credit_count.bonus_count	/* coins towards the bonus credit */
+#define bonus_units	credit_count.bonus_units
+coin_lock_t	coin_lock;				/* 0x801e0970 */
+#define slam_active	coin_lock.slam
+#define coin_lock_unused coin_lock.unused
+#define unk_801e097c	coin_lock.unk97c
+#define unk_801e0980	coin_lock.unk980
 int		intro_cue_played;			/* 0x80179b58 */
 int		pricing_from_dips;			/* 0x80237274 */
-int		unk_80212e1c;
 int		unk_801e09d0;
 
 /* the selected pricing (credit_info_struct_2, 0x801e5cf8) */
-int		slot_units[5];				/* 0x801e5cf8 */
-int		units_per_credit;			/* 0x801e5d0c */
-int		bonus_coins;				/* 0x801e5d10 */
-int		bonus_threshold;			/* 0x801e5d14 */
-int		coins_needed_to_play;			/* 0x801e5d18 */
-int		num_credits_to_continue;		/* 0x801e5d1c */
-int		max_credits;				/* 0x801e5d20 */
-int		pricing_unk2c;				/* 0x801e5d24 */
-int		show_credit_fraction;			/* 0x801e5d28 */
-char		currency_symbol[8];			/* 0x801e5d2c */
-char		currency_name[8];			/* 0x801e5d34 */
-char		pricing_text[256];			/* 0x801e5d3c */
+live_pricing_t	live_pricing;
 pricing_record_t *pricing;				/* 0x801a4350 (credit_info_struct_1) */
 int		custom_pricing[22];			/* 0x801a4360: record built from adjustments 4..25 */
 int		*custom_pricing_strings;		/* 0x801a43ac */
 
 /* coin counters (0x80237458..0x80237498) */
-int		counter_pulses[5];			/* 0x80237458 */
-int		counter_enabled[5];			/* 0x8023746c */
-int		counter_pending[5];			/* 0x80237480 */
-int		counter_mode;				/* 0x80237494 */
-int		counter_unk;				/* 0x80237498 */
+coin_counter_t	coin_counter;
 
 char		credit_line1[128];			/* 0x801e6ee8 */
 char		credit_line2[128];			/* 0x801e6f68 */
 player_stats_t	player_stats[2];			/* 0x801e0f64 */
-int		game_mode;				/* 0x80212e14 */
+int		game_state[3];				/* 0x80212e14: mode, ?, start count */
 
-/* 0x800c6a64: split the pricing text into the three attract lines, upper-cased */
+/* the file's own helpers, in the original's order (the inline ones only inline into later callers) */
+static void	add_coin(int closed, int swid);
+static void	setup_pricing(void);
+void		free_play_func(void);
+static void	init_credit_counts(void);
+static void	init_coin_counters(void);
+static void	slam_proc(int *args);
+static void	pulse_coin_counter(int bits);
+int		have_credits_to_start(void);
+int		have_credits_to_continue(void);
+int		check_credits_to_start_mode(void);
+int		check_credits_to_continue_mode(void);
+void		take_credits(short n);
+void		draw_hbar(float x0, float x1, float y, float h);
+
+/* 0x800c6a64: split the pricing text into up to three attract lines, upper-cased */
 extern char	attract_text1[], attract_text2[], attract_text3[];
 extern int	attract_text_state;
-static void copy_line(char **src, char *dst)
-{
-	char	*s = *src;
-	while(*s && *s != '\n')
-	{
-		*dst++ = *s++;
-	}
-	*dst = 0;
-	*src = s;
-}
-static void upcase(char *s)
-{
-	for(; *s; s++)
-	{
-		if((unsigned char)(*s - 'a') < 26)
-		{
-			*s -= 0x20;
-		}
-	}
-}
 void something_todo_with_credits(void)
 {
-	char	*s = pricing_text;
+	char	*p;
+	char	*s;
+	char	*d1, *d2, *d3;
+	char	c;
+	char	nl;
 
-	copy_line(&s, attract_text1);
-	upcase(attract_text1);
-	if(!*s++)
+	d1 = attract_text1;
+	d2 = attract_text2;
+	d3 = attract_text3;
+	s = live_pricing.text;
+	nl = '\n';
+	while(*s && *s != nl)
+	{
+		*d1++ = *s++;
+	}
+	*d1 = 0;
+	p = attract_text1;
+	while((c = *p) != 0)
+	{
+		if((unsigned char)(c - 'a') < 26)
+		{
+			c -= 0x20;
+		}
+		*p = c;
+		p++;
+	}
+	if(*s == 0)
 	{
 		attract_text_state = 1;
 		return;
 	}
-	copy_line(&s, attract_text2);
-	upcase(attract_text2);
-	if(!*s++)
+	s++;
+	while(*s && *s != nl)
+	{
+		*d2++ = *s++;
+	}
+	*d2 = 0;
+	p = attract_text2;
+	while((c = *p) != 0)
+	{
+		if((unsigned char)(c - 'a') < 26)
+		{
+			c -= 0x20;
+		}
+		*p = c;
+		p++;
+	}
+	if(*s == 0)
 	{
 		attract_text_state = 2;
 		return;
 	}
-	copy_line(&s, attract_text3);
-	upcase(attract_text3);
+	s++;
+	while(*s && *s != nl)
+	{
+		*d3++ = *s++;
+	}
+	*d3 = 0;
+	p = attract_text3;
+	while((c = *p) != 0)
+	{
+		if((unsigned char)(c - 'a') < 26)
+		{
+			c -= 0x20;
+		}
+		*p = c;
+		p++;
+	}
 	attract_text_state = 3;
 }
 
-/* 0x800c7c88, 0x800c7cec, 0x800c7d38, 0x800c7d74, 0x800c7d84, 0x800c817c, 0x800c818c */
-int have_credits_to_start(void)
-{
-	if(debug_mode & 1)
-	{
-		return(1);
-	}
-	if(check_for_freeplay())
-	{
-		return(1);
-	}
-	return(credits + service_credits >= coins_needed_to_play);
-}
-int have_credits_to_continue(void)
-{
-	if(check_for_freeplay())
-	{
-		return(1);
-	}
-	return(credits + service_credits >= num_credits_to_continue);
-}
-int credits_available(void)
-{
-	if(check_for_freeplay())
-	{
-		return(30);
-	}
-	return(credits + service_credits);
-}
-int check_for_freeplay(void)
-{
-	return(is_freeplay);
-}
-int any_credits(void)
-{
-	return(coin_units > 0 || bonus_units > 0 || credits > 0 || service_credits > 0);
-}
-int check_credits_to_start_mode(void)
-{
-	return(coins_needed_to_play);
-}
-int check_credits_to_continue_mode(void)
-{
-	return(num_credits_to_continue);
-}
-
 /* 0x800c6c34: can this player start (or continue) with what is in the machine? */
-int player_can_start(int player)
+INLINE int player_can_start(int player)
 {
-	int	state = player_stats[player].state;
-
-	if(state == 0x20 || state == 0)
+	switch((unsigned int)player_stats[player].state)
 	{
+	case 0x20:
+	case 0:
 		return(have_credits_to_start());
-	}
-	if(state == 8)
-	{
+	case 8:
 		return(have_credits_to_continue());
+	default:
+		return(0);
 	}
-	return(0);
 }
 
 /* 0x800c6ca8 */
 void inc_80212e1c(void)
 {
-	unk_80212e1c++;
-}
-
-/* 0x800c811c: pay for a start or a continue */
-void take_credits(short n)
-{
-	if(is_freeplay)
-	{
-		credits = 0;
-	}
-	else
-	{
-		credits -= n;
-	}
-	set_audit(10, credits);
+	game_state[2]++;
 }
 
 /* 0x800c6cc0 / 0x800c6d04: a start button closing spawns the start process */
@@ -212,28 +187,40 @@ void dispatch_start_proc(int closed, int swid)
 		qcreate("start", 0, start_proc, swid, 0, 0, 0);
 	}
 }
+
 void start_proc(int *args)
 {
-	int	player = (args[0] == 5);
-	int	mode;
+	int	player;
 
+	switch(args[0])
+	{
+	case 5:
+		player = 1;
+		break;
+	default:
+		player = 0;
+		break;
+	}
 	if(player_can_start(player))
 	{
-		mode = game_mode;
-		if(mode == 1 || mode == 4)
+		switch((unsigned int)game_mode)
 		{
+		case 1:
+		case 4:
 			take_credits(player_stats[player].state == 8 ? check_credits_to_continue_mode() : check_credits_to_start_mode());
 			init_player_stats(player);
 			init_main_game_proc(player);
-		}
-		else if(mode == 2 || mode == 0x10 || mode == 0x20 || mode == 0x80)
-		{
+			break;
+		case 2:
+		case 0x10:
+		case 0x20:
+		case 0x80:
 			take_credits(player_stats[player].state == 8 ? check_credits_to_continue_mode() : check_credits_to_start_mode());
 			init_player_stats(player);
-		}
-		else if(mode == 0x100)
-		{
+			break;
+		case 0x100:
 			unk_801e09d0 = 2;
+			break;
 		}
 	}
 	else if(player_stats[player].state == 8)
@@ -270,32 +257,32 @@ void coin_volume_proc(int *args)
 		}
 		if(sound_unk6ec4 > 0)
 		{
-			sw = get_dip_coin_current();
 			changed = 0;
+			sw = get_dip_coin_current();
 			if(sw & 0x1000)
 			{
 				sound_unk6ec4 = 60;
-				if(volume < 255)
+				if(sound_state.volume < 255)
 				{
-					volume++;
+					sound_state.volume++;
 					changed = 1;
 				}
 			}
 			if(sw & 0x800)
 			{
 				sound_unk6ec4 = 60;
-				if(volume > 0)
+				if(sound_state.volume > 0)
 				{
-					volume--;
+					sound_state.volume--;
 					changed = 1;
 				}
 			}
 			if(changed)
 			{
-				set_adjustment(3, volume);
-				if(snd_master_volume(volume))
+				set_adjustment(3, sound_state.volume);
+				if(snd_master_volume(sound_state.volume))
 				{
-					printf("coin_volume_proc(): ERROR sending master volume %d\n", volume);
+					printf("coin_volume_proc(): ERROR sending master sound_state.volume %d\n", sound_state.volume);
 				}
 			}
 			sound_unk6ec4--;
@@ -304,63 +291,26 @@ void coin_volume_proc(int *args)
 	}
 }
 
-/* 0x800c7310: a coin in slot swid */
-static void add_coin(int closed, int swid)
+/* 0x800c706c: the volume bar while a volume button was recently held */
+void show_volume_level(void)
 {
-	int	slot;
-	int	total;
+	float	level;
+	float	x0;
 
-	if(closed != 1 || slam_active)
+	if(sound_unk6ec4 <= 0)
 	{
 		return;
 	}
-	switch(swid)
-	{
-	case 0: slot = 0; break;
-	case 1: slot = 1; break;
-	case 7: slot = 2; break;
-	case 8: slot = 3; break;
-	case 15: slot = 4; break;
-	default: slot = 0; break;
-	}
-	if(counter_mode)
-	{
-		counter_pending[slot] += counter_pulses[slot];
-	}
-	else
-	{
-		counter_pending[slot]++;
-	}
-	coin_units += slot_units[slot];
-	total = coin_units + bonus_units;
-	if(total >= bonus_threshold && total >= units_per_credit)
-	{
-		credits += total / units_per_credit;
-		coin_units = 0;
-		bonus_units = total % units_per_credit;
-	}
-	bonus_count += slot_units[slot];
-	if(bonus_coins && bonus_count && bonus_count >= bonus_coins)
-	{
-		credits += bonus_count / bonus_coins;
-		bonus_count = bonus_count % bonus_coins;
-	}
-	total = credits;
-	if(max_credits)
-	{
-		total = credits + service_credits;
-		if(total > max_credits)
-		{
-			total = max_credits;
-			credits = max_credits - service_credits;
-			coin_units = 0;
-			bonus_units = 0;
-		}
-	}
-	if(set_audit(10, total))
-	{
-		set_audit(10, total);
-	}
+	guAlphaSource(0);
+	guColorCombineFunction(1);
+	level = (float)sound_state.volume / 255.0f * 200.0f;
+	x0 = 100.0f;
+	grConstantColorValue(0x8000b000);
+	draw_hbar(x0, level + x0, 40.0f, 16.0f);
+	grConstantColorValue(0x80004000);
+	draw_hbar(level + x0, 300.0f, 40.0f, 16.0f);
+	graphical_printf(text_buffer, "VOLUME %d", sound_state.volume);
+	draw_string_centered(0, text_buffer, 200.0f, 34.0f, 0xffffffff);
 }
 
 /* 0x800c718c: coin switch handler: reset the continue timers, add the coin, play the coin sound */
@@ -410,18 +360,182 @@ void service_credit_handler(int closed, int swid)
 	play_level_cue_pri(26, "generic1", 0);
 	service_credits++;
 	total = credits + service_credits;
-	if(max_credits < total)
+	if(live_pricing.max_credits < total)
 	{
-		service_credits = max_credits - credits;
+		service_credits = live_pricing.max_credits - credits;
 		coin_units = 0;
 		bonus_units = 0;
-		set_audit(10, max_credits);
+		set_audit(10, live_pricing.max_credits);
 	}
 	else
 	{
 		set_audit(10, total);
 		increment_audit(11);
 	}
+}
+
+/* 0x800c7310: a coin in slot swid */
+static void add_coin(int closed, int swid)
+{
+	int	slot;
+	int	sum;
+	int	total = 0;
+
+	if(closed != 1 || slam_active)
+	{
+		return;
+	}
+	switch(swid)
+	{
+	case 0: slot = 0; break;
+	case 1: slot = 1; break;
+	case 7: slot = 2; break;
+	case 8: slot = 3; break;
+	case 15: slot = 4; break;
+	default: slot = 0; break;
+	}
+	if(coin_counter.mode)
+	{
+		coin_counter.pending[slot] += coin_counter.pulses[slot];
+	}
+	else
+	{
+		coin_counter.pending[slot]++;
+	}
+	coin_units += live_pricing.slot_units[slot];
+	sum = coin_units + bonus_units;
+	if(sum >= live_pricing.bonus_threshold && sum >= live_pricing.units_per_credit)
+	{
+		credits += sum / live_pricing.units_per_credit;
+		coin_units = 0;
+		bonus_units = sum % live_pricing.units_per_credit;
+	}
+	bonus_count += live_pricing.slot_units[slot];
+	if(live_pricing.bonus_coins && bonus_count && bonus_count >= live_pricing.bonus_coins)
+	{
+		credits += bonus_count / live_pricing.bonus_coins;
+		bonus_count = bonus_count % live_pricing.bonus_coins;
+	}
+	if(live_pricing.max_credits)
+	{
+		total = credits + service_credits;
+		if(total > live_pricing.max_credits)
+		{
+			total = live_pricing.max_credits;
+			credits = live_pricing.max_credits - service_credits;
+			coin_units = 0;
+			bonus_units = 0;
+		}
+	}
+	if(set_audit(10, total))
+	{
+		set_audit(10, total);
+	}
+}
+
+/* 0x800c7570 */
+void init_credits(void)
+{
+	free_play_func();
+	setup_pricing();
+	init_credit_counts();
+	init_coin_counters();
+	something_todo_with_credits();
+}
+
+/* 0x800c75b0: pick the pricing record and copy it into the live settings */
+static void setup_pricing(void)
+{
+	unsigned int sw;
+	int	continent, country, price;
+	unsigned int i;
+	int	j;
+	int	bad;
+	int	*p;
+	pricing_record_t *r;
+
+	pricing = 0;
+	sw = get_dip_coin_current();
+	if((sw & 0x10000) && !get_adjustment(0x2b, &continent) && !get_adjustment(0x2c, &country) && !get_adjustment(0x2d, &price))
+	{
+		if(continent == 6)
+		{
+			bad = 0;
+			for(p = custom_pricing, i = 0; i < 22; i++)
+			{
+				if(get_adjustment(4 + i, &p[i]))
+				{
+					bad = 1;
+				}
+			}
+			custom_pricing_strings = malloc(0x50);
+			if(!custom_pricing_strings)
+			{
+				bad = 1;
+			}
+			else
+			{
+				p = custom_pricing_strings;
+				for(j = 0; j < 20; j++)
+				{
+					if(get_adjustment(0x17 + j, p))
+					{
+						free(custom_pricing_strings);
+						bad = 1;
+					}
+					p++;
+				}
+			}
+			if(bad)
+			{
+				pricing = 0;
+			}
+			else
+			{
+				pricing = (pricing_record_t *)custom_pricing;
+			}
+		}
+		else
+		{
+			pricing = pricing_continents[continent][country];
+			pricing += price;
+		}
+	}
+	if(!pricing)
+	{
+		pricing_from_dips = 1;
+		pricing = pricing_by_dip[(sw >> 17) & 0x1f];
+	}
+	r = pricing;
+	live_pricing.slot_units[0] = r->slot_units[0];
+	live_pricing.slot_units[1] = r->slot_units[1];
+	live_pricing.slot_units[2] = r->slot_units[2];
+	live_pricing.slot_units[3] = r->slot_units[3];
+	live_pricing.slot_units[4] = r->slot_units[4];
+	live_pricing.units_per_credit = r->units_per_credit;
+	live_pricing.bonus_coins = r->bonus_coins;
+	live_pricing.bonus_threshold = r->bonus_threshold;
+	live_pricing.credits_to_start = r->credits_to_start;
+	live_pricing.credits_to_continue = r->credits_to_continue;
+	live_pricing.max_credits = r->max_credits;
+	live_pricing.unk2c = r->unk2c;
+	live_pricing.show_fraction = r->show_fraction;
+	if(r->currency == 0)
+	{
+		strcpy(live_pricing.symbol, "$");
+		live_pricing.name[0] = 0;
+	}
+	else if(r->currency == 1)
+	{
+		strcpy(live_pricing.symbol, "L");
+		live_pricing.name[0] = 0;
+	}
+	else
+	{
+		live_pricing.symbol[0] = 0;
+		strcpy(live_pricing.name, currency_names[r->currency]);
+	}
+	strcpy(live_pricing.text, pricing->text);
 }
 
 /* 0x800c78b0: free play from the dip switch or the adjustment */
@@ -436,14 +550,14 @@ void free_play_func(void)
 	dip = sw & 0x10000;
 	if(!dip || get_adjustment(0, &adj))
 	{
-		fprintf(__dj_stderr, "Setting free play from dip\r\n");
+		fprintf(stderr, "Setting free play from dip\r\n");
 		if(!dip)
 		{
-			fprintf(__dj_stderr, "Because dip is set\r\n");
+			fprintf(stderr, "Because dip is set\r\n");
 		}
 		if((sw & 0x3e0000) == 0x3e0000)
 		{
-			fprintf(__dj_stderr, "Enabling free play\r\n");
+			fprintf(stderr, "Enabling free play\r\n");
 			is_freeplay = 1;
 		}
 	}
@@ -455,87 +569,6 @@ void free_play_func(void)
 	coin_lock_unused = 1;
 	unk_801e097c = 0;
 	unk_801e0980 = 0;
-}
-
-/* 0x800c75b0: pick the pricing record and copy it into the live settings */
-static void setup_pricing(void)
-{
-	int	sw;
-	int	continent, country, price;
-	int	i, bad;
-	pricing_record_t *r;
-
-	pricing = 0;
-	sw = get_dip_coin_current();
-	if((sw & 0x10000) && !get_adjustment(0x2b, &continent) && !get_adjustment(0x2c, &country) && !get_adjustment(0x2d, &price))
-	{
-		if(continent == 6)
-		{
-			bad = 0;
-			for(i = 0; i < 22; i++)
-			{
-				if(get_adjustment(4 + i, &custom_pricing[i]))
-				{
-					bad = 1;
-				}
-			}
-			custom_pricing_strings = malloc(0x50);
-			if(!custom_pricing_strings)
-			{
-				bad = 1;
-			}
-			else
-			{
-				for(i = 0; i < 20; i++)
-				{
-					if(get_adjustment(0x17 + i, &custom_pricing_strings[i]))
-					{
-						free(custom_pricing_strings);
-						bad = 1;
-					}
-				}
-			}
-			pricing = bad ? 0 : (pricing_record_t *)custom_pricing;
-		}
-		else
-		{
-			pricing = pricing_continents[continent][country] + price;
-		}
-	}
-	if(!pricing)
-	{
-		pricing = pricing_by_dip[(sw >> 17) & 0x1f];
-		pricing_from_dips = 1;
-	}
-	r = pricing;
-	for(i = 0; i < 5; i++)
-	{
-		slot_units[i] = r->slot_units[i];
-	}
-	units_per_credit = r->units_per_credit;
-	bonus_coins = r->bonus_coins;
-	bonus_threshold = r->bonus_threshold;
-	coins_needed_to_play = r->credits_to_start;
-	num_credits_to_continue = r->credits_to_continue;
-	max_credits = r->max_credits;
-	pricing_unk2c = r->unk2c;
-	show_credit_fraction = r->show_fraction;
-	if(r->currency == 0)
-	{
-		strcpy(currency_symbol, "$");
-		currency_name[0] = 0;
-	}
-	else if(r->currency == 1)
-	{
-		strcpy(currency_symbol, "L");
-		currency_name[0] = 0;
-	}
-	else
-	{
-		currency_symbol[0] = 0;
-		strcpy(currency_name, currency_names[r->currency]);
-	}
-	strcpy(pricing_text, pricing->text);
 }
 
 /* 0x800c79a8: credits from the audit, counters cleared */
@@ -560,27 +593,32 @@ static void init_coin_counters(void)
 {
 	int	i;
 
-	for(i = 0; i < 5; i++)
+	for(i = 4; i >= 0; i--)
 	{
-		counter_pending[i] = 0;
+		coin_counter.pending[i] = 0;
 	}
-	for(i = 0; i < 5; i++)
-	{
-		counter_pulses[i] = pricing->counter_pulses[i];
-		counter_enabled[i] = 1;
-	}
-	counter_mode = 1;
-	counter_unk = 0;
+	coin_counter.pulses[0] = pricing->counter_pulses[0];
+	coin_counter.pulses[1] = pricing->counter_pulses[1];
+	coin_counter.pulses[2] = pricing->counter_pulses[2];
+	coin_counter.pulses[3] = pricing->counter_pulses[3];
+	coin_counter.pulses[4] = pricing->counter_pulses[4];
+	coin_counter.enabled[0] = 1;
+	coin_counter.enabled[1] = 1;
+	coin_counter.enabled[2] = 1;
+	coin_counter.enabled[3] = 1;
+	coin_counter.enabled[4] = 1;
+	coin_counter.mode = 1;
+	coin_counter.unk = 0;
 }
 
-/* 0x800c7570 */
-void init_credits(void)
+void dispatch_slam_proc(int closed, int swid)
 {
-	free_play_func();
-	setup_pricing();
-	init_credit_counts();
-	init_coin_counters();
-	something_todo_with_credits();
+	(void)swid;
+	if(closed == 1 && slam_active != 1)
+	{
+		slam_active = 1;
+		qcreate("slam", 0x8000, slam_proc, 0, 0, 0, 0);
+	}
 }
 
 /* 0x800c7ab8 / 0x800c7b14: slam switch: lock coins out for a second */
@@ -590,13 +628,32 @@ static void slam_proc(int *args)
 	sleep(60);
 	slam_active = 0;
 }
-void dispatch_slam_proc(int closed, int swid)
+
+/* 0x800c7b3c: the "ccproc" process drains the pending coin-meter pulses */
+void ccproc_proc(int *args)
 {
-	(void)swid;
-	if(closed == 1 && slam_active != 1)
+	int	i;
+	(void)args;
+	for(;;)
 	{
-		slam_active = 1;
-		qcreate("slam", 0x8000, slam_proc, 0, 0, 0, 0);
+		sleep(1);
+		for(i = 0; i < 5; i++)
+		{
+			if(coin_counter.pending[i])
+			{
+				increment_audit(i);
+				increment_audit(5);
+				if(coin_counter.unk != 1)
+				{
+					pulse_coin_counter(coin_counter.enabled[i]);
+				}
+				else
+				{
+					pulse_coin_counter(1);
+				}
+				coin_counter.pending[i]--;
+			}
+		}
 	}
 }
 
@@ -611,37 +668,59 @@ static void pulse_coin_counter(int bits)
 	sleep(3);
 }
 
-/* 0x800c7b3c: the "ccproc" process drains the pending coin-meter pulses */
-void ccproc_proc(int *args)
-{
-	int	i;
-	(void)args;
-	for(;;)
-	{
-		sleep(1);
-		for(i = 0; i < 5; i++)
-		{
-			if(counter_pending[i])
-			{
-				increment_audit(i);
-				increment_audit(5);
-				pulse_coin_counter(counter_enabled[4] == 1 ? 1 : counter_enabled[i]);
-				counter_pending[i]--;
-			}
-		}
-	}
-}
-
 /* 0x800c7c78 */
 void clear_bonus_count(void)
 {
 	bonus_count = 0;
 }
 
+/* 0x800c7c88, 0x800c7cec, 0x800c7d38, 0x800c7d74, 0x800c7d84, 0x800c817c, 0x800c818c */
+INLINE int have_credits_to_start(void)
+{
+	if((debug_mode & 1) || check_for_freeplay())
+	{
+		return(1);
+	}
+	return(credits + service_credits >= live_pricing.credits_to_start);
+}
+
+INLINE int have_credits_to_continue(void)
+{
+	if(check_for_freeplay() == 0)
+	{
+		return(credits + service_credits >= live_pricing.credits_to_continue);
+	}
+	return(1);
+}
+
+int credits_available(void)
+{
+	if(check_for_freeplay())
+	{
+		return(30);
+	}
+	return(credits + service_credits);
+}
+
+int check_for_freeplay(void)
+{
+	return(is_freeplay);
+}
+
+int any_credits(void)
+{
+	if(coin_units > 0 || bonus_units > 0 || credits > 0 || service_credits > 0)
+	{
+		return(1);
+	}
+	return(0);
+}
+
 /* 0x800c7dd0: the two credit lines shown on the attract screens */
 void credit_info(int mode)
 {
-	int	total, bonus;
+	int	total, bonus, upc;
+	int	needed;
 
 	if(is_freeplay)
 	{
@@ -651,19 +730,24 @@ void credit_info(int mode)
 	}
 	total = credits + service_credits;
 	bonus = coin_units + bonus_units;
+	upc = live_pricing.units_per_credit;
 	if(mode == 1)
 	{
 		if(have_credits_to_start())
 		{
 			graphical_printf(credit_line2, "PRESS START");
 		}
-		else if(check_credits_to_start_mode() - total == 1)
-		{
-			graphical_printf(credit_line2, "INSERT COIN");
-		}
 		else
 		{
-			graphical_printf(credit_line2, "INSERT %d COINS", check_credits_to_start_mode() - total);
+			needed = check_credits_to_start_mode() - total;
+			if(needed == 1)
+			{
+				graphical_printf(credit_line2, "INSERT COIN");
+			}
+			else
+			{
+				graphical_printf(credit_line2, "INSERT %d COINS", needed);
+			}
 		}
 	}
 	else
@@ -672,28 +756,32 @@ void credit_info(int mode)
 		{
 			graphical_printf(credit_line2, "PRESS START");
 		}
-		else if(check_credits_to_continue_mode() - total == 1)
-		{
-			graphical_printf(credit_line2, "INSERT COIN");
-		}
 		else
 		{
-			graphical_printf(credit_line2, "INSERT %d COINS", check_credits_to_continue_mode() - total);
+			needed = check_credits_to_continue_mode() - total;
+			if(needed == 1)
+			{
+				graphical_printf(credit_line2, "INSERT COIN");
+			}
+			else
+			{
+				graphical_printf(credit_line2, "INSERT %d COINS", needed);
+			}
 		}
 	}
-	if(show_credit_fraction && bonus)
+	if(live_pricing.show_fraction && bonus)
 	{
-		if(total)
+		if(total == 0)
 		{
-			graphical_printf(credit_line1, "CREDITS: %d  %d/%d", total, bonus, units_per_credit);
+			graphical_printf(credit_line1, "CREDITS: %d/%d", bonus, upc);
 		}
 		else
 		{
-			graphical_printf(credit_line1, "CREDITS: %d/%d", bonus, units_per_credit);
+			graphical_printf(credit_line1, "CREDITS: %d  %d/%d", total, bonus, upc);
 		}
 		return;
 	}
-	if(total >= max_credits)
+	if(total >= live_pricing.max_credits)
 	{
 		graphical_printf(credit_line1, "CREDITS: %d (MAX)", total);
 	}
@@ -721,6 +809,30 @@ void credit_info(int mode)
 	}
 }
 
+/* 0x800c811c: pay for a start or a continue */
+void take_credits(short n)
+{
+	if(is_freeplay)
+	{
+		credits = 0;
+	}
+	else
+	{
+		credits -= n;
+	}
+	set_audit(10, credits);
+}
+
+int check_credits_to_start_mode(void)
+{
+	return(live_pricing.credits_to_start);
+}
+
+int check_credits_to_continue_mode(void)
+{
+	return(live_pricing.credits_to_continue);
+}
+
 /* 0x800dacb0: a flat horizontal bar from x0 to x1, h high, centred on y (two triangles) */
 typedef struct { float x, y, z, pad; } flat_vertex_t;
 void draw_hbar(float x0, float x1, float y, float h)
@@ -733,26 +845,6 @@ void draw_hbar(float x0, float x1, float y, float h)
 	d.x = x1; d.y = y + h * 0.5f; d.z = 0.9090909f;
 	draw_tri_flat(&a, &b, &d);
 	draw_tri_flat(&a, &d, &c);
-}
-
-/* 0x800c706c: the volume bar while a volume button was recently held */
-void show_volume_level(void)
-{
-	float	level;
-
-	if(sound_unk6ec4 <= 0)
-	{
-		return;
-	}
-	guAlphaSource(0);
-	guColorCombineFunction(1);
-	level = (float)volume / 255.0f * 200.0f + 100.0f;
-	grConstantColorValue(0x8000b000);
-	draw_hbar(100.0f, level, 40.0f, 16.0f);
-	grConstantColorValue(0x80004000);
-	draw_hbar(level, 300.0f, 40.0f, 16.0f);
-	graphical_printf(text_buffer, "VOLUME %d", volume);
-	draw_string_centered(0, text_buffer, 200.0f, 34.0f, 0xffffffff);
 }
 
 /* 0x800cbab4: the attract-mode credit lines, alternating every 50 frames */

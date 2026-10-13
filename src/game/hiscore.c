@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern int	remove(const char *);
+
 extern int	get_adjustment(int, int *), set_adjustment(int, int);
 extern void	graphical_printf(char *, char *, ...);
 
@@ -23,58 +25,65 @@ static high_score_t default_scores[10] =	/* 0x8017de08 */
 	{ "MRT", 150000 }, { "ROW", 120000 }, { "JAS", 90000 }, { "KEV", 60000 }, { "MJL", 30000 },
 };
 
-/* 0x800e6208: copy a partition file (the default high-score photos over the current ones) */
+/* 0x800e6208: copy a high-score photo (a 40-byte .WMS header and 32K 16-bit texels) */
 void file_copy(char *readfile, char *writefile)
 {
-	FILE	*in, *out;
-	char	buf[4096];
-	size_t	n;
+	FILE	*f;
+	char	header[0x28];
+	unsigned short *texels;
 
-	in = fopen(readfile, "rb");
-	if(!in)
+	remove(writefile);
+	texels = malloc(0x10000);
+	f = fopen(readfile, "rb");
+	if(f)
 	{
-		printf("file_copy(): cannot open %s\n", readfile);
-		return;
+		fread(header, 0x28, 1, f);
+		fread(texels, 2, 0x8000, f);
+		fclose(f);
 	}
-	out = fopen(writefile, "wb");
-	if(!out)
+	else
 	{
-		printf("file_copy(): cannot create %s\n", writefile);
-		fclose(in);
-		return;
+		printf("Could not open readfile %s in file_copy\n", readfile);
 	}
-	while((n = fread(buf, 1, sizeof buf, in)) > 0)
+	f = fopen(writefile, "wb");
+	if(f)
 	{
-		fwrite(buf, 1, n, out);
+		fwrite(header, 0x28, 1, f);
+		fwrite(texels, 2, 0x8000, f);
+		fclose(f);
 	}
-	fclose(out);
-	fclose(in);
+	else
+	{
+		printf("Could not open writefile %s in file_copy\n", writefile);
+	}
+	free(texels);
 }
 
 /* 0x800e5114 */
-int write_scores(void)
+void write_scores(void)
 {
-	int	i;
-	int	packed;
+	register int	i;
+	int	packed, score;
 
 	for(i = 0; i < 10; i++)
 	{
 		packed = ((high_scores[i].name[3] & 0xff) << 24) | ((high_scores[i].name[0] & 0xff) << 16) | ((high_scores[i].name[1] & 0xff) << 8) | (high_scores[i].name[2] & 0xff);
+		score = high_scores[i].score;
 		set_adjustment(0x48 + i, packed);
-		set_adjustment(0x3e + i, high_scores[i].score);
+		set_adjustment(0x3e + i, score);
 	}
-	return(0);
 }
 
 /* 0x800e5014 */
 void load_high_scores(void)
 {
-	int	i;
-	int	packed, score;
+	register int	i;
+	unsigned int	packed;
+	int	score;
 
 	for(i = 0; i < 10; i++)
 	{
-		get_adjustment(0x48 + i, &packed);
+		get_adjustment(0x48 + i, (int *)&packed);
 		get_adjustment(0x3e + i, &score);
 		high_scores[i].name[0] = (packed & 0xff0000) >> 16;
 		high_scores[i].name[1] = (packed & 0xff00) >> 8;
@@ -85,9 +94,9 @@ void load_high_scores(void)
 }
 
 /* 0x800e4eac */
-int reset_high_scores(void)
+void reset_high_scores(void)
 {
-	int	i;
+	register int	i;
 	char	src[16], dst[16];
 
 	printf("reseting high scores\n");
@@ -102,5 +111,5 @@ int reset_high_scores(void)
 		graphical_printf(dst, "HSTD%02d.WMS", i + 1);
 		file_copy(src, dst);
 	}
-	return(write_scores());
+	write_scores();
 }

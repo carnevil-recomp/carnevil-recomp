@@ -103,7 +103,6 @@ void init_player_stats(int p) { fprintf(stderr, "[stub] init_player_stats(%d)\n"
 void init_main_game_proc(int p) { fprintf(stderr, "[stub] init_main_game_proc(%d): GAME START requested by player %d, credits now %d\n", p, p + 1, credits); }
 void play_level_cue_pri(int scall, char *bank, int pri) { extern unsigned int next_cue_priority(void); extern int snd_scall_bank(char *, unsigned, unsigned, unsigned, unsigned); snd_scall_bank(bank, scall, 0xe6, 0x80, (pri | next_cue_priority()) & 0xdfff); }	/* 0x800ebfa8 */
 void dispatch_diags_proc(int closed, int swid) { (void)closed; (void)swid; fprintf(stderr, "[stub] test switch: diagnostics not implemented\n"); }
-FILE *__dj_stderr;
 
 /* the triangle setup (0x800d1750) writes Voodoo commands; here it is a plain draw */
 void draw_tri(MidVertex *a, MidVertex *b, MidVertex *c) { grDrawTriangleDma(a, b, c, 0); }
@@ -148,7 +147,6 @@ static void draw_pass(void *data)		/* "FOO": print_onscreen_debuginfo's object l
 void game_init(void)			/* func_800ca3a0, the parts the port has */
 {
 	int	i;
-	__dj_stderr = stderr;		/* DJGPP's stderr, as the game objects reference it */
 	init_objects();
 	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }
 	load_fram_wrapper();

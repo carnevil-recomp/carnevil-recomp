@@ -60,8 +60,23 @@ build/host/carnevil --partition original/partition --raw original/carn.raw --fra
 ```
 which leaves `f.001000.ppm`, a frame of the intro movie. The game proper (level scripts, 3D,
 the player state, the guns, diagnostics) is still stubbed in `port/host/game_stub.c`.
-Modules transcribed but not yet byte-matched: main.c, hwinfo.c, adjust.c, hiscore.c, gun.c,
-credits.c, soundio.c, movie.c, parts of attract.c and objects.c.
+Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-13):
+
+| module | profile | matched |
+|---|---|---|
+| credits.c | game2 (-O2) | 28 of 32 at 100%; credit_info 99%, setup_pricing 98%, ccproc_proc 98%, draw_hbar 78%, start_proc 7% (a branch the compiler turns into `sltu`) |
+| hwinfo.c | game2 | 2 of 2 |
+| audits.c | game1 (-O) | 15 of 15 |
+| adjust.c | game2 | 2 of 3; game_setup_cmos 98% |
+| hiscore.c | game0 (-O0, `register`) | 4 of 4 |
+| soundio.c | game2 | 9 of 10; cue_priority 42% |
+| stream.c | game2 | 19 of 23; stream_select_wave 86%, stream_debug_display 96%, stream_jump 60%, stream_fill 52% |
+| gun.c | game2 | 0 of 2 (32%, 18%) |
+| main.c | ? | main_proc 39%, utime_proc 10% |
+| movie.c, attract.c (game_proc 63%), objects.c (add_object 43%) | game2 | not revisited yet |
+
+None of these is registered in `config/modules.txt` yet; a module is registered once every
+function in its address range matches.
 
 ## Screen origin and texture orientation
 

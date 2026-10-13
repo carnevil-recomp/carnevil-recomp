@@ -5,7 +5,7 @@ Usage: match.py <file.s> <func>=<game_vaddr> [<func>=<vaddr> ...]
 Reports per-function instruction match percentage. Immediates that carry relocations
 (lui hi16 / lo16 / jal targets) are masked, since the link layout differs.
 """
-import sys, os, subprocess, struct, re, tempfile
+import sys, os, os, subprocess, struct, re, tempfile
 HERE=os.path.dirname(os.path.abspath(__file__))
 BIN=os.path.join(HERE,"mipsel-elf-binutils","bin")
 AS=os.path.join(BIN,"mipsel-elf-as"); OBJDUMP=os.path.join(BIN,"mipsel-elf-objdump"); NM=os.path.join(BIN,"mipsel-elf-nm")

@@ -33,7 +33,7 @@ extern char	text_buffer[];
 
 int		stream_active;				/* 0x801e5bc0 */
 int		stream_busy;				/* 0x801a25c8 */
-volatile unsigned int *fifo_port = (volatile unsigned int *)0xb3000000;	/* 0x801a25cc: the ASIC sound FIFO */
+unsigned int	*fifo_port = (unsigned int *)0xb3000000;	/* 0x801a25cc: the ASIC sound FIFO (a plain pointer: the stores sit in delay slots) */
 unsigned short	chunk_state[RING_CHUNKS];		/* 0x801e6c98 */
 unsigned char	stream_ring[RING_CHUNKS * 0x400];	/* 0x801fad70 */
 int		fill_index;				/* 0x801e5ba4: next chunk the disk fills */
@@ -99,8 +99,15 @@ void main_ctl_fifo_int_off(void)
 
 void func_8013f5b4(void) { main_ctl_clear(); }		/* the name GOOSE main() (initg.c) calls it by */
 
-/* 0x8013fae8, 0x8013fb20: restart the FIFO and its interrupt */
+/* 0x8013fae8, 0x8013fb20: restart the FIFO and its interrupt (two identical copies) */
 void fifo_restart(void)
+{
+	main_ctl_clear();
+	sound_fifo_reset();
+	main_ctl_fifo_int_on();
+	main_ctl_enable();
+}
+void fifo_restart2(void)
 {
 	main_ctl_clear();
 	sound_fifo_reset();
@@ -112,11 +119,13 @@ void fifo_restart(void)
 void stream_ring_reset(void)
 {
 	int	i;
+	unsigned short free_state;
 
 	memset(stream_ring, 0, sizeof stream_ring);
+	free_state = CHUNK_FREE;
 	for(i = RING_CHUNKS - 1; i >= 0; i--)
 	{
-		chunk_state[i] = CHUNK_FREE;
+		chunk_state[i] = free_state;
 	}
 	read_index = 0;
 	fill_index = 0;
@@ -138,7 +147,10 @@ void stream_start(void)
 void stream_stop(void)
 {
 	stream_active = 0;
-	fifo_restart();
+	main_ctl_clear();
+	sound_fifo_reset();
+	main_ctl_fifo_int_on();
+	main_ctl_enable();
 	snd_send_data(0x55d7);
 }
 
@@ -168,7 +180,7 @@ int stream_fill(void)
 			_SecReads(stream_sector + partition_start, stream_ring + (fill_index << 10), first);
 			stream_sector = loop_start;
 			_SecReads(loop_start + partition_start, stream_ring + ((fill_index + first / 2) << 10), 0x40 - first);
-			stream_sector = stream_sector + 0x40 - first;
+			stream_sector = (stream_sector + 0x40) - first;
 			return(2);
 		}
 		stream_sector = loop_start;
@@ -213,7 +225,10 @@ int stream_board_flush(void)
 		return(1);
 	}
 	snd_clear_latch();
-	fifo_restart();
+	main_ctl_clear();
+	sound_fifo_reset();
+	main_ctl_fifo_int_on();
+	main_ctl_enable();
 	snd_query_buffers(&n);
 	if(snd_send_data(0x55e7))
 	{
@@ -232,14 +247,14 @@ int stream_kick(void)
 	int	r;
 
 	stream_busy = 1;
-	if(!stream_active)
+	if(stream_active)
 	{
+		r = stream_fill();
 		stream_busy = 0;
-		return(0);
+		return(r);
 	}
-	r = stream_fill();
 	stream_busy = 0;
-	return(r);
+	return(0);
 }
 
 /* 0x8013ff78: 512 words into the sound FIFO: the next chunk, or silence */
@@ -250,24 +265,27 @@ void stream_fifo_feed(void)
 
 	if(!stream_active)
 	{
-		for(i = 0x1ff; i >= 0; i--)
+		i = 0x1ff;
+		do
 		{
 			FIFO_WRITE(0);
-		}
+		} while(--i >= 0);
 		return;
 	}
 	if(chunk_state[read_index] != CHUNK_READY)
 	{
-		for(i = 0x1ff; i >= 0; i--)
+		i = 0x1ff;
+		do
 		{
 			FIFO_WRITE(0);
-		}
+		} while(--i >= 0);
 		return;
 	}
 	p = (unsigned short *)(stream_ring + (read_index << 10));
 	for(i = 0; i < 0x200; i++)
 	{
-		FIFO_WRITE(*p++);
+		FIFO_WRITE(*p);
+		p++;
 	}
 	chunk_state[read_index] = CHUNK_FREE;
 	read_index = (read_index + 1) % RING_CHUNKS;
@@ -279,10 +297,13 @@ int interrupt_ioasic_handler(void)
 	int	status;
 
 	_ioctl(4, FIOCGETMAINSTATUS, (int)(long)&status);
-	if((status & 1) && (status & 8))
+	if(status & 1)
 	{
-		stream_fifo_feed();
-		_ioctl(4, FIOCGETMAINSTATUS, (int)(long)&status);
+		if(status & 8)
+		{
+			stream_fifo_feed();
+			_ioctl(4, FIOCGETMAINSTATUS, (int)(long)&status);
+		}
 	}
 	return(0);
 }
@@ -291,74 +312,86 @@ int interrupt_ioasic_handler(void)
 int stream_select_wave(int wave)
 {
 	int	*table;
+	int	start, end;
 
 	stream_sector = 0;
-	if(wave == 0x1040000)
+	switch(wave)
 	{
+	case 0x1040000:
 		stream_partition = 7;
 		stream_segments = 10;
-		segment[0][0] = 0;       segment[0][1] = 0x8cc;
-		segment[1][0] = 0x8cc;   segment[1][1] = 0x3a50;
-		segment[2][0] = 0x3a50;  segment[2][1] = 0x3c5a;
-		segment[3][0] = 0x3c5a;  segment[3][1] = 0x4edc;
-		segment[4][0] = 0x4edc;  segment[4][1] = 0x5e00;
-		segment[5][0] = 0x5e00;  segment[5][1] = 0xa4ae;
-		segment[6][0] = 0xa4ae;  segment[6][1] = 0xa744;
-		segment[7][0] = 0xa744;  segment[7][1] = 0xf54c;
-		segment[8][0] = 0xf54c;  segment[8][1] = 0xfa80;
-		segment[9][0] = 0xfa80;  segment[9][1] = 0x1241c;
-		loop_start = 0x8cc;
-		loop_end = 0x3a50;
-	}
-	else if(wave == 0x1060000)
-	{
+		start = 0x8cc;
+		end = 0x3a50;
+		segment[3][0] = segment[2][1] = 0x3c5a;
+		segment[4][0] = segment[3][1] = 0x4edc;
+		segment[5][0] = segment[4][1] = 0x5e00;
+		segment[6][0] = segment[5][1] = 0xa4ae;
+		segment[7][0] = segment[6][1] = 0xa744;
+		segment[8][0] = segment[7][1] = 0xf54c;
+		segment[0][0] = 0;
+		segment[1][0] = segment[0][1] = start;
+		segment[2][0] = segment[1][1] = end;
+		segment[9][0] = segment[8][1] = 0xfa80;
+		segment[9][1] = 0x1241c;
+		loop_start = start;
+		loop_end = end;
+		break;
+	case 0x1060000:
 		stream_partition = 5;
 		stream_segments = 4;
-		segment[0][0] = 0;       segment[0][1] = 0x32e6;
-		segment[1][0] = 0x32e6;  segment[1][1] = 0x4aae;
-		segment[2][0] = 0x4aae;  segment[2][1] = 0x4ae4;
-		segment[3][0] = 0x4ae4;  segment[3][1] = 0x73d2;
-		segment[4][0] = 0x73d2;  segment[4][1] = 0x7ca2;
-		segment[5][0] = 0x7ca2;  segment[5][1] = 0xbac0;
-		loop_start = 0x32e6;
-		loop_end = 0x4aae;
-	}
-	else if(wave == 0x1070000)
-	{
+		start = 0x32e6;
+		end = 0x4aae;
+		segment[3][0] = segment[2][1] = 0x4ae4;
+		segment[4][0] = segment[3][1] = 0x73d2;
+		segment[5][0] = segment[4][1] = 0x7ca2;
+		segment[0][0] = 0;
+		segment[1][0] = segment[0][1] = start;
+		segment[2][0] = segment[1][1] = end;
+		segment[5][1] = 0xbac0;
+		loop_start = start;
+		loop_end = end;
+		break;
+	case 0x1070000:
 		stream_partition = 9;
 		stream_segments = 4;
-		segment[0][0] = 0;       segment[0][1] = 0x396;
-		segment[1][0] = 0x396;   segment[1][1] = 0x5242;
-		segment[2][0] = 0x5242;  segment[2][1] = 0x5fb0;
-		segment[3][0] = 0x5fb0;  segment[3][1] = 0x8490;
-		segment[4][0] = 0x8490;  segment[4][1] = 0x8cd4;
-		segment[5][0] = 0x8cd4;  segment[5][1] = 0xbf10;
-		loop_start = 0x396;
-		loop_end = 0x5242;
-	}
-	else if(wave == 0xd0000)
-	{
+		start = 0x396;
+		end = 0x5242;
+		segment[3][0] = segment[2][1] = 0x5fb0;
+		segment[4][0] = segment[3][1] = 0x8490;
+		segment[5][0] = segment[4][1] = 0x8cd4;
+		segment[0][0] = 0;
+		segment[1][0] = segment[0][1] = start;
+		segment[2][0] = segment[1][1] = end;
+		segment[5][1] = 0xbf10;
+		loop_start = start;
+		loop_end = end;
+		break;
+	case 0xd0000:
 		stream_partition = 9;
 		stream_segments = 4;
-		segment[0][0] = 0;       segment[0][1] = 0x396;
-		segment[1][0] = 0x396;   segment[1][1] = 0x5242;
-		segment[2][0] = 0x5242;  segment[2][1] = 0x5fb0;
-		segment[3][0] = 0x5fb0;  segment[3][1] = 0x8490;
-		segment[4][0] = 0x8490;  segment[4][1] = 0x8cd4;
-		segment[5][0] = 0x8cd4;  segment[5][1] = 0xbf10;
+		segment[1][0] = segment[0][1] = 0x396;
+		segment[2][0] = segment[1][1] = 0x5242;
+		segment[3][0] = segment[2][1] = 0x5fb0;
+		segment[0][0] = 0;
+		segment[4][0] = segment[3][1] = 0x8490;
+		segment[5][0] = segment[4][1] = 0x8cd4;
+		segment[5][1] = 0xbf10;
 		stream_sector = 0x8490;
 		loop_start = 0x8cd4;
 		loop_end = 0xbf10;
-	}
-	else
-	{
+		break;
+	default:
 		stream_partition = 3;
 		stream_segments = 3;
-		segment[0][0] = 0;       segment[0][1] = 0xab0;
-		segment[1][0] = 0xab0;   segment[1][1] = 0x2976;
-		segment[2][0] = 0x2976;  segment[2][1] = 0x3f42;
-		loop_start = 0xab0;
-		loop_end = 0x2976;
+		start = 0xab0;
+		end = 0x2976;
+		segment[0][0] = 0;
+		segment[1][0] = segment[0][1] = start;
+		segment[2][0] = segment[1][1] = end;
+		segment[2][1] = 0x3f42;
+		loop_start = start;
+		loop_end = end;
+		break;
 	}
 	table = ide_get_partition_table();
 	stream_part_table = table;
@@ -386,39 +419,50 @@ void stream_set_volume(int volume)
 /* 0x801400a4: loop from segment a's start to segment b's end (after the current read) */
 void stream_set_loop(int a, int b)
 {
-	loop_start = segment[a][0];
-	loop_end = segment[b][1];
+	int	sector;
+
+	sector = segment[a][0];
+	loop_start = sector;
+	sector = segment[b][1];
+	loop_end = sector;
 }
 
 /* 0x801400dc: jump to segment a now and loop from b to c */
 void stream_jump(int a, int b, int c)
 {
-	loop_start = segment[b][0];
-	stream_sector = segment[a][0];
-	loop_end = segment[c][1];
+	int	sector, cur;
+
+	sector = segment[b][0];
+	cur = segment[a][0];
+	loop_start = sector;
+	sector = segment[c][1];
+	stream_sector = cur;
+	loop_end = sector;
 }
 
 /* 0x8014012c: debug display of the ring: one number per chunk, coloured by state */
 void stream_debug_display(void)
 {
 	int	i;
-	unsigned int color;
+	unsigned int color = 0xffffff;
+	float	x, y;
 
 	for(i = 0; i < RING_CHUNKS; i++)
 	{
 		graphical_printf(text_buffer, "%d", i);
-		color = 0xffffff;
-		if(chunk_state[i] == CHUNK_READING)
+		x = (float)(i % 8) * 20.0f;
+		y = (float)(i / 8) * 20.0f;
+		switch(chunk_state[i])
 		{
-			color = 0xff0000;
-		}
-		else if(chunk_state[i] == CHUNK_FREE)
-		{
+		case CHUNK_FREE:
 			color = 0xffffff;
-		}
-		else if(chunk_state[i] == CHUNK_READY)
-		{
+			break;
+		case CHUNK_READING:
+			color = 0xff0000;
+			break;
+		case CHUNK_READY:
 			color = 0xff00;
+			break;
 		}
 		if(i == read_index)
 		{
@@ -428,6 +472,6 @@ void stream_debug_display(void)
 		{
 			color = 0xff;
 		}
-		draw_string_color(0, text_buffer, (float)(i % 8) * 20.0f, (float)(i / 8) * 20.0f, color);
+		draw_string_color(0, text_buffer, x, y, color);
 	}
 }

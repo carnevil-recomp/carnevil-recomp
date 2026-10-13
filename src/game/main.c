@@ -6,6 +6,7 @@
  */
 #include <stdio.h>
 #include "credits.h"
+#include "soundio.h"
 
 extern void	*qcreate(char *, int, void (*)(), int, int, int, int);
 extern void	sleep(int);
@@ -14,13 +15,13 @@ extern void	set_bgnd_color(unsigned int);
 extern void	game_init(void);					/* 0x800ca3a0 */
 extern void	read_pic_serial(int *);					/* 0x800c6480 */
 extern void	hw_info_screen(void);					/* 0x800c65d4 */
-extern int	setup_cmos(void);					/* 0x800f2a28 */
+extern int	game_setup_cmos(void);				/* 0x800f2a28 (setup_cmos is the SDK template's name) */
 extern int	check_adjustments(void);				/* GOOSE (write_adjustments_file_wrapper) */
 extern void	clear_all_audits(void), restore_game_adjustments(void);	/* 0x800f1a20, 0x800f1fa8 */
 extern int	check_all_audits(void), load_game_adjustments(void);	/* 0x800f1bac, 0x800f1d88 */
 extern void	set_percent_audit(int, int, int);			/* 0x800f1cd4 */
 extern void	load_high_scores(void);					/* 0x800e5014 */
-extern int	reset_high_scores(void);				/* 0x800e4eac */
+extern void	reset_high_scores(void);				/* 0x800e4eac */
 extern int	get_audit(int, int *), set_audit(int, int), get_adjustment(int, int *), set_adjustment(int, int);
 extern int	snd_master_volume(int);
 extern int	gfx_scale_from_refresh(void);				/* 0x80157004 */
@@ -39,9 +40,8 @@ extern void	game_proc(void), game_proc2(void);
 extern void	dispatch_diags_proc(int, int);
 extern int	pic_serial[6];						/* 0x801e7030: serial number, game id, ... */
 #define game_id		pic_serial[1]
-extern int	snd_opsys_ver, volume, debug_mode, gfx_scale, uptime, pricing_from_dips;
+extern int	snd_opsys_ver, debug_mode, gfx_scale, uptime, pricing_from_dips;
 extern float	D_80212df4;
-extern FILE	*__dj_stderr;
 
 int	cmos_status;					/* 1 restored, 2 bad, 3 ok */
 int	coinage_source;					/* 0x801e096c: 1 CMOS, 2 dipswitch */
@@ -134,7 +134,7 @@ void main_proc(void)
 			sleep(1);
 		}
 	}
-	if(setup_cmos() == 0)
+	if(game_setup_cmos() == 0)
 	{
 		if(get_audit(0xb5, &val) || val != 0xb5)
 		{
@@ -190,7 +190,7 @@ void main_proc(void)
 	}
 	else
 	{
-		fprintf(__dj_stderr, "Error occured in trying to INIT. cmos err num %d\r\n", setup_cmos());
+		fprintf(stderr, "Error occured in trying to INIT. cmos err num %d\r\n", game_setup_cmos());
 		cmos_status = 2;
 	}
 	if(cmos_status == 0)
@@ -220,9 +220,9 @@ void main_proc(void)
 			D_80212df4 += 0.1f;
 			set_adjustment(0x37, 0x46);
 		}
-		volume = 200;
+		sound_state.volume = 200;
 		set_adjustment(3, 200);
-		snd_master_volume(volume);
+		snd_master_volume(sound_state.volume);
 	}
 	init_credits();
 	if(cmos_status == 2 || pricing_from_dips)

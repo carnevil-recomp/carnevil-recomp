@@ -38,12 +38,43 @@ typedef struct player_stats
 	int	pad2[0xb];
 } player_stats_t;
 
+/* the credit counters (0x801de8d8) */
+typedef struct credit_count
+{
+	int	credits, service_credits, coin_units, bonus_count, bonus_units;
+} credit_count_t;
+
+/* the pricing in force (0x801e5cf8): the record's first 13 words, then the strings */
+typedef struct live_pricing
+{
+	int	slot_units[5];
+	int	units_per_credit, bonus_coins, bonus_threshold;
+	int	credits_to_start, credits_to_continue, max_credits, unk2c, show_fraction;
+	char	symbol[8];		/* 0x801e5d2c "$" / "L" */
+	char	name[8];		/* 0x801e5d34 */
+	char	text[256];		/* 0x801e5d3c the attract pricing text */
+} live_pricing_t;
+
+/* the coin meters (0x80237458) */
+typedef struct coin_counter
+{
+	int	pulses[5], enabled[5], pending[5], mode, unk;
+} coin_counter_t;
+
 extern player_stats_t	player_stats[2];		/* 0x801e0f64 */
-extern int		game_mode;			/* 0x80212e14: 1 attract, 2/4/0x10/0x20/0x80 in play, 0x100 */
-extern int		credits, service_credits;	/* 0x801de8d8, 0x801de8dc */
-extern int		is_freeplay;			/* 0x801e0978 */
-extern int		coins_needed_to_play, num_credits_to_continue, max_credits;	/* 0x801e5d18.. */
-extern char		pricing_text[];			/* 0x801e5d3c */
+extern int		game_state[3];			/* 0x80212e14: mode (1 attract, 2/4/0x10/0x20/0x80 in play, 0x100), ?, start count */
+#define game_mode	game_state[0]
+extern credit_count_t	credit_count;
+#define credits		credit_count.credits
+extern live_pricing_t	live_pricing;
+extern coin_counter_t	coin_counter;
+/* the coin lockout block (0x801e0970) */
+typedef struct coin_lock
+{
+	int	slam, unused, freeplay, unk97c, unk980;
+} coin_lock_t;
+extern coin_lock_t	coin_lock;
+#define is_freeplay	coin_lock.freeplay
 extern char		credit_line1[], credit_line2[];	/* 0x801e6ee8, 0x801e6f68 */
 
 void	init_credits(void);

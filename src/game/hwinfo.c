@@ -28,7 +28,6 @@ int	pic_serial[6];
 void read_pic_serial(int *info)
 {
 	int	fd;
-	int	d;
 
 	fd = open("pic:", 0);
 	if(fd < 0)
@@ -45,11 +44,10 @@ void read_pic_serial(int *info)
 		_ioctl(fd, 0x7000, (int)(long)&info[0]);
 		_ioctl(fd, 0x7001, (int)(long)&info[1]);
 		_ioctl(fd, 0x7002, (int)(long)&info[5]);
-		d = info[5] - 1;
-		info[5] = d;
-		info[3] = d % 31 + 1;
-		info[4] = d / 372 + 80;
-		info[2] = (d % 372) / 31 + 1;
+		info[5] = info[5] - 1;
+		info[3] = info[5] % 31 + 1;
+		info[4] = info[5] / 372 + 80;
+		info[2] = (info[5] % 372) / 31 + 1;
 	}
 	close(fd);
 }
@@ -69,35 +67,37 @@ void hw_info_screen(void)
 	graphical_printf(text_buffer, "MANUFACTURE DATE %02d/%02d/%02d", month, day, year);
 	draw_string_centered(1, text_buffer, 200.0f, 170.0f, 0xffffff);
 	draw_string_centered(1, "CMOS:", 100.0f, 140.0f, 0xff00);
-	if(cmos_status == 2)
+	switch(cmos_status)
 	{
-		draw_string_centered(1, "BAD", 300.0f, 140.0f, 0xff0000);
-	}
-	else if(cmos_status == 1)
-	{
-		draw_string_centered(1, "FACTORY SETTINGS RESTORED", 300.0f, 140.0f, 0xffff00);
-	}
-	else if(cmos_status == 3)
-	{
+	case 3:
 		draw_string_centered(1, "OK", 300.0f, 140.0f, 0xff00);
+		break;
+	case 1:
+		draw_string_centered(1, "FACTORY SETTINGS RESTORED", 300.0f, 140.0f, 0xffff00);
+		break;
+	case 2:
+		draw_string_centered(1, "BAD", 300.0f, 140.0f, 0xff0000);
+		break;
 	}
 	draw_string_centered(1, "COINAGE:", 100.0f, 110.0f, 0xff00);
-	if(coinage_source == 1)
+	switch(coinage_source)
 	{
+	case 1:
 		draw_string_centered(1, "FROM CMOS", 300.0f, 110.0f, 0xff00);
-	}
-	else if(coinage_source == 2)
-	{
+		break;
+	case 2:
 		draw_string_centered(1, "FROM DIPSWITCH", 300.0f, 110.0f, 0xffff00);
+		break;
 	}
 	draw_string_centered(1, "GUN:", 100.0f, 80.0f, 0xff00);
-	if(gun_status == 1)
+	switch(gun_status)
 	{
-		draw_string_centered(1, "BAD", 300.0f, 80.0f, 0xff0000);
-	}
-	else if(gun_status == 2)
-	{
+	case 2:
 		draw_string_centered(1, "OK", 300.0f, 80.0f, 0xff00);
+		break;
+	case 1:
+		draw_string_centered(1, "BAD", 300.0f, 80.0f, 0xff0000);
+		break;
 	}
 	draw_string_centered(1, "DCS2:", 100.0f, 50.0f, 0xff00);
 	if(snd_opsys_ver)

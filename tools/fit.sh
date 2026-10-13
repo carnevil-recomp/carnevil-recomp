@@ -7,6 +7,9 @@ HERE="$(cd "$(dirname "$0")/.." && pwd)"; cd "$HERE"
 case "$PROF" in
   goose) F="-O3 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   game)  F="-O3 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;   # game objects: signed char, pre-R5000 ISA (see docs/toolchain.md)
+  game2) F="-O2 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;   # game objects built at -O2 (no inlining)
+  game1) F="-O -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;
+  game0) F="-mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;
   o2)    F="-O2 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   o2r5k) F="-O2 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   o1r5k) F="-O -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
@@ -16,5 +19,5 @@ case "$PROF" in
 esac
 mkdir -p build/try; B=build/try/$(basename "$SRC" .c)
 clang -E -P -Wno-nonportable-include-path -nostdinc -Ioriginal/sdk/include -Iinclude $CPPEXTRA -D__DJGPP__ -DSEATTLE -DRELEASE -x c "$SRC" -o $B.i
-CC1FLAGS="$F" tools/sncc.sh $B.i $B.s 2>/dev/null
+CC1FLAGS="$F $EXTRAF" tools/sncc.sh $B.i $B.s 2>/dev/null
 python3 tools/modfit.py $B.s "$@" 2>&1 | grep -vE 'Warning: used \$at|Assembler messages'

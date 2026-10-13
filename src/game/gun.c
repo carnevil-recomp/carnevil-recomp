@@ -11,7 +11,7 @@ float	gun_cal[4];				/* 0x801e70bc: P1 x scale, y scale, x offset, y offset */
 float	gun_cal2[4];				/* 0x801e70e0: P2 */
 int	D_801f8848;
 
-#define GUN_CONTROL	(*(volatile signed char *)0xb7f00000)
+#define GUN_CONTROL	(*(signed char *)0xb7f00000)
 
 /* 0x800d4ac8 */
 int kss_reset_(void)
@@ -25,8 +25,8 @@ int kss_reset_(void)
 	gun_cal2[0] = 4.0117650f;
 	gun_cal2[1] = 0.89473701f;
 	gun_cal2[2] = 271.76471f;
-	gun_cal2[3] = 39.105263f;
 	v = GUN_CONTROL;
+	gun_cal2[3] = 39.105263f;
 	printf("NSS reset = %x\n", v);
 	GUN_CONTROL = v | 0x10;
 	D_801f8848 = 0;
