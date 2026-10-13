@@ -25,7 +25,7 @@ extern int	get_dip_coin_current(void);
 extern void	sleep(int);
 extern void	*qcreate(char *, int, void (*)(), int, int, int, int);
 extern int	snd_master_volume(int);
-extern void	play_level_cue_pri(int, char *, int);		/* 0x800ebfa8 */
+#include "levelsnd.h"
 extern void	graphical_printf(char *, char *, ...);
 extern int	_ioctl(int, int, int);
 extern void	init_player_stats(int);				/* 0x800e2d48 */
@@ -339,12 +339,12 @@ void coin_handler(int closed, int swid)
 	}
 	if(have_credits_to_start() && !intro_cue_played)
 	{
-		play_level_cue_pri(26, "generic1", 0);
+		play_rotating_cue_flags_noint(26, "generic1", 0);
 		intro_cue_played = closed;
 	}
 	else
 	{
-		play_level_cue_pri(26, "generic1", 0);
+		play_rotating_cue_flags_noint(26, "generic1", 0);
 	}
 }
 
@@ -357,7 +357,7 @@ void service_credit_handler(int closed, int swid)
 	{
 		return;
 	}
-	play_level_cue_pri(26, "generic1", 0);
+	play_rotating_cue_flags_noint(26, "generic1", 0);
 	service_credits++;
 	total = credits + service_credits;
 	if(live_pricing.max_credits < total)

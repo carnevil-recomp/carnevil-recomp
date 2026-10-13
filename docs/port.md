@@ -69,7 +69,8 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | audits.c | game1 (-O) | 16 of 16, registered in modules.txt (text 0x800f18e0-0x800f1d84, data 0x8018ea60-0x8018ed48) |
 | adjust.c | game2 | 2 of 3; game_setup_cmos 98% |
 | hiscore.c | game0 (-O0, `register`) | 4 of 4 |
-| soundio.c | game2 | 9 of 10; cue_priority 42% |
+| soundio.c | game2 | 2 of 2 (main_init_sound, check_sound_os; the cue helpers moved to levelsnd.c) |
+| levelsnd.c | game2 | 36 of 36, registered in modules.txt (text 0x800ebb18-0x800ec53c, rodata 0x80170f08-0x80170f40, data 0x8018e038-0x8018e050) |
 | stream.c | game2 | 19 of 23; stream_select_wave 86%, stream_debug_display 96%, stream_jump 60%, stream_fill 52% |
 | gun.c | game2 | 0 of 2 (32%, 18%: the control-byte load keeps its address in a register, not yet reproduced) |
 | main.c | game2 | 2 of 2 (main_proc and utime_proc) |

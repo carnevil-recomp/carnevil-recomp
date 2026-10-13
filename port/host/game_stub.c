@@ -57,15 +57,7 @@ void func_800e7568(void) { movie_stop(); }	/* movie play stop */
 /* script callees and level data the attract movies touch */
 int  func_8012fa20(void) { fprintf(stderr, "[stub] script call func_8012fa20\n"); return 0; }
 int  func_8012fbf0(void) { fprintf(stderr, "[stub] script call func_8012fbf0\n"); return 0; }
-void func_800ebdbc(int a, char *s) { fprintf(stderr, "[stub] level sound %d \"%s\"\n", a, s); }
-void func_800ebe34(int a, char *s) { (void)a; (void)s; }
-void func_800ebd70(int a, char *s) { (void)a; (void)s; }
-void func_800ebe6c(void) { }
-void func_800ebe8c(void) { }
-void func_800ebb44(void) { }
 void func_800d4968(void) { }
-void func_800ec370(int a, int b) { (void)a; (void)b; }
-void func_800ec504(int a) { (void)a; }
 void *func_800d6758(int a) { (void)a; return 0; }
 void level_end_stats_wrapper(void) { }
 int  end_of_wave(void) { return 0; }
@@ -101,7 +93,6 @@ int attract_text_state;
 /* the game proper: not decompiled yet */
 void init_player_stats(int p) { fprintf(stderr, "[stub] init_player_stats(%d)\n", p); }
 void init_main_game_proc(int p) { fprintf(stderr, "[stub] init_main_game_proc(%d): GAME START requested by player %d, credits now %d\n", p, p + 1, credits); }
-void play_level_cue_pri(int scall, char *bank, int pri) { extern unsigned int next_cue_priority(void); extern int snd_scall_bank(char *, unsigned, unsigned, unsigned, unsigned); snd_scall_bank(bank, scall, 0xe6, 0x80, (pri | next_cue_priority()) & 0xdfff); }	/* 0x800ebfa8 */
 void dispatch_diags_proc(int closed, int swid) { (void)closed; (void)swid; fprintf(stderr, "[stub] test switch: diagnostics not implemented\n"); }
 
 /* the triangle setup (0x800d1750) writes Voodoo commands; here it is a plain draw */

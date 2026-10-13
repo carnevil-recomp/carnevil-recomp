@@ -12,9 +12,9 @@ extern void	fade(float, int, void (*)(void));
 extern int	end_of_wave(void);
 extern void	increment_audit(int);
 extern void	stop_level_cue_and_stream(void), play_level_cue(int, char *);
-extern void	func_800ebdbc(int, char *), func_800ebe34(int, char *), func_800ebd70(int, char *);
-extern void	func_800ebe6c(void), func_800ebe8c(void), func_800ebb44(void), func_800d4968(void);
-extern void	play_bigtop_cue(int, int), func_800ec504(int);
+extern void	play_level_music(int, char *), play_level_speech(int, char *), start_level_music(int, char *);
+extern void	stop_level_music(void), fade_out_level_music(void), fade_out_level_stream(void), func_800d4968(void);
+extern void	play_bigtop_cue(int, int), play_bigtop2_cue(int);
 extern void	stream_set_loop(int, int), stream_jump(int, int, int);	/* 0x801400a4, 0x801400dc */
 extern void	*func_800d6758();
 extern short	add_object1_wrapper(int, void (*)(), int, int);
@@ -107,7 +107,7 @@ int do_script(int frame)
 			((void (*)())NEXT())();
 			break;
 		case 6:
-			func_800ebdbc(NEXT(), "generic1");
+			play_level_music(NEXT(), "generic1");
 			break;
 		case 19:
 			arg = NEXT();
@@ -121,54 +121,54 @@ int do_script(int frame)
 			stream_set_loop(arg, arg2);
 			break;
 		case 12:
-			func_800ebdbc(NEXT(), "hhouse1");
+			play_level_music(NEXT(), "hhouse1");
 			break;
 		case 14:
-			func_800ebdbc(NEXT(), "freaksho");
+			play_level_music(NEXT(), "freaksho");
 			break;
 		case 16:
-			func_800ebe34(NEXT(), "freaksho");
+			play_level_speech(NEXT(), "freaksho");
 			break;
 		case 17:
-			func_800ebd70(NEXT(), "freaksho");
+			start_level_music(NEXT(), "freaksho");
 			break;
 		case 21:
-			func_800ebdbc(NEXT(), "rickity");
+			play_level_music(NEXT(), "rickity");
 			break;
 		case 22:
-			func_800ebe34(NEXT(), "rickity");
+			play_level_speech(NEXT(), "rickity");
 			break;
 		case 23:
-			func_800ebd70(NEXT(), "rickity");
+			start_level_music(NEXT(), "rickity");
 			break;
 		case 26:
-			func_800ebdbc(NEXT(), "bigtop");
+			play_level_music(NEXT(), "bigtop");
 			break;
 		case 29:
 			arg = NEXT();
 			if((unsigned)(arg - 0x11) < 2)
 			{
-				func_800ec504(arg);
+				play_bigtop2_cue(arg);
 			}
 			else
 			{
-				func_800ebdbc(arg, "bigtop2");
+				play_level_music(arg, "bigtop2");
 			}
 			break;
 		case 27:
-			func_800ebd70(NEXT(), "bigtop");
+			start_level_music(NEXT(), "bigtop");
 			break;
 		case 28:
 			play_bigtop_cue(NEXT(), 0);
 			break;
 		case 15:
-			func_800ebe6c();
+			stop_level_music();
 			break;
 		case 18:
-			func_800ebe8c();
+			fade_out_level_music();
 			break;
 		case 13:
-			func_800ebdbc(NEXT(), "chastity");
+			play_level_music(NEXT(), "chastity");
 			break;
 		case 7:		/* *var = 0 */
 			arg = NEXT();
@@ -238,9 +238,9 @@ void script_level_end_stats(void)
 }
 void script_end_cleanup(void)
 {
-	func_800ebb44();
+	fade_out_level_stream();
 	func_800d4968();
-	func_800ebe8c();
+	fade_out_level_music();
 	fade(0.0f, 80, 0);
 }
 void script_fade_out_90(void) { fade(0.0f, 90, 0); }

@@ -125,6 +125,13 @@ the flags and a set of source idioms. `MATCH_MAXDIFF=N` lengthens the diff it pr
   with no argument. The level and attract scripts that follow the file (0x80110b04-0x80113218)
   are data stored in `.text`: `tools/disasm.py` now labels referenced words inside the
   padding it emits after a C module (`asm/functions/<addr>_pad.s`).
+- **levelsnd.c (36 of 36, registered)**: the level sound file is the music/stream fade state
+  (four `.data` ints initialised to 0xff, 0, 0xaa, 0) and thin wrappers around
+  `snd_scall_bank` whose priority words are `(unsigned short)(x)` or `x & 0xdfff` (no
+  interrupt). `cue_priority` is a `switch` whose `case 5:` falls into `default:`: that extra
+  case is what makes the compiler emit the compare tree (`beq 4; slti 5; bne 3`); without it
+  a two-case switch is a linear chain. The fade routine's `else goto`/`else return` keep
+  the shared `snd_*_volume` calls out of the other branches.
 - **Naming**: functions and data are named by what they do; Binary Ninja's guesses stay in
   `config/functions_v103.txt`/`binja_symbols.txt` and `config/names.txt` carries the
   override (also for symbols the port already names, e.g. `draw_string_centered` for
