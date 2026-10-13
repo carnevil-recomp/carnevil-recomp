@@ -8,6 +8,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include "waves.h"
 
 extern int	_ioctl(int, int, int);
 extern int	snd_send_data(unsigned int);
@@ -317,7 +318,7 @@ int stream_select_wave(int wave)
 	stream_sector = 0;
 	switch(wave)
 	{
-	case 0x1040000:
+	case WAVE_RICKITY:
 		stream_partition = 7;
 		stream_segments = 10;
 		start = 0x8cc;
@@ -336,7 +337,7 @@ int stream_select_wave(int wave)
 		loop_start = start;
 		loop_end = end;
 		break;
-	case 0x1060000:
+	case WAVE_FREAKSHOW:
 		stream_partition = 5;
 		stream_segments = 4;
 		start = 0x32e6;
@@ -351,7 +352,7 @@ int stream_select_wave(int wave)
 		loop_start = start;
 		loop_end = end;
 		break;
-	case 0x1070000:
+	case WAVE_BIGTOP:
 		stream_partition = 9;
 		stream_segments = 4;
 		start = 0x396;
@@ -366,7 +367,7 @@ int stream_select_wave(int wave)
 		loop_start = start;
 		loop_end = end;
 		break;
-	case 0xd0000:
+	case WAVE_BIGTOP_LOAD:
 		stream_partition = 9;
 		stream_segments = 4;
 		segment[1][0] = segment[0][1] = 0x396;

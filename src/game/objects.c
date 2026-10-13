@@ -11,6 +11,7 @@
 #include "levelsnd.h"
 #include "movie.h"
 #include "spawn.h"
+#include "waves.h"
 
 extern int	get_free_mem_left(void);		/* 0x80143e90 */
 extern void	graphical_printf(char *, char *, ...);
@@ -90,7 +91,7 @@ void draw_pass(void)
 	}
 	shown_frame = frame;
 	sample_switches();
-	if(D_801e5cbc || (debug_mode & 1))
+	if(D_801e5cbc || (debug_mode & DEBUG_ON))
 	{
 		func_800d41b4(frame);
 		show_debug_light_(frame);
@@ -116,7 +117,7 @@ void draw_pass(void)
 	{
 		something_to_do_with_shooting_(&player_stats[1]);
 	}
-	if(debug_mode & 0x10000)
+	if(debug_mode & DEBUG_CHARACTERS)
 	{
 		if(debug_enemy)
 		{
@@ -134,7 +135,7 @@ void draw_pass(void)
 		draw_string_color(0, text_buffer, 40.0f, 20.0f, 0xffffff);
 		draw_string_color(0, text_buffer, 40.0f, 0.0f, 0);
 	}
-	if((debug_mode & 0x20000) && D_80194650)
+	if((debug_mode & DEBUG_POINT) && D_80194650)
 	{
 		debug_move_point(D_80194650);
 		graphical_printf(text_buffer, "XYZ %f %f %f", D_80194650[0], D_80194650[1], D_80194650[2]);
@@ -142,7 +143,7 @@ void draw_pass(void)
 		graphical_printf(text_buffer, "ROT %f %f %f", debug_angles[0], debug_angles[1], debug_angles[2]);
 		draw_string_color(0, text_buffer, 0.0f, 60.0f, 0xff00);
 	}
-	if(debug_mode & 0x80000)
+	if(debug_mode & DEBUG_VECTORS)
 	{
 		debug_move_vectors();
 		graphical_printf(text_buffer, "XYZ %f %f %f", debug_p1x, debug_p1y, debug_p1z);
@@ -173,7 +174,7 @@ void draw_pass(void)
 	{
 		attract_credit_lines();
 	}
-	if(debug_mode & 0x10000)
+	if(debug_mode & DEBUG_CHARACTERS)
 	{
 		debug_blink++;
 		if(debug_blink & 2)
@@ -182,7 +183,7 @@ void draw_pass(void)
 			draw_string_color(0, text_buffer, 10.0f, 240.0f, 0xff0000);
 		}
 	}
-	if(debug_mode & 4)
+	if(debug_mode & DEBUG_RTP_FPS)
 	{
 		graphical_printf(text_buffer, "RTP %d DMA %d DRAWN %d", RTP_val, DMA_val, D_801e0ecc);
 		draw_string(0, text_buffer, 10.0f, 235.0f);
@@ -213,7 +214,7 @@ void draw_pass(void)
 	{
 		func_800c9bf0();
 	}
-	if(debug_mode & 0x8000)
+	if(debug_mode & DEBUG_HEAP)
 	{
 		print_heap_and_obj_info_onscreen();
 	}
@@ -443,16 +444,16 @@ void think_pass(void *data)
 	D_801e0ecc = 0;
 	switch(wave_id_g2)
 	{
-	case 0x1020000:
+	case WAVE_HHOUSE:
 		nearest_enemy = nearest_enemy_hhouse();
 		break;
-	case 0x1060000:
+	case WAVE_FREAKSHOW:
 		nearest_enemy = nearest_enemy_freakshow();
 		break;
-	case 0x1040000:
+	case WAVE_RICKITY:
 		nearest_enemy = nearest_enemy_rickity();
 		break;
-	case 0x1070000:
+	case WAVE_BIGTOP:
 		nearest_enemy = nearest_enemy_bigtop();
 		break;
 	default:

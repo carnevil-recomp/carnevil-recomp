@@ -26,6 +26,7 @@ extern void	sleep(int);
 extern void	*qcreate(char *, int, void (*)(), int, int, int, int);
 extern int	snd_master_volume(int);
 #include "levelsnd.h"
+#include "waves.h"
 extern void	graphical_printf(char *, char *, ...);
 extern int	_ioctl(int, int, int);
 extern void	init_player_stats(int);				/* 0x800e2d48 */
@@ -670,7 +671,7 @@ void clear_bonus_count(void)
 /* 0x800c7c88, 0x800c7cec, 0x800c7d38, 0x800c7d74, 0x800c7d84, 0x800c817c, 0x800c818c */
 INLINE int have_credits_to_start(void)
 {
-	if((debug_mode & 1) || check_for_freeplay())
+	if((debug_mode & DEBUG_ON) || check_for_freeplay())
 	{
 		return(1);
 	}

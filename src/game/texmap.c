@@ -8,6 +8,7 @@
 
 #include "texmap.h"
 #include "credits.h"			/* debug_mode */
+#include "waves.h"
 
 surface_t	surfaces[MAX_SURFACES];
 int		num_surfaces;
@@ -108,7 +109,7 @@ void load_texmap(texmap_t *t, int n, char *label)
 	int		key;
 	int		m0, m1, m2, m3, m4;
 
-	if(debug_mode & 0x200)
+	if(debug_mode & DEBUG_TEXMAP_LOG)
 	{
 		func_80162a10(&m0, &m1, &m2, &m3);
 		printf("Loading texmaps for %s...", label);
@@ -150,7 +151,7 @@ have:
 		}
 		t++;
 	}
-	if(debug_mode & 0x200)
+	if(debug_mode & DEBUG_TEXMAP_LOG)
 	{
 		func_80162a10(&m0, &m1, &m4, &m3);
 		printf("%dK\n", (m4 - m2) / 1024);

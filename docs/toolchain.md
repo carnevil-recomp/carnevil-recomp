@@ -152,6 +152,14 @@ the flags and a set of source idioms. `MATCH_MAXDIFF=N` lengthens the diff it pr
   alone is precomputed, the division happens while the arguments are evaluated).
   The nearest-enemy loops read `i = p->next` before the body like the draw pass and keep
   `range = 1000.0f` as a float local; `fsqrt` is the one-instruction sqrt.s wrapper.
+- **spawn.c**: the die list hangs off a 12-byte dummy node (`die_head_t`: the list pointer is
+  its fourth word), and `prev` is set to it *before* the list is loaded; the list loops are
+  `if(d) do {...} while(d && !found)` with `next` read before the test; the 256-entry table
+  copy is `spawn_table[i] = *s++` through a local pointer (`spawn_t` must be word aligned or
+  the copy becomes a byte-wise `lwl/lwr` one); `die_check_outdated` tests `frame >=
+  d->frame` with the kill as the then-branch; `add_die` has no return on its success path.
+- **Named constants**: `waves.h` holds the wave ids and the debug-flag bits; a number that
+  carries meaning gets a name there (or in the owning header) rather than a comment.
 - **Naming**: functions and data are named by what they do; Binary Ninja's guesses stay in
   `config/functions_v103.txt`/`binja_symbols.txt` and `config/names.txt` carries the
   override (also for symbols the port already names, e.g. `draw_string_centered` for

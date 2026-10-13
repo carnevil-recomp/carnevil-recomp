@@ -8,9 +8,10 @@
 #include "spawn.h"
 #include "objects.h"
 #include "credits.h"			/* player_stats, debug_mode */
+#include "waves.h"
 
 extern spawn_t	hhouse_spawn_blob[], freakshow_spawn_blob[], rickity_spawn_blob[], bigtop_spawn_blob[];
-extern int	D_802373fc;			/* adjustment 0x30: the difficulty */
+extern int	difficulty;			/* 0x802373fc: adjustment 0x30 */
 extern int	D_801e0f0c;
 
 spawn_t		spawn_table[MAX_SPAWN];		/* 0x801e1790 */
@@ -20,7 +21,7 @@ int		spawn_enabled = 0;		/* 0x8018db8c */
 int		level_wave_id;			/* 0x8021f0fc */
 int		enemies_alive;			/* 0x801e6b6c */
 int		wave_lock;			/* 0x801e6e70 */
-die_t		die_list_head;			/* 0x801e7068 */
+die_head_t	die_head;			/* 0x801e7068 */
 
 /* 0x800e9140: spawn the table entries due on this frame, then expire the die list */
 void spawn_wave_enemies(int frame)
@@ -52,7 +53,7 @@ void spawn_wave_enemies(int frame)
 		{
 			thr = w->thr1;
 		}
-		if(D_802373fc < thr)
+		if(difficulty < thr)
 		{
 			w->count--;
 			continue;
@@ -61,7 +62,7 @@ void spawn_wave_enemies(int frame)
 		{
 			continue;
 		}
-		if(level_wave_id == 0x1020000 && i == 7)
+		if(level_wave_id == WAVE_HHOUSE && i == 7)		/* the house's slot 7 waits for slots 9 and 10 */
 		{
 			if(!wave_slot_done(9))
 			{
@@ -85,9 +86,10 @@ void spawn_wave_enemies(int frame)
    the previous list) */
 void load_level_spawn(int wave)
 {
+	spawn_t	*s;
 	int	i;
 
-	if(debug_mode & 0x400)
+	if(debug_mode & DEBUG_SPAWN_LOG)
 	{
 		printf("Loading spawn level 0x%08x\n", wave);
 	}
@@ -100,27 +102,27 @@ void load_level_spawn(int wave)
 	level_wave_id = wave;
 	switch(wave)
 	{
-	case 0x1060000:
+	case WAVE_FREAKSHOW:
 		spawn_struct_g = freakshow_spawn_blob;
 		num_enemies_in_wave_g = 0xbd;
 		break;
-	case 0x1040000:
+	case WAVE_RICKITY:
 		spawn_struct_g = rickity_spawn_blob;
 		num_enemies_in_wave_g = 0x87;
 		break;
-	case 0x1070000:
+	case WAVE_BIGTOP:
 		spawn_struct_g = bigtop_spawn_blob;
 		num_enemies_in_wave_g = 0x96;
 		break;
 	default:
 		printf("Warning - Unknown wave 0x%08X in load_level_spawn\n", wave);
-	case 0x1020000:
+	case WAVE_HHOUSE:
 		spawn_struct_g = hhouse_spawn_blob;
 		num_enemies_in_wave_g = 0xd1;
 		break;
-	case 0xa0000:
-	case 0xb0000:
-	case 0xc0000:
+	case WAVE_ATTRACT:
+	case WAVE_ATTRACT_B:
+	case WAVE_ATTRACT_C:
 		break;
 	}
 	if(num_enemies_in_wave_g > MAX_SPAWN)
@@ -128,9 +130,10 @@ void load_level_spawn(int wave)
 		printf("Error, more enemies in this wave than MAX_SPAWN!\n");
 	}
 	D_801e0f0c = 0xffff;
+	s = spawn_struct_g;
 	for(i = 0; i < MAX_SPAWN; i++)
 	{
-		spawn_table[i] = spawn_struct_g[i];
+		spawn_table[i] = *s++;
 	}
 	spawn_enabled = 1;
 }
@@ -138,11 +141,13 @@ void load_level_spawn(int wave)
 /* 0x800e94dc: restore the table from the level's list (for a replay) */
 void reload_spawn_table(void)
 {
+	spawn_t	*s;
 	int	i;
 
+	s = spawn_struct_g;
 	for(i = 0; i < MAX_SPAWN; i++)
 	{
-		spawn_table[i] = spawn_struct_g[i];
+		spawn_table[i] = *s++;
 	}
 }
 
@@ -160,13 +165,13 @@ int remove_die(int id)
 	int	found;
 
 	found = 0;
-	if(debug_mode & 1)
+	if(debug_mode & DEBUG_ON)
 	{
 		remove_game_object(id);
 		return(0);
 	}
-	d = die_list_head.next;
-	prev = &die_list_head;
+	prev = (die_t *)&die_head;
+	d = die_list;
 	if(d)
 	{
 		do
@@ -194,15 +199,16 @@ int remove_die(int id)
 /* 0x800ea55c: flag an enemy's die entry (2 = marked) */
 int mark_die(int id)
 {
-	die_t	*d;
+	die_t	*d, *next;
 	int	found;
 
 	found = 0;
-	d = die_list_head.next;
+	d = die_list;
 	if(d)
 	{
 		do
 		{
+			next = d->next;
 			if(d->id == id)
 			{
 				d->flag = 2;
@@ -210,7 +216,7 @@ int mark_die(int id)
 			}
 			else
 			{
-				d = d->next;
+				d = next;
 			}
 		} while(d && !found);
 	}
@@ -227,13 +233,13 @@ int wave_slot_done(int index)
 	done = 1;
 	if(spawn_table[index].count > 0)
 	{
-		if((debug_mode & 0x400) && wave_lock >= 31)
+		if((debug_mode & DEBUG_SPAWN_LOG) && wave_lock >= 31)
 		{
 			printf("Zdis check %d...more to go\n", index);
 		}
 		return(0);
 	}
-	d = die_list_head.next;
+	d = die_list;
 	if(d)
 	{
 		do
@@ -255,7 +261,8 @@ void reset_wave_lock(void)
 	wave_lock = 0;
 }
 
-/* 0x800ea670: queue an enemy to die on a frame; 1 when out of memory */
+/* 0x800ea670: queue an enemy to die on a frame; 1 when out of memory (the original has no
+   return on the success path: callers ignore the value) */
 int add_die(short id, int master, int frame)
 {
 	die_t	*d;
@@ -269,9 +276,11 @@ int add_die(short id, int master, int frame)
 	d->master = master;
 	d->flag = 1;
 	d->frame = frame;
-	d->next = die_list_head.next;
-	die_list_head.next = d;
+	d->next = die_list;
+	die_list = d;
+#ifdef PORT_HOST
 	return(0);
+#endif
 }
 
 /* 0x800ea6e4: queue an enemy to die with its master's frame */
@@ -279,17 +288,14 @@ void add_die_like(short id, short master)
 {
 	die_t	*d, *m;
 
-	m = die_list_head.next;
-	if(m)
+	m = die_list;
+	while(m)
 	{
-		while(m->id != master)
+		if(m->id == master)
 		{
-			m = m->next;
-			if(!m)
-			{
-				break;
-			}
+			break;
 		}
+		m = m->next;
 	}
 	if(!m)
 	{
@@ -305,8 +311,8 @@ void add_die_like(short id, short master)
 	d->id = id;
 	d->flag = 1;
 	d->frame = m->frame;
-	d->next = die_list_head.next;
-	die_list_head.next = d;
+	d->next = die_list;
+	die_list = d;
 }
 
 /* 0x800ea7a4: remove the enemies whose die frame has passed */
@@ -314,16 +320,12 @@ void die_check_outdated(int frame)
 {
 	die_t	*d, *prev, *next;
 
-	d = die_list_head.next;
-	prev = &die_list_head;
+	prev = (die_t *)&die_head;
+	d = die_list;
 	while(d)
 	{
 		next = d->next;
-		if(frame < d->frame)
-		{
-			prev = d;
-		}
-		else
+		if(frame >= d->frame)
 		{
 			if(d->id != -7)
 			{
@@ -337,6 +339,10 @@ void die_check_outdated(int frame)
 			free(d);
 			prev->next = next;
 		}
+		else
+		{
+			prev = d;
+		}
 		d = next;
 	}
 }
@@ -344,17 +350,18 @@ void die_check_outdated(int frame)
 /* 0x800ea870: free the whole die list */
 void free_die_list(void)
 {
-	die_t	*d, *next;
+	die_t	*d, *prev, *next;
 
-	d = die_list_head.next;
+	prev = (die_t *)&die_head;
+	d = die_list;
 	while(d)
 	{
 		next = d->next;
 		free(d);
 		d = next;
-		die_list_head.next = d;
+		prev->next = d;
 	}
-	if(debug_mode & 0x400)
+	if(debug_mode & DEBUG_SPAWN_LOG)
 	{
 		printf("killed zdie\n");
 	}

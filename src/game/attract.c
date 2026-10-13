@@ -29,6 +29,7 @@ extern void	guTexSource(int), guColorCombineFunction(int);
 extern void	draw_quad(float, float, float, float, float, float);
 extern int	violence_level;
 #include "credits.h"			/* game_mode (0x80212e14) */
+#include "waves.h"
 extern int	attract_cycles;		/* 0x80212d98 */
 extern void	grDepthBufferFunction(int), grDepthMask(int);
 extern int	check_for_freeplay(void), check_credits_to_start_mode(void), check_credits_to_continue_mode(void);
@@ -122,7 +123,7 @@ void game_proc(void)
 		normal_screen();
 		add_object1_wrapper(0x20, draw_screen_7201, 0, 0);
 	}
-	preload_wave(0xa0000);
+	preload_wave(WAVE_ATTRACT);
 	remove_all_objects();
 	game_mode = 1;
 	set_bgnd_color(0xff000000);

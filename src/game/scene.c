@@ -9,6 +9,7 @@
 #include "enemy.h"
 #include "credits.h"			/* debug_mode */
 #include "movie.h"
+#include "waves.h"
 
 extern int	read_player12_direct(void), read_player34_direct(void);
 extern int	get_free_mem_left(void);				/* 0x80143e90 */
@@ -58,26 +59,26 @@ void sample_switches(void)
 	switches34 = ~read_player34_direct();
 	if((switches34 & 0x20) && !(switches34_prev & 0x20))
 	{
-		if(debug_mode & 1)
+		if(debug_mode & DEBUG_ON)
 		{
-			if(debug_mode & 0x20000)
+			if(debug_mode & DEBUG_POINT)
 			{
-				debug_mode &= ~0x20000;
+				debug_mode &= ~DEBUG_POINT;
 			}
 			else
 			{
-				debug_mode |= 0x20000;
+				debug_mode |= DEBUG_POINT;
 			}
 		}
 		else
 		{
-			if(debug_mode & 0x10000)
+			if(debug_mode & DEBUG_CHARACTERS)
 			{
-				debug_mode &= ~0x10000;
+				debug_mode &= ~DEBUG_CHARACTERS;
 			}
 			else
 			{
-				debug_mode |= 0x10000;
+				debug_mode |= DEBUG_CHARACTERS;
 			}
 		}
 	}

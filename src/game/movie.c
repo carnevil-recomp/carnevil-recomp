@@ -46,6 +46,7 @@ extern void	level_end_stats_wrapper();
 extern unsigned int	background_color;
 extern int	do_draw_background;
 #include "credits.h"			/* game_mode (0x80212e14), player_stats (0x801e0f64) */
+#include "waves.h"
 extern int	D_801e6e70, D_8018db90;
 extern char	text_buffer[];
 
@@ -589,7 +590,7 @@ int movie_draw_frame(void)
 			movie.disk = &mdb1;
 		}
 	}
-	if(debug_mode & 0x2000)
+	if(debug_mode & DEBUG_FRAME_TEXT)
 	{
 		grDepthBufferFunction(GR_CMP_ALWAYS);
 		grDepthMask(FXFALSE);

@@ -14,7 +14,7 @@ extern void	startaudit(FILE *);				/* 0x800ef870: the audit names for audits.fmt
 extern int	violence_level;					/* 0x801e5bfc */
 extern int	stereo_output;					/* 0x801de954 */
 
-int	D_802373fc, D_801de8a4, D_80237438;			/* difficulty-type adjustments 0x30-0x32 (0..4) */
+int	difficulty, D_801de8a4, D_80237438;			/* difficulty-type adjustments 0x30-0x32 (0..4) */
 int	D_801e5c10, D_801e70a0, D_801e6ed0, D_80237420, D_801e704c;
 float	D_80212df4;						/* adjustment 0x37 / 100 */
 
@@ -37,8 +37,8 @@ int load_game_adjustments(void)
 {
 	int	val;
 
-	if(get_adjustment(0x30, &D_802373fc)) D_802373fc = 2;
-	if((unsigned)D_802373fc >= 5) D_802373fc = 2;
+	if(get_adjustment(0x30, &difficulty)) difficulty = 2;
+	if((unsigned)difficulty >= 5) difficulty = 2;
 	if(get_adjustment(0x31, &D_801de8a4)) D_801de8a4 = 2;
 	if((unsigned)D_801de8a4 >= 5) D_801de8a4 = 2;
 	if(get_adjustment(0x32, &D_80237438)) D_80237438 = 2;

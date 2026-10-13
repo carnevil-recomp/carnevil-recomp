@@ -79,7 +79,7 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | shake.c | game2 | 1 of 1 (update_movie_scroll; the rest of its file, 0x800f3420-0x800f37ac, is not decompiled) |
 | attract.c | game2 | 18 of 18, registered in modules.txt (text 0x800caf80-0x800cbb6c, rodata 0x8016f600-0x8016f704, data 0x80179c50-0x80179d40) |
 | scene.c | game2 | 9 of 9 (the switch sampler, the debug nudges, the heap display, game_init, load_level_assets); the rest of that file (0x800c8280-0x800ca4d0: screen markers, 3D helpers) is still assembly |
-| spawn.c | game2 | 5 of 12 exact (spawn_wave_enemies, wave_slot_done, the two one-liners, ...); the die-list loops and load_level_spawn's table copy are still being shaped; the port runs spawn_wave_enemies with construct_and_spawn_object (0x800e9570, 3.8 KB) stubbed |
+| spawn.c | game2 | 11 of 12 exact; add_die 38% (its failure return is laid out differently); the port runs spawn_wave_enemies with construct_and_spawn_object (0x800e9570, 3.8 KB) stubbed |
 | objects.c | game2 | 17 of 18: the list routines, the per-frame draw pass (0x800cbbb4, `draw_pass`), think pass (0x800cca70) and the four nearest-enemy searches exact; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20). The port runs the real passes; the level routines they call are stubs |
 
 A module is registered in `config/modules.txt` once every function in its source file's

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "movie.h"
 #include "credits.h"			/* game_mode (0x80212e14), player_stats (0x801e0f64) */
+#include "waves.h"
 
 extern void	fade(float, int, void (*)(void));
 extern int	end_of_wave(void);
@@ -64,7 +65,7 @@ int do_script(int frame)
 		end_of_wave();
 		return(MOVIE_END);
 	}
-	if(debug_mode & 0x10000)
+	if(debug_mode & DEBUG_CHARACTERS)
 	{
 		return(frame);
 	}

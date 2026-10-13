@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "credits.h"
 #include "soundio.h"
+#include "waves.h"
 
 extern void	*qcreate(char *, int, void (*)(), int, int, int, int);
 extern void	sleep(int);
@@ -282,7 +283,7 @@ void main_proc(void)
 	D_80212d98 = 0;
 	set_dcsw_handler(2, dispatch_start_proc);
 	set_dcsw_handler(5, dispatch_start_proc);
-	if(debug_mode & 1)
+	if(debug_mode & DEBUG_ON)
 	{
 		remove_game_object(hw_obj);
 		qcreate("attract", 0x100, game_proc2, 0, 0, 0, 0);

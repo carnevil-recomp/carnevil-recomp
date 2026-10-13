@@ -36,7 +36,15 @@ extern int	spawn_enabled;			/* 0x8018db8c */
 extern int	level_wave_id;			/* 0x8021f0fc */
 extern int	enemies_alive;			/* 0x801e6b6c */
 extern int	wave_lock;			/* 0x801e6e70 */
-extern die_t	die_list_head;			/* 0x801e7068: its next (0x801e7074) is the list */
+/* the list hangs off a 12-byte dummy node (so unlinking never special-cases the head) */
+typedef struct die_head
+{
+	short		id, flag;
+	int		master, frame;
+	die_t		*list;			/* 0x801e7074: the first real node */
+} die_head_t;
+extern die_head_t	die_head;		/* 0x801e7068 */
+#define die_list	die_head.list
 
 void	spawn_wave_enemies(int frame);
 void	load_level_spawn(int wave);

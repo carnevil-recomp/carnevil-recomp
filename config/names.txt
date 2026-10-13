@@ -597,3 +597,4 @@
 0x8015fd7c grFogMode
 0x8015fe50 grFogColorValue
 0x8015fee4 grFogTable
+0x802373fc difficulty
