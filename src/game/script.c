@@ -19,7 +19,6 @@ extern void	stream_set_loop(int, int), stream_jump(int, int, int);	/* 0x801400a4
 extern void	*func_800d6758();
 extern short	add_object1_wrapper(int, void (*)(), int, int);
 extern void	level_end_stats_wrapper();
-extern int	debug_mode;			/* 0x80212e20 */
 
 /* script interpreter */
 script_word_t	*movie_script_g1;		/* 0x801e09d8: start of the current script */

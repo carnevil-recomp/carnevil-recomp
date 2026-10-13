@@ -532,3 +532,6 @@
 0x8018e044 stream_fade
 0x8018e048 level_sound_unk048
 0x8013fb84 stream_stop
+# the player records start 4 bytes before the Binary Ninja player_stats symbol (0x800cbbb4 passes 0x801e0f60/0x801e1080)
+0x801e0f60 player_stats
+0x801e0f64 player1_state

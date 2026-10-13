@@ -40,7 +40,7 @@ extern void	game_proc(void), game_proc2(void);
 extern void	dispatch_diags_proc(int, int);
 extern int	pic_serial[6];						/* 0x801e7030: serial number, game id, ... */
 #define game_id		pic_serial[1]
-extern int	snd_opsys_ver, debug_mode, gfx_scale, uptime, pricing_from_dips;
+extern int	snd_opsys_ver, gfx_scale, uptime, pricing_from_dips;
 extern float	D_80212df4;
 
 int	cmos_status;					/* 1 restored, 2 bad, 3 ok */

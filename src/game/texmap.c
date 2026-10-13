@@ -7,10 +7,10 @@
 #include <goose/texture.h>
 
 #include "texmap.h"
+#include "credits.h"			/* debug_mode */
 
 surface_t	surfaces[MAX_SURFACES];
 int		num_surfaces;
-extern int	debug_mode;
 extern int	D_801fad10;
 extern int	D_801e0f10;
 extern void	func_80162a10(int *, int *, int *, int *);

@@ -30,7 +30,6 @@ extern void	graphical_printf(char *, char *, ...);
 extern int	_ioctl(int, int, int);
 extern void	init_player_stats(int);				/* 0x800e2d48 */
 extern void	init_main_game_proc(int);			/* 0x800c5748 */
-extern int	debug_mode;					/* 0x80212e20 */
 extern void	guAlphaSource(int), guColorCombineFunction(int), grConstantColorValue(unsigned int);
 extern void	grDepthBufferFunction(int), grDepthMask(int);
 extern void	draw_string_centered(int, char *, float, float, unsigned int);	/* 0x800ddf74 (add_to_print_) */
@@ -64,8 +63,8 @@ coin_counter_t	coin_counter;
 
 char		credit_line1[128];			/* 0x801e6ee8 */
 char		credit_line2[128];			/* 0x801e6f68 */
-player_stats_t	player_stats[2];			/* 0x801e0f64 */
-int		game_state[3];				/* 0x80212e14: mode, ?, start count */
+player_stats_t	player_stats[2];			/* 0x801e0f60 */
+int		game_state[4];				/* 0x80212e14: mode, ?, start count, debug flags (0x80212e20) */
 
 /* the file's own helpers, in the original's order (the inline ones only inline into later callers) */
 static void	add_coin(int closed, int swid);

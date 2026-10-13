@@ -132,6 +132,17 @@ the flags and a set of source idioms. `MATCH_MAXDIFF=N` lengthens the diff it pr
   case is what makes the compiler emit the compare tree (`beq 4; slti 5; bne 3`); without it
   a two-case switch is a linear chain. The fade routine's `else goto`/`else return` keep
   the shared `snd_*_volume` calls out of the other branches.
+- **objects.c's draw pass (0x800cbbb4, 505 insns exact)**: Binary Ninja's
+  `print_onscreen_debuginfo` is the game's whole per-frame draw. Three facts fell out of
+  matching it: `got_interrupt_save` is `volatile` (reloaded around every use, including the
+  `60 / n` FPS division); the debug flags word is the fourth element of the game-state
+  array (`game_state[3]`, 0x80212e20: three consecutive bit tests keep `&game_state[3]` in
+  s0 like any array element, a plain global would be reloaded with lui/lw); and the player
+  records start at 0x801e0f60, four bytes before Binary Ninja's `player_stats` (the draw
+  pass passes `&player_stats[i]` to the shot handler), so `state` is at +4 and
+  `time_to_continue` at +0xf4. Its object loop reads `i = p->next` before calling `p->draw(p)`
+  with no null check; the think pass checks. The wait-timer decrement is inside the `> 0`
+  test; the FPS colour is green under 3, red at 4 or more, plain for 3.
 - **Naming**: functions and data are named by what they do; Binary Ninja's guesses stay in
   `config/functions_v103.txt`/`binja_symbols.txt` and `config/names.txt` carries the
   override (also for symbols the port already names, e.g. `draw_string_centered` for

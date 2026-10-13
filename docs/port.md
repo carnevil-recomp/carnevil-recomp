@@ -78,7 +78,7 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | script.c | game2 | 10 of 10, registered in modules.txt (text 0x80110270-0x80110b04, rodata 0x80173318-0x8017345c) |
 | shake.c | game2 | 1 of 1 (update_movie_scroll; the rest of its file, 0x800f3420-0x800f37ac, is not decompiled) |
 | attract.c | game2 | 18 of 18, registered in modules.txt (text 0x800caf80-0x800cbb6c, rodata 0x8016f600-0x8016f704, data 0x80179c50-0x80179d40) |
-| objects.c | game2 | 7 of 8; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20) |
+| objects.c | game2 | 13 of 14: the list routines, the per-frame draw pass (0x800cbbb4, `draw_pass`) and think pass (0x800cca70) exact; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20). The port runs the real passes; the level routines they call are stubs |
 
 A module is registered in `config/modules.txt` once every function in its source file's
 address range matches and its data is laid out in the file's order (the audit file was the
@@ -111,8 +111,9 @@ the font glyph tables index rows from the file top and came out blank.)
 three glyph tables for FONT0001.WMS, `draw_string`, `draw_string_color`, `draw_string_at`,
 `draw_string_centered`, `string_width`. The attract "play mode" screen (`do_play_mode` in
 attract.c) draws the LEGAL1 texmap plus the credit lines with it. The per-frame buffer clear
-comes from the game's draw pass (movie_draw_frame, 0x800e77ec, clears when no movie is
-playing); the port's stand-in draw pass does the same.
+comes from the game's draw pass (`draw_pass` in objects.c, 0x800cbbb4: the movie frame via
+movie_draw_frame, then the level's 3D, every game object's draw function, the overlays and
+the debug displays); the port runs that pass with the level routines stubbed.
 
 ## Movies (`src/game/movie.c`, `port/host/disk.c`)
 

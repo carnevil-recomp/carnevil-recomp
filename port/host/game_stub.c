@@ -11,6 +11,7 @@
 #include <glide/glide.h>
 #include "hal.h"
 #include "../../src/game/objects.h"
+#include "../../src/game/credits.h"
 #include "../../src/game/texmap.h"
 #include "../../src/game/movie.h"
 #include "../../src/game/credits.h"
@@ -26,7 +27,6 @@ extern void grDrawTriangleDma(MidVertex *, MidVertex *, MidVertex *, int);
 /* ---- globals the game code references ---- */
 int	violence_level = 3;
 int	attract_cycles;
-int	debug_mode = 0;
 int	D_801fad10, D_801e0f10;
 
 /* ---- GOOSE main() callees ---- */
@@ -103,37 +103,45 @@ void draw_tri_alpha(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); 
 /* 0x800d2174: a constant-colour triangle (the original sorts the vertices by y) */
 void draw_tri_flat(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
 
-/* ---- the per-frame passes the game installs as GOOSE objects in func_800ca3a0 ---- */
-static void think_pass(void *data)		/* "BAR": object_draw_func (0x800cca70) */
-{
-	game_object_t	*p;
-	short		i;
-	(void)data;
-	for(i = objects[0].next; i != OBJ_NONE; i = p->next)
-	{
-		p = &objects[i];
-		if(p->think) p->think(p);
-	}
-}
+/* ---- the per-frame passes (objects.c: draw_pass 0x800cbbb4, think_pass 0x800cca70) call
+   into level code the port does not have yet; these keep them no-ops in the attract ---- */
+void draw_pass(void);
+void think_pass(void *);
+int  get_free_mem_left(void) { return 0x400000; }			/* GOOSE 0x80143e90 */
+void func_800c9908(void) { }						/* switch sampling after the movie draw */
+void func_800d41b4(int f) { (void)f; }					/* the level's 3D draws */
+int *show_debug_light_(int f) { (void)f; return 0; }
+void func_800e9140(int f) { (void)f; }					/* enemy stats */
+void func_800d6e94(void) { }
+void func_800ff418(void) { }
+player_stats_t *something_to_do_with_shooting_(player_stats_t *p) { return p; }
+void func_800c9d54(void *o) { (void)o; }
+void func_800ca194(void *o) { (void)o; }
+void func_800c9f4c(void) { }
+void func_800ce2f8(float *a, float b, float *c) { (void)a; (void)b; c[0] = c[1] = c[2] = 0.0f; }
+void func_800c8ef0(float *a, float b, unsigned int c) { (void)a; (void)b; (void)c; }
+void func_800fe580(void) { }
+void func_800fef18(void) { }
+void func_800ffbdc(void) { }
+void func_800fe1fc(void) { }
+void func_800dbb80(void) { }
+void func_80100558(void) { }
+void func_800e2fe4(void) { }
+void func_800db4b8(void) { }
+void func_800c83bc(void) { }
+void func_800c9620(int a) { (void)a; }
+void func_800c9bf0(void) { }
+void print_heap_and_obj_info_onscreen(void) { }
+short func_800cd1f8(void) { return 0; }
+short func_800cd4ac(void) { return 0; }
+short func_800cd7a0(void) { return 0; }
+short func_800cdaa0(void) { return 0; }
+int	D_801e5cbc, shown_frame, wave_id_g2, RTP_val, DMA_val, D_801e0ecc, please_wait_timer;
+short	D_80212d92;
+float	D_801de8f0[3], D_80179c00[6], D_80179c44[3];
+void	*D_80179bfc;
+float	*D_80194650;
 extern unsigned int background_color;
-
-static void draw_pass(void *data)		/* "FOO": print_onscreen_debuginfo's object loop */
-{
-	game_object_t	*p;
-	short		i;
-	(void)data;
-	/* 0x800e77ec: put the movie frame up, or clear when no movie is playing */
-	movie_draw_frame();
-	for(i = objects[0].next; i != OBJ_NONE; i = p->next)
-	{
-		p = &objects[i];
-		if(p->draw) p->draw(p);
-	}
-	/* the overlays print_onscreen_debuginfo draws after the objects (0x800cc0ac..) */
-	grDepthBufferFunction(GR_CMP_ALWAYS);
-	show_volume_level();
-	if(game_mode == 1) attract_credit_lines();
-}
 
 void game_init(void)			/* func_800ca3a0, the parts the port has */
 {
@@ -142,7 +150,7 @@ void game_init(void)			/* func_800ca3a0, the parts the port has */
 	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }
 	movie_init();
 	load_font_texmap();
-	create_object("FOO", 0, 0, 1, 0, draw_pass);
+	create_object("FOO", 0, 0, 1, 0, (void (*)(void *))draw_pass);
 	create_object("BAR", 0, 0, 0, 0, think_pass);
 }
 

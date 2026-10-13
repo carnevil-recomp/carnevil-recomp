@@ -32,10 +32,13 @@ extern char		*currency_names[12];		/* 0x80177be8 */
 /* per-player state block (0x801e0f64 + player * 0x120): only the fields credits.c uses */
 typedef struct player_stats
 {
-	int	state;			/* 0 idle, 8 waiting to continue, 0x20 joining */
-	int	pad[0x3b];
-	int	time_to_continue;	/* +0xf0 */
-	int	pad2[0xb];
+	int	unk0;			/* +0x00 (the record starts 4 bytes before Binary Ninja's player_stats) */
+	int	state;			/* +0x04 (0x801e0f64): 0 idle, 8 waiting to continue, 0x20 joining */
+	int	pad[0x2c];
+	int	shooting;		/* +0xb8: 1 while the player's shot is being resolved */
+	int	pad1[0xe];
+	int	time_to_continue;	/* +0xf4 */
+	int	pad2[0xa];
 } player_stats_t;
 
 /* the credit counters (0x801de8d8) */
@@ -61,9 +64,10 @@ typedef struct coin_counter
 	int	pulses[5], enabled[5], pending[5], mode, unk;
 } coin_counter_t;
 
-extern player_stats_t	player_stats[2];		/* 0x801e0f64 */
-extern int		game_state[3];			/* 0x80212e14: mode (1 attract, 2/4/0x10/0x20/0x80 in play, 0x100), ?, start count */
+extern player_stats_t	player_stats[2];		/* 0x801e0f60 (player1_stats), 0x801e1080 */
+extern int		game_state[4];			/* 0x80212e14: mode (1 attract, 2/4/0x10/0x20/0x80 in play, 0x100), ?, start count, debug flags */
 #define game_mode	game_state[0]
+#define debug_mode	game_state[3]		/* 0x80212e20 (one array: the draw pass keeps its address in a register) */
 extern credit_count_t	credit_count;
 #define credits		credit_count.credits
 extern live_pricing_t	live_pricing;

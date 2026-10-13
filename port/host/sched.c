@@ -33,7 +33,7 @@ static int	__draw = 1;
 static int	frame_factor = 1;
 static int	frame_time = 1;
 static int	enable_realtime = FALSE;
-int	got_interrupt_save;
+volatile int got_interrupt_save;
 int	profile_enable = 1;
 
 /* one host context per live process node; nodes are recycled by process.c, so an entry is

@@ -45,7 +45,6 @@ extern short	add_object1_wrapper(int, void (*)(), int, int);
 extern void	level_end_stats_wrapper();
 extern unsigned int	background_color;
 extern int	do_draw_background;
-extern int	debug_mode;			/* 0x80212e20 */
 #include "credits.h"			/* game_mode (0x80212e14), player_stats (0x801e0f64) */
 extern int	D_801e6e70, D_8018db90;
 extern char	text_buffer[];
