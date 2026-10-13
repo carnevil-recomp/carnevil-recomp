@@ -73,18 +73,22 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | stream.c | game2 | 19 of 23; stream_select_wave 86%, stream_debug_display 96%, stream_jump 60%, stream_fill 52% |
 | gun.c | game2 | 0 of 2 (32%, 18%: the control-byte load keeps its address in a register, not yet reproduced) |
 | main.c | game2 | 2 of 2 (main_proc and utime_proc) |
-| movie.c | game2 | 24 of 25 at 100% (every decoder, the draw pass, the script interpreter); loadfram_proc 74% (only the s0/s1/s2 assignment differs) |
-| attract.c (game_proc 63%), objects.c (add_object 43%) | game2 | not revisited yet |
+| movie.c | game2 | 24 of 26 at 100% (every decoder, the draw pass, the loader set-up); loadfram_proc 74% (only the s0/s1/s2 assignment differs), decode_movie_rgb16 44% (an unused decoder, register names) |
+| script.c | game2 | 10 of 10, registered in modules.txt (text 0x80110270-0x80110b04, rodata 0x80173318-0x8017345c) |
+| shake.c | game2 | 1 of 1 (update_movie_scroll; the rest of its file, 0x800f3420-0x800f37ac, is not decompiled) |
+| attract.c | game2 | 18 of 18, registered in modules.txt (text 0x800caf80-0x800cbb6c, rodata 0x8016f600-0x8016f704, data 0x80179c50-0x80179d40) |
+| objects.c | game2 | 7 of 8; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20) |
 
 A module is registered in `config/modules.txt` once every function in its source file's
 address range matches and its data is laid out in the file's order (the audit file was the
 first: its text ends at a stray literal word at 0x800f1d84, and the adjustment table that
 follows its tables in `.data` belongs to the next file). The main/credits file
 (0x800c4f18-0x800c82xx) and the high-score file still contain undecompiled functions.
-movie.c is three original files (the player at 0x800e70b0-0x800e8f88, the scroll update at
-0x800f3580 and the script interpreter at 0x80110270-0x80110ad8); the player file still has
-func_800e70b0/7130/7184/7f3c/8f88 and the gamma presets' neighbours to decompile before it
-can be registered.
+The movie player is now three source files like the original: movie.c (0x800e7188-0x800e9140,
+blocked on loadfram_proc and decode_movie_rgb16), shake.c (0x800f3580, a file whose other
+functions are not decompiled) and script.c (registered). The objects file is large
+(0x800cbb70-0x800cd4ac and beyond: the per-frame draw pass, 3D object drawing, hit tests),
+so objects.c stays unregistered until that code is decompiled.
 
 Function names are ours and describe what the code does; where they replace a Binary
 Ninja guess (`decompress_movie` -> `decode_movie_8pal`, `decoode_movie2` ->

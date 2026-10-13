@@ -73,7 +73,7 @@ float func_800c9158(unsigned int *px) { return (float)(*px >> 16); }	/* depth wo
 int  D_801e6e70, D_8018db90;
 script_word_t hhouse_script[1], freakshow_script[1], rickity_town_script[1], bigtop_script[1];	/* level scripts: not extracted yet */
 int  func_800d4990(void) { return 0; }		/* I/O ASIC bit test */
-int  sub_800e4d90(int arg) { (void)arg; return 0; }	/* high-score reset screen */
+int  attract_high_scores(int arg) { (void)arg; return 0; }	/* high-score reset screen */
 extern void load_attract_texmap(void), load_aamav_texmap(void);
 extern int snd_bank_load_playing(char *);
 void preload_wave(int w)		/* 0x800f59dc: only the attract wave's banks and texmaps for now */
@@ -168,3 +168,8 @@ void startaudit(FILE *f) { (void)f; }					/* 0x800ef870: the audit names for aud
 void game_proc2(void) { fprintf(stderr, "[stub] game_proc2: debug attract not implemented\n"); for(;;) sleep(1); }
 void ide_set_partition(int n) { (void)n; }				/* GOOSE IDE: the HAL maps partition 1 itself */
 int gfx_scale_from_refresh(void) { return 54; }				/* 0x80157004: frames per second of the display mode */
+
+/* 0x800d49c4: a switch-page test used by the attract's unused credits step; 0x801410a4
+   load_credits reloads the pricing. Neither runs in the attract loop as shipped. */
+int func_800d49c4(void) { return 0; }
+void load_credits(void) { fprintf(stderr, "[stub] load_credits (0x801410a4)\n"); }

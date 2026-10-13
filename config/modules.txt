@@ -29,3 +29,5 @@ randper  src/goose/randper.c  goose  0x80147968 0x801479bc  -          -        
 pshell   src/goose/pshell.s   asm    0x8014a930 0x8014a958  -          -            0x801a3128 0x801a3137
 texmap   src/game/texmap.c    game   0x800d6814 0x800d6e60  0x8016fd78 0x8016fe5b  -          -
 audits   src/game/audits.c    game1  0x800f18e0 0x800f1d84  -          -           0x8018ea60 0x8018ed48
+attract  src/game/attract.c   game2  0x800caf80 0x800cbb6c  0x8016f600 0x8016f704  0x80179c50 0x80179d40
+script   src/game/script.c    game2  0x80110270 0x80110b04  0x80173318 0x8017345c  -          -

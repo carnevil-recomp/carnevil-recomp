@@ -450,3 +450,52 @@
 0x800e8510 decode_movie_8pal
 0x800e878c decode_movie_1pal_depth
 0x800e8b78 decode_movie_8pal_depth
+# game attract.c (0x800caf80-0x800cbb6c, -O2): the attract process, built from src/game/attract.c
+0x800cb17c attract_playmode
+0x800cb3f0 attract_movie_violence
+0x800cb478 attract_generic
+0x800cb570 attract_screen
+0x800cb61c attract_credits_step
+0x800cb680 draw_screen_7202
+0x800cb6e0 draw_screen_7201
+0x800cb740 draw_screen_7200
+0x800cb7a0 draw_screen_7203
+0x800cbab4 attract_credit_lines
+0x80179c50 attract_steps
+0x80179cd0 attract_texmap
+0x80179d30 attract_started
+0x80179d34 credits_step_counter
+0x80179d38 play_mode_timer
+0x80179d3c credit_line_timer
+# game script.c (0x80110270-0x80110b04, -O2): the movie script interpreter, built from src/game/script.c
+0x80110270 movie_script_init
+0x801102a8 movie_script_abort
+0x801102bc movie_script_skip
+0x801109c0 script_fade_out_108
+0x801109e8 script_fade_out_40
+0x80110a10 script_fade_out_40b
+0x80110a38 script_level_end_stats
+0x80110a70 script_end_cleanup
+0x80110ab0 script_fade_out_90
+0x80110ad8 script_fade_in_90
+0x8023740c script_stop_frame
+0x80212e94 script_delay
+0x801e5bdc script_abort
+0x801e5b24 script_skip
+# attract step 5 (high-score file, -O0) and the credit lines it shares with credits.c
+0x800e4d90 attract_high_scores
+0x801e6ee8 credit_line1
+0x801e6f68 credit_line2
+# symbols the attract and script modules reference under the port's names
+0x800ddf74 draw_string_centered
+0x800cc92c remove_all_objects
+0x800e7534 movie_pause
+0x801400a4 stream_set_loop
+0x801400dc stream_jump
+0x80212e14 game_state
+0x80212d98 attract_cycles
+0x801de900 movie
+0x8021eed0 attract_text1
+0x8021ef58 attract_text2
+0x8021eff0 attract_text3
+0x801fad18 attract_text_state

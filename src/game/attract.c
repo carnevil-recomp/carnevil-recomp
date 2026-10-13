@@ -1,7 +1,7 @@
 /*
  * attract.c - CarnEvil's attract mode: game_proc (the "attract" process) cycles through
  * eight steps: movies (intro, attract, Midway), screens drawn from texmaps, and the demo
- * play mode. Functions at 0x800cb084-0x800cb800.
+ * play mode. One original file: 0x800caf80-0x800cbb6c (text), data at 0x80179c50-0x80179d40.
  */
 #include <stdio.h>
 #include "texmap.h"
@@ -24,7 +24,7 @@ extern void	set_frame_factor(int);
 extern void	func_800e74f0(void), func_800e7568(void);	/* movie play start / stop */
 extern void	play_attract_cue(int, char *), stop_attract_cue(void);
 extern int	func_800d4990(void);
-extern int	sub_800e4d90(int);
+extern int	attract_high_scores(int);
 extern void	guTexSource(int), guColorCombineFunction(int);
 extern void	draw_quad(float, float, float, float, float, float);
 extern int	violence_level;
@@ -37,7 +37,21 @@ extern void	draw_string_centered(int, char *, float, float, unsigned int);
 extern char	text_buffer[];		/* 0x801e7100 */
 extern char	attract_text1[], attract_text2[], attract_text3[];	/* 0x8021eed0, 0x8021ef58, 0x8021eff0 */
 extern int	attract_text_state;	/* 0x801fad18 */
-int		play_mode_timer = 0;	/* 0x80179d38 */
+
+
+int movie_load_intro(int);
+int movie_load_attract(int);
+int movie_load_midway(int);
+int attract_playmode(int);
+int attract_movie_violence(int);
+int attract_generic(int);
+int attract_screen(int);
+
+int	(*attract_steps[8])(int) =
+{
+	movie_load_intro, attract_playmode, attract_movie_violence, attract_screen,
+	movie_load_attract, attract_high_scores, movie_load_midway, attract_generic
+};
 
 texmap_t	disclaimer_texmap[3] =
 {
@@ -57,23 +71,13 @@ texmap_t	preattract_texmap[1] =
 {
 	{ 0x7201, 1, 0xffffff, 0, "GAMEOV01.WMS" },
 };
-int		attract_started = 0;	/* 0x80179d30 */
-
-int movie_load_intro(int);
-int movie_load_attract(int);
-int movie_load_midway(int);
-int attract_playmode(int);
-int attract_movie_violence(int);
-int attract_generic(int);
-int attract_screen(int);
-
-int	(*attract_steps[8])(int) =
-{
-	movie_load_intro, attract_playmode, attract_movie_violence, attract_screen,
-	movie_load_attract, sub_800e4d90, movie_load_midway, attract_generic
-};
+int		attract_started = 0;		/* 0x80179d30 */
+int		credits_step_counter = 0;	/* 0x80179d34 */
+int		play_mode_timer = 0;		/* 0x80179d38 */
+int		credit_line_timer = 0;		/* 0x80179d3c */
 
 static void draw_screen_7201(game_object_t *);
+void do_play_mode(game_object_t *);
 
 void load_attract_texmap(void)
 {
@@ -128,81 +132,21 @@ void game_proc(void)
 		attract_started = 1;
 		i = 8;
 	}
-	for(;;)
+	for(;; i++)
 	{
-		do
-		{
-			step = i & 7;
+		step = i & 7;
 #ifdef PORT_HOST
-			{ extern int port_trace; extern unsigned long hal_frame_count; if(port_trace) fprintf(stderr, "[attract] vblank %lu step %d\n", hal_frame_count, step); }
+		{ extern int port_trace; extern unsigned long hal_frame_count; if(port_trace) fprintf(stderr, "[attract] vblank %lu step %d\n", hal_frame_count, step); }
 #endif
-			attract_steps[step](i);
-			i++;
-		} while(step != 0);
-		attract_cycles++;
+		attract_steps[step](i);
+		if(step == 0)
+		{
+			attract_cycles++;
+		}
 	}
 }
 
-/* 0x800cb800: the "play mode" attract screen: legal texmap, credits line, blinking messages */
-void do_play_mode(game_object_t *obj)
-{
-	guTexSource(find_surface(0x7204)->handle);
-	guColorCombineFunction(4);
-	draw_quad(200.0f, 128.0f, 400.0f, 256.0f, 255.0f, 255.0f);
-	grDepthBufferFunction(7);
-	grDepthMask(0);
-	if(check_for_freeplay())
-	{
-		draw_string_centered(1, "FREE PLAY", 200.0f, 140.0f, 0xff00);
-	}
-	else if(play_mode_timer < 40)
-	{
-		if(check_credits_to_start_mode() == 1)
-		{
-			graphical_printf(text_buffer, "%d CREDIT TO START", check_credits_to_start_mode());
-		}
-		else
-		{
-			graphical_printf(text_buffer, "%d CREDITS TO START", check_credits_to_start_mode());
-		}
-		draw_string_centered(1, text_buffer, 200.0f, 140.0f, 0xaaaaaa);
-		if(check_credits_to_continue_mode() == 1)
-		{
-			graphical_printf(text_buffer, "%d CREDIT TO CONTINUE", check_credits_to_continue_mode());
-		}
-		else
-		{
-			graphical_printf(text_buffer, "%d CREDITS TO CONTINUE", check_credits_to_continue_mode());
-		}
-		draw_string_centered(1, text_buffer, 200.0f, 110.0f, 0x999999);
-	}
-	else
-	{
-		switch(attract_text_state)
-		{
-		case 3:
-			draw_string_centered(1, attract_text1, 200.0f, 150.0f, 0x999999);
-			draw_string_centered(1, attract_text2, 200.0f, 125.0f, 0x999999);
-			draw_string_centered(1, attract_text3, 200.0f, 100.0f, 0x999999);
-			break;
-		case 2:
-			draw_string_centered(1, attract_text1, 200.0f, 140.0f, 0x999999);
-			draw_string_centered(1, attract_text2, 200.0f, 110.0f, 0x999999);
-			break;
-		default:
-			draw_string_centered(1, attract_text1, 200.0f, 125.0f, 0x999999);
-			break;
-		}
-	}
-	play_mode_timer++;
-	if(play_mode_timer >= 81)
-	{
-		play_mode_timer = 0;
-	}
-	grDepthMask(1);
-	grDepthBufferFunction(3);
-}
-
+/* 0x800cb17c: step 1, the demo-play screen for 240 frames */
 int attract_playmode(int arg)
 {
 	int	obj;
@@ -355,6 +299,25 @@ int attract_screen(int arg)
 	return(1);
 }
 
+/* 0x800cb61c: an unused step: after ten frames of the test switch, reload the credits */
+extern int	func_800d49c4(void);			/* a switch-page test */
+extern void	load_credits(void);
+int attract_credits_step(int arg)
+{
+	if(func_800d49c4())
+	{
+		credits_step_counter = 10;
+	}
+	credits_step_counter++;
+	if(credits_step_counter < 10)
+	{
+		return(0);
+	}
+	credits_step_counter = 0;
+	load_credits();
+	return(1);
+}
+
 /* full-screen texmap draws used by the attract screens */
 static void draw_screen_7202(game_object_t *obj)
 {
@@ -382,4 +345,87 @@ static void draw_screen_7203(game_object_t *obj)
 	guTexSource(find_surface(0x7203)->handle);
 	guColorCombineFunction(4);
 	draw_quad(200.0f, 128.0f, 400.0f, 256.0f, 255.0f, 255.0f);
+}
+
+/* 0x800cb800: the "play mode" attract screen: legal texmap, credits line, blinking messages */
+void do_play_mode(game_object_t *obj)
+{
+	guTexSource(find_surface(0x7204)->handle);
+	guColorCombineFunction(4);
+	draw_quad(200.0f, 128.0f, 400.0f, 256.0f, 255.0f, 255.0f);
+	grDepthBufferFunction(7);
+	grDepthMask(0);
+	if(check_for_freeplay())
+	{
+		draw_string_centered(1, "FREE PLAY", 200.0f, 140.0f, 0xff00);
+	}
+	else if(play_mode_timer < 40)
+	{
+		if(check_credits_to_start_mode() == 1)
+		{
+			graphical_printf(text_buffer, "%d CREDIT TO START", check_credits_to_start_mode());
+		}
+		else
+		{
+			graphical_printf(text_buffer, "%d CREDITS TO START", check_credits_to_start_mode());
+		}
+		draw_string_centered(1, text_buffer, 200.0f, 140.0f, 0xaaaaaa);
+		if(check_credits_to_continue_mode() == 1)
+		{
+			graphical_printf(text_buffer, "%d CREDIT TO CONTINUE", check_credits_to_continue_mode());
+		}
+		else
+		{
+			graphical_printf(text_buffer, "%d CREDITS TO CONTINUE", check_credits_to_continue_mode());
+		}
+		draw_string_centered(1, text_buffer, 200.0f, 110.0f, 0x999999);
+	}
+	else
+	{
+		switch(attract_text_state)
+		{
+		case 3:
+			draw_string_centered(1, attract_text1, 200.0f, 150.0f, 0x999999);
+			draw_string_centered(1, attract_text2, 200.0f, 125.0f, 0x999999);
+			draw_string_centered(1, attract_text3, 200.0f, 100.0f, 0x999999);
+			break;
+		case 2:
+			draw_string_centered(1, attract_text1, 200.0f, 140.0f, 0x999999);
+			draw_string_centered(1, attract_text2, 200.0f, 110.0f, 0x999999);
+			break;
+		default:
+			draw_string_centered(1, attract_text1, 200.0f, 125.0f, 0x999999);
+			break;
+		}
+	}
+	play_mode_timer++;
+	if(play_mode_timer >= 81)
+	{
+		play_mode_timer = 0;
+	}
+	grDepthMask(1);
+	grDepthBufferFunction(3);
+}
+
+/* 0x800cbab4: the attract-mode credit lines, alternating every 50 frames */
+void attract_credit_lines(void)
+{
+	grDepthBufferFunction(7);
+	grDepthMask(0);
+	credit_info(1);
+	credit_line_timer += 4;
+	if(credit_line_timer < 50)
+	{
+		draw_string_centered(1, credit_line1, 200.0f, 5.0f, 0x00ffffff);
+	}
+	else
+	{
+		draw_string_centered(1, credit_line2, 200.0f, 5.0f, 0x00ffffff);
+	}
+	if(credit_line_timer >= 101)
+	{
+		credit_line_timer = 0;
+	}
+	grDepthMask(1);
+	grDepthBufferFunction(3);
 }

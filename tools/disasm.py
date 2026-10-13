@@ -197,7 +197,9 @@ def main():
         """a run of raw words (e.g. the padding between a C module's end and the next region)"""
         with open(os.path.join(a.outdir,fn),'w') as f:
             f.write(".set noreorder\n.set noat\n.section .text\n")
-            for A in range(s,e,4): f.write("\t.word 0x%08x\n"%words[(A-LOAD)//4])
+            for A in range(s,e,4):
+                if A in glob_labels: f.write(".globl %s\n%s:\n"%(label(A),label(A)))   # e.g. movie scripts stored in .text
+                f.write("\t.word 0x%08x\n"%words[(A-LOAD)//4])
     for (s,e) in bounds:
         m=module_at(s,'text')
         if m:

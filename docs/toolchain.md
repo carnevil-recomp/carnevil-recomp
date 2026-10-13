@@ -107,6 +107,28 @@ the flags and a set of source idioms. `MATCH_MAXDIFF=N` lengthens the diff it pr
   `grLfbReadRegion(..., fb, 800)`; `grDitherMode(0)` (not `grTexCombineFunction(0, 0)`)
   before the LFB write; `enable_flag = 0` is stored before the decoder pointer in every
   single-buffered `movie_load` case and `height` last in `movie_init`.
+- **attract.c (18 of 18, registered)**: the attract process is `for(;; i++) { step = i & 7;
+  attract_steps[step](i); if(step == 0) attract_cycles++; }`; the file holds an unused step
+  (0x800cb61c, `attract_credits_step`: ten frames of a switch test, then `load_credits`) and
+  the credit-lines draw object (0x800cbab4) after `do_play_mode`; its `.data` is the step
+  table, then the four texmap tables, then the four counters (0x80179c50-0x80179d40); its
+  text ends in a stray literal word at 0x800cbb6c like the audit file. Binary Ninja's
+  `attract_playmode` guess pointed at that unused step: the real one is 0x800cb17c.
+- **objects.c**: `alloc_object_id` is a GNU `inline` function (inlined into `add_object`,
+  emitted standalone too). `add_object` is still 43%: the original's insert loop reads
+  `p->next` twice (an `lh` for the break test and an `lhu` + sign-extension for a loop-back
+  test that is redundant) and has a 0x38-byte frame; every C shape we tried folds the second
+  test away. The list head check is `objects[0].id != OBJ_NONE`; `obj->next = p->next` (not
+  the constant) in the tail-insert case; the type compare is unsigned (`sltu`).
+- **script.c (10 of 10, registered)**: the interpreter's helpers (0x801109c0-0x80110ad8)
+  come *after* `do_script` in the file; `script_level_end_stats` calls `func_800d6758()`
+  with no argument. The level and attract scripts that follow the file (0x80110b04-0x80113218)
+  are data stored in `.text`: `tools/disasm.py` now labels referenced words inside the
+  padding it emits after a C module (`asm/functions/<addr>_pad.s`).
+- **Naming**: functions and data are named by what they do; Binary Ninja's guesses stay in
+  `config/functions_v103.txt`/`binja_symbols.txt` and `config/names.txt` carries the
+  override (also for symbols the port already names, e.g. `draw_string_centered` for
+  `add_to_print_`, `attract_high_scores` for `sub_800e4d90`).
 - Per-function matching status lives in `docs/port.md`.
 
 ## Assembler behaviour (`tools/sn2gas.py`)

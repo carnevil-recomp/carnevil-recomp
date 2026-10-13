@@ -86,6 +86,8 @@ void	loadfram_proc(void);
 int	movie_draw_frame(void);
 float	movie_depth_at(float x, float y);
 void	movie_script_init(script_word_t *script);
+void	update_movie_scroll(void);
+void	script_fade_in_90(void);
 int	do_script(int frame);
 void	decode_movie_8pal(unsigned char *src, unsigned int *dst);
 void	decode_movie_8pal_depth(unsigned char *src, unsigned int *dst);

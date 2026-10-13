@@ -46,7 +46,7 @@ void init_objects(void)
 	objects[0].prev = OBJ_NONE;
 }
 
-static short alloc_object_id(void)
+inline short alloc_object_id(void)
 {
 	short	i;
 
@@ -66,6 +66,7 @@ short add_object(game_object_t *tmpl)
 	game_object_t	*obj;
 	game_object_t	*p;
 	short		id;
+	short		next;
 	int		err;
 
 	if(num_objects_on_heap >= MAX_OBJECTS)
@@ -85,22 +86,23 @@ short add_object(game_object_t *tmpl)
 	p = &objects[0];
 	if(objects[0].id != OBJ_NONE)
 	{
-		for(;;)
+		do
 		{
-			if(p->type != OBJ_HEAD && p->type < obj->type)
+			if(p->type != OBJ_HEAD && (unsigned int)p->type < (unsigned int)obj->type)
 			{
 				break;
 			}
+			next = p->next;
 			if(p->next == OBJ_NONE)
 			{
 				break;
 			}
 			p = &objects[p->next];
-		}
+		} while(next != OBJ_NONE);
 	}
 	if(p->next == OBJ_NONE)
 	{
-		obj->next = OBJ_NONE;
+		obj->next = p->next;
 		obj->prev = p->id;
 		p->next = id;
 	}

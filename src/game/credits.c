@@ -845,26 +845,3 @@ void draw_hbar(float x0, float x1, float y, float h)
 	draw_tri_flat(&a, &d, &c);
 }
 
-/* 0x800cbab4: the attract-mode credit lines, alternating every 50 frames */
-int	credit_line_timer;				/* 0x80179d3c */
-void attract_credit_lines(void)
-{
-	grDepthBufferFunction(7);
-	grDepthMask(0);
-	credit_info(1);
-	credit_line_timer += 4;
-	if(credit_line_timer < 50)
-	{
-		draw_string_centered(1, credit_line1, 200.0f, 5.0f, 0x00ffffff);
-	}
-	else
-	{
-		draw_string_centered(1, credit_line2, 200.0f, 5.0f, 0x00ffffff);
-	}
-	if(credit_line_timer >= 101)
-	{
-		credit_line_timer = 0;
-	}
-	grDepthMask(1);
-	grDepthBufferFunction(3);
-}
