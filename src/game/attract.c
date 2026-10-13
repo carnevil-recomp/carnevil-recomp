@@ -28,7 +28,7 @@ extern int	attract_high_scores(int);
 extern void	guTexSource(int), guColorCombineFunction(int);
 extern void	draw_quad(float, float, float, float, float, float);
 extern int	violence_level;
-#include "credits.h"			/* game_mode (0x80212e14) */
+#include "credits.h"			/* game_phase (0x80212e14) */
 #include "waves.h"
 extern int	attract_cycles;		/* 0x80212d98 */
 extern void	grDepthBufferFunction(int), grDepthMask(int);
@@ -125,7 +125,7 @@ void game_proc(void)
 	}
 	preload_wave(WAVE_ATTRACT);
 	remove_all_objects();
-	game_mode = 1;
+	game_phase = 1;
 	set_bgnd_color(0xff000000);
 	i = 0;
 	if(!attract_started)

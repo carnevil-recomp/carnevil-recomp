@@ -21,9 +21,9 @@ extern void	func_800cfda8(float *, float *);			/* a rotation matrix from three a
 extern void	func_800c836c(void), func_800c865c(void), init_surfaces(void), func_800d78fc(void);
 extern void	init_camera(void), rot_matrix_yxz(float *, float *), vec_negate(float *, float *);
 extern float	camera_x, camera_rx, view_matrix[9], camera_neg_pos[3];	/* camera.c */
-extern void	func_800e2f08(int player);
+extern void	init_player(int player);				/* 0x800e2f08 (player.c) */
 extern int	read_player12_direct(void);
-extern int	wave_id_g2;					/* 0x80212e30 */
+extern int	loaded_wave;					/* 0x80212e30 */
 int		D_80212e60, D_80212e28, D_80212e24, D_80212e2c, D_802372b8;
 int		D_801e0960;					/* the player 1/2 switches at boot, inverted */
 extern void	load_font_texmap(void);
@@ -269,7 +269,7 @@ void init_game_state(void)
 	int	i;
 
 	game_state[0] = 0x800;
-	wave_id_g2 = 0;
+	loaded_wave = 0;
 	D_80212e60 = 0;
 	debug_mode = 0;
 	D_80212e28 = 0;
@@ -281,7 +281,7 @@ void init_game_state(void)
 	D_802372b8 = 0;
 	for(i = 0; i < 2; i++)
 	{
-		func_800e2f08(i);
+		init_player(i);
 	}
 	D_801e0960 = ~read_player12_direct();
 }

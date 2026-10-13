@@ -28,16 +28,15 @@ extern int	snd_master_volume(int);
 extern int	gfx_scale_from_refresh(void);				/* 0x80157004 */
 extern void	set_frame_factor(int), main_init_sound(void);
 extern void	*set_dcsw_handler(int, void (*)(int, int));
-extern short	add_object1_wrapper(int, void (*)(), int, int);
-extern void	remove_game_object(short);
-extern void	delete_all_sprites(void);				/* 0x8014c65c */
+#include "objects.h"
+extern void	delete_all_sprites(void), delete_all_background_sprites(void);	/* 0x8014c65c, 0x8014849c */
 extern void	load_level_assets(void);				/* 0x800ca448 */
 extern void	load_jester_texmap(void), load_jester_model(void), load_inng_texmap(void), load_chnk_texmap(void), load_chnk_model(void);
 extern void	load_shotgun_texmap(void), load_health_texmap(void), load_ammmo_texmap(void), load_machinegun_texmap(void);
 extern void	load_flamethrower_texmap(void), load_acid_texmap(void), load_shotgun_model(void), load_health_model(void);
 extern void	load_ammo_model(void), load_machinegun_model(void), load_flamethrower_model(void), load_acid_model(void);
 extern int	kss_reset_(void), kss_reset_w_calib_(void);
-extern void	game_proc(void), game_proc2(void);
+extern void	game_proc(void), game_proc2(void), main_game_proc(void);
 extern void	dispatch_diags_proc(int, int);
 extern int	pic_serial[6];						/* 0x801e7030: serial number, game id, ... */
 #define game_id		pic_serial[1]
@@ -126,7 +125,7 @@ void main_proc(void)
 	D_801fad10 = 1;
 	game_init();
 	read_pic_serial(pic_serial);
-	hw_obj = add_object1_wrapper(0x20, hw_info_screen, 0, 0);
+	hw_obj = add_object1_wrapper(0x20, (void (*)(game_object_t *))hw_info_screen, 0, 0);
 	if(game_id != 0x210 && game_id != 0x1d5 && game_id != 0x1e6)
 	{
 		for(;;)
@@ -278,7 +277,7 @@ void main_proc(void)
 	{
 		gun_status = kss_reset_w_calib_();
 	}
-	hw_obj = add_object1_wrapper(0x20, hw_info_screen, 0, 0);
+	hw_obj = add_object1_wrapper(0x20, (void (*)(game_object_t *))hw_info_screen, 0, 0);
 	sleep(20);
 	D_80212d98 = 0;
 	set_dcsw_handler(2, dispatch_start_proc);
@@ -292,4 +291,265 @@ void main_proc(void)
 	{
 		qcreate("attract", 0x100, game_proc, 0, 0, 0, 0);
 	}
+}
+
+/* ---- the game proper: the main game process and the level select (0x800c5748-0x800c5e50) ---- */
+#include <glide/glide.h>
+#include "movie.h"
+#include "levelsnd.h"
+extern void	enable_guns(void), normal_screen(void), delete_process_id(int);
+extern void	remove_all_objects(void), preload_wave(int), unload_wave(void), load_credits(void);
+extern void	fade(float, int, int), script_level_end_stats(void), graphical_printf(char *, char *, ...);
+extern void	draw_string_centered(int, char *, float, float, unsigned int);
+extern void	func_800d6744(void), func_800d6758(void), func_80102690(void), func_800d5f34(player_stats_t *, int);
+extern void	set_level_start_time(player_stats_t *), func_80102500(player_stats_t *), something_player_score(player_stats_t *);
+extern void	L_80101908(game_object_t *), func_80102454(game_object_t *);	/* the level-select targets (objects 0x710-0x713) */
+extern int	func_801020b4(game_object_t *);
+extern int	increment_audit(int);
+extern void	clear_bonus_count(void);				/* 0x800c7c78 (credits.c) */
+extern void	average_audit(int count_audit, int average_audit, int value);	/* 0x800f24c8 */
+extern void	print_select_countdown(game_object_t *);
+extern int	wave_busy, please_wait_timer, attract_cycles;
+extern int	D_80212e10, D_80212e24, D_80212e28, D_80212e2c, D_801e0e24, D_801e70a8;
+int		levels_cleared;				/* 0x80212e34: bit 0 Rickety Town, 1 haunted house, 2 freak show, 3 big top */
+int		next_wave;				/* 0x801fac6c: the level picked on the select screen, -1 while none */
+int		level_start_counter;			/* 0x80237400: the select screen's countdown */
+int		select_blink = 0;			/* 0x80177be4 (.data) */
+extern int	something_with_reload_p1, something_with_reload_p2;
+extern char	text_buffer[];
+int		game_start_time;				/* 0x801e09e8: D_801facc8 when the game started */
+
+/* 0x800c5748: a game starts (from the credits' start process): the main game process
+   replaces the attract one. A player already joining keeps their place. */
+void init_main_game_proc(int player)
+{
+#ifdef PORT_HOST
+	{ extern int port_trace; if(port_trace) fprintf(stderr, "[game] start by player %d, phase %#x\n", player, game_phase); }
+#endif
+	enable_guns();
+	delete_all_sprites();
+	delete_all_background_sprites();
+	game_phase = 0x10;
+	game_state[1] = 1;
+	D_80212e10 = 0;
+	D_80212e24 = 1;
+	D_80212e2c = 0;
+	D_80212e28 = 0;
+	levels_cleared = 0;
+	game_start_time = D_801facc8;
+	normal_screen();
+	if(player_stats[0].state == 0x20)
+	{
+		player_stats[0].state = 0;
+	}
+	else
+	{
+		remove_all_objects();
+		delete_process_id(0x100);
+		stop_level_cue_and_stream();
+		set_frame_factor(3);
+	}
+	qcreate("game", 0, main_game_proc, 0, 0, 0, 0);
+}
+
+/* 0x800c63c8: the level select's countdown (an object callback), in a pulsing red, and the
+   players' panels */
+void print_select_countdown(game_object_t *obj)
+{
+	int	blink;
+
+	blink = select_blink + 0x11;
+	select_blink = blink;
+	if(level_start_counter < 200)
+	{
+		graphical_printf(text_buffer, "%d", level_start_counter / 10);
+		draw_string_centered(1, text_buffer, 200.0f, 180.0f, (blink & 0xff) << 16);
+	}
+	func_80102500(&player_stats[0]);
+	func_80102500(&player_stats[1]);
+}
+
+/* 0x800c5830: the main game process: the level-select gallery (a shot target or the countdown
+   picks the next level), the level itself, and when all four are cleared or both players are
+   out, the high-score entry and back to the attract */
+void main_game_proc(void)
+{
+	int	won;
+
+#ifdef PORT_HOST
+	{ extern int port_trace; if(port_trace) fprintf(stderr, "[game] main game process\n"); }
+#endif
+	grDepthBufferMode(GR_DEPTHBUFFER_WBUFFER);
+	grDepthBufferFunction(GR_CMP_LEQUAL);
+	player_stats[0].unk8 = 0;
+	player_stats[1].unk8 = 0;
+	something_with_reload_p1 = 0;
+	something_with_reload_p2 = 0;
+	func_800d6758();
+	while(wave_busy == 1)
+	{
+		sleep(1);
+	}
+	game_phase = 0x20;
+	movie_stop();
+	sleep(2);
+	for(;;)
+	{
+		level_start_counter = 400;
+		if(game_phase == 0x400)
+		{
+			game_phase = 0x20;
+		}
+		preload_wave(WAVE_LEVEL_SELECT);
+		next_wave = -1;
+		play_level_cue(2, "select1");
+		movie_load(8);
+		movie_start();
+		func_80102690();
+		enable_guns();
+		func_800d5f34(&player_stats[0], 1);
+		func_800d5f34(&player_stats[1], 1);
+		sleep(2);
+		normal_screen();
+		sleep(5);
+		if(!(levels_cleared & 1))
+		{
+			add_object1_wrapper(0x710, L_80101908, func_801020b4, func_80102454);
+		}
+		if(!(levels_cleared & 4))
+		{
+			add_object1_wrapper(0x711, L_80101908, func_801020b4, func_80102454);
+		}
+		if(!(levels_cleared & 2))
+		{
+			add_object1_wrapper(0x712, L_80101908, func_801020b4, func_80102454);
+		}
+		add_object1_wrapper(0x20, print_select_countdown, 0, 0);
+		if(levels_cleared == 7)
+		{
+			sleep(20);
+			add_object1_wrapper(0x713, L_80101908, func_801020b4, func_80102454);
+		}
+		if(next_wave == -1)
+		{
+			do
+			{
+				sleep(1);
+				level_start_counter--;
+				if(levels_cleared == 7 && level_start_counter < 340)
+				{
+					next_wave = WAVE_BIGTOP;
+				}
+				if(level_start_counter <= 0)
+				{
+					if(!(levels_cleared & 1))
+					{
+						next_wave = WAVE_RICKITY;
+					}
+					else if(!(levels_cleared & 4))
+					{
+						next_wave = WAVE_FREAKSHOW;
+					}
+					else if(!(levels_cleared & 2))
+					{
+						next_wave = WAVE_HHOUSE;
+					}
+					else
+					{
+						next_wave = WAVE_BIGTOP;
+					}
+				}
+			} while(next_wave == -1);
+		}
+		remove_all_objects();
+		clean_up_level_sounds();
+		movie_stop();
+		sleep(2);
+		unload_wave();
+		game_phase = 0x80;
+		D_801e0e24 = D_801facc8;
+		please_wait_timer = 0;
+		switch(next_wave)
+		{
+		case WAVE_FREAKSHOW:
+			increment_audit(0x3a);
+			movie_load(2);
+			preload_wave(WAVE_FREAKSHOW);
+			break;
+		case WAVE_HHOUSE:
+			increment_audit(0x33);
+			movie_load(1);
+			preload_wave(WAVE_HHOUSE);
+			break;
+		case WAVE_RICKITY:
+			increment_audit(0x40);
+			movie_load(5);
+			preload_wave(WAVE_RICKITY);
+			break;
+		case WAVE_BIGTOP:
+			increment_audit(0x47);
+			movie_load(7);
+			preload_wave(WAVE_BIGTOP);
+			break;
+		default:
+			printf("Starting game with unknown wave!!!!\n");
+			break;
+		}
+		movie_start();
+		please_wait_timer = 0;
+		game_phase = 2;
+		func_800d6744();
+		if(player_stats[0].state)
+		{
+			set_level_start_time(&player_stats[0]);
+		}
+		if(player_stats[1].state)
+		{
+			set_level_start_time(&player_stats[1]);
+		}
+		if((player_stats[0].state || player_stats[1].state) && game_phase == 2)
+		{
+			do
+			{
+				sleep(1);
+			} while(player_stats[0].state || player_stats[1].state);
+		}
+		won = 0;
+		if(!player_stats[0].state && !player_stats[1].state)
+		{
+			break;
+		}
+		if(levels_cleared == 0xf)
+		{
+			won = 1;
+			D_801e70a8 = D_801facc8;
+			average_audit(0x69, 0x68, D_801facc8 - game_start_time);
+			break;
+		}
+	}
+	if(won)
+	{
+		script_level_end_stats();
+		sleep(2);
+		fade(1.0f, 15, 0);
+		sleep(140);
+	}
+	enable_guns();
+	game_phase = 8;
+	player_stats[0].state = 0;
+	player_stats[1].state = 0;
+	remove_all_objects();
+	clear_bonus_count();
+	fade(0.0f, 15, 0);
+	preload_wave(WAVE_HISCORE_ENTRY);
+	sleep(17);
+	something_player_score(&player_stats[0]);
+	something_player_score(&player_stats[1]);
+	unload_wave();
+	if(won)
+	{
+		load_credits();
+	}
+	attract_cycles = 0;
+	qcreate("game", 0x100, game_proc, 0, 0, 0, 0);
 }

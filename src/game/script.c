@@ -6,7 +6,7 @@
  */
 #include <stdio.h>
 #include "movie.h"
-#include "credits.h"			/* game_mode (0x80212e14), player_stats (0x801e0f64) */
+#include "credits.h"			/* game_phase (0x80212e14), player_stats (0x801e0f64) */
 #include "waves.h"
 
 extern void	fade(float, int, void (*)(void));
@@ -69,7 +69,7 @@ int do_script(int frame)
 	{
 		return(frame);
 	}
-	if(game_mode != 1 && !(player_stats[0].state & 0x44) && !(player_stats[1].state & 0x44))
+	if(game_phase != 1 && !(player_stats[0].state & 0x44) && !(player_stats[1].state & 0x44))
 	{
 		return(frame);
 	}

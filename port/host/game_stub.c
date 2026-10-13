@@ -50,50 +50,20 @@ int  vblank_handler(void)
 	return 1;
 }
 void game_dma0_handler(void) { }
-void func_80162a10(int *a, int *b, int *c, int *d) { *a = *b = *c = *d = 0; }	/* memory statistics */
 
 /* ---- attract-mode callees not decompiled yet ---- */
 void func_800e74f0(void) { movie_start(); }	/* movie play start */
 void func_800e7568(void) { movie_stop(); }	/* movie play stop */
 /* script callees and level data the attract movies touch */
-int  func_8012fa20(void) { fprintf(stderr, "[stub] script call func_8012fa20\n"); return 0; }
-int  func_8012fbf0(void) { fprintf(stderr, "[stub] script call func_8012fbf0\n"); return 0; }
-void func_800d4968(void) { }
-void *func_800d6758(int a) { (void)a; return 0; }
 void level_end_stats_wrapper(void) { }
 int  end_of_wave(void) { return 0; }
 float func_800c9158(unsigned int *px) { return (float)(*px >> 16); }	/* depth word -> distance (placeholder scale) */
-int  D_801e6e70, D_8018db90;
-script_word_t hhouse_script[1], freakshow_script[1], rickity_town_script[1], bigtop_script[1];	/* level scripts: not extracted yet */
-int  func_800d4990(void) { return 0; }		/* I/O ASIC bit test */
 int  attract_high_scores(int arg) { (void)arg; return 0; }	/* high-score reset screen */
-extern void load_attract_texmap(void), load_aamav_texmap(void);
-extern int snd_bank_load_playing(char *);
-void preload_wave(int w)		/* 0x800f59dc: only the attract wave's banks and texmaps for now */
-{
-	fprintf(stderr, "[stub] preload_wave(%#x): level assets not loaded, attract texmaps and banks only\n", w);
-	load_attract_texmap(); load_aamav_texmap();
-	snd_bank_load_playing("select1"); snd_bank_load_playing("midway"); snd_bank_load_playing("intro4"); snd_bank_load_playing("attract");	/* load_level_sounds, wave 0xa0000 */
-	/* load_wave_proc starts the PCM music stream for the level waves (bit 24 set); the attract wave has none.
-	   CARNEVIL_STREAM_TEST=<wave> starts one anyway so the stream path can be heard before the levels exist. */
-	if(getenv("CARNEVIL_STREAM_TEST"))
-	{
-		extern void stop_level_cue(void), install_disk_info(void *, void *, void *), stream_start(void), stream_set_volume(int);
-		extern int stream_select_wave(int);
-		int wave = (int)strtoul(getenv("CARNEVIL_STREAM_TEST"), 0, 0);
-		fprintf(stderr, "[stub] CARNEVIL_STREAM_TEST: streaming the music of wave %#x\n", wave);
-		stop_level_cue(); install_disk_info(0, 0, 0); stream_set_volume(0xaa);
-		stream_select_wave(wave); sleep(3); stream_start();
-	}
-}
-
 float get_screen_pos(int pos, float *out) { (void)pos; out[0] = out[1] = 0.0f; return -1.0f; }	/* 3D point -> screen: no camera yet */
 void graphical_printf(char *buf, char *fmt, ...) { va_list ap; va_start(ap, fmt); vsprintf(buf, fmt, ap); va_end(ap); }
 char attract_text1[136], attract_text2[136], attract_text3[136];	/* 0x8021eed0.. filled by something_todo_with_credits */
 int attract_text_state;
 /* the game proper: not decompiled yet */
-void init_player_stats(int p) { fprintf(stderr, "[stub] init_player_stats(%d)\n", p); }
-void init_main_game_proc(int p) { fprintf(stderr, "[stub] init_main_game_proc(%d): GAME START requested by player %d, credits now %d\n", p, p + 1, credits); }
 void dispatch_diags_proc(int closed, int swid) { (void)closed; (void)swid; fprintf(stderr, "[stub] test switch: diagnostics not implemented\n"); }
 
 /* the triangle setup (0x800d1750) writes Voodoo commands; here it is a plain draw */
@@ -126,7 +96,7 @@ void func_800db4b8(void) { }
 void func_800c83bc(void) { }
 void func_800c9620(int a) { (void)a; }
 void func_800c9bf0(void) { }
-int	D_801e5cbc, shown_frame, wave_id_g2, RTP_val, DMA_val, D_801e0ecc, please_wait_timer;
+int	shown_frame, RTP_val, DMA_val, D_801e0ecc, please_wait_timer;
 extern unsigned int background_color;
 
 /* the spawn table's per-type constructor (0x800e9570) and the levels' spawn lists */
@@ -136,7 +106,6 @@ spawn_t hhouse_spawn_blob[1], freakshow_spawn_blob[1], rickity_spawn_blob[1], bi
 int D_801e0f0c;
 /* game_init (0x800ca3a0, scene.c) is real; the set-up calls it makes that the port lacks */
 void func_800c836c(void) { }
-void func_800e2f08(int player) { (void)player; }					/* 0x800e2f08: a player reset at boot */
 void func_800c865c(void) { }
 void init_surfaces(void)			/* 0x800d6768: the texmap surface table */
 {
@@ -175,7 +144,28 @@ void game_proc2(void) { fprintf(stderr, "[stub] game_proc2: debug attract not im
 void ide_set_partition(int n) { (void)n; }				/* GOOSE IDE: the HAL maps partition 1 itself */
 int gfx_scale_from_refresh(void) { return 54; }				/* 0x80157004: frames per second of the display mode */
 
-/* 0x800d49c4: a switch-page test used by the attract's unused credits step; 0x801410a4
-   load_credits reloads the pricing. Neither runs in the attract loop as shipped. */
-int func_800d49c4(void) { return 0; }
+/* 0x801410a4 load_credits reloads the pricing (after a won game) */
 void load_credits(void) { fprintf(stderr, "[stub] load_credits (0x801410a4)\n"); }
+
+/* ---- the level flow (main_game_proc, wave.c): what the port still lacks ---- */
+int  D_80212e10, D_801e0e24, D_801e70a8, D_801a25c8, D_80212da4, D_801e5cd4, D_801e0f0c_pad;
+int  something_with_reload_p1, something_with_reload_p2, hhouse_texmap_set;
+void func_80162a10(int *size, int *avail, int *used, int *frag) { *size = *avail = *used = *frag = 0; }	/* texture memory statistics */
+void func_80163eec(int n) { (void)n; }
+void func_80102690(void) { }			/* 0x80102690: three select-screen words cleared */
+void func_800d5f34(player_stats_t *p, int a) { (void)p; (void)a; }
+void func_80102500(player_stats_t *p) { (void)p; }	/* the player's panel on the select screen */
+void something_player_score(player_stats_t *p) { (void)p; }	/* 0x800e5560: high-score entry */
+void L_80101908(game_object_t *o) { (void)o; }			/* the level-select targets */
+int  func_801020b4(game_object_t *o) { (void)o; return 1; }
+void func_80102454(game_object_t *o) { (void)o; }
+void func_800d6e60(void) { }
+void func_800d7174(void) { }
+void func_800fe3d8(void) { }
+void func_800db7a8(void) { }
+void func_80109260(void *o, int n) { (void)o; (void)n; }
+void func_80107e30(game_object_t *o) { (void)o; }			/* the loading jester (object 0x2014) */
+int  func_80108ab0(game_object_t *o) { (void)o; return 1; }
+void func_80108c94(game_object_t *o) { (void)o; }
+void some_sort_of_free(void) { }
+int  load_level_lights(int w) { extern int port_trace; if(port_trace) fprintf(stderr, "[stub] load_level_lights(%#x)\n", w); return 0; }

@@ -24,7 +24,7 @@ extern short		num_objects_on_heap, cur_object_id, next_free_object;
 void *get_object_data(int id);
 void init_objects(void);
 short add_object(game_object_t *tmpl);
-short add_object1_wrapper(short type, void (*draw)(game_object_t *), int (*init)(game_object_t *), int think);
+short add_object1_wrapper(short type, void (*draw)(game_object_t *), int (*init)(game_object_t *), void (*think)(game_object_t *));
 short remove_game_object(short id);
 void remove_all_objects(void);
 void remove_objects_of_type(short type);

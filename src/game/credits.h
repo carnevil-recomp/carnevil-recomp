@@ -33,12 +33,35 @@ extern char		*currency_names[12];		/* 0x80177be8 */
 typedef struct player_stats
 {
 	int	unk0;			/* +0x00 (the record starts 4 bytes before Binary Ninja's player_stats) */
-	int	state;			/* +0x04 (0x801e0f64): 0 idle, 8 waiting to continue, 0x20 joining */
-	int	pad[0x2c];
+	int	state;			/* +0x04 (0x801e0f64): 0 idle, 4 playing, 8 waiting to continue, 0x20 joining */
+	int	unk8;			/* +0x08: cleared when the main game process starts */
+	unsigned int colour;		/* +0x0c: 0xff00 player 1, 0xff00ff player 2 */
+	int	unk10, unk14, unk18, unk1c, unk20;
+	float	unk24, unk28;		/* +0x24, +0x28: both start at 1300 - 200 * adjustment 0x31 */
+	int	unk2c;
+	int	start_time;		/* +0x30: D_801facc8 when the player joined */
+	int	unk34;
+	int	level_start_time;	/* +0x38: D_801facc8 when the level started */
+	int	unk3c;
+	int	continues;		/* +0x40 */
+	void	*gun;			/* +0x44: the player's gun record (camera.c guns[]) */
+	int	unk48, unk4c, unk50, unk54, unk58, unk5c, unk60, unk64, unk68;
+	float	unk6c;			/* +0x6c: 100 player 1, 300 player 2 (a screen x) */
+	float	unk70;			/* +0x70: 128 (a screen y) */
+	int	priority;		/* +0x74: sound priority word (levelsnd.c) */
+	int	priority2;		/* +0x78 */
+	int	unk7c, unk80, unk84;
+	int	volume;			/* +0x88: sound volume (levelsnd.c) */
+	int	unk8c[11];
 	int	shooting;		/* +0xb8: 1 while the player's shot is being resolved */
-	int	pad1[0xe];
+	int	unkbc[5];
+	int	index;			/* +0xd0: 0 or 1 */
+	int	unkd4;			/* +0xd4: 100 after a continue */
+	int	unkd8[7];
 	int	time_to_continue;	/* +0xf4 */
-	int	pad2[0xa];
+	int	unkf8, unkfc, unk100;
+	int	unk104;			/* +0x104: 6 at a start */
+	int	unk108, unk10c, unk110, unk114, unk118, unk11c;
 } player_stats_t;
 
 /* the credit counters (0x801de8d8) */
@@ -66,7 +89,7 @@ typedef struct coin_counter
 
 extern player_stats_t	player_stats[2];		/* 0x801e0f60 (player1_stats), 0x801e1080 */
 extern int		game_state[4];			/* 0x80212e14: mode (1 attract, 2/4/0x10/0x20/0x80 in play, 0x100), ?, start count, debug flags */
-#define game_mode	game_state[0]
+#define game_phase	game_state[0]		/* 0x800 booted/attract, 1 attract loop, 0x10 game start, 0x20 level select, 0x80 loading, 2 playing, 8 game over */
 #define debug_mode	game_state[3]		/* 0x80212e20 (one array: the draw pass keeps its address in a register) */
 extern credit_count_t	credit_count;
 #define credits		credit_count.credits

@@ -96,3 +96,16 @@ int game_setup_cmos(void)
 	}
 	return(config_cmos(&cfg));
 }
+
+/* 0x800f24c8: fold a value into a running average kept in two audits: the count and the mean */
+void average_audit(int count_audit, int mean_audit, int value)
+{
+	int	count, mean;
+
+	get_audit(count_audit, &count);
+	get_audit(mean_audit, &mean);
+	mean = (mean * count + value) / (count + 1);
+	count = count + 1;
+	set_audit(count_audit, count);
+	set_audit(mean_audit, mean);
+}

@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include "credits.h"			/* debug_mode */
 #include "waves.h"
+#include "camera.h"
 
 extern float	fatan(float), ftan(float);			/* vecmat.c */
 extern void	rot_matrix_neg_zxy(float *, float *), vec_negate(float *, float *);
@@ -40,11 +41,11 @@ float		proj_y;			/* 0x801e5db4 */
 float		screen_aspect;		/* 0x801e5dc8: 400 / 256 */
 float		screen_w, screen_h;	/* 0x8023744c, 0x80237424 */
 int		half_height = 128;	/* 0x8017dfd8 */
-float		gun_cal[2][9];		/* 0x801e70bc: per player x scale, y scale, x offset, y offset, ... */
+gun_t		guns[2];		/* 0x801e70b0 (player 1), 0x801e70d4 (player 2) */
 int		guns_active;		/* 0x80179d54 (.data) */
 int		D_80212da4, D_80212da8;
+extern int	D_801f8848;					/* shoot.c */
 int		gun_min_x, gun_max_x, gun_min_y, gun_max_y;	/* 0x801e0e10/18/1c/20: the gun's raw range */
-int		D_801f8848;
 
 extern signed char nss_control;				/* 0xb7f00000: the gun board's control byte, as a variable */
 #define GUN_P1		((volatile unsigned char *)0xb6800004)
@@ -204,8 +205,8 @@ void load_level_camera(int wave)
 		load_camera_file(&data, 0x109b, "BTOP.RAW", 0xc1f5071d);
 		break;
 	case WAVE_ATTRACT:
-	case WAVE_ATTRACT_B:
-	case WAVE_ATTRACT_C:
+	case WAVE_HISCORE_ENTRY:
+	case WAVE_LEVEL_SELECT:
 		camera_data_count = 0x3d;
 		load_camera_file(&data, 0x3d, "GALL.RAW", 0x4bc0df8f);
 		break;
@@ -306,14 +307,14 @@ int kss_reset_(void)
 {
 	char	v;
 
-	gun_cal[0][0] = 4.0235300f;
-	gun_cal[0][1] = 0.94736803f;
-	gun_cal[0][2] = 285.52942f;
-	gun_cal[0][3] = 25.052631f;
-	gun_cal[1][0] = 4.0117650f;
-	gun_cal[1][1] = 0.89473701f;
-	gun_cal[1][2] = 271.76471f;
-	gun_cal[1][3] = 39.105263f;
+	guns[0].scale_x = 4.0235300f;
+	guns[0].scale_y = 0.94736803f;
+	guns[0].off_x = 285.52942f;
+	guns[0].off_y = 25.052631f;
+	guns[1].scale_x = 4.0117650f;
+	guns[1].scale_y = 0.89473701f;
+	guns[1].off_x = 271.76471f;
+	guns[1].off_y = 39.105263f;
 	v = nss_control;
 	printf("NSS reset = %x\n", v);
 	nss_control = v | 0x10;
@@ -353,12 +354,12 @@ int take_calibration_request(void)
 /* 0x800d4c34: a player's calibration from the gun's raw range */
 void default_calibration(int player)
 {
-	gun_cal[player][0] = 3.8611112f;
+	guns[player].scale_x = 3.8611112f;
 	gun_min_x = 330;
-	gun_cal[player][2] = ((float)gun_min_x / gun_cal[player][0] - 20.0f) * gun_cal[player][0];
-	gun_cal[player][1] = 0.85185188f;
+	guns[player].off_x = ((float)gun_min_x / guns[player].scale_x - 20.0f) * guns[player].scale_x;
+	guns[player].scale_y = 0.85185188f;
 	gun_min_y = 36;
-	gun_cal[player][3] = ((float)gun_min_y / gun_cal[player][1] - 20.0f) * gun_cal[player][1];
+	guns[player].off_y = ((float)gun_min_y / guns[player].scale_y - 20.0f) * guns[player].scale_y;
 	gun_max_x = 1720;
 	gun_max_y = 220;
 }

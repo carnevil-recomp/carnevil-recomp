@@ -12,8 +12,9 @@
 #define WAVE_FREAKSHOW		0x1060000	/* the freak show (partition 6, stream partition 5) */
 #define WAVE_BIGTOP		0x1070000	/* the big top (partition 10, stream partition 9) */
 #define WAVE_ATTRACT		0xa0000		/* the attract loop's banks */
-#define WAVE_ATTRACT_B		0xb0000		/* two more non-level waves load_level_spawn accepts */
-#define WAVE_ATTRACT_C		0xc0000
+#define WAVE_HISCORE_ENTRY	0xb0000		/* the high-score entry screen (its texmap, no banks) */
+#define WAVE_LEVEL_SELECT	0xc0000		/* the level-select gallery (its targets and "select1") */
+#define WAVE_HHOUSE_SOUNDS	0x10000		/* only in the bank lists: three haunted-house banks */
 #define WAVE_BIGTOP_LOAD	0xd0000		/* the big top's loading music stream (btopload_proc) */
 
 /* debug_mode bits (only the ones whose effect is known) */

@@ -203,7 +203,7 @@ void start_proc(int *args)
 	}
 	if(player_can_start(player))
 	{
-		switch((unsigned int)game_mode)
+		switch((unsigned int)game_phase)
 		{
 		case 1:
 		case 4:
@@ -227,7 +227,7 @@ void start_proc(int *args)
 	{
 		player_stats[player].time_to_continue = 300;
 	}
-	else if(game_mode == 0x100)
+	else if(game_phase == 0x100)
 	{
 		unk_801e09d0 = 2;
 	}

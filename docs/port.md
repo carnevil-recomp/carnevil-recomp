@@ -58,8 +58,22 @@ decompiled object list, texmap, text, movie, sound and credits modules. Verify w
 ```
 build/host/carnevil --partition original/partition --raw original/carn.raw --frames 1001 --fast --dump-every f 1000
 ```
-which leaves `f.001000.ppm`, a frame of the intro movie. The game proper (level scripts, 3D,
-the player state, the guns, diagnostics) is still stubbed in `port/host/game_stub.c`.
+which leaves `f.001000.ppm`, a frame of the intro movie.
+
+The game flow runs through the real code: a start creates the main game process
+(main.c, `main_game_proc`), which loads the level-select gallery (wave.c), lets the
+countdown pick a level (no gun aiming yet, so Rickety Town first), loads it with its sound
+banks, camera file, spawn table and music stream, and plays its movie under the level
+script (movie_scripts.c, extracted by `tools/extract_scripts.py`). What the level still
+lacks is stubbed: the enemies' models and texmaps (`port/host/wave_stubs.c`), the script's
+per-level callbacks (`port/host/script_stubs.c`, weak definitions a real one overrides), the
+lights, the HUD, the hit tests and the guns. With `CARNEVIL_TRACE=1` the loaders report
+their steps; a headless run through the first level:
+
+```
+./build/host/carnevil --partition original/partition --raw original/carn.raw \
+    --headless --fast --frames 3000 --press 600:coin,610:coin,650:start1
+```
 Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-13):
 
 | module | profile | matched |
@@ -80,6 +94,10 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | scene.c | game2 | 10 of 10 (the switch sampler, the debug nudges, the heap display, init_game_state, game_init, load_level_assets); the rest of that file (0x800c8280-0x800ca4d0: screen markers, 3D helpers) is still assembly |
 | spawn.c | game2 | 11 of 12 exact; add_die 38% (its failure return is laid out differently); the port runs spawn_wave_enemies with construct_and_spawn_object (0x800e9570, 3.8 KB) stubbed |
 | objects.c | game2 | 17 of 18 (re-verified after the camera moved to camera.c): the list routines, the per-frame draw pass (0x800cbbb4, `draw_pass`), think pass (0x800cca70) and the four nearest-enemy searches exact; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20). The port runs the real passes; the level routines they call are stubs |
+| wave.c | game2 | 19 of 21 exact (unload_wave, preload_wave, the bank lists, the per-level asset lists, the big top's act change); load_wave_proc 25% and btopload_proc 8% keep an address in a saved register that ours does not |
+| main.c (game) | game2 | init_main_game_proc 61%, print_select_countdown 63%, main_game_proc 7% (first transcription; the flow is right) |
+| player.c | game2 | set_level_start_time exact, init_player_stats 92%, init_player 25% (store order) |
+| shoot.c | game2 | 3 of 3 (set_player_gun and the two level-play flags) |
 | camera.c | game2 | 17 of 23 exact (update_camera, update_view_matrix, get_camera_pos, the file loader's callers, the gun pollers, kss_reset_w_calib_, take_calibration_request, default_calibration ...); set_field_of_view 67% and init_camera 12% / load_level_camera 5% (the original combines the field-of-view constants at run time where our compiler folds them: 67.74+10 is an `add.s` in the game), kss_reset_ 59%, gun_board_reset 89% (one scheduling swap), the two `&&`/`\|\|` gun tests 53-60% (register choice). Absorbs the old gun.c: the file at 0x800d4070-0x800d4f6c holds the camera and the light guns |
 | vecmat.c | game2 | 23 of 23 exact (0x800cfb18-0x800d1370: 3x3 matrices, the twelve rotation-order products, fatan, ftan); the rest of the file (get_screen_pos, the projection helpers, draw_tri) is still assembly |
 | loaders.c | game2 | 0 of 1 (load_camera_file 4%: the retry loop's two counters are allocated differently; the port uses it as is) |

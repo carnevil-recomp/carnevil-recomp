@@ -7,7 +7,7 @@
 
 #include "objects.h"
 #include "enemy.h"
-#include "credits.h"			/* game_mode, player_stats */
+#include "credits.h"			/* game_phase, player_stats */
 #include "levelsnd.h"
 #include "movie.h"
 #include "spawn.h"
@@ -34,7 +34,7 @@ extern float	fsqrt(float);				/* 0x80144900 */
 extern int	free_mem_left;				/* 0x801e0ee8 */
 extern int	D_801e5cbc;				/* draw the level's 3D even without debug bit 0 */
 extern int	shown_frame;				/* 0x80212da0: the movie frame on screen */
-extern int	wave_id_g2;				/* 0x80212e30 */
+extern int	loaded_wave;				/* 0x80212e30 */
 extern short	nearest_enemy;				/* 0x80212d92: id of the enemy nearest the camera this frame */
 short	nearest_enemy_hhouse(void), nearest_enemy_freakshow(void), nearest_enemy_rickity(void), nearest_enemy_bigtop(void);
 extern int	RTP_val, DMA_val, D_801e0ecc;		/* 0x80237508, 0x80237414: per-frame triangle/DMA counters */
@@ -162,7 +162,7 @@ void draw_pass(void)
 	func_800e2fe4();
 	func_800db4b8();
 	func_800c83bc();
-	if(game_mode == 0x80)
+	if(game_phase == 0x80)
 	{
 		if(please_wait_timer > 0)
 		{
@@ -170,7 +170,7 @@ void draw_pass(void)
 			please_wait_timer--;
 		}
 	}
-	if(game_mode == 1)
+	if(game_phase == 1)
 	{
 		attract_credit_lines();
 	}
@@ -341,14 +341,14 @@ short add_object(game_object_t *tmpl)
 	return(obj->id);
 }
 
-short add_object1_wrapper(short type, void (*draw)(game_object_t *), int (*init)(game_object_t *), int think)
+short add_object1_wrapper(short type, void (*draw)(game_object_t *), int (*init)(game_object_t *), void (*think)(game_object_t *))
 {
 	game_object_t	t;
 
 	t.type = type;
 	t.draw = draw;
 	t.init = init;
-	t.think = (void (*)(game_object_t *))think;
+	t.think = think;
 	return(add_object(&t));
 }
 
@@ -442,7 +442,7 @@ void think_pass(void *data)
 	RTP_val = 0;
 	DMA_val = 0;
 	D_801e0ecc = 0;
-	switch(wave_id_g2)
+	switch(loaded_wave)
 	{
 	case WAVE_HHOUSE:
 		nearest_enemy = nearest_enemy_hhouse();

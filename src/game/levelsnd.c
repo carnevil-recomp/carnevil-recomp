@@ -4,7 +4,7 @@
  */
 #include <stdio.h>
 #include "levelsnd.h"
-#include "credits.h"			/* game_mode (0x80212e14) */
+#include "credits.h"			/* game_phase (0x80212e14) */
 
 extern int	snd_scall_bank(char *, unsigned int, unsigned int, unsigned int, unsigned int);
 extern int	snd_stop_track(unsigned int);
@@ -183,7 +183,7 @@ void play_generic_sound(snd_object_t *obj, int scall)
 {
 	int	on;
 
-	if(game_mode == 1)
+	if(game_phase == 1)
 	{
 		if(get_adjustment(2, &on))
 		{
@@ -202,7 +202,7 @@ void play_bank_sound(snd_object_t *obj, int scall, char *bank)
 {
 	int	on;
 
-	if(game_mode == 1)
+	if(game_phase == 1)
 	{
 		if(get_adjustment(2, &on))
 		{

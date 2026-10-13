@@ -343,3 +343,15 @@ Lessons from camera.c and vecmat.c (the camera, the 3D helpers):
   (`67.74 + 10.0` is computed at run time from literal-pool loads); our compiler folds them
   in every form tried (literals, `static const`, inline functions, macros reading the globals
   just stored). Unexplained; those two functions stay at 12% / 5%.
+
+Lessons from wave.c, main.c and player.c (the level flow):
+- A `switch` whose default shares a case's body (`case WAVE_FREAKSHOW: default:`) keeps
+  the explicit compare for that case in the tree; cross-jumping merges the identical tails
+  of an if/else (remove_level_sounds' big top branches end in one shared `snd_bank_delete`).
+- `other = player_stats; p = other + player; ... other++;` gives the shared base register
+  and `addiu s1, s1, 0x120` of init_player_stats; `&player_stats[player]` computes the base
+  into a temporary first.
+- `a = b = v` stores b first: init_player_stats writes +0x28 before +0x24, so the source is
+  `p->unk24 = p->unk28 = v`.
+- The movie scripts are word streams in .text; `tools/extract_scripts.py` decodes them with
+  do_script's opcode table into per-script arrays (labels become `&script[i]` casts).

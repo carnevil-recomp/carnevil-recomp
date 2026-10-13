@@ -635,7 +635,6 @@
 0x8023744c screen_w
 0x80237424 screen_h
 0x8017dfd8 half_height
-0x801e70bc gun_cal
 0x80179d54 guns_active
 0x801e0e10 gun_min_x
 0x801e0e18 gun_max_x
@@ -670,3 +669,28 @@
 # loaders.c (0x800ca4d0-0x800caf48): the level's data files
 0x80179be0 camera_loads
 0x80179be4 camera_crc_errors
+# wave.c (0x800f5244-0x800f7420): loading and unloading a wave
+0x80212e30 loaded_wave
+0x80212e60 wave_busy
+0x801e5be0 free_mem_after_load
+0x801e0f4c bigtop_act2
+0x800f6b0c remove_bigtop_act1
+0x800f6b54 load_bigtop_act2
+0x800f6dd0 remove_attract_assets
+0x800f6e00 load_attract_assets
+0x800f6e30 remove_gallery_assets
+0x800f6e70 start_btopload
+# main.c: the main game process
+0x800c5830 main_game_proc
+0x80212e34 levels_cleared
+0x801fac6c next_wave
+0x801e09e8 game_start_time
+0x80177be4 select_blink
+0x800f24c8 average_audit
+# player.c (0x800e2d48-): the players' records
+0x800e2d48 init_player_stats
+0x800e2f08 init_player
+0x800e4bc0 set_level_start_time
+# shoot.c (0x800d4f6c-0x800d6768): the light-gun shots
+0x800d6718 set_player_gun
+0x801e70b0 guns

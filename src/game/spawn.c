@@ -121,8 +121,8 @@ void load_level_spawn(int wave)
 		num_enemies_in_wave_g = 0xd1;
 		break;
 	case WAVE_ATTRACT:
-	case WAVE_ATTRACT_B:
-	case WAVE_ATTRACT_C:
+	case WAVE_HISCORE_ENTRY:
+	case WAVE_LEVEL_SELECT:
 		break;
 	}
 	if(num_enemies_in_wave_g > MAX_SPAWN)
