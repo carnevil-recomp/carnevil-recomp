@@ -101,7 +101,7 @@ static int traced_bank_load(char *name)
 {
 	int	r = snd_bank_load_playing(name);
 
-	if(port_trace) fprintf(stderr, "[wave] bank %s -> %d\n", name, r);
+	if(port_trace) fprintf(stderr, "[wave] vblank %lu bank %s -> %d\n", hal_frame_count, name, r);
 	return r;
 }
 #define snd_bank_load_playing(n)	traced_bank_load(n)
