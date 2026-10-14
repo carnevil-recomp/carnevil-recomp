@@ -629,6 +629,14 @@ done_message:
 	}
 }
 
+/* 0x800e44e0: show a pickup (or penalty) message: its kind, at full alpha; the status
+   display fades it (draw_player_status) */
+void show_pickup_message(player_stats_t *p, int kind)
+{
+	p->unk10c = kind;
+	*(float *)&p->unk110 = 255.0f;
+}
+
 /* 0x800e4650: an automatic weapon's gauge: a 32 by 128 column at (x - 16, y) filled from
    the bottom by ammo / ammo_max of the texture rows u0..u1 of key + 1 + frame, under the
    frame texture key. w is the player's weapon record (weapon, ammo, ammo_max) */

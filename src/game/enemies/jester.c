@@ -372,7 +372,7 @@ void draw_jester(game_object_t *o)
 	if(debug_mode & DEBUG_SPAWN_LOG)
 	{
 		graphical_printf(text_buffer, "%d", e->num);
-		draw_string_at_color(0, text_buffer, (int)e->hit_group->pos[0] + 8, 0xffffff);
+		draw_string_at_color(0, text_buffer, (int)e->hit_group->pos, 0xffffff);
 	}
 	if(debug_mode & 0x100)
 	{

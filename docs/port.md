@@ -74,7 +74,7 @@ the per-level collision tests. Every stub reports the first time it is reached
 list, so nothing missing is a silent no-op; the hardware stand-ins (heap size, refresh rate,
 texture memory statistics) are not stubs and stay quiet. A Rickety Town run reached 61
 stubs on 2026-10-14, 53 by the end of that day, 39 the next morning (the weapons file,
-the point sprites and the explosion object came in) and 35 with the select screen, 29 with the jester. At game
+the point sprites and the explosion object came in) 35 with the select screen, 29 with the jester, and 6 with the rest of Rickety Town (2026-10-14: the dinosaur, the girl, Smiling Bob, the teens, Krampus and the pickups, plus the model/animation/path removers, the limb-detach code, the breath puffs and the helpers they share). The six left are boot-time and high-score pieces. At game
 over the console shows "Error, already have a camera!": the original prints it too (its
 game-over path preloads the high-score wave before unloading the level). With `CARNEVIL_TRACE=1` the loaders report their steps; a headless run
 through the first level:
@@ -115,7 +115,13 @@ Matching status of the game modules (per function, `tools/match/trymatch.sh`, 20
 | krinkle.c | game2 | load_krinkle_texmap, remove_krinkle_assets, krinkle_remove, krinkle_drop_arm_parts, krinkle_drop_head_parts exact; krinkle_steer 95%, load_krinkle 86%, krinkle_hit 76%, krinkle_setup 54%, krinkle_think 50%, krinkle_init 50%, krinkle_draw 31%, krinkle_end_path 26%, krinkle_die 2% (one saved register off). He walks, strikes, reacts to hits and dies in the port |
 | effects.c | game2 | 4 of 5 exact (the effect list on an enemy: attach, draw, think, free); detach_effect 33% |
 | rickity_script.c | game2 | 38 of 38 exact (0x80123f88-0x80124c68: the script entry, the 22 section gates the movie script calls between its replays, the unused timers and counters). Unregistered: its timers are interleaved with the other levels' in .bss |
-| term.c | game2 | 5 of 12 exact (the loaders, term_remove), term_die 94%, term_end_path 96%, term_steer 94%, term_hit 76%, term_init 59%, term_draw 33%, term_think 17%, term_setup 15% (case-tree shapes); the port runs all of it: the bugs follow their path and reach the screen |
+| term.c | game2 | 7 of 12 exact (the loaders, term_remove, term_draw and term_hit after the debug-label and store-order fixes), term_die 94%, term_end_path 96%, term_steer 94%, term_init 59%, term_think 17%, term_setup 15% (case-tree shapes); the port runs all of it: the bugs follow their path and reach the screen |
+| dino.c | game2 | the dinosaur (0x2040, 0x80124c68-0x80126410): 13 of 14 exact, dino_die 81% (an s1/s2 swap). Limbs shoot off at violence 3 |
+| rickity_innocent.c | game2 | the Rickety Town innocent, a little girl (0x2043, "rinn", 0x801293b8-0x80129d54): 11 of 11 exact. Shooting her costs 350 health and shows the penalty notice; her holder's let-go routine (0x800fa1c4) is the Haunted House zombie's and still a stub |
+| smilingbob.c | game2 | Smiling Bob (0x2044, 0x80129d58-0x8012b7d4): 12 of 14 exact, smilingbob_die and smilingbob_steer 55% |
+| teen.c | game2 | the teens (0x2045, 0x8012b7d8-0x8012d4a0): 14 of 15 exact, teen_die 73%. They throw the food, presents and coal (weapons.c) |
+| krampus.c | game2 | Krampus, the level's boss (0x2046, 0x8012d4a0-0x8012fa20, with his 15 level-script callbacks): 26 of 28 exact, krampus_init 97%, krampus_think 99% |
+| pickup_*.c | game2 | the six pickups (shotgun, health, ammo, acid gun, machine gun, flame thrower; 0x801026b0-0x80105388, tables in pickups_data.c): 53 of 54 exact, draw_flamethrower_pickup 34% |
 | enemy.c | game2 | 9 of 14 exact (health by adjustment, the path helpers, the reach test, set_goal_near_camera); step_toward_goal and _xz 50%, move_cd 16% (the per-level collision tests are stubs), face_camera 3%; the thrown objects' helpers near_camera, group_point, aim_at_camera, aim_at_point, knock_sideways and lob_toward all exact |
 | sprites.c | game2 | the screen and world sprite lists (0x800db148-0x800dbf58: muzzle flashes, hit marks, the dust of a miss, drops, sparks): the list resets exact, the creators 31-55%, the draw/update loops 58-64%, the reapers 10% (loop shape). The kind tables are in the source (0x8017d230, 0x8017d3b0) |
 | draw2d.c | game2 | draw_quad and draw_quad_mirrored exact, the alpha quads 94%; the four billboards (0x800da0f0-0x800dac0c) are transcriptions (0-4%: the original keeps the corners in 16-byte slots and inlines everything); the five point sprites (0x800d9550-0x800d9eb4: a screen-aligned textured quad at a world point, sized by its distance; the flame and the explosion use them) 97-98%, draw_life_bar 23%, the two flat quads exact, the rotated quads 69% and 58% |

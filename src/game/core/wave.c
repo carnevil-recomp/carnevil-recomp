@@ -75,10 +75,10 @@ extern void	load_btop_gore_texmaps(void), load_pood_texmap(void), load_mame_texm
 extern void	load_litl_texmap(void), load_doctorklot_texmap(void), load_skeleton_texmap(void), load_btop_weap_texmaps(void);
 extern void	load_pood(void), load_mame(void), load_batb(void), load_clown(void), load_litl(void), load_doctor_klot(void);
 extern void	load_binn(void), load_skeleton(void), load_btop_weap_models(void);
-extern void	remove_junk(void), remove_rinn_assets(void), remove_term_assets(void), remove_dino_assets(void), func_8012c214(void);
+extern void	remove_junk(void), remove_rinn_assets(void), remove_term_assets(void), remove_dino_assets(void), remove_teen_assets(void);
 extern void	remove_krampus_assets(void), remove_krinkle_assets(void), remove_smilingbob_assets(void), remove_rickity_texmap(void);
 extern void	load_rickity_texmap(void), load_smilingbob_texmap(void), load_krinkle_texmap(void), load_krampus_texmap(void);
-extern void	func_8012c0bc(void), load_dino_texmap(void), load_term_texmap(void), load_rickity_object_texmaps(void), load_smilingbob(void);
+extern void	load_teen_texmap(void), load_dino_texmap(void), load_term_texmap(void), load_rickity_object_texmaps(void), load_smilingbob(void);
 extern void	load_krinkle(void), load_krampus(void), load_teen(void), load_dino(void), load_term(void), load_rinn(void), load_junk(void);
 
 int	loaded_wave;			/* 0x80212e30 (wave_id_g2): the wave loaded, 0 for none */
@@ -664,7 +664,7 @@ void remove_rickitytown_assets(void)
 	remove_rinn_assets();
 	remove_term_assets();
 	remove_dino_assets();
-	func_8012c214();
+	remove_teen_assets();
 	remove_krampus_assets();
 	remove_krinkle_assets();
 	remove_smilingbob_assets();
@@ -677,7 +677,7 @@ void load_rickity_town_assets(void)
 	load_smilingbob_texmap();
 	load_krinkle_texmap();
 	load_krampus_texmap();
-	func_8012c0bc();
+	load_teen_texmap();
 	load_dino_texmap();
 	load_term_texmap();
 	load_rickity_object_texmaps();

@@ -62,6 +62,20 @@ void draw_effects(enemy_t *e)
 	}
 }
 
+/* 0x800fda08: the effects riding group from move to group to (a part replaced by another) */
+void move_effects(enemy_t *e, group_t *from, group_t *to)
+{
+	effect_t	*fx;
+
+	for(fx = e->effects; fx; fx = fx->next)
+	{
+		if(fx->group == from)
+		{
+			fx->group = to;
+		}
+	}
+}
+
 /* 0x800fda34: every frame: every effect's think */
 void think_effects(enemy_t *e)
 {

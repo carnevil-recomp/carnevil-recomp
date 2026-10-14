@@ -86,7 +86,7 @@ void krinkle_draw(game_object_t *obj)
 	if(debug_mode & 0x400)
 	{
 		graphical_printf(text_buffer, "%d", e->num);
-		draw_string_at_color(0, text_buffer, (int)e->hit_group->pos[0] + 8, 0xffffff);
+		draw_string_at_color(0, text_buffer, (int)e->hit_group->pos, 0xffffff);
 	}
 	if(debug_mode & 0x100)
 	{
@@ -106,11 +106,11 @@ void krinkle_draw(game_object_t *obj)
 		graphical_printf(text_buffer, "%d", e->num);
 		if(e == debug_enemy)
 		{
-			draw_string_at_color(0, text_buffer, (int)e->hit_group->pos[0] + 8, 0xff0000);
+			draw_string_at_color(0, text_buffer, (int)e->hit_group->pos, 0xff0000);
 		}
 		else
 		{
-			draw_string_at_color(0, text_buffer, (int)e->hit_group->pos[0] + 8, 0xffffff);
+			draw_string_at_color(0, text_buffer, (int)e->hit_group->pos, 0xffffff);
 		}
 	}
 	if(debug_mode & 0x1000)
@@ -887,7 +887,7 @@ extern float	shot_damage_of(player_stats_t *);
 extern void	award_points(int, int);
 extern int	mark_die();
 extern void	detach_group(group_t *, float *, float, float *);	/* model.c: a part flies off */
-extern void	func_8011459c(enemy_t *, group_t *, group_t *);	/* a group takes over another's place */
+extern void	replace_group(enemy_t *, group_t *, group_t *);	/* a group takes over another's place */
 extern int	violence_level;
 int	krinkle_hurt_sounds[5] = { 3, 4, 7, 9, 10 };	/* 0x8019b0a8 */
 float	D_8019b088[3] = { 0, 0.05f, 0 };		/* the neck spray's two vectors */
@@ -906,9 +906,9 @@ int krinkle_hit(game_object_t *obj, player_stats_t *p)
 		if(group != -1)
 		{
 			p->hit = 1;
+			p->hit_id = obj->id;
 			p->hit_group = group;
 			p->die = (void *)krinkle_die;
-			p->hit_id = obj->id;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -992,7 +992,7 @@ int krinkle_die(game_object_t *obj, player_stats_t *p)
 			}
 			else if(e->unka8 == 2)
 			{
-				func_8011459c(e, &e->groups[1], &e->groups[16]);
+				replace_group(e, &e->groups[1], &e->groups[16]);
 			}
 		}
 		else
@@ -1039,7 +1039,7 @@ int krinkle_die(game_object_t *obj, player_stats_t *p)
 				{
 					detach_group(&e->groups[16], e->groups[16].pos, e->y, e->scale);
 				}
-				func_8011459c(e, &e->groups[5], &e->groups[15]);
+				replace_group(e, &e->groups[5], &e->groups[15]);
 				attach_effect(e, attach_spray(D_8019b094, D_8019b088, &e->groups[15]));
 				e->ai_state = 0x2001;
 				e->frame = 0x12a;

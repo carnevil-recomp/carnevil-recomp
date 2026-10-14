@@ -155,22 +155,6 @@ WEAK void sub_801221d8(void) { fprintf(stderr, "[script] sub_801221d8 not implem
 WEAK void sub_801221e0(void) { fprintf(stderr, "[script] sub_801221e0 not implemented\n"); }
 WEAK int sub_80122218(void) { fprintf(stderr, "[script] sub_80122218 not implemented\n"); return 0; }
 WEAK void sub_8012225c(void) { fprintf(stderr, "[script] sub_8012225c not implemented\n"); }
-WEAK void sub_8012d43c(void) { fprintf(stderr, "[script] sub_8012d43c not implemented\n"); }
-WEAK void sub_8012f6c8(void) { fprintf(stderr, "[script] sub_8012f6c8 not implemented\n"); }
-WEAK int sub_8012f6f0(void) { fprintf(stderr, "[script] sub_8012f6f0 not implemented\n"); return 0; }
-WEAK void sub_8012f728(void) { fprintf(stderr, "[script] sub_8012f728 not implemented\n"); }
-WEAK void sub_8012f774(void) { fprintf(stderr, "[script] sub_8012f774 not implemented\n"); }
-WEAK int sub_8012f79c(void) { fprintf(stderr, "[script] sub_8012f79c not implemented\n"); return 0; }
-WEAK void sub_8012f7d4(void) { fprintf(stderr, "[script] sub_8012f7d4 not implemented\n"); }
-WEAK void sub_8012f820(void) { fprintf(stderr, "[script] sub_8012f820 not implemented\n"); }
-WEAK int sub_8012f848(void) { fprintf(stderr, "[script] sub_8012f848 not implemented\n"); return 0; }
-WEAK void sub_8012f880(void) { fprintf(stderr, "[script] sub_8012f880 not implemented\n"); }
-WEAK void sub_8012f8cc(void) { fprintf(stderr, "[script] sub_8012f8cc not implemented\n"); }
-WEAK int sub_8012f8f4(void) { fprintf(stderr, "[script] sub_8012f8f4 not implemented\n"); return 0; }
-WEAK void sub_8012f92c(void) { fprintf(stderr, "[script] sub_8012f92c not implemented\n"); }
-WEAK void sub_8012f978(void) { fprintf(stderr, "[script] sub_8012f978 not implemented\n"); }
-WEAK int sub_8012f9a0(void) { fprintf(stderr, "[script] sub_8012f9a0 not implemented\n"); return 0; }
-WEAK void sub_8012f9d8(void) { fprintf(stderr, "[script] sub_8012f9d8 not implemented\n"); }
 WEAK void sub_8012fa20(void) { fprintf(stderr, "[script] sub_8012fa20 not implemented\n"); }
 WEAK void sub_8012fbf0(void) { fprintf(stderr, "[script] sub_8012fbf0 not implemented\n"); }
 WEAK void sub_8012fc3c(void) { fprintf(stderr, "[script] sub_8012fc3c not implemented\n"); }

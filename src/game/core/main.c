@@ -32,7 +32,7 @@ extern void	*set_dcsw_handler(int, void (*)(int, int));
 extern void	delete_all_sprites(void), delete_all_background_sprites(void);	/* 0x8014c65c, 0x8014849c */
 extern void	load_level_assets(void);				/* 0x800ca448 */
 extern void	load_jester_texmap(void), load_jester_model(void), load_inng_texmap(void), load_chnk_texmap(void), load_chnk_model(void);
-extern void	load_shotgun_texmap(void), load_health_texmap(void), load_ammmo_texmap(void), load_machinegun_texmap(void);
+extern void	load_shotgun_texmap(void), load_health_texmap(void), load_ammo_texmap(void), load_machinegun_texmap(void);
 extern void	load_flamethrower_texmap(void), load_acid_texmap(void), load_shotgun_model(void), load_health_model(void);
 extern void	load_ammo_model(void), load_machinegun_model(void), load_flamethrower_model(void), load_acid_model(void);
 extern int	kss_reset_(void), kss_reset_w_calib_(void);
@@ -256,7 +256,7 @@ void main_proc(void)
 	load_chnk_model();
 	load_shotgun_texmap();
 	load_health_texmap();
-	load_ammmo_texmap();
+	load_ammo_texmap();
 	load_machinegun_texmap();
 	load_flamethrower_texmap();
 	load_acid_texmap();

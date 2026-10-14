@@ -11,6 +11,22 @@ extern void	end_of_wave();
 extern void	fade_out_level_stream();
 extern void	func_800fa720();
 extern void	func_801153a0();
+extern void	func_8012d43c();
+extern void	krampus_section0();
+extern void	krampus_section0_wait();
+extern int	krampus_section0_waiting();
+extern void	krampus_section1();
+extern void	krampus_section1_wait();
+extern int	krampus_section1_waiting();
+extern void	krampus_section2();
+extern void	krampus_section2_wait();
+extern int	krampus_section2_waiting();
+extern void	krampus_section3();
+extern void	krampus_section3_wait();
+extern int	krampus_section3_waiting();
+extern void	krampus_section4();
+extern void	krampus_section4_wait();
+extern int	krampus_section4_waiting();
 extern void	movie_load_ending();
 extern void	reset_stream_volume();
 extern void	rickity_gate1();
@@ -158,22 +174,6 @@ extern void	sub_801221d8();
 extern void	sub_801221e0();
 extern int	sub_80122218();
 extern void	sub_8012225c();
-extern void	sub_8012d43c();
-extern void	sub_8012f6c8();
-extern int	sub_8012f6f0();
-extern void	sub_8012f728();
-extern void	sub_8012f774();
-extern int	sub_8012f79c();
-extern void	sub_8012f7d4();
-extern void	sub_8012f820();
-extern int	sub_8012f848();
-extern void	sub_8012f880();
-extern void	sub_8012f8cc();
-extern int	sub_8012f8f4();
-extern void	sub_8012f92c();
-extern void	sub_8012f978();
-extern int	sub_8012f9a0();
-extern void	sub_8012f9d8();
 extern void	sub_8012fa20();
 extern void	sub_8012fbf0();
 extern void	sub_8012fc3c();
@@ -2552,7 +2552,7 @@ script_word_t	rickity_town_script[] =
 	7,
 	SCRIPT_VAR(&wave_lock),
 	5,
-	SCRIPT_FN(sub_8012d43c),
+	SCRIPT_FN(func_8012d43c),
 	1,
 	1991,
 	8,
@@ -2748,66 +2748,66 @@ script_word_t	rickity_town_script[] =
 	1,
 	3389,
 	11,
-	SCRIPT_FN(sub_8012f6f0),
+	SCRIPT_FN(krampus_section1_waiting),
 	(script_word_t)&rickity_town_script[534],
 	5,
-	SCRIPT_FN(sub_8012f728),
+	SCRIPT_FN(krampus_section1),
 	1,
 	3499,
 	5,
-	SCRIPT_FN(sub_8012f774),
+	SCRIPT_FN(krampus_section2_wait),
 	3,
 	3499,
 	1,
 	3508,
 	11,
-	SCRIPT_FN(sub_8012f79c),
+	SCRIPT_FN(krampus_section2_waiting),
 	(script_word_t)&rickity_town_script[547],
 	5,
-	SCRIPT_FN(sub_8012f7d4),
+	SCRIPT_FN(krampus_section2),
 	1,
 	3618,
 	5,
-	SCRIPT_FN(sub_8012f820),
+	SCRIPT_FN(krampus_section3_wait),
 	3,
 	3618,
 	1,
 	3627,
 	11,
-	SCRIPT_FN(sub_8012f848),
+	SCRIPT_FN(krampus_section3_waiting),
 	(script_word_t)&rickity_town_script[560],
 	5,
-	SCRIPT_FN(sub_8012f880),
+	SCRIPT_FN(krampus_section3),
 	1,
 	3715,
 	5,
-	SCRIPT_FN(sub_8012f8cc),
+	SCRIPT_FN(krampus_section4_wait),
 	3,
 	3715,
 	1,
 	3724,
 	11,
-	SCRIPT_FN(sub_8012f8f4),
+	SCRIPT_FN(krampus_section4_waiting),
 	(script_word_t)&rickity_town_script[573],
 	5,
-	SCRIPT_FN(sub_8012f92c),
+	SCRIPT_FN(krampus_section4),
 	1,
 	3847,
 	5,
-	SCRIPT_FN(sub_8012f978),
+	SCRIPT_FN(krampus_section0_wait),
 	3,
 	3847,
 	1,
 	3856,
 	11,
-	SCRIPT_FN(sub_8012f9a0),
+	SCRIPT_FN(krampus_section0_waiting),
 	(script_word_t)&rickity_town_script[586],
 	5,
-	SCRIPT_FN(sub_8012f9d8),
+	SCRIPT_FN(krampus_section0),
 	1,
 	3925,
 	5,
-	SCRIPT_FN(sub_8012f6c8),
+	SCRIPT_FN(krampus_section1_wait),
 	2,
 	(script_word_t)&rickity_town_script[534],
 	5,

@@ -127,6 +127,79 @@ void draw_submesh_at(group_t *g, submesh_t *sub, float *verts, int nverts, face_
 	}
 }
 
+extern void	detach_effect(struct enemy *, group_t *), move_effects(struct enemy *, group_t *, group_t *);	/* effects.c */
+
+/* 0x80114560: hide a group and drop the effects riding it */
+void hide_group(struct enemy *e, group_t *g)
+{
+	if(g->flags)
+	{
+		detach_effect(e, g);
+		g->flags = 0;
+	}
+}
+
+/* 0x8011459c: group to takes over group from's place (a shot-off part swapped for its stump):
+   its flags (keeping its own alpha-test bit 0x40), matrix, position and pivot, and the
+   effects riding from; from is hidden */
+void replace_group(struct enemy *e, group_t *from, group_t *to)
+{
+	if(from->flags)
+	{
+		if(to->flags & 0x40)
+		{
+			to->flags = from->flags | 0x40;
+		}
+		else
+		{
+			to->flags = from->flags;
+		}
+		from->flags = 0;
+		mat_copy(from->mat, to->mat);
+		to->pos[0] = from->pos[0];
+		to->pos[1] = from->pos[1];
+		to->pos[2] = from->pos[2];
+		to->pivot[0] = from->pivot[0];
+		to->pivot[1] = from->pivot[1];
+		to->pivot[2] = from->pivot[2];
+		move_effects(e, from, to);
+	}
+}
+
+/* 0x80114cdc: knock a group loose: it leaves the animation (0x2000 off, 0x4000 on) and flies
+   from where it is, its offset kept relative to from, upward at 0.99 and spinning, opaque,
+   for 25 steps of life, until it falls to floor; drawn alpha-blended (0x80). The fourth
+   argument is not used */
+void detach_group(group_t *g, float *from, float floor, float *unused)
+{
+	if(!(g->flags & 0x4000))
+	{
+		g->flags = (g->flags & ~0x2000) | 0x4000;
+		mat_copy(g->mat, g->parent_mat);
+		g->parent_pos[0] = g->pos[0];
+		g->parent_pos[1] = g->pos[1];
+		g->parent_pos[2] = g->pos[2];
+		g->off[0] = g->pos[0] - from[0];
+		g->off[1] = g->pos[1] - from[1];
+		g->off[2] = g->pos[2] - from[2];
+		g->life = 0x19;
+		g->life_step = 0;
+		g->rot[0] = 0.0f;
+		g->rot[1] = 0.0f;
+		g->rot[2] = 0.0f;
+		g->vel[0] = 0.0f;
+		g->vel[1] = 0.99f;
+		g->vel[2] = 0.0f;
+		g->spin[0] = 0.176f;
+		g->spin[1] = 0.09f;
+		g->spin[2] = 0.0f;
+		g->floor = floor;
+		g->alpha = 255.0f;
+		g->alpha_step = 0.0f;
+		g->flags |= 0x80;
+	}
+}
+
 /* 0x80114b8c: a group shot loose (flag 0x4000) flies on its own: while it is above its
    floor it moves by its velocity, spins by its spin and falls (the y velocity loses 0.22 a
    frame); its life counts down by its step and its alpha changes by its step; at the end of

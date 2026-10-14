@@ -83,7 +83,7 @@ void term_draw(game_object_t *obj)
 	if(debug_mode & 0x400)
 	{
 		graphical_printf(text_buffer, "%d", e->num);
-		draw_string_at_color(0, text_buffer, (int)e->hit_group->pos[0] + 8, 0xffffff);
+		draw_string_at_color(0, text_buffer, (int)e->hit_group->pos, 0xffffff);
 	}
 	if(debug_mode & 0x100)
 	{
@@ -103,11 +103,11 @@ void term_draw(game_object_t *obj)
 		graphical_printf(text_buffer, "%d", e->num);
 		if(e == debug_enemy)
 		{
-			draw_string_at_color(0, text_buffer, (int)e->hit_group->pos[0] + 8, 0xff0000);
+			draw_string_at_color(0, text_buffer, (int)e->hit_group->pos, 0xff0000);
 		}
 		else
 		{
-			draw_string_at_color(0, text_buffer, (int)e->hit_group->pos[0] + 8, 0xffffff);
+			draw_string_at_color(0, text_buffer, (int)e->hit_group->pos, 0xffffff);
 		}
 	}
 	if(debug_mode & 0x1000)
@@ -130,9 +130,9 @@ int term_hit(game_object_t *obj, player_stats_t *p)
 		if(group != -1)
 		{
 			p->hit = 1;
+			p->hit_id = obj->id;
 			p->hit_group = group;
 			p->die = (void *)term_die;
-			p->hit_id = obj->id;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];

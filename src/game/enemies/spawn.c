@@ -392,30 +392,30 @@ ENEMY(func_800f70b8, func_800f7680, func_800f7824)
 ENEMY(func_800f7988, func_800f8860, func_800f8c84)
 ENEMY(func_80105e38, func_80106584, func_8010674c)
 ENEMY(func_80106928, func_80106e78, func_8010701c)
-ENEMY(func_80103c90, func_80104170, func_8010430c)
-ENEMY(func_80102e58, func_801032c8, func_80103420)
+ENEMY(draw_acid_pickup, init_acid_pickup, acid_pickup_think)
+ENEMY(draw_health_pickup, init_health_pickup, health_pickup_think)
 ENEMY(func_80109cf4, func_8010aa68, func_8010acac)
-ENEMY(func_801026b0, func_80102bb8, func_80102d4c)
-ENEMY(func_80103568, func_80103a1c, func_80103bb0)
+ENEMY(draw_shotgun_pickup, init_shotgun_pickup, shotgun_pickup_think)
+ENEMY(draw_ammo_pickup, init_ammo_pickup, ammo_pickup_think)
 ENEMY(func_801163e8, func_80116e10, func_80117080)
-ENEMY(func_80104418, func_80104928, func_80104abc)
-ENEMY(func_80104bc8, func_801050ec, func_80105280)
+ENEMY(draw_machinegun_pickup, init_machinegun_pickup, machinegun_pickup_think)
+ENEMY(draw_flamethrower_pickup, init_flamethrower_pickup, flamethrower_pickup_think)
 ENEMY(func_8011a170, func_8011a6f8, func_8011a8d0)
 ENEMY(func_8011b510, func_8011ba5c, func_8011bc34)
 ENEMY(func_8011fa7c, func_80120714, func_801209ec)
-ENEMY(func_8012b7d8, func_8012c2c4, func_8012c4d8)
+ENEMY(teen_draw, teen_init, teen_think)
 ENEMY(func_80122e40, func_801235ec, func_8012387c)
 ENEMY(func_8011dd80, func_8011e674, func_8011e890)
 ENEMY(func_80118728, func_8011905c, func_80119280)
 ENEMY(func_801222d0, func_80122818, func_801229d4)
 ENEMY(term_draw, term_init, term_think)
-ENEMY(func_80124c68, func_8012562c, func_80125824)
+ENEMY(dino_draw, dino_init, dino_think)
 ENEMY(krinkle_draw, krinkle_init, krinkle_think)
-ENEMY(func_801293b8, func_801298c8, func_80129a8c)
-ENEMY(func_80129d58, func_8012a818, func_8012aa28)
+ENEMY(rinn_draw, rinn_init, rinn_think)
+ENEMY(smilingbob_draw, smilingbob_init, smilingbob_think)
 ENEMY(func_801348e0, func_801352f4, func_801354fc)
 ENEMY(render_enetity_debug_info, func_8013c35c, func_8013c56c)
-ENEMY(func_8012d4a0, spawn_krampus_, func_8012e850)
+ENEMY(krampus_draw, krampus_init, krampus_think)
 ENEMY(func_80133580, func_80133d38, func_80133f28)
 ENEMY(func_80131f10, func_8013281c, func_80132a14)
 ENEMY(func_80138ac4, func_801394f4, func_801397f4)
@@ -427,8 +427,8 @@ ENEMY(func_8013cfb0, func_8013d794, func_8013d990)
 SETUP(func_80119894) SETUP(func_8010725c) SETUP(func_800eeeec) SETUP(func_800eb7d4) SETUP(func_800f96a8)
 SETUP(func_800f7960) SETUP(func_80105cb4) SETUP(func_801068c8) SETUP(func_8011af54) SETUP(func_8010b384)
 SETUP(set_jester_state) SETUP(func_80117c88) SETUP(func_8011d704) SETUP(func_80121318) SETUP(func_8011f070)
-SETUP(func_8012f320) SETUP(krinkle_setup) SETUP(func_80123cd4) SETUP(func_80125eb4) SETUP(func_80129c40)
-SETUP(func_8012b260) SETUP(func_8012cce8) SETUP(func_80131a9c) SETUP(func_80134420) SETUP(func_8013cad4)
+SETUP(krampus_setup) SETUP(krinkle_setup) SETUP(func_80123cd4) SETUP(dino_setup) SETUP(rinn_setup)
+SETUP(smilingbob_setup) SETUP(teen_setup) SETUP(func_80131a9c) SETUP(func_80134420) SETUP(func_8013cad4)
 SETUP(func_80133118) SETUP(func_80135f98) SETUP(func_8013aa34) SETUP(func_8013f324) SETUP(func_8013e518)
 SETUP(func_80137ae8) SETUP(term_setup) SETUP(func_80122ca8) SETUP(func_8011be94)
 extern void	something_bat_state(enemy_t *, short), func_800f5278(enemy_t *, short);
@@ -523,9 +523,9 @@ int construct_and_spawn_object(spawn_t *s, int index)
 		break;
 	case 0x2043:
 		type = (short)s->type;
-		draw = func_801293b8;
-		init = func_801298c8;
-		think = func_80129a8c;
+		draw = rinn_draw;
+		init = rinn_init;
+		think = rinn_think;
 		break;
 	case 0x2041:
 		type = (short)s->type;
@@ -535,21 +535,21 @@ int construct_and_spawn_object(spawn_t *s, int index)
 		break;
 	case 0x2046:
 		type = (short)s->type;
-		draw = func_8012d4a0;
-		init = spawn_krampus_;
-		think = func_8012e850;
+		draw = krampus_draw;
+		init = krampus_init;
+		think = krampus_think;
 		break;
 	case 0x2045:
 		type = (short)s->type;
-		draw = func_8012b7d8;
-		init = func_8012c2c4;
-		think = func_8012c4d8;
+		draw = teen_draw;
+		init = teen_init;
+		think = teen_think;
 		break;
 	case 0x2040:
 		type = (short)s->type;
-		draw = func_80124c68;
-		init = func_8012562c;
-		think = func_80125824;
+		draw = dino_draw;
+		init = dino_init;
+		think = dino_think;
 		break;
 	case 0x2042:
 		type = (short)s->type;
@@ -559,9 +559,9 @@ int construct_and_spawn_object(spawn_t *s, int index)
 		break;
 	case 0x2044:
 		type = (short)s->type;
-		draw = func_80129d58;
-		init = func_8012a818;
-		think = func_8012aa28;
+		draw = smilingbob_draw;
+		init = smilingbob_init;
+		think = smilingbob_think;
 		break;
 	case 0x2028:
 		type = (short)s->type;
@@ -685,39 +685,39 @@ int construct_and_spawn_object(spawn_t *s, int index)
 		break;
 	case 0x2018:
 		type = 0x2018;
-		draw = func_801026b0;
-		init = func_80102bb8;
-		think = func_80102d4c;
+		draw = draw_shotgun_pickup;
+		init = init_shotgun_pickup;
+		think = shotgun_pickup_think;
 		break;
 	case 0x2019:
 		type = 0x2019;
-		draw = func_80103568;
-		init = func_80103a1c;
-		think = func_80103bb0;
+		draw = draw_ammo_pickup;
+		init = init_ammo_pickup;
+		think = ammo_pickup_think;
 		break;
 	case 0x2017:
 		type = 0x2017;
-		draw = func_80102e58;
-		init = func_801032c8;
-		think = func_80103420;
+		draw = draw_health_pickup;
+		init = init_health_pickup;
+		think = health_pickup_think;
 		break;
 	case 0x201d:
 		type = 0x201d;
-		draw = func_80104bc8;
-		init = func_801050ec;
-		think = func_80105280;
+		draw = draw_flamethrower_pickup;
+		init = init_flamethrower_pickup;
+		think = flamethrower_pickup_think;
 		break;
 	case 0x201c:
 		type = 0x201c;
-		draw = func_80104418;
-		init = func_80104928;
-		think = func_80104abc;
+		draw = draw_machinegun_pickup;
+		init = init_machinegun_pickup;
+		think = machinegun_pickup_think;
 		break;
 	case 0x201b:
 		type = 0x201b;
-		draw = func_80103c90;
-		init = func_80104170;
-		think = func_8010430c;
+		draw = draw_acid_pickup;
+		init = init_acid_pickup;
+		think = acid_pickup_think;
 		break;
 	default:
 		printf("error - trying to spawn unknown type 0x%04x\n", s->type);
@@ -787,13 +787,13 @@ int construct_and_spawn_object(spawn_t *s, int index)
 	case 0x2068: func_8013e518(e, e->ai_state); break;
 	case 0x2066: func_8013aa34(e, e->ai_state); break;
 	case 0x2067: func_8013f324(e, e->ai_state); break;
-	case 0x2043: func_80129c40(e, e->ai_state); break;
+	case 0x2043: rinn_setup(e, e->ai_state); break;
 	case 0x2041: krinkle_setup(e, e->ai_state); break;
-	case 0x2046: func_8012f320(e, e->ai_state); break;
-	case 0x2045: func_8012cce8(e, e->ai_state); break;
-	case 0x2040: func_80125eb4(e, e->ai_state); break;
+	case 0x2046: krampus_setup(e, e->ai_state); break;
+	case 0x2045: teen_setup(e, e->ai_state); break;
+	case 0x2040: dino_setup(e, e->ai_state); break;
 	case 0x2042: term_setup(e, e->ai_state); break;
-	case 0x2044: func_8012b260(e, e->ai_state); break;
+	case 0x2044: smilingbob_setup(e, e->ai_state); break;
 	case 0x2028: func_80122ca8(e, e->ai_state); break;
 	case 0x2020: func_80117c88(e, e->ai_state); break;
 	case 0x2029: func_80123cd4(e, e->ai_state); break;

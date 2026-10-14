@@ -471,3 +471,16 @@ same way.
 - **Switch dispatch trees** depend on the case set: the jester's think has eleven cases and
   the original's tree is rooted at 0x104, ours at 0x8080; three adjacent cases with one
   body merge into a range node in ours, so they were written as separate bodies.
+
+## Lessons from the Rickety Town enemies (2026-10-14)
+- **The debug label takes the position's address.** `draw_string_at_color(0, text, (int)e->hit_group->pos, colour)`:
+  text.c projects the pointer it is given. Writing `(int)pos[0] + 8` read a bad pointer in the port
+  and kept every enemy draw near 33%; the fix made term_draw, dino_draw, teen_draw and smilingbob_draw exact.
+- **The hit record's store order** is hit, hit_id, (hit_point), hit_group, die; that order made every
+  enemy's hit test exact (term_hit and krinkle_hit went from 76%).
+- **burst_blood is called with a third argument** (0x800000) the routine never reads; the enemy files
+  declare a three-argument prototype locally.
+- **Spawn-table smoke tests**: the level gates on enemies being killed, so a headless run that never
+  aims stalls at the first gate. To exercise later enemies, a throwaway build that gives the first
+  Krinkle rows another type, state and path (never committed) gets them spawned early.
+- **zsh**: `"$f:start1"` applies zsh's `:s` modifier; write `"${f}:start1"`.

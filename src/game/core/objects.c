@@ -764,6 +764,77 @@ void offset_in_view(float *pos, float dx, float dy, float dz, float *out)
 	view_to_world(out);
 }
 
+/* 0x800cdc00: break the enemy's links to its partners: a holder and the one it holds point
+   at each other through +0xd8/+0xdc, a second pair through +0xe0/+0xe4 */
+void unlink_enemy(enemy_t *e)
+{
+	if(e->unke0)
+	{
+		((enemy_t *)e->unke0)->unke4 = 0;
+	}
+	if(e->unke4)
+	{
+		((enemy_t *)e->unke4)->unke0 = 0;
+	}
+	if(e->unkdc)
+	{
+		((enemy_t *)e->unkdc)->unkd8 = 0;
+	}
+	if(e->unkd8)
+	{
+		((enemy_t *)e->unkd8)->unkdc = 0;
+	}
+}
+
+/* a chance table entry for pick_random_action: entries are tried in order and the first
+   whose cumulative chance reaches a roll of 0..99 is taken */
+typedef struct action_chance
+{
+	int		chance;
+	unsigned short	state;
+	short		frame;
+} action_chance_t;
+
+void	start_blend(enemy_t *, submesh_t *, int);
+extern int	randrng(int);
+
+/* 0x800cf098: switch the enemy to a random action from a chance table (rolling again if it
+   would be the action it is already doing) and blend over len frames to the action's first
+   animation frame */
+void pick_random_action(enemy_t *e, action_chance_t *table, submesh_t *subs, int n, int len)
+{
+	action_chance_t	*a;
+	int		r;
+
+	a = table;
+again:
+	r = randrng(100);
+	while(a->chance < r)
+	{
+		a++;
+	}
+	if(a->state == e->ai_state)
+	{
+		a = table;
+		goto again;
+	}
+	e->ai_state = a->state;
+	if(e->frame > 0)
+	{
+		e->frame--;
+	}
+	if(e->frame != a->frame)
+	{
+		e->frame_to = a->frame;
+		e->frame_from = e->frame;
+		e->frame = a->frame;
+		e->blend_pos = 0;
+		e->blend_len = len;
+		e->flags |= 2;
+		start_blend(e, subs, n);
+	}
+}
+
 /* 0x800cf190: the player an enemy's attack lands on: its target, unless both players are in
    the game, when the enemy's place on the screen decides: left of 180 player 1, right of
    220 player 2 (off screen keeps the target) */

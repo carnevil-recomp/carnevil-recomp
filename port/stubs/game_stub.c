@@ -122,10 +122,10 @@ void func_8013f6d8(void) { STUB(func_8013f6d8); }
 
 /* the boot callees the port does not have yet: level assets, models, the gun calibration */
 #define LOAD_STUB(n) void n(void) { STUB(n); }
-LOAD_STUB(load_inng_texmap) LOAD_STUB(load_shotgun_texmap) LOAD_STUB(load_health_texmap) LOAD_STUB(load_ammmo_texmap)
-LOAD_STUB(load_machinegun_texmap) LOAD_STUB(load_flamethrower_texmap) LOAD_STUB(load_acid_texmap) LOAD_STUB(load_shotgun_model)
-LOAD_STUB(load_health_model) LOAD_STUB(load_ammo_model) LOAD_STUB(load_machinegun_model) LOAD_STUB(load_flamethrower_model)
-LOAD_STUB(load_acid_model)
+LOAD_STUB(load_inng_texmap) 
+
+
+
 extern int randrng(int);
 float func_800fe8dc(float range) { return (float)(randrng(10000) - 5000) / (5000.0f / range); }	/* 0x800fe8dc: a random float in +-range */
 void debug_move_camera(void) { STUB(debug_move_camera); }						/* 0x800c93c4: the player 3/4 switches move the camera (debug) */
