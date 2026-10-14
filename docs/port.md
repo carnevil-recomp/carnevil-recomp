@@ -167,6 +167,12 @@ glDrawPixels), so the enemies are hidden by the scenery the way the hardware hid
 2026-10-14 the vertex z was `1 - oow` before the negation, so the farther of two models won
 the depth test: a Krinkle on the balcony drew over the one in front of the camera.
 
+## In-place vector helpers
+The game calls `mat_vec_mul(v, m, v)` in place (project_vertices, angles_to, the
+billboards). The MIPS routine loads v before it stores, so that is safe on the hardware; the
+host build needs the same order written in the C (locals), or every drawn vertex lands away
+from where the hit tests put the enemy. See docs/toolchain.md.
+
 ## Lighting and the colour combine
 
 Every enemy draw builds its own light list (`build_light_list`, 0x800d8198): each live point

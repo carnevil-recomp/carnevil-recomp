@@ -425,3 +425,13 @@ Lessons from the Rickety Town script gates, term.c and enemy.c (2026-10-13):
   `&drop_list` (`la`, then `lw 0(..)` / `sw 0(..)`), spray_think uses two `lui/%lo` accesses.
   A one-element array reproduces the first and breaks the second, so the plain global stays
   and add_blood_drop sits at 81%.
+
+## Aliasing: what the MIPS binary allows and the host compiler does not (2026-10-14)
+`mat_vec_mul(v, m, out)` is called in place (`out == v`) by project_vertices, angles_to and
+the billboards. The original's compiled routine loads all of v before its first store, so
+the call is correct on the hardware; the byte-exact C, built for the host by clang, reloaded
+v after each store and every model vertex was projected from a wrong camera-relative
+position (enemies floating, unhittable, too near). Where the original binary's load/store
+order makes an in-place call safe, the C must copy the inputs to locals first; mat_vec_mul
+still matches with the locals. Check any three-output helper the game calls in place the
+same way.
