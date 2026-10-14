@@ -7,17 +7,11 @@
 #ifndef LEVELSND_H
 #define LEVELSND_H
 
-/* the part of an enemy/object record the sound helpers read */
-typedef struct snd_object
-{
-	unsigned char	pad0[0x74];
-	int		priority;		/* 0x74: priority word of its generic sounds */
-	unsigned char	pad1[0x10];
-	int		volume;			/* 0x88: volume of its rotating cues */
-	unsigned char	pad2[0x48];
-	unsigned short	prio_base;		/* 0xd4: priority of its sound n is prio_base - n */
-	unsigned short	prio_flags;		/* 0xd6 */
-} snd_object_t;
+/* the sound helpers take the player record (priority, volume) or the enemy record
+   (prio_base, prio_flags): the same offsets on the original, so the code is unchanged, and
+   the real types on the host where the records hold 8-byte pointers */
+struct player_stats;
+struct enemy;
 
 extern int	track_volume, track_fade, stream_volume, stream_fade, cue_priority_rotor;
 
@@ -25,8 +19,8 @@ void	reset_stream_volume(void);
 void	fade_out_level_stream(void), fade_in_level_stream(void);
 void	level_sound_fades(void);
 void	clean_up_level_sounds(void);
-void	play_enemy_sound(snd_object_t *obj, int scall, char *bank, int n);
-void	play_enemy_sound_noint(snd_object_t *obj, int scall, char *bank, int n);
+void	play_enemy_sound(struct enemy *obj, int scall, char *bank, int n);
+void	play_enemy_sound_noint(struct enemy *obj, int scall, char *bank, int n);
 void	start_level_music(int scall, char *bank);
 void	play_level_music(int scall, char *bank);
 void	play_level_speech(int scall, char *bank);
@@ -34,9 +28,9 @@ void	stop_level_music(void), fade_out_level_music(void);
 void	play_rotating_cue(int scall, char *bank), play_rotating_cue_noint(int scall, char *bank);
 void	play_rotating_cue_flags(int scall, char *bank, int flags), play_rotating_cue_flags_noint(int scall, char *bank, int flags);
 void	play_cue_flags(int scall, char *bank, int flags), play_cue_flags_noint(int scall, char *bank, int flags);
-void	play_generic_sound(snd_object_t *obj, int scall);
-void	play_bank_sound(snd_object_t *obj, int scall, char *bank);
-void	play_generic_rotating_cue(snd_object_t *obj, int scall);
+void	play_generic_sound(struct player_stats *obj, int scall);
+void	play_bank_sound(struct player_stats *obj, int scall, char *bank);
+void	play_generic_rotating_cue(struct player_stats *obj, int scall);
 void	play_level_cue(int scall, char *bank);
 void	stop_level_cue(void), stop_level_cue_and_stream(void);
 void	play_attract_cue(int scall, char *bank), stop_attract_cue(void);

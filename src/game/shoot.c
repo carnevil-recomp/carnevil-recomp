@@ -251,7 +251,7 @@ void gun_trigger(int player, int down)
 			}
 			else
 			{
-				play_generic_sound((snd_object_t *)p, 0x21);
+				play_generic_sound(p, 0x21);
 			}
 		}
 		p->trigger_was = down;
@@ -259,7 +259,7 @@ void gun_trigger(int player, int down)
 	case 0x80:
 		if(down && !p->trigger_was)
 		{
-			play_generic_sound((snd_object_t *)p, 0x21);
+			play_generic_sound(p, 0x21);
 			please_wait_timer = 0xf;
 			D_801e7508 = 1;
 		}
@@ -277,12 +277,12 @@ void gun_trigger(int player, int down)
 			{
 				if(!p->trigger_was)
 				{
-					play_generic_sound((snd_object_t *)p, 0x9c);
+					play_generic_sound(p, 0x9c);
 				}
 			}
 			else if(p->trigger_was)
 			{
-				play_generic_sound((snd_object_t *)p, 0x9d);
+				play_generic_sound(p, 0x9d);
 			}
 		}
 		if(p->weapon == 0x1000005)
@@ -291,12 +291,12 @@ void gun_trigger(int player, int down)
 			{
 				if(!p->trigger_was)
 				{
-					play_bank_sound((snd_object_t *)p, 1, "rickity");
+					play_bank_sound(p, 1, "rickity");
 				}
 			}
 			else if(p->trigger_was)
 			{
-				play_bank_sound((snd_object_t *)p, 2, "rickity");
+				play_bank_sound(p, 2, "rickity");
 			}
 		}
 		if(!down)
@@ -344,7 +344,7 @@ void reload_gun(player_stats_t *p)
 {
 	if(p->has_mag)
 	{
-		play_generic_sound((snd_object_t *)p, 0x20);
+		play_generic_sound(p, 0x20);
 		p->clicks = 0;
 		p->ammo = p->ammo_max;
 	}
@@ -376,11 +376,11 @@ player_stats_t *resolve_shot(player_stats_t *p)
 			p->clicks++;
 			if((p->clicks & 3) == 3)
 			{
-				play_generic_sound((snd_object_t *)p, 0x59);
+				play_generic_sound(p, 0x59);
 			}
 			else
 			{
-				play_generic_sound((snd_object_t *)p, 0x21);
+				play_generic_sound(p, 0x21);
 			}
 			p->shooting = 0;
 			break;
@@ -406,7 +406,7 @@ player_stats_t *resolve_shot(player_stats_t *p)
 			p->accuracy = (float)p->hits / (float)p->shots;
 		}
 		func_800db158(p->shot_x, p->shot_y, p->index, 0);
-		play_generic_sound((snd_object_t *)p, randrng(1) + 0x3d);
+		play_generic_sound(p, randrng(1) + 0x3d);
 		p->shooting = 0;
 		break;
 	case 2:
@@ -415,11 +415,11 @@ player_stats_t *resolve_shot(player_stats_t *p)
 			p->clicks++;
 			if((p->clicks & 3) == 3)
 			{
-				play_generic_sound((snd_object_t *)p, 0x59);
+				play_generic_sound(p, 0x59);
 			}
 			else
 			{
-				play_generic_sound((snd_object_t *)p, 0x21);
+				play_generic_sound(p, 0x21);
 			}
 			p->shooting = 0;
 			break;
@@ -437,7 +437,7 @@ player_stats_t *resolve_shot(player_stats_t *p)
 			}
 		}
 		func_800db158(p->shot_x, p->shot_y, p->index + 2, 0);
-		play_generic_sound((snd_object_t *)p, randrng(2) + 0x38);
+		play_generic_sound(p, randrng(2) + 0x38);
 		if(accuracy_tracking)
 		{
 			p->accuracy = (float)p->hits / (float)p->shots;
@@ -450,11 +450,11 @@ player_stats_t *resolve_shot(player_stats_t *p)
 			p->clicks++;
 			if((p->clicks & 3) == 3)
 			{
-				play_generic_sound((snd_object_t *)p, 0x59);
+				play_generic_sound(p, 0x59);
 			}
 			else
 			{
-				play_generic_sound((snd_object_t *)p, 0x21);
+				play_generic_sound(p, 0x21);
 			}
 			p->shooting = 0;
 			break;
@@ -472,7 +472,7 @@ player_stats_t *resolve_shot(player_stats_t *p)
 			}
 		}
 		func_800db158(p->shot_x, p->shot_y, p->index, 0);
-		play_generic_sound((snd_object_t *)p, randrng(2) + 0x38);
+		play_generic_sound(p, randrng(2) + 0x38);
 		if(accuracy_tracking)
 		{
 			p->accuracy = (float)p->hits / (float)p->shots;
@@ -563,11 +563,11 @@ int use_ammo(player_stats_t *p)
 	}
 	if(p->weapon == 0x1000004)
 	{
-		play_generic_sound((snd_object_t *)p, 0x9d);
+		play_generic_sound(p, 0x9d);
 	}
 	if(p->weapon == 0x1000005)
 	{
-		play_bank_sound((snd_object_t *)p, 2, "rickity");
+		play_bank_sound(p, 2, "rickity");
 	}
 	if(!p->has_mag)
 	{
@@ -648,7 +648,7 @@ void gun_pump(player_stats_t *p, int down)
 				{
 					if(p->has_mag)
 					{
-						play_generic_sound((snd_object_t *)p, 0x20);
+						play_generic_sound(p, 0x20);
 						p->clicks = 0;
 						p->ammo = p->ammo_max;
 					}

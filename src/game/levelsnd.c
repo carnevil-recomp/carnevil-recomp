@@ -4,7 +4,8 @@
  */
 #include <stdio.h>
 #include "levelsnd.h"
-#include "credits.h"			/* game_phase (0x80212e14) */
+#include "credits.h"			/* game_phase (0x80212e14), player_stats_t */
+#include "enemy.h"
 
 extern int	snd_scall_bank(char *, unsigned int, unsigned int, unsigned int, unsigned int);
 extern int	snd_stop_track(unsigned int);
@@ -103,11 +104,11 @@ void clean_up_level_sounds(void)
 }
 
 /* 0x800ebcf4, 0x800ebd30: an enemy's sound n at its own priority (noint: no interrupt) */
-void play_enemy_sound(snd_object_t *obj, int scall, char *bank, int n)
+void play_enemy_sound(enemy_t *obj, int scall, char *bank, int n)
 {
 	snd_scall_bank(bank, scall, 0xe6, 0x80, (obj->prio_base - n) | obj->prio_flags);
 }
-void play_enemy_sound_noint(snd_object_t *obj, int scall, char *bank, int n)
+void play_enemy_sound_noint(enemy_t *obj, int scall, char *bank, int n)
 {
 	snd_scall_bank(bank, scall, 0xe6, 0x80, ((obj->prio_base - n) | obj->prio_flags) & 0xdfff);
 }
@@ -179,7 +180,7 @@ void play_cue_flags_noint(int scall, char *bank, int flags)
 }
 
 /* 0x800ec080: an enemy's generic sound; in the attract only if attract sounds are on */
-void play_generic_sound(snd_object_t *obj, int scall)
+void play_generic_sound(player_stats_t *obj, int scall)
 {
 	int	on;
 
@@ -198,7 +199,7 @@ void play_generic_sound(snd_object_t *obj, int scall)
 }
 
 /* 0x800ec100 */
-void play_bank_sound(snd_object_t *obj, int scall, char *bank)
+void play_bank_sound(player_stats_t *obj, int scall, char *bank)
 {
 	int	on;
 
@@ -217,7 +218,7 @@ void play_bank_sound(snd_object_t *obj, int scall, char *bank)
 }
 
 /* 0x800ec188 */
-void play_generic_rotating_cue(snd_object_t *obj, int scall)
+void play_generic_rotating_cue(player_stats_t *obj, int scall)
 {
 	snd_scall_bank("generic1", scall, 0xe6, obj->volume, (unsigned short)(next_cue_priority() | 0x10));
 }

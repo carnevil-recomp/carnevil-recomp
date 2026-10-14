@@ -254,7 +254,7 @@ int krinkle_init(game_object_t *obj)
 	e->prio_base = 0x40;
 	e->prio_flags = next_cue_priority();
 	krinkle_setup(e, 0);
-	play_enemy_sound((snd_object_t *)e, krinkle_sounds[randrng(2)], "krinkle", -2);
+	play_enemy_sound(e, krinkle_sounds[randrng(2)], "krinkle", -2);
 	return(0);
 }
 
@@ -266,7 +266,7 @@ void krinkle_remove(game_object_t *obj)
 	e = (enemy_t *)obj->data;
 	if(!(e->ai_state & 0x4000))
 	{
-		play_enemy_sound((snd_object_t *)e, 0xb, "krinkle", 8);
+		play_enemy_sound(e, 0xb, "krinkle", 8);
 	}
 	if(debug_enemy == e)
 	{
@@ -781,25 +781,25 @@ void krinkle_steer(enemy_t *e)
 		roll = randrng(100);
 		if(roll < 35)
 		{
-			play_enemy_sound((snd_object_t *)e, krinkle_attack_sounds[randrng(6)], "krinkle", 0);
+			play_enemy_sound(e, krinkle_attack_sounds[randrng(6)], "krinkle", 0);
 			blend_to_frame(e, submesh_info_krik, 5, 0, r);
 			e->ai_state = 0x201;
 		}
 		else if(roll < 70)
 		{
-			play_enemy_sound((snd_object_t *)e, krinkle_attack_sounds[randrng(6)], "krinkle", 0);
+			play_enemy_sound(e, krinkle_attack_sounds[randrng(6)], "krinkle", 0);
 			blend_to_frame(e, submesh_info_krik, 5, 0x1fd, r);
 			e->ai_state = 0x206;
 		}
 		else if(roll < 85)
 		{
-			play_enemy_sound((snd_object_t *)e, krinkle_attack_sounds[randrng(6)], "krinkle", 0);
+			play_enemy_sound(e, krinkle_attack_sounds[randrng(6)], "krinkle", 0);
 			blend_to_frame(e, submesh_info_krik, 5, 0x1a7, r);
 			e->ai_state = 0x204;
 		}
 		else
 		{
-			play_enemy_sound((snd_object_t *)e, krinkle_attack_sounds[randrng(6)], "krinkle", 0);
+			play_enemy_sound(e, krinkle_attack_sounds[randrng(6)], "krinkle", 0);
 			blend_to_frame(e, submesh_info_krik, 5, 0x1b9, r);
 			e->ai_state = 0x205;
 		}
@@ -1013,7 +1013,7 @@ int krinkle_die(game_object_t *obj, player_stats_t *p)
 		if(e->health <= 0.0f)
 		{
 			award_points(p->index, 500);
-			play_enemy_sound((snd_object_t *)e, 0xb, "krinkle", 8);
+			play_enemy_sound(e, 0xb, "krinkle", 8);
 			e->killer = p;
 			mark_die(obj->id, p);
 			roll = randrng(100);
@@ -1058,7 +1058,7 @@ int krinkle_die(game_object_t *obj, player_stats_t *p)
 		else
 		{
 			award_points(p->index, 50);
-			play_enemy_sound((snd_object_t *)e, krinkle_hurt_sounds[randrng(5)], "krinkle", 2);
+			play_enemy_sound(e, krinkle_hurt_sounds[randrng(5)], "krinkle", 2);
 		}
 	}
 	if(e->ai_state & 0xe000)

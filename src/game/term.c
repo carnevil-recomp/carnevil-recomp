@@ -187,7 +187,7 @@ int term_die(game_object_t *obj, player_stats_t *p)
 		if(e->health <= 0.0f)
 		{
 			award_points(p->index, 500);
-			play_enemy_sound((snd_object_t *)e, term_sounds[randrng(3)], "rickity", 2);
+			play_enemy_sound(e, term_sounds[randrng(3)], "rickity", 2);
 			e->killer = p;
 			mark_die(obj->id, p);
 			if(randrng(100) < 25)
@@ -204,7 +204,7 @@ int term_die(game_object_t *obj, player_stats_t *p)
 		else
 		{
 			award_points(p->index, 50);
-			play_enemy_sound((snd_object_t *)e, term_sounds[randrng(3)], "rickity", 2);
+			play_enemy_sound(e, term_sounds[randrng(3)], "rickity", 2);
 		}
 	}
 	if(e->ai_state & 0xe000)
@@ -333,7 +333,7 @@ int term_init(game_object_t *obj)
 	e->prio_base = 0x40;
 	e->prio_flags = next_cue_priority();
 	term_setup(e, 0);
-	play_enemy_sound((snd_object_t *)e, 0x14, "rickity", 0);
+	play_enemy_sound(e, 0x14, "rickity", 0);
 	return(0);
 }
 
@@ -345,7 +345,7 @@ void term_remove(game_object_t *obj)
 	e = (enemy_t *)obj->data;
 	if(!(e->ai_state & 0x6000))
 	{
-		play_enemy_sound((snd_object_t *)e, term_sounds[randrng(3)], "rickity", 2);
+		play_enemy_sound(e, term_sounds[randrng(3)], "rickity", 2);
 	}
 	if(debug_enemy == e)
 	{
