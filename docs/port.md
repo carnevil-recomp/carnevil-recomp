@@ -64,11 +64,17 @@ The game flow runs through the real code: a start creates the main game process
 (main.c, `main_game_proc`), which loads the level-select gallery (wave.c), lets the
 countdown pick a level (no gun aiming yet, so Rickety Town first), loads it with its sound
 banks, camera file, spawn table and music stream, and plays its movie under the level
-script (movie_scripts.c, extracted by `tools/extract_scripts.py`). What the level still
-lacks is stubbed: the enemies' models and texmaps (`port/host/wave_stubs.c`), the script's
-per-level callbacks (`port/host/script_stubs.c`, weak definitions a real one overrides), the
-lights, the HUD, the hit tests and the guns. With `CARNEVIL_TRACE=1` the loaders report
-their steps; a headless run through the first level:
+script (movie_scripts.c, extracted by `tools/extract_scripts.py`), lights (lights.c), the
+light gun (shoot.c), the enemies the spawn table places (krinkle.c, term.c through model.c
+and the sprite and clipper files) and their sounds. What the level still lacks is stubbed:
+the other enemies' models and texmaps (`port/host/wave_stubs.c`), the script's per-level
+callbacks (`port/host/script_stubs.c`, weak definitions a real one overrides), the HUD and
+the per-level collision tests. Every stub reports the first time it is reached
+(`[stub] name reached at vblank N`, `stub_reached` in hal.c) and the run ends with the
+list, so nothing missing is a silent no-op; the hardware stand-ins (heap size, refresh rate,
+texture memory statistics) are not stubs and stay quiet. A Rickety Town run reaches 61
+stubs (2026-10-14). With `CARNEVIL_TRACE=1` the loaders report their steps; a headless run
+through the first level:
 
 ```
 ./build/host/carnevil --partition original/partition --raw original/carn.raw \
@@ -108,6 +114,10 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | rickity_script.c | game2 | 38 of 38 exact (0x80123f88-0x80124c68: the script entry, the 22 section gates the movie script calls between its replays, the unused timers and counters). Unregistered: its timers are interleaved with the other levels' in .bss |
 | term.c | game2 | 5 of 12 exact (the loaders, term_remove), term_die 94%, term_end_path 96%, term_steer 94%, term_hit 76%, term_init 59%, term_draw 33%, term_think 17%, term_setup 15% (case-tree shapes); the port runs all of it: the bugs follow their path and reach the screen |
 | enemy.c | game2 | 9 of 14 exact (health by adjustment, the path helpers, the reach test, set_goal_near_camera); step_toward_goal and _xz 50%, move_cd 16% (the per-level collision tests are stubs), face_camera 3% |
+| sprites.c | game2 | the screen and world sprite lists (0x800db148-0x800dbf58: muzzle flashes, hit marks, the dust of a miss, drops, sparks): the list resets exact, the creators 31-55%, the draw/update loops 58-64%, the reapers 10% (loop shape). The kind tables are in the source (0x8017d230, 0x8017d3b0) |
+| draw2d.c | game2 | draw_quad and draw_quad_mirrored exact, the alpha quads 94%; the four billboards (0x800da0f0-0x800dac0c) are transcriptions (0-4%: the original keeps the corners in 16-byte slots and inlines everything) |
+| texmaps.c | game2 | load_misc_texmaps exact, the per-level loaders 70-91% (the violence choice is `t = noblood; if(violence_level >= 2) t = blood;`); the 25 tables are generated into texmaps_data.c by tools/extract_texmaps.py |
+| clip.c | game2 | the three edge interpolators exact; draw_world_tri (0x8010bf30, near-plane clip and projection) and clip_screen_tri (0x8010cd54, the screen edges, recursive) are complete transcriptions at 1-10%: the original assigns the vertex pointers to the saved registers in a different order and does not interleave the quarter-pixel snaps |
 
 A module is registered in `config/modules.txt` once every function in its source file's
 address range matches and its data is laid out in the file's order (the audit file was the

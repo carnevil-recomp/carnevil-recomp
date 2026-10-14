@@ -957,3 +957,15 @@
 0x8010d64c clip_vertex_y
 0x8010d6e4 clip_vertex_x
 0x8010d77c clip_vertex_z
+# player damage (player.c), endgame.c, shake.c, the Rickety Town step test (objects.c), loose groups (model.c), angles_to (enemy.c), rickity_objects.c
+0x800e2a34 hurt_player
+0x800e3c74 kill_player
+0x800e4bd0 audit_level_time
+0x800f3668 start_shake
+0x8018f118 shake_table
+0x8017ddf0 hurt_cue_count
+0x800cd610 step_blocked_rickity
+0x80114b8c animate_loose_groups
+0x800fc34c angles_to
+0x8010fe84 load_rickity_object_texmaps
+0x80194170 rickitytown_present_texmap

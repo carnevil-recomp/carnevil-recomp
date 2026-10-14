@@ -258,7 +258,9 @@ int face_camera(enemy_t *e, float rate)
 
 extern void	world_to_view(float *, float *), view_to_world(float *);	/* vecmat.c */
 extern int	loaded_wave;
-extern int	func_800cd094(float *, float *, int), func_800cd31c(float *, float *, int), func_800cd610(float *, float *, int), func_800cd904(float *, float *, int);
+extern float	fatan(float), ffabs(float);				/* vecmat.c, objects.c */
+extern void	rot_y(float *, float *), rot_matrix_neg_zyx(float *, float *), mat_vec_mul(float *, float *, float *);
+extern int	func_800cd094(float *, float *, int), func_800cd31c(float *, float *, int), step_blocked_rickity(float *, float *, int), func_800cd904(float *, float *, int);
 extern int	printf(const char *, ...);
 
 /* 0x800fb934: the enemy's goal: a point dz in front of from (the view point), dy below it
@@ -406,7 +408,7 @@ int move_cd(enemy_t *e, float dx, float dy, float dz)
 		blocked = func_800cd31c(np, &e->x, e->id);
 		break;
 	case WAVE_RICKITY:
-		blocked = func_800cd610(np, &e->x, e->id);
+		blocked = step_blocked_rickity(np, &e->x, e->id);
 		break;
 	case WAVE_BIGTOP:
 		blocked = func_800cd904(np, &e->x, e->id);
@@ -424,4 +426,108 @@ int move_cd(enemy_t *e, float dx, float dy, float dz)
 	e->y = e->y + dy;
 	e->z = e->z + dz;
 	return(1);
+}
+
+/* 0x800fc34c: the pitch (rot[0]) and yaw (rot[1]) that point from `from` at `to`; rot[2] = 0.
+   The yaw comes from the x and z difference, the pitch from the y difference and the depth
+   once the difference is turned by that yaw */
+void angles_to(float *from, float *to, float *rot)
+{
+	float	d[3], m[9], a;
+
+	d[0] = to[0] - from[0];
+	d[1] = to[1] - from[1];
+	d[2] = to[2] - from[2];
+	if(d[2] == 0.0f)
+	{
+		if(d[0] >= 0.0f)
+		{
+			rot[1] = 1.5707960f;
+		}
+		else
+		{
+			rot[1] = 4.7123880f;
+		}
+	}
+	else
+	{
+		a = fatan(ffabs(d[0] / d[2]));
+		if(d[0] >= 0.0f)
+		{
+			if(d[2] >= 0.0f)
+			{
+				rot[1] = 3.1415927f - a;
+			}
+			else
+			{
+				rot[1] = a;
+			}
+		}
+		else
+		{
+			if(d[2] >= 0.0f)
+			{
+				rot[1] = a + 3.1415927f;
+			}
+			else
+			{
+				rot[1] = 6.2831855f - a;
+			}
+		}
+	}
+	rot_y(m, rot);
+	mat_vec_mul(d, m, d);
+	if(d[2] == 0.0f)
+	{
+		if(d[1] >= 0.0f)
+		{
+			rot[0] = 1.5707960f;
+		}
+		else
+		{
+			rot[0] = 4.7123880f;
+		}
+	}
+	else
+	{
+		a = fatan(ffabs(d[1] / d[2]));
+		if(d[1] <= 0.0f)
+		{
+			if(d[2] >= 0.0f)
+			{
+				rot[0] = 3.1415927f - a;
+			}
+			else
+			{
+				rot[0] = 6.2831855f - a;
+			}
+		}
+		else
+		{
+			if(d[2] >= 0.0f)
+			{
+				rot[0] = a + 3.1415927f;
+			}
+			else
+			{
+				rot[0] = a;
+			}
+		}
+	}
+	rot[2] = 0.0f;
+}
+
+/* 0x800fd6b0: the enemy's angles become those looking from the point 100 units along its
+   heading (the rotation by minus its yaw applied to (0, 0, 100)) back at the origin */
+void func_800fd6b0(enemy_t *e)
+{
+	float	origin[3] = { 0.0f, 0.0f, 0.0f };
+	float	ahead[3] = { 0.0f, 0.0f, 100.0f };
+	float	m[9], p[3], angles[3];
+
+	angles[0] = angles[2] = 0.0f;
+	angles[1] = e->ry;
+	rot_matrix_neg_zyx(m, angles);
+	mat_vec_mul(ahead, m, p);
+	angles_to(p, origin, &e->rx);
 }

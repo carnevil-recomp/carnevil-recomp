@@ -78,7 +78,7 @@ extern void	load_binn(void), load_skeleton(void), load_btop_weap_models(void);
 extern void	func_8010ffd4(void), remove_rinn_assets(void), remove_term_assets(void), remove_dino_assets(void), func_8012c214(void);
 extern void	remove_krampus_assets(void), remove_krinkle_assets(void), remove_smilingbob_assets(void), remove_rickity_texmap(void);
 extern void	load_rickity_texmap(void), load_smilingbob_texmap(void), load_krinkle_texmap(void), load_krampus_texmap(void);
-extern void	func_8012c0bc(void), load_dino_texmap(void), load_term_texmap(void), func_8010fe84(void), load_smilingbob(void);
+extern void	func_8012c0bc(void), load_dino_texmap(void), load_term_texmap(void), load_rickity_object_texmaps(void), load_smilingbob(void);
 extern void	load_krinkle(void), load_krampus(void), load_teen(void), load_dino(void), load_term(void), load_rinn(void), load_junk(void);
 
 int	loaded_wave;			/* 0x80212e30 (wave_id_g2): the wave loaded, 0 for none */
@@ -680,7 +680,7 @@ void load_rickity_town_assets(void)
 	func_8012c0bc();
 	load_dino_texmap();
 	load_term_texmap();
-	func_8010fe84();
+	load_rickity_object_texmaps();
 	load_smilingbob();
 	load_krinkle();
 	load_krampus();

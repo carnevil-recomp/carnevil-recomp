@@ -18,7 +18,10 @@ extern void	draw_string(int, char *, float, float);
 extern float	get_screen_pos(float *, float *);		/* 0x800d07a8: -1 when off screen */
 extern void	func_800c8a44(float, float, float, float, unsigned int);	/* a screen marker */
 extern void	rot_matrix_zyx(float *, float *);			/* a rotation matrix from three angles */
-extern void	func_800c836c(void), func_800c865c(void), init_surfaces(void), init_lights(void);
+extern void	init_surfaces(void), init_lights(void);
+extern float	D_801faca4, D_801facb4;			/* the debug aim point (objects.c) */
+int		D_801fad20;				/* 0x801fad20 */
+float		D_801e0984;				/* 0x801e0984 */
 extern void	init_camera(void), rot_matrix_yxz(float *, float *), vec_negate(float *, float *);
 extern float	camera_x, camera_rx, view_matrix[9], camera_neg_pos[3];	/* camera.c */
 extern void	init_player(int player);				/* 0x800e2f08 (player.c) */
@@ -285,6 +288,23 @@ void init_game_state(void)
 		init_player(i);
 	}
 	D_801e0960 = ~read_player12_direct();
+}
+
+/* 0x800c836c: two globals of unknown use and, in debug mode 2, the debug aim point */
+void func_800c836c(void)
+{
+	D_801fad20 = 5;
+	D_801e0984 = 3.2f;
+	if(debug_mode & 2)
+	{
+		D_801faca4 = 100.0f;
+		D_801facb4 = 100.0f;
+	}
+}
+
+/* 0x800c865c: empty */
+void func_800c865c(void)
+{
 }
 
 /* 0x800ca3a0: the game's set-up at boot: the movie player, the object list, the fonts, and

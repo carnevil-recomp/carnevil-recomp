@@ -16,7 +16,6 @@ WEAK void func_80109388(void) { STUB(func_80109388); }
 WEAK void func_801093c4(void) { STUB(func_801093c4); }
 WEAK void func_80109400(void) { STUB(func_80109400); }
 WEAK void func_8010e848(void) { STUB(func_8010e848); }
-WEAK void func_8010fe84(void) { STUB(func_8010fe84); }
 WEAK void func_8010ffd4(void) { STUB(func_8010ffd4); }
 WEAK void func_801101c0(void) { STUB(func_801101c0); }
 WEAK void func_8011536c(void) { STUB(func_8011536c); }
@@ -308,14 +307,10 @@ WEAK int remove_animation(void) { STUB(remove_animation); return 0; }
 WEAK int remove_model(void) { STUB(remove_model); return 0; }
 WEAK int remove_path(void) { STUB(remove_path); return 0; }
 /* term.c's helpers (hit tests, effects, steering, damage) still in assembly */
-WEAK void decrenent_health_(void) { STUB(decrenent_health_); }
-WEAK void func_800fc34c(void) { STUB(func_800fc34c); }
-WEAK void func_800fd6b0(void) { STUB(func_800fd6b0); }
 WEAK void func_800fdc18(void) { STUB(func_800fdc18); }
 WEAK void func_800fdcf4(void) { STUB(func_800fdcf4); }
 WEAK void *func_800febd0(void) { return 0; }
 WEAK void func_800ff190(void) { STUB(func_800ff190); }
-WEAK void func_80114b8c(void) { STUB(func_80114b8c); }
 WEAK void *get_player_info_struct2_(void) { return 0; }
 /* krinkle.c's helpers still in assembly */
 WEAK void func_8010d818(void) { STUB(func_8010d818); }
@@ -323,7 +318,6 @@ WEAK void func_8010d818(void) { STUB(func_8010d818); }
 /* the per-level collision tests, the part fly-off and the spray effect are still assembly */
 WEAK int func_800cd094(void) { STUB(func_800cd094); return 0; }
 WEAK int func_800cd31c(void) { STUB(func_800cd31c); return 0; }
-WEAK int func_800cd610(void) { STUB(func_800cd610); return 0; }
 WEAK int func_800cd904(void) { STUB(func_800cd904); return 0; }
 WEAK void detach_group(void) { STUB(detach_group); }
 WEAK void func_8011459c(void) { STUB(func_8011459c); }

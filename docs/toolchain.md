@@ -381,3 +381,25 @@ Lessons from the Rickety Town script gates, term.c and enemy.c (2026-10-13):
   stack in declaration order and every expression reloads its operands, so the shape of the
   source (which temporaries exist, the order of the comparisons in a `while(n && !found)`)
   decides the match. The list routines match; the longer ones still differ in their frames.
+
+## Lessons from the sprite, texmap and clipper files (2026-10-14)
+- **A choice between two tables on a global** compiles to "load the default, test, overwrite"
+  when written as `t = noblood_texmap; if(violence_level >= 2) t = blood_texmap;`; the ternary
+  `violence_level >= 2 ? blood : noblood` tests first and lands at 70-80%.
+- **`x ? a : b` on a plain int** (`violence_level ? bloodnv : smokesplat`) produced `beqz`
+  where the original has `bnez`: write the zero case first (`violence_level == 0 ? smokesplat :
+  bloodnv`).
+- **Mixed `0` and `0.0` in float tests** show in the clipper: `v->y < 0` is a single compare
+  (`c.lt.s` against a zero moved into the FPU), `v->y >= 0.0` promotes to double
+  (`cvt.d.s`, `c.le.d`). Keep the spelling the original used per test; `256` and `400` are
+  float constants from rodata either way.
+- **One rodata constant per use site.** The clipper's eight projection sites each have their
+  own 1.0 and 200.0 words (0x80172f70-0x80172fac): a macro expanded per site, which the
+  compiler does not merge.
+- **A macro parameter must not share a name with a struct member it dereferences**
+  (`#define PROJECT(v) (v)->v`): the SN preprocessor path accepts it, clang does not.
+- **List reapers walk with a "previous record" pointer** made from the list head:
+  `(sprite_t *)((char *)&list - offsetof(sprite_t, next))`, so `prev->next = next` also
+  rewrites the head. Keep it; it is what the original compiles to (D_801e5898 = list - 0x80).
+- **Weak stubs must be loud.** A missing function that links as a weak no-op hides a gap
+  in the transcription; every stub in `port/host/` now reports through `stub_reached()`.

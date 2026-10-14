@@ -9,6 +9,13 @@ extern int	increment_audit(int);
 extern void	set_weapon(player_stats_t *, int);
 extern void	set_player_gun(player_stats_t *);			/* 0x800d6718 */
 extern int	loaded_wave, D_801facc8;
+extern int	game_state[4];						/* credits.h: [0] is the phase */
+extern void	start_shake(int);
+extern float	func_800fe8dc(float range);				/* a random float in +-range */					/* shake.c */
+extern void	kill_player(player_stats_t *);				/* endgame.c */
+extern int	printf(const char *, ...);
+#include "levelsnd.h"
+#include "sprites.h"
 extern int	D_801de8a4;						/* adjustment 0x31 (adjust.c) */
 
 /* 0x800e4bc0 */
@@ -177,5 +184,103 @@ void heal_player(player_stats_t *p, float amount)
 	else
 	{
 		p->health = h;
+	}
+}
+
+int	hurt_cue_count;			/* 0x8017ddf0: the hurt cues alternate 0xa2/0xa3 */
+
+/* 0x800e2a34: an enemy's attack lands: the damage comes off the health (a dead player goes
+   to the continue countdown), the screen shakes, a hurt cue plays and the attack's hit mark
+   (a screen sprite, kinds 6-15) appears over the player's side. kind 6 scatters its mark by
+   param and plays no cue; 1 and 7 draw it mirrored when param is set; 5 only shakes and is
+   the one attack that lands during the grace after a continue. */
+void hurt_player(player_stats_t *p, int damage, int kind, float param)
+{
+	if(game_state[0] != 2)
+	{
+		return;
+	}
+	if(p->state != 4)
+	{
+		return;
+	}
+	if(p->unkd4 > 0)
+	{
+		if(kind != 5)
+		{
+			return;
+		}
+	}
+	p->health = p->health - (float)damage;
+	if(p->health <= 0.0f)
+	{
+		kill_player(p);
+	}
+	switch(kind)
+	{
+	case 6:
+		add_screen_sprite(p->unk6c + param, func_800fe8dc(10.0f) + 128.0f, 11, 0);
+		start_shake(1);
+		break;
+	case 5:
+		start_shake(1);
+		break;
+	case 8:
+		start_shake(1);
+		hurt_cue_count++;
+		play_generic_rotating_cue(p, (hurt_cue_count & 1) | 0xa2);
+		break;
+	case 4:
+		start_shake(1);
+		hurt_cue_count++;
+		play_generic_rotating_cue(p, (hurt_cue_count & 1) | 0xa2);
+		add_screen_sprite(p->unk6c, 128.0f, 9, 0);
+		break;
+	case 1:
+		start_shake(1);
+		hurt_cue_count++;
+		play_generic_rotating_cue(p, (hurt_cue_count & 1) | 0xa2);
+		add_screen_sprite_mirror(p->unk6c, 128.0f, 7, 0, param);
+		break;
+	case 7:
+		start_shake(1);
+		hurt_cue_count++;
+		play_generic_rotating_cue(p, (hurt_cue_count & 1) | 0xa2);
+		add_screen_sprite_mirror(p->unk6c, 128.0f, 8, 0, param);
+		break;
+	case 0:
+	case 3:
+		start_shake(1);
+		hurt_cue_count++;
+		play_generic_rotating_cue(p, (hurt_cue_count & 1) | 0xa2);
+		add_screen_sprite(p->unk6c, 128.0f, 6, 0);
+		break;
+	case 9:
+		start_shake(1);
+		hurt_cue_count++;
+		play_generic_rotating_cue(p, (hurt_cue_count & 1) | 0xa2);
+		add_screen_sprite(p->unk6c, 128.0f, 12, 0);
+		break;
+	case 10:
+		start_shake(1);
+		hurt_cue_count++;
+		play_generic_rotating_cue(p, (hurt_cue_count & 1) | 0xa2);
+		add_screen_sprite(p->unk6c, 128.0f, 13, 0);
+		break;
+	case 11:
+		start_shake(1);
+		hurt_cue_count++;
+		play_generic_rotating_cue(p, (hurt_cue_count & 1) | 0xa2);
+		add_screen_sprite(p->unk6c, 128.0f, 14, 0);
+		break;
+	case 12:
+		start_shake(1);
+		hurt_cue_count++;
+		play_generic_rotating_cue(p, (hurt_cue_count & 1) | 0xa2);
+		add_screen_sprite(p->unk6c, 128.0f, 15, 0);
+		break;
+	default:
+		printf("Unknown hurt in decrement_health\n");
+		break;
 	}
 }

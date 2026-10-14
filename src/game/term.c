@@ -36,10 +36,10 @@ extern void	path_place_upright(enemy_t *, void *, short, float);	/* step along a
 extern void	func_800fd6b0(enemy_t *);
 extern void	think_effects(enemy_t *);
 extern void	free_effects(enemy_t *);
-extern void	func_80114b8c(enemy_t *, int);
-extern void	func_800fc34c(float *, float *, float *);	/* turn to face a point */
+extern void	animate_loose_groups(enemy_t *, int);
+extern void	angles_to(float *, float *, float *);	/* turn to face a point */
 extern int	group_near_camera(group_t *, float);		/* a group within reach of the player */
-extern void	decrenent_health_(player_stats_t *, int, int, float);
+extern void	hurt_player(player_stats_t *, int, int, float);
 extern void	blend_to_frame(enemy_t *, submesh_t *, int, int, int);	/* blend to a frame */
 extern void	start_hit_reaction(enemy_t *, int, int, submesh_t *, int);	/* hit reaction */
 extern void	set_goal_near_camera(enemy_t *, float *, float *, float, float, float);
@@ -323,7 +323,7 @@ int term_init(game_object_t *obj)
 	e->unkac = 0;
 	init_groups(e, submesh_info_term, 0xd);
 	e->hit_group = &e->groups[6];
-	e->groups[6].unk74 = 0;
+	e->groups[6].floor = 0.0f;
 	e->unk98 = 0;
 	e->effects = 0;
 	e->unkd8 = 0;
@@ -372,7 +372,7 @@ void term_think(game_object_t *obj)
 	}
 	e = (enemy_t *)obj->data;
 	think_effects(e);
-	func_80114b8c(e, 0xd);
+	animate_loose_groups(e, 0xd);
 	if(e->flags & 2)
 	{
 		return;
@@ -398,17 +398,17 @@ void term_think(game_object_t *obj)
 		{
 			e->frame = 0xf;
 		}
-		func_800fc34c(&camera_x, &e->x, &e->rx);
+		angles_to(&camera_x, &e->x, &e->rx);
 		term_steer(e);
 		break;
 	case 0x201:
-		func_800fc34c(&camera_x, &e->x, &e->rx);
+		angles_to(&camera_x, &e->x, &e->rx);
 		e->frame++;
 		if(e->frame == 0xc)
 		{
 			if(group_near_camera(&e->groups[4], 13.0f))
 			{
-				decrenent_health_(get_player_info_struct2_(e), 0xaa, 3, 0.0f);
+				hurt_player(get_player_info_struct2_(e), 0xaa, 3, 0.0f);
 			}
 		}
 		if(e->frame < 0xf)
@@ -418,7 +418,7 @@ void term_think(game_object_t *obj)
 		term_steer(e);
 		break;
 	case 3:
-		func_800fc34c(&camera_x, &e->x, &e->rx);
+		angles_to(&camera_x, &e->x, &e->rx);
 		e->frame++;
 		if(e->frame < 0x4b)
 		{
@@ -455,7 +455,7 @@ void term_think(game_object_t *obj)
 		}
 		if(group_near_camera(&e->groups[4], 8.0f))
 		{
-			decrenent_health_(get_player_info_struct2_(e), 0xaa, 3, 0.0f);
+			hurt_player(get_player_info_struct2_(e), 0xaa, 3, 0.0f);
 			remove_die(obj->id, 0);
 		}
 		path_place_upright(e, term_path, e->path, 1.0f);

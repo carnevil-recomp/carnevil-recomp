@@ -244,7 +244,7 @@ int krinkle_init(game_object_t *obj)
 	e->unkb0 = 0;
 	init_groups(e, submesh_info_krik, 0x11);
 	e->hit_group = &e->groups[5];
-	e->groups[5].unk74 = 0;
+	e->groups[5].floor = 0.0f;
 	e->unk98 = 0;
 	e->effects = 0;
 	e->unkd8 = 0;
@@ -278,10 +278,10 @@ void krinkle_remove(game_object_t *obj)
 }
 
 extern void	think_effects(enemy_t *);
-extern void	func_80114b8c(enemy_t *, int);
+extern void	animate_loose_groups(enemy_t *, int);
 extern int	group_near_camera(group_t *, float);		/* enemy.c */
 extern int	face_camera(enemy_t *, float);			/* enemy.c */
-extern void	decrenent_health_(player_stats_t *, int, int, float);
+extern void	hurt_player(player_stats_t *, int, int, float);
 extern void	blend_to_frame(enemy_t *, submesh_t *, int, int, int);	/* blend to a frame */
 extern void	func_8010d818(float *, int, float *);		/* a part flies off */
 extern void	detach_effect(enemy_t *, group_t *);		/* drop the effect on a group */
@@ -312,7 +312,7 @@ void krinkle_think(game_object_t *obj)
 	}
 	e = (enemy_t *)obj->data;
 	think_effects(e);
-	func_80114b8c(e, 0x11);
+	animate_loose_groups(e, 0x11);
 	if(e->flags2 & 0x100)
 	{
 		path_place(e, krik_path, e->path, 1.0f);
@@ -405,49 +405,49 @@ void krinkle_think(game_object_t *obj)
 		case 10:
 			if(group_near_camera(&e->groups[11], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 7, 3.1415927f);
+				hurt_player(e->target, 0x50, 7, 3.1415927f);
 			}
 			break;
 		case 22:
 			if(group_near_camera(&e->groups[14], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 3, 0.0f);
+				hurt_player(e->target, 0x50, 3, 0.0f);
 			}
 			break;
 		case 34:
 			if(group_near_camera(&e->groups[11], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 7, 0.0f);
+				hurt_player(e->target, 0x50, 7, 0.0f);
 			}
 			break;
 		case 47:
 			if(group_near_camera(&e->groups[14], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 3, 0.0f);
+				hurt_player(e->target, 0x50, 3, 0.0f);
 			}
 			break;
 		case 57:
 			if(group_near_camera(&e->groups[11], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 7, 0.0f);
+				hurt_player(e->target, 0x50, 7, 0.0f);
 			}
 			break;
 		case 66:
 			if(group_near_camera(&e->groups[14], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 7, 3.1415927f);
+				hurt_player(e->target, 0x50, 7, 3.1415927f);
 			}
 			break;
 		case 74:
 			if(group_near_camera(&e->groups[11], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 7, 0.0f);
+				hurt_player(e->target, 0x50, 7, 0.0f);
 			}
 			break;
 		case 89:
 			if(group_near_camera(&e->groups[14], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 7, 0.0f);
+				hurt_player(e->target, 0x50, 7, 0.0f);
 			}
 			break;
 		}
@@ -464,21 +464,21 @@ void krinkle_think(game_object_t *obj)
 		{
 			if(group_near_camera(&e->groups[14], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 3, 0.0f);
+				hurt_player(e->target, 0x50, 3, 0.0f);
 			}
 		}
 		if(e->frame == 0x212)
 		{
 			if(group_near_camera(&e->groups[14], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 3, 0.0f);
+				hurt_player(e->target, 0x50, 3, 0.0f);
 			}
 		}
 		if(e->frame == 0x21c)
 		{
 			if(group_near_camera(&e->groups[14], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 3, 0.0f);
+				hurt_player(e->target, 0x50, 3, 0.0f);
 			}
 		}
 		if(e->frame < 0x225)
@@ -494,7 +494,7 @@ void krinkle_think(game_object_t *obj)
 		{
 			if(group_near_camera(&e->groups[8], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 3, 0.0f);
+				hurt_player(e->target, 0x50, 3, 0.0f);
 			}
 		}
 		if(e->frame < 0x1b9)
@@ -510,7 +510,7 @@ void krinkle_think(game_object_t *obj)
 		{
 			if(group_near_camera(&e->groups[4], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 3, 0.0f);
+				hurt_player(e->target, 0x50, 3, 0.0f);
 			}
 		}
 		if(e->frame < 0x1c5)
@@ -526,7 +526,7 @@ void krinkle_think(game_object_t *obj)
 		{
 			if(group_near_camera(&e->groups[11], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 3, 0.0f);
+				hurt_player(e->target, 0x50, 3, 0.0f);
 			}
 		}
 		if(e->frame < 0x1a7)
@@ -609,7 +609,7 @@ void krinkle_think(game_object_t *obj)
 		{
 			if(group_near_camera(&e->groups[11], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 3, 0.0f);
+				hurt_player(e->target, 0x50, 3, 0.0f);
 			}
 		}
 		if(e->frame < 0x1fd)
@@ -624,7 +624,7 @@ void krinkle_think(game_object_t *obj)
 		{
 			if(group_near_camera(&e->groups[11], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 3, 0.0f);
+				hurt_player(e->target, 0x50, 3, 0.0f);
 			}
 		}
 		if(e->frame < 0x272)
@@ -639,14 +639,14 @@ void krinkle_think(game_object_t *obj)
 		{
 			if(group_near_camera(&e->groups[11], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 7, 3.1415927f);
+				hurt_player(e->target, 0x50, 7, 3.1415927f);
 			}
 		}
 		else if(e->frame == 0x286 || e->frame == 0x296)
 		{
 			if(group_near_camera(&e->groups[11], 25.0f))
 			{
-				decrenent_health_(e->target, 0x50, 0xa, 0.0f);
+				hurt_player(e->target, 0x50, 0xa, 0.0f);
 			}
 		}
 		if(e->frame < 0x2a9)

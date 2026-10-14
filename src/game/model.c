@@ -67,6 +67,49 @@ void shiver_vertices(int n, float *src, float *dst)
 	}
 }
 
+/* 0x80114b8c: a group shot loose (flag 0x4000) flies on its own: while it is above its
+   floor it moves by its velocity, spins by its spin and falls (the y velocity loses 0.22 a
+   frame); its life counts down by its step and its alpha changes by its step; at the end of
+   either it is no longer loose */
+void animate_loose_groups(enemy_t *e, int n)
+{
+	group_t	*g;
+	int	i;
+
+	for(i = 0; i < n; i++)
+	{
+		g = &e->groups[i];
+		if(!(g->flags & 0x4000))
+		{
+			continue;
+		}
+		if(g->pos[1] > g->floor)
+		{
+			g->rot[0] = g->rot[0] + g->spin[0];
+			g->rot[1] = g->rot[1] + g->spin[1];
+			g->rot[2] = g->rot[2] + g->spin[2];
+			g->parent_pos[0] = g->parent_pos[0] + g->vel[0];
+			g->parent_pos[1] = g->parent_pos[1] + g->vel[1];
+			g->parent_pos[2] = g->parent_pos[2] + g->vel[2];
+			g->vel[0] = g->vel[0] + 0.0f;
+			g->vel[1] = g->vel[1] + -0.22f;
+			g->vel[2] = g->vel[2] + 0.0f;
+		}
+		g->life = g->life + g->life_step;
+		if(g->life == 0)
+		{
+			g->flags &= ~0x4000;
+			g->flags &= ~0x8000;
+		}
+		g->alpha = g->alpha + g->alpha_step;
+		if(g->alpha <= 0.0f)
+		{
+			g->flags &= ~0x4000;
+			g->flags &= ~0x8000;
+		}
+	}
+}
+
 /* 0x801149b4: every group starts at the enemy's position */
 void init_groups(enemy_t *e, submesh_t *sub, int nsub)
 {

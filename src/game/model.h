@@ -47,18 +47,19 @@ typedef struct pvert
 #define GROUP_SHIVER	0x0002			/* vertices jittered each frame */
 typedef struct group
 {
-	int	flags;				/* placement bits above, draw mode bits 0x7f4, texture key high half */
-	int	unk4;
+	int	flags;				/* placement bits above, draw mode bits 0x7f4, texture key high half; 0x4000 shot loose */
+	unsigned short	life, life_step;	/* +0x04: a loose group's frames left and the step it counts by */
 	float	pos[3];				/* +0x08: world position */
 	float	mat[9];				/* +0x14: world rotation (scaled) */
 	float	rot[3];				/* +0x38: own angles */
 	float	off[3];				/* +0x44 */
 	float	pivot[3];			/* +0x50: the submesh pivot in the world */
-	int	unk5c[6];
-	int	unk74;
+	float	vel[3];				/* +0x5c: a loose group's velocity */
+	float	spin[3];			/* +0x68: its angular velocity */
+	float	floor;				/* +0x74: it stops falling below this height */
 	float	alpha;				/* +0x78 */
-	int	unk7c;
-	float	parent_pos[3];			/* +0x80 */
+	float	alpha_step;			/* +0x7c: a loose group's alpha change per frame */
+	float	parent_pos[3];			/* +0x80: a loose group flies from here */
 	float	parent_mat[9];			/* +0x8c */
 } group_t;					/* sizeof = 0xb0 */
 

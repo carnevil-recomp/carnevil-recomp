@@ -475,6 +475,53 @@ void think_pass(void *data)
 	}
 }
 
+/* 0x800cd610: Rickety Town's step test for move_cd: the step to np from pos is blocked when
+   it ends inside another live enemy (the five Rickety Town types, not dying) that it was not
+   already inside; the enemy nearest the camera is never blocked */
+int step_blocked_rickity(float *np, float *pos, int id)
+{
+	game_object_t	*o;
+	enemy_t		*e;
+	short		i;
+	float		d, dx, dz;
+
+	if(nearest_enemy == (short)id)
+	{
+		return(0);
+	}
+	i = objects[0].next;
+	while(i != OBJ_NONE)
+	{
+		o = &objects[i];
+		i = o->next;
+		if(o->id == (short)id)
+		{
+			continue;
+		}
+		if(o->type == 0x2041 || o->type == 0x2044 || o->type == 0x2042 || o->type == 0x2045 || o->type == 0x2040)
+		{
+			e = (enemy_t *)o->data;
+			if(e->ai_state & 0x6000)
+			{
+				continue;
+			}
+			dx = e->x - np[0];
+			dz = e->z - np[2];
+			d = fsqrt(dx * dx + dz * dz);
+			if(d < e->radius)
+			{
+				dx = e->x - pos[0];
+				dz = e->z - pos[2];
+				if(d < fsqrt(dx * dx + dz * dz))
+				{
+					return(1);
+				}
+			}
+		}
+	}
+	return(0);
+}
+
 /* 0x800cd1f8-0x800cdaa0: the id of the nearest live enemy of the level's kinds within
    1000 units of the camera (in x and z), 0 when none */
 short nearest_enemy_hhouse(void)
@@ -861,7 +908,7 @@ void start_hit_reaction(enemy_t *e, int frame, int state, submesh_t *subs, int n
 
 extern void	screen_to_ray(float *, float, float), screen_to_point(float *, float, float, float);	/* vecmat.c */
 extern float	movie_depth_at(float, float);
-int	D_801faca4, D_801facb4;			/* the debug aim point */
+float	D_801faca4, D_801facb4;			/* the debug aim point (a screen position) */
 
 /* 0x800ccbd0: a player's shot: the aim ray from the screen position, the hit point from
    the movie's depth under it, every object's hit test, then the hit object's die callback */
@@ -874,8 +921,8 @@ void shoot_objects(player_stats_t *p)
 
 	if(debug_mode & 2)
 	{
-		x = D_801faca4;
-		y = D_801facb4;
+		x = *(int *)&D_801faca4;
+		y = *(int *)&D_801facb4;
 	}
 	else
 	{

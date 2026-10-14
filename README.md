@@ -13,8 +13,10 @@ and the port runs that code on a thin hardware layer. See `docs/PLAN.md` for the
 - **The port** (`make port`) boots the game's real main process: hardware info screen,
   CMOS, audits and adjustments, high scores, pricing and credits, the sound board bring-up,
   then the attract mode with its movies, text, music and sound effects. Coins, start
-  buttons, service credit and the volume buttons work. The game itself (levels, 3D, the
-  guns) is not decompiled yet, so pressing start only reports that a game was requested.
+  buttons, service credit and the volume buttons work. A start runs the real game flow:
+  the level-select gallery, Rickety Town with its movie, script, lights, sound and music,
+  Krinkle and the termites, the light gun (the mouse), muzzle flashes and hit effects.
+  What the game code still lacks is stubbed, and every stub announces itself (below).
 - macOS (Apple Silicon and Intel) builds today; Linux and Windows are planned.
 
 ## Layout
@@ -111,7 +113,15 @@ This table grows as inputs are added (player 2 keys, gun aiming, the test menu).
 
 ## Faithfulness
 Game and library code is transcribed from the disassembly and checked byte-exact where it
-has been matched; modules not yet matched are marked in `docs/port.md`. The hardware is the
-only thing replaced: `port/host/` stands in for the disk, I/O ASIC, CMOS, security PIC,
+has been matched; modules not yet matched are marked in `docs/port.md`. The same C source
+goes into the byte-identical GAME.EXE (`make`, where the untranscribed functions are still
+the original assembly) and into the port (`make port`, which links only C). The hardware is
+the only thing replaced: `port/host/` stands in for the disk, I/O ASIC, CMOS, security PIC,
 Voodoo and the DCS2 board, following the SDK sources and MAME as the reference. Files the
 game writes go to the state directory so an extracted partition is never modified.
+
+Game code the port does not have in C yet is a stub, never a silent one: each stub prints
+`[stub] name reached at vblank N` the first time it runs and the run ends with the list of
+every stub it touched. That list is the work queue; a stub is retired by transcribing its
+function and matching it with `tools/trymatch.sh`. Host-only code paths in game sources
+are `#ifdef PORT_HOST` blocks, so the matching build never sees them.

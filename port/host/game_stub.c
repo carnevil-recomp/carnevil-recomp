@@ -117,8 +117,6 @@ extern unsigned int background_color;
 spawn_t hhouse_spawn_blob[1], freakshow_spawn_blob[1], rickity_spawn_blob[1], bigtop_spawn_blob[1];
 int D_801e0f0c;
 /* game_init (0x800ca3a0, scene.c) is real; the set-up calls it makes that the port lacks */
-void func_800c836c(void) { STUB(func_800c836c); }
-void func_800c865c(void) { STUB(func_800c865c); }
 void init_surfaces(void)			/* 0x800d6768: the texmap surface table */
 {
 	int	i;
