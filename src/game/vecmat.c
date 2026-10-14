@@ -264,12 +264,19 @@ void mat_unscale(float *m, float *scale)
 	mat_mul(s, m, m);
 }
 
-/* 0x800cf6dc: out = m * v (rows of m dotted with v; out may not alias v) */
+/* 0x800cf6dc: out = m * v (rows of m dotted with v). The game calls it in place (out == v:
+   project_vertices, angles_to, the billboards), which the original's compiled code allows
+   by loading all of v before it stores; the locals keep that order on every compiler */
 void mat_vec_mul(float *v, float *m, float *out)
 {
-	out[0] = v[0] * m[0] + v[1] * m[1] + v[2] * m[2];
-	out[1] = v[0] * m[3] + v[1] * m[4] + v[2] * m[5];
-	out[2] = v[0] * m[6] + v[1] * m[7] + v[2] * m[8];
+	float	x, y, z;
+
+	x = v[0];
+	y = v[1];
+	z = v[2];
+	out[0] = x * m[0] + y * m[1] + z * m[2];
+	out[1] = x * m[3] + y * m[4] + z * m[5];
+	out[2] = x * m[6] + y * m[7] + z * m[8];
 }
 
 /* 0x800cf7ec */

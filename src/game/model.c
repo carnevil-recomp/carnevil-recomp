@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <glide/glide.h>
 #include "model.h"
+#include "camera.h"
 #include "enemy.h"
 #include "texmap.h"
 #include "credits.h"			/* debug_mode */
@@ -402,7 +403,9 @@ void draw_model(enemy_t *e, submesh_t *sub, int nsub, float *verts, int nverts, 
 	    { int gi, vis = 0, tot = 0; float minx = 9999, maxx = -9999, miny = 9999, maxy = -9999;
 	      for(gi = 0; gi < nsub; gi++) { int vi; if(!(e->groups[gi].flags & GROUP_VISIBLE)) continue;
 	        for(vi = sub[gi].vert_start; vi <= sub[gi].vert_end; vi++) { tot++; if(proj_verts[vi].q != -1.0f) { vis++; if(proj_verts[vi].x < minx) minx = proj_verts[vi].x; if(proj_verts[vi].x > maxx) maxx = proj_verts[vi].x; if(proj_verts[vi].y < miny) miny = proj_verts[vi].y; if(proj_verts[vi].y > maxy) maxy = proj_verts[vi].y; } } }
-	      fprintf(stderr, "[model] visible %d of %d vertices, screen x %.0f..%.0f y %.0f..%.0f, scale %.2f %.2f %.2f, groups0 flags %x group5 pos (%.1f %.1f %.1f)\n", vis, tot, minx, maxx, miny, maxy, e->scale[0], e->scale[1], e->scale[2], e->groups[0].flags, e->groups[5].pos[0], e->groups[5].pos[1], e->groups[5].pos[2]); } } }
+	      { extern float project_point(float *, float *); float s5[3], se[3]; project_point(e->groups[5].pos, s5); project_point(&e->x, se);
+	      fprintf(stderr, "[model] visible %d of %d vertices, screen x %.0f..%.0f y %.0f..%.0f, scale %.2f %.2f %.2f, groups0 flags %x group5 pos (%.1f %.1f %.1f) -> screen (%.0f %.0f) q %.4f; feet -> screen (%.0f %.0f); cam angles (%.3f %.3f %.3f)\n", vis, tot, minx, maxx, miny, maxy, e->scale[0], e->scale[1], e->scale[2], e->groups[0].flags, e->groups[5].pos[0], e->groups[5].pos[1], e->groups[5].pos[2], s5[0], s5[1], s5[2], se[0], se[1], camera_rx, camera_ry, camera_rz); } } } }
+
 #endif
 	if(e->flags & 2)
 	{
