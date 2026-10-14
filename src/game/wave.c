@@ -32,10 +32,11 @@ extern void	remove_all_objects(void), disable_spawning(void), some_sort_of_free(
 extern void	free_level_camera(void), update_view_matrix(void), load_level_camera(int);
 extern void	enable_guns(void), disable_guns(void), func_800d4978(void);
 extern float	camera_x, camera_y, camera_z, camera_rx, camera_ry, camera_rz;
-extern int	load_level_lights(int), load_level_spawn(int);
+extern void	load_level_lights(int);
+extern int	load_level_spawn(int);
 extern int	stream_select_wave(int);
 extern void	stream_start(void);
-extern void	func_800d6e60(void), func_800d7174(void), func_800fe3d8(void), func_800db7a8(void);
+extern void	reset_fog(void), free_lights(void), func_800fe3d8(void), func_800db7a8(void);
 extern void	func_80109260(void *, int);
 extern void	func_80107e30(game_object_t *), func_80108c94(game_object_t *);	/* the loading jester (object 0x2014) */
 extern int	func_80108ab0(game_object_t *);
@@ -124,7 +125,7 @@ void unload_wave(void)
 	remove_all_objects();
 	disable_spawning();
 	free_level_camera();
-	func_800d7174();
+	free_lights();
 	snd_stop_all();
 	snd_delay(20);
 	switch(loaded_wave)
@@ -180,7 +181,7 @@ void preload_wave(int wave)
 	{
 		check_sound_os();
 	}
-	func_800d6e60();
+	reset_fog();
 	func_800d4978();
 	camera_x = 0;
 	camera_y = 0;

@@ -377,3 +377,7 @@ Lessons from the Rickety Town script gates, term.c and enemy.c (2026-10-13):
   table's `min_lock` field waits for a given replay), `script_section` counts the sections;
   each gate function clears its timer when its spawn slots are done and counts it down
   otherwise, so a section ends after at most 32 replays.
+- **-O0 files.** lights.c is the second -O0 file (after hiscore.c): every local lives on the
+  stack in declaration order and every expression reloads its operands, so the shape of the
+  source (which temporaries exist, the order of the comparisons in a `while(n && !found)`)
+  decides the match. The list routines match; the longer ones still differ in their frames.

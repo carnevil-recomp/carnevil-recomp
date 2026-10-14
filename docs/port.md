@@ -101,7 +101,8 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | camera.c | game2 | 17 of 23 exact (update_camera, update_view_matrix, get_camera_pos, the file loader's callers, the gun pollers, kss_reset_w_calib_, take_calibration_request, default_calibration ...); set_field_of_view 67% and init_camera 12% / load_level_camera 5% (the original combines the field-of-view constants at run time where our compiler folds them: 67.74+10 is an `add.s` in the game), kss_reset_ 59%, gun_board_reset 89% (one scheduling swap), the two `&&`/`\|\|` gun tests 53-60% (register choice). Absorbs the old gun.c: the file at 0x800d4070-0x800d4f6c holds the camera and the light guns |
 | vecmat.c | game2 | 23 of 23 exact (0x800cfb18-0x800d1370: 3x3 matrices, the twelve rotation-order products, fatan, ftan); the rest of the file (get_screen_pos, the projection helpers, draw_tri) is still assembly |
 | loaders.c | game2 | 0 of 1 (load_camera_file 4%: the retry loop's two counters are allocated differently; the port uses it as is) |
-| model.c, lights.c | game2 | init_groups exact; draw_model and the eight face drawers are first transcriptions (0-31%), light_vertices 2%; the port draws every enemy through them |
+| model.c | game2 | init_groups exact; draw_model and the eight face drawers are first transcriptions (0-31%); the port draws every enemy through them |
+| lights.c, fog.c | game0 (-O0) / game2 | lights.c 12 of 23 exact (the list operations, the ambient override, the fog switch); load_level_lights, add_light_group, update_lights, build_light_list and light_vertices are behaviourally complete transcriptions whose -O0 stack layouts do not match yet. The light tables are generated into lights_data.c by tools/extract_lights.py. fog.c 4 of 4 |
 | krinkle.c | game2 | load_krinkle_texmap, remove_krinkle_assets, krinkle_remove exact; load_krinkle 86%, krinkle_setup 54%, krinkle_init 50%, krinkle_draw 31%; the think, hit and die callbacks are still assembly (stubs in the port) |
 | rickity_script.c | game2 | 38 of 38 exact (0x80123f88-0x80124c68: the script entry, the 22 section gates the movie script calls between its replays, the unused timers and counters). Unregistered: its timers are interleaved with the other levels' in .bss |
 | term.c | game2 | 5 of 12 exact (the loaders, term_remove), term_die 94%, term_end_path 96%, term_steer 94%, term_hit 76%, term_init 59%, term_draw 33%, term_think 17%, term_setup 15% (case-tree shapes); the port runs all of it: the bugs follow their path and reach the screen |
@@ -123,6 +124,23 @@ Ninja guess (`decompress_movie` -> `decode_movie_8pal`, `decoode_movie2` ->
 `decode_movie_8pal_depth`, `show_debug_frame_data` -> `movie_draw_frame`,
 `load_fram_wrapper` -> `movie_init`) the override lives in `config/names.txt` and the
 original guess stays in `config/functions_v103.txt`.
+
+## Lighting and the colour combine
+
+Every enemy draw builds its own light list (`build_light_list`, 0x800d8198): each live point
+light within ten times its table range becomes a direction scaled by `1 - d^2/range^2`, each
+directional light is taken as it is, and `light_vertices` shades every normal from a base of 5
+plus the positive cosines, clamped to 254. The live lights come from the level's table
+(lights_data.c): `update_lights` switches each group on at its start frame and off at its end
+frame, steps the colour fades and counts timed lights down, and one group may be the camera
+light that follows the view point. With no lights an enemy is nearly black, which is what the
+port showed before this was decompiled.
+
+The drawers hand the renderer the game's own vertex layouts (`port_draw_tri` in render_gl.c:
+x, y, 1/w, optional s/w, t/w, then the iterated colour and alpha where the layout keeps them),
+and the iterated-colour combine modes now feed GL per-vertex colours. `grColorCombine` maps
+the Glide tuple back to the mode the state keeps; `draw_faces_tex` (group flag 0x10) asks for
+the inverted output, which GL gets as `INTERPOLATE(1 - colour, white, texture)`.
 
 ## Screen origin and texture orientation
 

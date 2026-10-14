@@ -68,17 +68,21 @@ void dispatch_diags_proc(int closed, int swid) { (void)closed; (void)swid; fprin
 
 /* the triangle setup (0x800d1750) writes Voodoo commands; here it is a plain draw */
 void draw_tri(MidVertex *a, MidVertex *b, MidVertex *c) { grDrawTriangleDma(a, b, c, 0); }
-/* 0x800d1d8c / 0x800d2664: the same with iterated RGB / alpha vertices (iteration ignored for now) */
-void draw_tri_rgb(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
-void draw_tri_alpha(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
-/* 0x800d2174: a constant-colour triangle (the original sorts the vertices by y) */
+/* the game's own triangle set-up routines write the Voodoo's triangle registers from its vertex
+   layouts; the port hands each layout to the renderer with the colour and alpha positions:
+   0x800d1d8c / 0x800d3834: x, y, q, s/w, t/w, r, g, b (model.c tvert_t)
+   0x800d2664: x, y, q, s/w, t/w, a (text.c MidVertexWithTA)
+   0x800d2174: a constant-colour triangle (the original sorts the vertices by y)
+   0x800d1a38: x, y, q, r, g, b (fvert_t, no texture)
+   0x800d299c / 0x800d3bf0: x, y, q, s/w, t/w, a, r, g, b (avert_t) */
+void port_draw_tri(const float *, const float *, const float *, int, int, int);
+void draw_tri_rgb(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, 5, -1); }
+void draw_tri_alpha(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, -1, 5); }
 void draw_tri_flat(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
-/* the model drawers' triangle routines (0x800d1a38 flat lit, 0x800d299c and 0x800d3bf0 with alpha, 0x800d3834): the
-   vertices start with x, y, 1/w, s/w, t/w like MidVertex, so the port draws them all the same way */
-void func_800d1a38(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
-void func_800d299c(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
-void func_800d3834(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
-void func_800d3bf0(void *a, void *b, void *c) { grDrawTriangleDma(a, b, c, 0); }
+void func_800d1a38(void *a, void *b, void *c) { port_draw_tri(a, b, c, 0, 3, -1); }
+void func_800d299c(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, 6, 5); }
+void func_800d3834(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, 5, -1); }
+void func_800d3bf0(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, 6, 5); }
 
 /* ---- the per-frame passes (objects.c: draw_pass 0x800cbbb4, think_pass 0x800cca70) call
    into level code the port does not have yet; these keep them no-ops in the attract ---- */
@@ -86,8 +90,6 @@ void draw_pass(void);
 void think_pass(void *);
 int  get_free_mem_left(void) { return 0x400000; }			/* GOOSE 0x80143e90 */
 float fsqrt(float x) { return sqrtf(x); }				/* 0x80144900: sqrt.s */
-int *show_debug_light_(int f) { (void)f; return 0; }
-void func_800d6e94(void) { }
 void func_800ff418(void) { }
 player_stats_t *something_to_do_with_shooting_(player_stats_t *p) { return p; }
 void func_800ce2f8(float *a, float b, float *c) { (void)a; (void)b; c[0] = c[1] = c[2] = 0.0f; }
@@ -117,7 +119,6 @@ void init_surfaces(void)			/* 0x800d6768: the texmap surface table */
 	int	i;
 	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }
 }
-void func_800d78fc(void) { }
 void func_800c8a44(float x, float y, float w, float r, unsigned int c) { (void)x; (void)y; (void)w; (void)r; (void)c; }	/* a screen marker */
 /* load_level_assets (0x800ca448, scene.c) is real; its loaders are not */
 void func_800db148(void) { }
@@ -165,8 +166,6 @@ void something_player_score(player_stats_t *p) { (void)p; }	/* 0x800e5560: high-
 void L_80101908(game_object_t *o) { (void)o; }			/* the level-select targets */
 int  func_801020b4(game_object_t *o) { (void)o; return 1; }
 void func_80102454(game_object_t *o) { (void)o; }
-void func_800d6e60(void) { }
-void func_800d7174(void) { }
 void func_800fe3d8(void) { }
 void func_800db7a8(void) { }
 void func_80109260(void *o, int n) { (void)o; (void)n; }
@@ -174,4 +173,3 @@ void func_80107e30(game_object_t *o) { (void)o; }			/* the loading jester (objec
 int  func_80108ab0(game_object_t *o) { (void)o; return 1; }
 void func_80108c94(game_object_t *o) { (void)o; }
 void some_sort_of_free(void) { }
-int  load_level_lights(int w) { extern int port_trace; if(port_trace) fprintf(stderr, "[stub] load_level_lights(%#x)\n", w); return 0; }

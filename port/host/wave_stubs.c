@@ -305,7 +305,6 @@ WEAK int something_bat_state(void) { return 0; }
 WEAK int something_gool_anim(void) { return 0; }
 WEAK int something_mari_anim(void) { return 0; }
 WEAK int spawn_krampus_(void) { return 0; }
-WEAK int create_particle_light_(void) { return 0; }
 WEAK int func_800c8938(void) { return 0; }
 WEAK int func_800c99e4(void) { return 0; }
 WEAK int func_800d14a4(void) { return 0; }

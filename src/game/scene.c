@@ -18,7 +18,7 @@ extern void	draw_string(int, char *, float, float);
 extern float	get_screen_pos(float *, float *);		/* 0x800d07a8: -1 when off screen */
 extern void	func_800c8a44(float, float, float, float, unsigned int);	/* a screen marker */
 extern void	rot_matrix_zyx(float *, float *);			/* a rotation matrix from three angles */
-extern void	func_800c836c(void), func_800c865c(void), init_surfaces(void), func_800d78fc(void);
+extern void	func_800c836c(void), func_800c865c(void), init_surfaces(void), init_lights(void);
 extern void	init_camera(void), rot_matrix_yxz(float *, float *), vec_negate(float *, float *);
 extern float	camera_x, camera_rx, view_matrix[9], camera_neg_pos[3];	/* camera.c */
 extern void	init_player(int player);				/* 0x800e2f08 (player.c) */
@@ -296,7 +296,7 @@ void game_init(void)
 	func_800c865c();
 	init_objects();
 	init_surfaces();
-	func_800d78fc();
+	init_lights();
 	load_font_texmap();
 	create_object("FOO", 0, 0, 1, 0, (void (*)(void *))draw_pass);	/* the draw pass takes no argument */
 	create_object("BAR", 0, 0, 0, 0, think_pass);

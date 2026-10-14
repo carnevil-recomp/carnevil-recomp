@@ -716,8 +716,6 @@
 0x800cf304 project_vertices
 # lights.c (0x800d6ef0-): the level's lights
 0x800d7dfc light_vertices
-0x8017c1d8 light_flags
-0x8017c1e8 ambient_override
 0x8017c2a8 light_list
 # krinkle.c (0x80126410-0x80127e40): Krinkle
 0x80126410 krinkle_draw
@@ -822,3 +820,42 @@
 0x800fb83c path_follow_turned
 0x800fb8d4 path_place_turned
 0x800fcfc4 group_near_camera
+# fog.c (0x800d6e60-0x800d6eec) and lights.c (0x800d6ef0-0x800d8c60): the level fog switch and lights
+0x800d6e60 reset_fog
+0x800d6e70 enable_fog
+0x800d6e84 disable_fog
+0x800d6e94 apply_fog
+0x801e6fe8 fog_enabled
+0x80179da8 fog_table
+0x800d7174 free_lights
+0x800d719c remove_light_group
+0x800d71e0 add_light_group
+0x800d78fc init_lights
+0x800d7930 add_dynamic_light
+0x800d7b44 update_lights
+0x800d7d60 set_ambient_override
+0x800d7dc4 clear_ambient_override
+0x800d80d4 check_light_colors
+0x800d8198 build_light_list
+0x800d84f0 append_light_record
+0x800d8574 move_light
+0x800d870c remove_light
+0x800d8824 free_light_records
+0x800d88bc append_light
+0x800d8988 free_light_list
+0x800d8a0c next_light_id
+0x800d8bd4 print_light_records
+0x8017c1d0 light_root
+0x8017c218 light_root2
+0x8017c260 light_root3
+0x8017c2ac next_id
+0x801e5cb8 light_count
+0x801e5cc8 camera_light
+0x801e6d78 light_wave
+0x801e0a00 light_group
+0x801e15b0 group_flags
+0x80179e28 hiscore_light_info
+0x8017c0b8 bigtop_light_info
+0x8017c160 attract_light_info
+0x800cf240 vec_max_normalize
+0x800cf5ac ffabs

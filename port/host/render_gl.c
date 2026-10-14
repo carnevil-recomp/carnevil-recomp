@@ -32,6 +32,7 @@ static int	win_w, win_h;
 static struct {
 	GrMipMapId_t	tex;
 	int		tex_combine, color_combine, alpha_source;
+	int		cc_invert;		/* grColorCombine's invert flag: output = 1 - result */
 	unsigned int	const_color, chroma_value;
 	int		chroma_mode;
 	int		filter_min, filter_mag, clamp_s, clamp_t;
@@ -158,26 +159,62 @@ static GLenum cmp_func(int f)
 }
 
 /* push the Glide state into GL before a draw */
+/* the per-draw colour the vertices inherit unless the combine iterates it */
+static unsigned char cur_rgb[3], cur_alpha;
+static int	have_uv = 1;		/* the vertex layout carries s/w, t/w (a flat-lit layout does not) */
+
+static int iterated_rgb(void)
+{
+	switch(st.color_combine)
+	{
+	case GR_COLORCOMBINE_ITRGB: case GR_COLORCOMBINE_ITRGB_DELTA0: case GR_COLORCOMBINE_TEXTURE_TIMES_ITRGB:
+	case GR_COLORCOMBINE_TEXTURE_TIMES_ITRGB_DELTA0: case GR_COLORCOMBINE_TEXTURE_TIMES_ITRGB_ADD_ALPHA:
+	case GR_COLORCOMBINE_TEXTURE_TIMES_ALPHA_ADD_ITRGB: case GR_COLORCOMBINE_TEXTURE_ADD_ITRGB: case GR_COLORCOMBINE_TEXTURE_SUB_ITRGB:
+		return 1;
+	}
+	return 0;
+}
+static int iterated_alpha(void)
+{
+	return st.alpha_source == GR_ALPHASOURCE_ITERATED_ALPHA || st.alpha_source == GR_ALPHASOURCE_TEXTURE_ALPHA_TIMES_ITERATED_ALPHA;
+}
+
 static void apply_state(void)
 {
-	int	textured = st.tex != GR_NULL_MIPMAP_HANDLE && st.color_combine != GR_COLORCOMBINE_CCRGB
-			&& st.color_combine != GR_COLORCOMBINE_ZERO && st.color_combine != GR_COLORCOMBINE_ONE;
+	int	textured = st.tex != GR_NULL_MIPMAP_HANDLE && have_uv && st.color_combine != GR_COLORCOMBINE_CCRGB
+			&& st.color_combine != GR_COLORCOMBINE_ZERO && st.color_combine != GR_COLORCOMBINE_ONE
+			&& st.color_combine != GR_COLORCOMBINE_ITRGB && st.color_combine != GR_COLORCOMBINE_ITRGB_DELTA0;
 	unsigned char r = (st.const_color >> 16) & 255, g = (st.const_color >> 8) & 255, b = st.const_color & 255, a = st.const_color >> 24;
+	static const float white[4] = { 1, 1, 1, 1 };
 	if(textured) bind_texture(); else glDisable(GL_TEXTURE_2D);
 	switch(st.color_combine)
 	{
 	case GR_COLORCOMBINE_ZERO: r = g = b = 0; break;
 	case GR_COLORCOMBINE_DECAL_TEXTURE: case GR_COLORCOMBINE_ONE: case GR_COLORCOMBINE_DECAL_TEXTURE_ADD_CCALPHA: r = g = b = 255; break;
 	case GR_COLORCOMBINE_TEXTURE_TIMES_ALPHA: r = g = b = 255; break;	/* alpha applied through the alpha channel below */
-	default: break;							/* CCRGB, TEXTURE_TIMES_CCRGB: constant colour */
+	default: break;							/* CCRGB, TEXTURE_TIMES_CCRGB: constant colour; the iterated modes set the colour per vertex */
 	}
+	if(st.cc_invert && !textured) { r = 255 - r; g = 255 - g; b = 255 - b; }
 	glColor4ub(r, g, b, a);
+	cur_rgb[0] = r; cur_rgb[1] = g; cur_rgb[2] = b; cur_alpha = a;
 	if(textured)
 	{
-		/* RGB = texture * colour; alpha per Glide's alpha source */
+		/* RGB = texture * colour (or + / - colour); alpha per Glide's alpha source */
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_TEXTURE); glTexEnvi(GL_TEXTURE_ENV, GL_SRC1_RGB, GL_PRIMARY_COLOR);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_TEXTURE); glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SRC1_RGB, GL_PRIMARY_COLOR); glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
+		if(st.cc_invert)
+		{
+			/* 1 - tex * col = (1 - col) * tex + 1 * (1 - tex): INTERPOLATE(arg0 = 1 - col, arg1 = white, arg2 = tex) */
+			glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, white);
+			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
+			glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_PRIMARY_COLOR); glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_ONE_MINUS_SRC_COLOR);
+			glTexEnvi(GL_TEXTURE_ENV, GL_SRC1_RGB, GL_CONSTANT); glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
+			glTexEnvi(GL_TEXTURE_ENV, GL_SRC2_RGB, GL_TEXTURE); glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_COLOR);
+		}
+		else if(st.color_combine == GR_COLORCOMBINE_TEXTURE_ADD_ITRGB) glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_ADD);
+		else if(st.color_combine == GR_COLORCOMBINE_TEXTURE_SUB_ITRGB) glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_SUBTRACT);
+		else glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
 		switch(st.alpha_source)
 		{
 		case GR_ALPHASOURCE_TEXTURE_ALPHA: glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE); glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_ALPHA, GL_TEXTURE); break;
@@ -213,9 +250,22 @@ static void frame_setup(void)
 	glMatrixMode(GL_MODELVIEW); glLoadIdentity();
 }
 
-static void vertex(const MidVertex *v, port_texture_t *t)
+static void vertex_rgba(const MidVertex *v, port_texture_t *t, const float *rgb, const float *alpha)
 {
 	float oow = v->oow > 0 ? v->oow : 1e-6f;
+	if(rgb || alpha)
+	{
+		unsigned char r = cur_rgb[0], g = cur_rgb[1], b = cur_rgb[2], a = cur_alpha;
+		if(rgb && iterated_rgb())
+		{
+			r = rgb[0] < 0 ? 0 : rgb[0] > 255 ? 255 : (unsigned char)rgb[0];
+			g = rgb[1] < 0 ? 0 : rgb[1] > 255 ? 255 : (unsigned char)rgb[1];
+			b = rgb[2] < 0 ? 0 : rgb[2] > 255 ? 255 : (unsigned char)rgb[2];
+			if(st.cc_invert && !t) { r = 255 - r; g = 255 - g; b = 255 - b; }
+		}
+		if(alpha && iterated_alpha()) a = *alpha < 0 ? 0 : *alpha > 255 ? 255 : (unsigned char)*alpha;
+		glColor4ub(r, g, b, a);
+	}
 	if(t)
 	{
 		/* Glide texture coordinates run 0..256 on the texture's long axis */
@@ -226,6 +276,25 @@ static void vertex(const MidVertex *v, port_texture_t *t)
 	}
 	/* w-buffer: nearer (larger oow) wins under GR_CMP_LESS */
 	glVertex3f(v->x, v->y, 1.0f - (oow > 1.0f ? 1.0f : oow));
+}
+static void vertex(const MidVertex *v, port_texture_t *t) { vertex_rgba(v, t, 0, 0); }
+
+/* a triangle from the game's own vertex layouts: x, y, 1/w, then s/w, t/w when has_uv, with
+   the iterated colour at float index rgb_at (-1: none) and the alpha at alpha_at (-1: none) */
+void port_draw_tri(const float *a, const float *b, const float *c, int has_uv, int rgb_at, int alpha_at)
+{
+	port_texture_t *t;
+	port_triangles++;
+	if(!have_display) return;
+	have_uv = has_uv;
+	apply_state();
+	have_uv = 1;
+	t = (has_uv && st.tex != GR_NULL_MIPMAP_HANDLE && glIsEnabled(GL_TEXTURE_2D)) ? port_texture(st.tex) : 0;
+	glBegin(GL_TRIANGLES);
+	vertex_rgba((const MidVertex *)a, t, rgb_at >= 0 ? a + rgb_at : 0, alpha_at >= 0 ? a + alpha_at : 0);
+	vertex_rgba((const MidVertex *)b, t, rgb_at >= 0 ? b + rgb_at : 0, alpha_at >= 0 ? b + alpha_at : 0);
+	vertex_rgba((const MidVertex *)c, t, rgb_at >= 0 ? c + rgb_at : 0, alpha_at >= 0 ? c + alpha_at : 0);
+	glEnd();
 }
 
 /* ---- Glide entry points ---- */
@@ -338,7 +407,7 @@ void dma_start(void) { grBufferSwap(1); }			/* the DMA kick; the board swaps whe
 
 void guTexSource(GrMipMapId_t h) { st.tex = h; }
 void grTexCombineFunction(int tmu, int fn) { (void)tmu; st.tex_combine = fn; }
-void guColorCombineFunction(int fn) { st.color_combine = fn; }
+void guColorCombineFunction(int fn) { st.color_combine = fn; st.cc_invert = 0; }
 void guAlphaSource(int s) { st.alpha_source = s; }
 void grConstantColorValue(unsigned int c) { st.const_color = c; }
 void grChromakeyValue(unsigned int c) { st.chroma_value = c & 0xffffff; }
@@ -355,7 +424,35 @@ void grAlphaTestFunction(int f) { st.alpha_test = f; }
 void grAlphaTestReferenceValue(FxU8 v) { alpha_ref = v / 255.0f; }
 void grCullMode(int m) { st.cull = m; }
 void grLoadGammaTable(unsigned int n, unsigned int *r, unsigned int *g, unsigned int *b) { (void)n; (void)r; (void)g; (void)b; }
-void grColorCombine(int a, int b, int c, int d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; }
+/* grColorCombine(function, factor, local, other, invert): the tuple Glide's gu helpers are
+   built from, mapped back to the mode the state keeps (plus the invert flag) */
+void grColorCombine(int function, int factor, int local, int other, int invert)
+{
+	int mode = GR_COLORCOMBINE_DECAL_TEXTURE;
+	switch(function)
+	{
+	case GR_COMBINE_FUNCTION_ZERO: mode = invert ? GR_COLORCOMBINE_ONE : GR_COLORCOMBINE_ZERO; invert = 0; break;
+	case GR_COMBINE_FUNCTION_LOCAL: mode = local == GR_COMBINE_LOCAL_ITERATED ? GR_COLORCOMBINE_ITRGB : GR_COLORCOMBINE_CCRGB; break;
+	case GR_COMBINE_FUNCTION_SCALE_OTHER:
+		if(other == GR_COMBINE_OTHER_TEXTURE)
+		{
+			if(factor == GR_COMBINE_FACTOR_ONE) mode = GR_COLORCOMBINE_DECAL_TEXTURE;
+			else if(factor == GR_COMBINE_FACTOR_LOCAL) mode = local == GR_COMBINE_LOCAL_ITERATED ? GR_COLORCOMBINE_TEXTURE_TIMES_ITRGB : GR_COLORCOMBINE_TEXTURE_TIMES_CCRGB;
+			else if(factor == GR_COMBINE_FACTOR_LOCAL_ALPHA) mode = GR_COLORCOMBINE_TEXTURE_TIMES_ALPHA;
+		}
+		else mode = local == GR_COMBINE_LOCAL_ITERATED ? GR_COLORCOMBINE_ITRGB : GR_COLORCOMBINE_CCRGB;
+		break;
+	case GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL:
+		mode = other == GR_COMBINE_OTHER_TEXTURE ? GR_COLORCOMBINE_TEXTURE_ADD_ITRGB : GR_COLORCOMBINE_ITRGB; break;
+	case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL:
+		mode = other == GR_COMBINE_OTHER_TEXTURE ? GR_COLORCOMBINE_TEXTURE_SUB_ITRGB : GR_COLORCOMBINE_ITRGB; break;
+	default:
+		{ static int warned; if(!warned++) fprintf(stderr, "[gl] grColorCombine(%d, %d, %d, %d, %d) not mapped\n", function, factor, local, other, invert); }
+		break;
+	}
+	st.color_combine = mode;
+	st.cc_invert = invert != 0;
+}
 
 /* ---- init: the game asks for 400x256 (grSstVidMode timing), graphics_init() sets hres/vres ---- */
 void grSstVidMode(int which, void *timing) { (void)which; (void)timing; }
@@ -372,3 +469,8 @@ int  grSstOpen(int res, int refresh, int fmt, int origin, int smooth, int nbuf)
 }
 int  func_80157004(void) { return hal_refresh_hz(); }	/* Glide: current vertical refresh */
 void render_set_dump(const char *path, unsigned long every) { dump_path = path; dump_every = every; }
+
+/* fog: the level fog table is not applied yet (the draw pass sets it every frame) */
+void grFogMode(int mode) { (void)mode; }
+void grFogColorValue(unsigned int c) { (void)c; }
+void grFogTable(const unsigned char *t) { (void)t; }

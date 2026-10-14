@@ -23,9 +23,9 @@ extern void	show_volume_level(void);
 extern float	get_screen_pos(float *, float *);	/* 0x800d07a8 */
 extern void	sample_switches(void), debug_move_enemy(enemy_t *), debug_move_point(float *), debug_move_vectors(void);	/* scene.c */
 extern void	draw_marker(float *, float, unsigned int);
-extern void	update_camera(int), show_debug_light_(int);
+extern void	update_camera(int), update_lights(int);
 extern void	*camera_data;				/* camera.c: the level's camera file, 0 when none */	/* camera.c, and the lights */
-extern void	func_800d6e94(void), func_800ff418(void);
+extern void	apply_fog(void), func_800ff418(void);
 extern player_stats_t *something_to_do_with_shooting_(player_stats_t *);	/* 0x800d5a84 */
 extern void	func_800ce2f8(float *, float, float *);
 extern void	func_800fe580(void), func_800fef18(void), func_800ffbdc(void), func_800fe1fc(void);
@@ -94,13 +94,13 @@ void draw_pass(void)
 	if(camera_data || (debug_mode & DEBUG_ON))
 	{
 		update_camera(frame);
-		show_debug_light_(frame);
+		update_lights(frame);
 		spawn_wave_enemies(frame);
 	}
 	grDepthBufferMode(GR_DEPTHBUFFER_WBUFFER);
 	grDepthBufferFunction(GR_CMP_LEQUAL);
 	grDepthBiasLevel(0);
-	func_800d6e94();
+	apply_fog();
 	func_800ff418();
 	i = objects[0].next;
 	while(i != OBJ_NONE)
@@ -639,4 +639,36 @@ player_stats_t *get_target_player(void)
 		next_target_second = 0;
 	}
 	return(p);
+}
+
+/* 0x800cf5ac: |x| */
+float ffabs(float x)
+{
+	if(0.0f <= x)
+	{
+		return(x);
+	}
+	return(-x);
+}
+
+/* 0x800cf240: scale a vector so that its largest component is 1 */
+void vec_max_normalize(float *v)
+{
+	float	ax, ay, az, m;
+
+	ax = ffabs(v[0]);
+	ay = ffabs(v[1]);
+	az = ffabs(v[2]);
+	if(ay < ax)
+	{
+		m = az < ax ? ax : az;
+	}
+	else
+	{
+		m = az < ay ? ay : az;
+	}
+	m = 1.0f / m;
+	v[0] = v[0] * m;
+	v[1] = v[1] * m;
+	v[2] = v[2] * m;
 }

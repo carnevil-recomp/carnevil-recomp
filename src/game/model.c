@@ -18,7 +18,7 @@ extern void	mat_vec_mul(float *, float *, float *), vec_add(float *, float *, fl
 extern void	project_vertices(int, float *, float *, float *, float *);
 extern void	transform_vectors(int, float *, float *, float *);
 extern void	light_vertices(int, float *, float *);				/* lights.c */
-extern void	create_particle_light_(float *pos);				/* 0x800dxxxx */
+extern void	build_light_list(float *pos);				/* 0x800dxxxx */
 extern float	func_800fe8dc(float range);					/* a random float in +-range */
 extern void	func_800c8938(float *pos, float radius, unsigned int colour);	/* a debug sphere */
 extern void	func_8015f30c(int, int, int, int, int);				/* texture combine set-up */
@@ -146,7 +146,7 @@ void draw_model(enemy_t *e, submesh_t *sub, int nsub, float *verts, int nverts, 
 		printf("ERROR! More normals (%d) than I can handle(%d).\n", nnormals, MAX_MODEL_VERTS);
 		return;
 	}
-	create_particle_light_(e->hit_group->pos);
+	build_light_list(e->hit_group->pos);
 	e->flags |= 1;
 	rot_matrix_zyx(scaled, &e->rx);
 	rot_matrix_zyx(unscaled, &e->rx);
