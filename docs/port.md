@@ -102,7 +102,7 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | objects.c | game2 | the list routines, draw_pass and think_pass exact; the shot tests (shot_hits_sphere 43%, find_submesh_hit 7%), the animation blends (start_hit_reaction exact, the rest 15-33%) and shoot_objects (5%) are transcriptions the port runs |
 | wave.c | game2 | 19 of 21 exact (unload_wave, preload_wave, the bank lists, the per-level asset lists, the big top's act change); load_wave_proc 26% and btopload_proc 8% keep an address in a saved register that ours does not. The 25% transcription had put the music stream start outside the `loaded_wave & WAVE_LEVEL` test, so the attract and the gallery streamed the haunted house partition under their own cues (fixed 2026-10-13: only the four levels stream) |
 | main.c (game) | game2 | init_main_game_proc 61%, print_select_countdown 63%, main_game_proc 7% (first transcription; the flow is right) |
-| player.c | game2 | set_level_start_time exact, init_player_stats 92%, init_player 25% (store order) |
+| player.c | game2 | set_level_start_time, hurt_player (the damage, the hurt cues, the hit marks) exact, init_player_stats 92%, audit_level_time 92%, kill_player 90%, draw_player_status 81% (the score, pickup messages, the continue count and game over, the credit line), draw_hud 65%, init_player 25% (store order); the health bars and ammo gauges (draw_health_bar, draw_ammo_gauge and their mirrored forms, 20-35%) draw the right picture but their vertex stores are ordered differently. The whole file is 0x800e2958-0x800e4eac |
 | shoot.c | game2 | 6 of 14 exact (set_player_gun, the accuracy flags, reload_gun, set_weapon, give_pistol); read_guns 13%, gun_trigger 10%, resolve_shot 14%, gun_pump 4%, use_ammo 36% (first transcriptions; the whole light-gun path runs in the port) |
 | camera.c | game2 | 17 of 23 exact (update_camera, update_view_matrix, get_camera_pos, the file loader's callers, the gun pollers, kss_reset_w_calib_, take_calibration_request, default_calibration ...); set_field_of_view 67% and init_camera 12% / load_level_camera 5% (the original combines the field-of-view constants at run time where our compiler folds them: 67.74+10 is an `add.s` in the game), kss_reset_ 59%, gun_board_reset 89% (one scheduling swap), the two `&&`/`\|\|` gun tests 53-60% (register choice). Absorbs the old gun.c: the file at 0x800d4070-0x800d4f6c holds the camera and the light guns |
 | vecmat.c | game2 | 23 of 23 exact (0x800cfb18-0x800d1370: 3x3 matrices, the twelve rotation-order products, fatan, ftan) plus screen_to_ray and screen_to_point exact; world_to_view and view_to_world are transcriptions (1-2%) |
@@ -154,6 +154,16 @@ units (`video_to_game`), `port_gun_raw` folds it back through the player's calib
 the raw readings, and the left button or left control is the trigger. Headless runs aim at
 the screen centre, or at `CARNEVIL_AIM=x,y` (y from the bottom), and `--press N:trigger`
 pulls the trigger. `CARNEVIL_TRACE=1` prints `[gun]`, `[shot]` and `[krinkle]` lines.
+
+## Depth
+The Voodoo w-buffers: a vertex carries 1/w and the nearer fragment (the larger 1/w) wins
+under GR_CMP_LESS. The port keeps a GL depth buffer in the window mapping 0 = nearest,
+1 = farthest: a vertex's z is `2 * min(1, oow) - 1`, which frame_setup's `glOrtho(.., -1, 1)`
+(it negates z into clip space) lands in the window as `1 - oow`; the movie's 16-bit depth
+plane is written straight into the depth buffer with the same `1 - oow` (port_movie_blit,
+glDrawPixels), so the enemies are hidden by the scenery the way the hardware hid them. Until
+2026-10-14 the vertex z was `1 - oow` before the negation, so the farther of two models won
+the depth test: a Krinkle on the balcony drew over the one in front of the camera.
 
 ## Lighting and the colour combine
 

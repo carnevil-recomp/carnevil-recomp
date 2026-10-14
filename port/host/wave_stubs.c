@@ -326,3 +326,8 @@ WEAK void *func_800fe7a4(void) { return 0; }
 WEAK void func_800e7130(void) { STUB(func_800e7130); }
 WEAK int func_80162570(void) { STUB(func_80162570); return 0; }
 WEAK void func_800e59b8(void) { STUB(func_800e59b8); }
+WEAK void func_800fe748(void) { STUB(func_800fe748); }
+WEAK void func_800ff9cc(void) { STUB(func_800ff9cc); }
+WEAK void func_800ff05c(void) { STUB(func_800ff05c); }
+WEAK void func_800ffe0c(void) { STUB(func_800ffe0c); }
+WEAK void func_8010074c(void) { STUB(func_8010074c); }

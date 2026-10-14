@@ -403,3 +403,15 @@ Lessons from the Rickety Town script gates, term.c and enemy.c (2026-10-13):
   rewrites the head. Keep it; it is what the original compiles to (D_801e5898 = list - 0x80).
 - **Weak stubs must be loud.** A missing function that links as a weak no-op hides a gap
   in the transcription; every stub in `port/host/` now reports through `stub_reached()`.
+- **A value chosen by two equality tests with no default** (`if(w == 1) key = 0x6003; else
+  if(w == 2) key = 0x6004;`, key otherwise unset) compiles to the first assignment in the
+  first branch's delay slot and a `beql` for the second: write it that way, not as a default
+  plus a test.
+- **Two names for one address.** The HUD reads player 1's state as the global
+  `player1_state` (0x801e0f64, a plain `lui/lw`) while our `player_stats[0].state` keeps the
+  address in a register across the stores; the game's source had separate symbols for the
+  players' records and their state words.
+- **The constant pool is in order of first use**, including duplicates: draw_ammo_gauge has
+  231.8 and 57.27 twice because each vertex's texture coordinate was written as its own
+  `255 * OOW` / `63 * OOW` expression. To match such a block, write the assignments in the
+  order the pool lists their constants.

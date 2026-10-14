@@ -105,7 +105,6 @@ void func_800fef18(void) { STUB(func_800fef18); }
 void func_800ffbdc(void) { STUB(func_800ffbdc); }
 void func_800fe1fc(void) { STUB(func_800fe1fc); }
 void func_80100558(void) { STUB(func_80100558); }
-void func_800e2fe4(void) { STUB(func_800e2fe4); }
 void func_800c83bc(void) { STUB(func_800c83bc); }
 void func_800c9620(int a) { STUB(func_800c9620); (void)a; }
 void func_800c9bf0(void) { STUB(func_800c9bf0); }

@@ -277,8 +277,10 @@ static void vertex_rgba(const MidVertex *v, port_texture_t *t, const float *rgb,
 		if(ar < 3) tmax = 256.0f / (float)(1 << (3 - ar)); else if(ar > 3) smax = 256.0f / (float)(1 << (ar - 3));
 		glTexCoord4f(v->sow / smax, v->tow / tmax, 0.0f, oow);
 	}
-	/* w-buffer: nearer (larger oow) wins under GR_CMP_LESS */
-	glVertex3f(v->x, v->y, 1.0f - (oow > 1.0f ? 1.0f : oow));
+	/* w-buffer: nearer (larger oow) wins under GR_CMP_LESS. frame_setup's glOrtho(.., -1, 1)
+	   negates z on the way to clip space, so 2 * oow - 1 lands in the window as 1 - oow (near
+	   0, far 1), the same mapping the movie's depth plane is written with */
+	glVertex3f(v->x, v->y, 2.0f * (oow > 1.0f ? 1.0f : oow) - 1.0f);
 }
 static void vertex(const MidVertex *v, port_texture_t *t) { vertex_rgba(v, t, 0, 0); }
 

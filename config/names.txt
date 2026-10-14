@@ -957,7 +957,7 @@
 0x8010d64c clip_vertex_y
 0x8010d6e4 clip_vertex_x
 0x8010d77c clip_vertex_z
-# player damage (player.c), endgame.c, shake.c, the Rickety Town step test (objects.c), loose groups (model.c), angles_to (enemy.c), rickity_objects.c
+# player damage, death and the level audit (player.c), shake.c, the Rickety Town step test (objects.c), loose groups (model.c), angles_to (enemy.c), rickity_objects.c
 0x800e2a34 hurt_player
 0x800e3c74 kill_player
 0x800e4bd0 audit_level_time
@@ -969,3 +969,15 @@
 0x800fc34c angles_to
 0x8010fe84 load_rickity_object_texmaps
 0x80194170 rickitytown_present_texmap
+# the HUD (player.c)
+0x800e2fe4 draw_hud
+0x800e3704 draw_health_bar
+0x800e39bc draw_health_bar_mirrored
+0x800e3de8 draw_player_status
+0x800e4650 draw_ammo_gauge
+0x800e490c draw_ammo_gauge_facing
+0x8017ddf4 hud_pulse
+0x8017ddf8 hud_pulse_step
+0x8017ddfc hud_frames
+0x8017de00 hud_gauge_frame
+0x8017de04 hud_blink
