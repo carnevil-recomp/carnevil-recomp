@@ -47,7 +47,7 @@ extern unsigned int	background_color;
 extern int	do_draw_background;
 #include "credits.h"			/* game_mode (0x80212e14), player_stats (0x801e0f64) */
 #include "waves.h"
-extern int	D_801e6e70, D_8018db90;
+extern int	wave_lock, script_section;	/* spawn.c; the script's gate section number */
 extern char	text_buffer[];
 
 extern script_word_t	hhouse_script[], freakshow_script[], rickity_town_script[], bigtop_script[];
@@ -594,13 +594,13 @@ int movie_draw_frame(void)
 	{
 		grDepthBufferFunction(GR_CMP_ALWAYS);
 		grDepthMask(FXFALSE);
-		if(!D_801e6e70)
+		if(!wave_lock)
 		{
 			graphical_printf(text_buffer, "FRAME %d   %d %d", frame, movie.frame_number, 0);
 		}
 		else
 		{
-			graphical_printf(text_buffer, "FRAME %d   %d LOCK %d %d", frame, movie.frame_number, D_8018db90, D_801e6e70);
+			graphical_printf(text_buffer, "FRAME %d   %d LOCK %d %d", frame, movie.frame_number, script_section, wave_lock);
 		}
 		draw_string(0, text_buffer, 0.0f, 220.0f);
 		grDepthMask(FXTRUE);

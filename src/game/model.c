@@ -330,10 +330,13 @@ void draw_model(enemy_t *e, submesh_t *sub, int nsub, float *verts, int nverts, 
 #ifdef PORT_HOST
 	{ extern int port_trace; extern unsigned long hal_frame_count; static int shown;
 	  extern float view_matrix[9], camera_neg_pos[3], camera_x, camera_y, camera_z, cull_x, cull_y, proj_x, proj_y;
-	  if(port_trace && shown < 6) { float p[3], w[3]; int k; shown++;
+	  if(port_trace && (shown++ % 40) == 0) { float p[3], w[3];
 	    vec_add(e->groups[0].pos, camera_neg_pos, p); mat_vec_mul(p, view_matrix, w);
 	    fprintf(stderr, "[model] vblank %lu enemy %d at (%.1f %.1f %.1f) frame %d cam (%.1f %.1f %.1f) neg (%.1f %.1f %.1f) view-space group0 (%.1f %.1f %.1f) cull %.2f %.2f proj %.1f %.1f vert0 q %.4f\n", hal_frame_count, e->num, e->x, e->y, e->z, e->frame, camera_x, camera_y, camera_z, camera_neg_pos[0], camera_neg_pos[1], camera_neg_pos[2], w[0], w[1], w[2], cull_x, cull_y, proj_x, proj_y, proj_verts[sub[0].vert_start].q);
-	    for(k = 0; k < 9; k++) fprintf(stderr, "%s%.3f", k ? " " : "[model] view_matrix ", view_matrix[k]); fprintf(stderr, " groups0 flags %x\n", e->groups[0].flags); } }
+	    { int gi, vis = 0, tot = 0; float minx = 9999, maxx = -9999, miny = 9999, maxy = -9999;
+	      for(gi = 0; gi < nsub; gi++) { int vi; if(!(e->groups[gi].flags & GROUP_VISIBLE)) continue;
+	        for(vi = sub[gi].vert_start; vi <= sub[gi].vert_end; vi++) { tot++; if(proj_verts[vi].q != -1.0f) { vis++; if(proj_verts[vi].x < minx) minx = proj_verts[vi].x; if(proj_verts[vi].x > maxx) maxx = proj_verts[vi].x; if(proj_verts[vi].y < miny) miny = proj_verts[vi].y; if(proj_verts[vi].y > maxy) maxy = proj_verts[vi].y; } } }
+	      fprintf(stderr, "[model] visible %d of %d vertices, screen x %.0f..%.0f y %.0f..%.0f, scale %.2f %.2f %.2f, groups0 flags %x group5 pos (%.1f %.1f %.1f)\n", vis, tot, minx, maxx, miny, maxy, e->scale[0], e->scale[1], e->scale[2], e->groups[0].flags, e->groups[5].pos[0], e->groups[5].pos[1], e->groups[5].pos[2]); } } }
 #endif
 	if(e->flags & 2)
 	{

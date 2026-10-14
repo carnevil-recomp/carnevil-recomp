@@ -309,8 +309,6 @@ WEAK int create_particle_light_(void) { return 0; }
 WEAK int func_800c8938(void) { return 0; }
 WEAK int func_800c99e4(void) { return 0; }
 WEAK int func_800d14a4(void) { return 0; }
-WEAK int func_800fb4a0(void) { return 0; }
-WEAK int func_800fb70c(void) { return 0; }
 WEAK int func_800fd990(void) { return 0; }
 WEAK int func_800fd9ac(void) { return 0; }
 WEAK int func_800fda88(void) { return 0; }
@@ -321,3 +319,23 @@ WEAK int func_8015f30c(void) { return 0; }
 WEAK int remove_animation(void) { return 0; }
 WEAK int remove_model(void) { return 0; }
 WEAK int remove_path(void) { return 0; }
+/* term.c's helpers (hit tests, effects, steering, damage) still in assembly */
+WEAK void decrenent_health_(void) { }
+WEAK int do_something_with_submesh(void) { return -1; }
+WEAK int func_800cdeac(void) { return 0; }
+WEAK void func_800ced14(void) { }
+WEAK void func_800cef8c(void) { }
+WEAK void func_800db810(void) { }
+WEAK void func_800e2958(void) { }
+WEAK float func_800e29b0(void) { return 0; }
+WEAK void func_800fb934(void) { }
+WEAK int func_800fbc6c(void) { return 0; }
+WEAK void func_800fc34c(void) { }
+WEAK void func_800fd6b0(void) { }
+WEAK void func_800fda34(void) { }
+WEAK void func_800fdc18(void) { }
+WEAK void func_800fdcf4(void) { }
+WEAK void *func_800febd0(void) { return 0; }
+WEAK void func_800ff190(void) { }
+WEAK void func_80114b8c(void) { }
+WEAK void *get_player_info_struct2_(void) { return 0; }

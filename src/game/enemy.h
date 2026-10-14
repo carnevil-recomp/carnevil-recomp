@@ -31,16 +31,18 @@ typedef struct enemy
 	int		unk44;
 	float		scale[3];		/* 0x48 */
 	int		unk54;
-	void		*target;		/* 0x58: the player it goes for */
+	struct player_stats *target;	/* 0x58: the player it goes for */
 	struct group	*groups;		/* 0x5c: one per submesh (model.h) */
 	float		vel[3];			/* 0x60: added to the position each draw */
-	int		unk6c, unk70;
+	short		resume_frame;		/* 0x6c: a hit reaction blends back to this frame ... */
+	short		resume_state;		/* 0x6e: ... and this state */
+	float		unk70;
 	int		sound_priority;		/* 0x74 */
 	int		unk78;
 	float		radius;			/* 0x7c: unkcc times the y scale */
 	int		unk80;
 	struct group	*hit_group;		/* 0x84 */
-	int		sound_volume;		/* 0x88 */
+	struct player_stats *killer;	/* 0x88: the player whose shot killed it */
 	int		unk8c;
 	short		unk90, unk92;		/* 0x90: the spawn entry's path and unk2a */
 	short		path;			/* 0x94 */

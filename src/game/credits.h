@@ -54,10 +54,16 @@ typedef struct player_stats
 	int	volume;			/* +0x88: sound volume (levelsnd.c) */
 	int	unk8c[11];
 	int	shooting;		/* +0xb8: 1 while the player's shot is being resolved */
-	int	unkbc[5];
+	int	weapon;			/* +0xbc: 0x1000004 the gun, 0x1000005 the heavy weapon (term.c) */
+	int	unkc0;
+	int	hit;			/* +0xc4: 1 when the shot landed on an enemy */
+	int	hit_id;			/* +0xc8: the object hit */
+	int	hit_group;		/* +0xcc: the submesh hit */
 	int	index;			/* +0xd0: 0 or 1 */
 	int	unkd4;			/* +0xd4: 100 after a continue */
-	int	unkd8[7];
+	float	aim[3];			/* +0xd8: where the shot went */
+	float	hit_point[3];		/* +0xe4: where it landed on the enemy */
+	void	*die;			/* +0xf0: the enemy's die callback, (game_object_t *, player_stats_t *) */
 	int	time_to_continue;	/* +0xf4 */
 	int	unkf8, unkfc, unk100;
 	int	unk104;			/* +0x104: 6 at a start */

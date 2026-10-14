@@ -48,6 +48,24 @@ static void split(blk_t *b, size_t n)
 	}
 }
 
+/* with CARNEVIL_TRACE the heap is walked on every malloc so an overrun shows up at once:
+   the block before the corrupt header is the one that was overrun */
+static void mem_check(const char *where)
+{
+	blk_t *b, *prev = 0;
+	size_t total = 0;
+	for(b = head; b; prev = b, b = b->next)
+	{
+		if((unsigned char *)b < arena || (unsigned char *)b >= arena + ARENA_SIZE || b->prev != prev || b->size > ARENA_SIZE || (b->free & ~1u))
+		{
+			fprintf(stderr, "[mem] heap corrupt at %s: block %p (size %zu free %u prev %p) after %p (size %zu free %u, data %p..%p)\n", where, (void *)b, b->size, b->free, (void *)b->prev, (void *)prev, prev ? prev->size : 0, prev ? prev->free : 0, prev ? (void *)(prev + 1) : 0, prev ? (void *)((unsigned char *)(prev + 1) + prev->size) : 0);
+			return;
+		}
+		total += sizeof(blk_t) + b->size;
+	}
+	if(total != ARENA_SIZE) fprintf(stderr, "[mem] heap sizes sum to %zu, not %u (%s)\n", total, ARENA_SIZE, where);
+}
+
 void *malloc(size_t n)
 {
 	/* fresh arcade memory is zero and the game relies on it here and there (records it does not
@@ -56,6 +74,7 @@ void *malloc(size_t n)
 	arena_init();
 	n = (n + ALIGN - 1) & ~(size_t)(ALIGN - 1);
 	if(!n) n = ALIGN;
+	{ extern int port_trace; if(port_trace) { static int checks; if(n >= (1u << 20)) fprintf(stderr, "[mem] malloc %zu\n", n); if(checks++ < 100000) mem_check("malloc"); } }
 	for(b = head; b; b = b->next)
 	{
 		if(b->free && b->size >= n) { split(b, n); b->free = 0; memset(b + 1, 0, n); return b + 1; }

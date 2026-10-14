@@ -22,12 +22,12 @@ extern void	func_800c8938(float *, float, unsigned int);
 extern void	func_800d14a4(float, float);
 extern void	func_800c99e4(enemy_t *, int);
 extern void	set_enemy_scale(enemy_t *, float);		/* objects.c */
-extern void	func_800fb4a0(enemy_t *, float);		/* health by difficulty */
+extern void	set_enemy_health(enemy_t *, float);		/* health by difficulty */
 extern player_stats_t *get_target_player(void);		/* objects.c */
 extern int	randrng(int);
 extern void	*func_8010eefc(group_t *, int, float, float, float, float, float, int, float *);
 extern void	func_800fd990(enemy_t *, void *);
-extern void	func_800fb70c(enemy_t *, void *, short, float);	/* start along a path */
+extern void	path_place(enemy_t *, void *, short, float);	/* start along a path */
 extern void	func_800fda88(enemy_t *);
 extern int	func_8012660c(game_object_t *, enemy_t *);	/* hit */
 extern void	func_801266c8(enemy_t *);			/* die */
@@ -185,7 +185,7 @@ void krinkle_setup(enemy_t *e, unsigned short state)
 		e->frame = 0x179;
 		break;
 	case 0x801:
-		func_800fb70c(e, krik_path, e->path, 1.0f);
+		path_place(e, krik_path, e->path, 1.0f);
 		e->frame = 0x5f;
 		break;
 	default:
@@ -200,7 +200,7 @@ int krinkle_init(game_object_t *obj)
 	enemy_t	*e;
 	int	i;
 
-	e = malloc(0xec);
+	e = malloc(sizeof(enemy_t));
 	obj->data = (short *)e;
 	if(!e)
 	{
@@ -225,8 +225,8 @@ int krinkle_init(game_object_t *obj)
 	e->ry = 3.1415927f;
 	e->unkcc = 0.92f;
 	set_enemy_scale(e, 1.0f);
-	func_800fb4a0(e, 5.5f);
-	e->groups = malloc(0xbb0);
+	set_enemy_health(e, 5.5f);
+	e->groups = malloc(0x11 * sizeof(group_t));
 	if(!e->groups)
 	{
 		free(e);

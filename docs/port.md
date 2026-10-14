@@ -94,13 +94,18 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | scene.c | game2 | 10 of 10 (the switch sampler, the debug nudges, the heap display, init_game_state, game_init, load_level_assets); the rest of that file (0x800c8280-0x800ca4d0: screen markers, 3D helpers) is still assembly |
 | spawn.c | game2 | 11 of 12 exact; add_die 38% (its failure return is laid out differently); the port runs spawn_wave_enemies with construct_and_spawn_object (0x800e9570, 3.8 KB) stubbed |
 | objects.c | game2 | 17 of 18 (re-verified after the camera moved to camera.c): the list routines, the per-frame draw pass (0x800cbbb4, `draw_pass`), think pass (0x800cca70) and the four nearest-enemy searches exact; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20). The port runs the real passes; the level routines they call are stubs |
-| wave.c | game2 | 19 of 21 exact (unload_wave, preload_wave, the bank lists, the per-level asset lists, the big top's act change); load_wave_proc 25% and btopload_proc 8% keep an address in a saved register that ours does not |
+| wave.c | game2 | 19 of 21 exact (unload_wave, preload_wave, the bank lists, the per-level asset lists, the big top's act change); load_wave_proc 26% and btopload_proc 8% keep an address in a saved register that ours does not. The 25% transcription had put the music stream start outside the `loaded_wave & WAVE_LEVEL` test, so the attract and the gallery streamed the haunted house partition under their own cues (fixed 2026-10-13: only the four levels stream) |
 | main.c (game) | game2 | init_main_game_proc 61%, print_select_countdown 63%, main_game_proc 7% (first transcription; the flow is right) |
 | player.c | game2 | set_level_start_time exact, init_player_stats 92%, init_player 25% (store order) |
 | shoot.c | game2 | 3 of 3 (set_player_gun and the two level-play flags) |
 | camera.c | game2 | 17 of 23 exact (update_camera, update_view_matrix, get_camera_pos, the file loader's callers, the gun pollers, kss_reset_w_calib_, take_calibration_request, default_calibration ...); set_field_of_view 67% and init_camera 12% / load_level_camera 5% (the original combines the field-of-view constants at run time where our compiler folds them: 67.74+10 is an `add.s` in the game), kss_reset_ 59%, gun_board_reset 89% (one scheduling swap), the two `&&`/`\|\|` gun tests 53-60% (register choice). Absorbs the old gun.c: the file at 0x800d4070-0x800d4f6c holds the camera and the light guns |
 | vecmat.c | game2 | 23 of 23 exact (0x800cfb18-0x800d1370: 3x3 matrices, the twelve rotation-order products, fatan, ftan); the rest of the file (get_screen_pos, the projection helpers, draw_tri) is still assembly |
 | loaders.c | game2 | 0 of 1 (load_camera_file 4%: the retry loop's two counters are allocated differently; the port uses it as is) |
+| model.c, lights.c | game2 | init_groups exact; draw_model and the eight face drawers are first transcriptions (0-31%), light_vertices 2%; the port draws every enemy through them |
+| krinkle.c | game2 | load_krinkle_texmap, remove_krinkle_assets, krinkle_remove exact; load_krinkle 86%, krinkle_setup 54%, krinkle_init 50%, krinkle_draw 31%; the think, hit and die callbacks are still assembly (stubs in the port) |
+| rickity_script.c | game2 | 38 of 38 exact (0x80123f88-0x80124c68: the script entry, the 22 section gates the movie script calls between its replays, the unused timers and counters). Unregistered: its timers are interleaved with the other levels' in .bss |
+| term.c | game2 | 5 of 12 exact (the loaders, term_remove), term_die 94%, term_end_path 96%, term_steer 94%, term_hit 76%, term_init 59%, term_draw 33%, term_think 17%, term_setup 15% (case-tree shapes); the port runs all of it: the bugs follow their path and reach the screen |
+| enemy.c | game2 | 8 of 8 exact (0x800fb4a0-0x800fcfc4: health by adjustment 0x32, the five path placement/follow helpers, the attack reach test); the steering and facing routines of that file are still assembly |
 
 A module is registered in `config/modules.txt` once every function in its source file's
 address range matches and its data is laid out in the file's order (the audit file was the
@@ -177,8 +182,18 @@ into the I/O ASIC's sound FIFO from the ASIC's FIFO interrupt (`src/game/stream.
 0x8013f508-0x8014012c); the board plays the FIFO after command 0x55D6. The HAL raises that
 interrupt between frames while the board's FIFO (a few frames deep here, 512 words on the
 hardware) has room, and the port's `FIFO_WRITE` seam replaces the register store. The
-attract mode never starts this stream; `CARNEVIL_STREAM_TEST=0x1040000` starts the haunted
-house music under the attract so the path can be heard.
+attract mode never starts this stream (load_wave_proc only selects and starts it for the four
+level waves; the gallery and the high-score entry run on bank cues); `CARNEVIL_STREAM_TEST=0x1040000`
+starts the haunted house music under the attract so the path can be heard.
+
+The board side was checked against the real sound OS: `tools/adsp21xx_dasm.py` (MAME's ADSP-2100
+disassembler in Python) lists F_OSYS.BIN (PM 0) and F_COMP.BIN (PM 0x2800). The host command
+dispatch is at PM 0x3633; 0x55D6/0x55D7 set and clear the stream-on word (DM 0x381C), 0x55D8
+clears the 13 stream buffers (480 words each, states at DM 0x382E, free count 0x381B), 0x55E7
+selects FIFO mode (DM 0x381D) and 0x55B3 stores the stream volume (DM 0x3818). The FIFO
+interrupt (PM 0x34C3) copies 512 words from DM 0x0407 into the next free buffer; the per-frame
+mixer (PM 0x3961) plays a full buffer whenever the stream is on, scaled by the stream volume
+and the master gain, with no track involved, which is what `dcs_board.cpp` does.
 
 Tracks: the board has six tracks (= mixer channels). The host's priority word picks the track
 (SOUND.H: 0x8000 forces the track in bits 7-9, otherwise the board allocates a free one,

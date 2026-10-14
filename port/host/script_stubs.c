@@ -3,15 +3,36 @@
    tools/extract_scripts.py --stubs; a real definition anywhere else overrides a stub. */
 #include <stdio.h>
 #define WEAK __attribute__((weak))
-
 WEAK void disable_spawning(void) { fprintf(stderr, "[script] disable_spawning not implemented\n"); }
 WEAK void end_of_wave(void) { fprintf(stderr, "[script] end_of_wave not implemented\n"); }
 WEAK void fade_out_level_stream(void) { fprintf(stderr, "[script] fade_out_level_stream not implemented\n"); }
 WEAK void func_800fa720(void) { fprintf(stderr, "[script] func_800fa720 not implemented\n"); }
 WEAK void func_801153a0(void) { fprintf(stderr, "[script] func_801153a0 not implemented\n"); }
-WEAK void func_80123f88(void) { fprintf(stderr, "[script] func_80123f88 not implemented\n"); }
 WEAK void movie_load_ending(void) { fprintf(stderr, "[script] movie_load_ending not implemented\n"); }
 WEAK void reset_stream_volume(void) { fprintf(stderr, "[script] reset_stream_volume not implemented\n"); }
+WEAK void rickity_gate1(void) { fprintf(stderr, "[script] rickity_gate1 not implemented\n"); }
+WEAK void rickity_gate10(void) { fprintf(stderr, "[script] rickity_gate10 not implemented\n"); }
+WEAK void rickity_gate11(void) { fprintf(stderr, "[script] rickity_gate11 not implemented\n"); }
+WEAK void rickity_gate12(void) { fprintf(stderr, "[script] rickity_gate12 not implemented\n"); }
+WEAK void rickity_gate13(void) { fprintf(stderr, "[script] rickity_gate13 not implemented\n"); }
+WEAK void rickity_gate14(void) { fprintf(stderr, "[script] rickity_gate14 not implemented\n"); }
+WEAK void rickity_gate15(void) { fprintf(stderr, "[script] rickity_gate15 not implemented\n"); }
+WEAK void rickity_gate16(void) { fprintf(stderr, "[script] rickity_gate16 not implemented\n"); }
+WEAK void rickity_gate17(void) { fprintf(stderr, "[script] rickity_gate17 not implemented\n"); }
+WEAK void rickity_gate18(void) { fprintf(stderr, "[script] rickity_gate18 not implemented\n"); }
+WEAK void rickity_gate19(void) { fprintf(stderr, "[script] rickity_gate19 not implemented\n"); }
+WEAK void rickity_gate2(void) { fprintf(stderr, "[script] rickity_gate2 not implemented\n"); }
+WEAK void rickity_gate20(void) { fprintf(stderr, "[script] rickity_gate20 not implemented\n"); }
+WEAK void rickity_gate21(void) { fprintf(stderr, "[script] rickity_gate21 not implemented\n"); }
+WEAK void rickity_gate22(void) { fprintf(stderr, "[script] rickity_gate22 not implemented\n"); }
+WEAK void rickity_gate3(void) { fprintf(stderr, "[script] rickity_gate3 not implemented\n"); }
+WEAK void rickity_gate4(void) { fprintf(stderr, "[script] rickity_gate4 not implemented\n"); }
+WEAK void rickity_gate5(void) { fprintf(stderr, "[script] rickity_gate5 not implemented\n"); }
+WEAK void rickity_gate6(void) { fprintf(stderr, "[script] rickity_gate6 not implemented\n"); }
+WEAK void rickity_gate7(void) { fprintf(stderr, "[script] rickity_gate7 not implemented\n"); }
+WEAK void rickity_gate8(void) { fprintf(stderr, "[script] rickity_gate8 not implemented\n"); }
+WEAK void rickity_gate9(void) { fprintf(stderr, "[script] rickity_gate9 not implemented\n"); }
+WEAK void rickity_script_init(void) { fprintf(stderr, "[script] rickity_script_init not implemented\n"); }
 WEAK void script_end_cleanup(void) { fprintf(stderr, "[script] script_end_cleanup not implemented\n"); }
 WEAK void script_fade_in_90(void) { fprintf(stderr, "[script] script_fade_in_90 not implemented\n"); }
 WEAK void script_fade_out_108(void) { fprintf(stderr, "[script] script_fade_out_108 not implemented\n"); }
@@ -134,28 +155,6 @@ WEAK void sub_801221d8(void) { fprintf(stderr, "[script] sub_801221d8 not implem
 WEAK void sub_801221e0(void) { fprintf(stderr, "[script] sub_801221e0 not implemented\n"); }
 WEAK int sub_80122218(void) { fprintf(stderr, "[script] sub_80122218 not implemented\n"); return 0; }
 WEAK void sub_8012225c(void) { fprintf(stderr, "[script] sub_8012225c not implemented\n"); }
-WEAK void sub_801240e4(void) { fprintf(stderr, "[script] sub_801240e4 not implemented\n"); }
-WEAK void sub_80124150(void) { fprintf(stderr, "[script] sub_80124150 not implemented\n"); }
-WEAK void sub_801241bc(void) { fprintf(stderr, "[script] sub_801241bc not implemented\n"); }
-WEAK void sub_80124258(void) { fprintf(stderr, "[script] sub_80124258 not implemented\n"); }
-WEAK void sub_801242b4(void) { fprintf(stderr, "[script] sub_801242b4 not implemented\n"); }
-WEAK void sub_80124320(void) { fprintf(stderr, "[script] sub_80124320 not implemented\n"); }
-WEAK void sub_801243ac(void) { fprintf(stderr, "[script] sub_801243ac not implemented\n"); }
-WEAK void sub_80124438(void) { fprintf(stderr, "[script] sub_80124438 not implemented\n"); }
-WEAK void sub_801244a4(void) { fprintf(stderr, "[script] sub_801244a4 not implemented\n"); }
-WEAK void sub_80124510(void) { fprintf(stderr, "[script] sub_80124510 not implemented\n"); }
-WEAK void sub_8012459c(void) { fprintf(stderr, "[script] sub_8012459c not implemented\n"); }
-WEAK void sub_80124628(void) { fprintf(stderr, "[script] sub_80124628 not implemented\n"); }
-WEAK void sub_80124694(void) { fprintf(stderr, "[script] sub_80124694 not implemented\n"); }
-WEAK void sub_801246f0(void) { fprintf(stderr, "[script] sub_801246f0 not implemented\n"); }
-WEAK void sub_8012478c(void) { fprintf(stderr, "[script] sub_8012478c not implemented\n"); }
-WEAK void sub_80124838(void) { fprintf(stderr, "[script] sub_80124838 not implemented\n"); }
-WEAK void sub_801248a4(void) { fprintf(stderr, "[script] sub_801248a4 not implemented\n"); }
-WEAK void sub_80124950(void) { fprintf(stderr, "[script] sub_80124950 not implemented\n"); }
-WEAK void sub_8012499c(void) { fprintf(stderr, "[script] sub_8012499c not implemented\n"); }
-WEAK void sub_801249e8(void) { fprintf(stderr, "[script] sub_801249e8 not implemented\n"); }
-WEAK void sub_80124a34(void) { fprintf(stderr, "[script] sub_80124a34 not implemented\n"); }
-WEAK void sub_80124aa0(void) { fprintf(stderr, "[script] sub_80124aa0 not implemented\n"); }
 WEAK void sub_8012d43c(void) { fprintf(stderr, "[script] sub_8012d43c not implemented\n"); }
 WEAK void sub_8012f6c8(void) { fprintf(stderr, "[script] sub_8012f6c8 not implemented\n"); }
 WEAK int sub_8012f6f0(void) { fprintf(stderr, "[script] sub_8012f6f0 not implemented\n"); return 0; }
@@ -243,60 +242,38 @@ WEAK void sub_8013b7b0(void) { fprintf(stderr, "[script] sub_8013b7b0 not implem
 WEAK void sub_8013b814(void) { fprintf(stderr, "[script] sub_8013b814 not implemented\n"); }
 WEAK void sub_8013b850(void) { fprintf(stderr, "[script] sub_8013b850 not implemented\n"); }
 
-WEAK int D_8018db90;
 WEAK int D_801e6b74;
 WEAK int D_801e6b78;
-WEAK int D_801e6b7c;
-WEAK int D_801e6b80;
 WEAK int D_801e6b84;
 WEAK int D_801e6b88;
 WEAK int D_801e6b8c;
-WEAK int D_801e6b90;
-WEAK int D_801e6b94;
-WEAK int D_801e6b98;
 WEAK int D_801e6b9c;
 WEAK int D_801e6ba0;
 WEAK int D_801e6ba4;
 WEAK int D_801e6ba8;
-WEAK int D_801e6bb0;
-WEAK int D_801e6bb4;
-WEAK int D_801e6bb8;
 WEAK int D_801e6bbc;
 WEAK int D_801e6bc0;
 WEAK int D_801e6bc4;
 WEAK int D_801e6bc8;
-WEAK int D_801e6bd4;
-WEAK int D_801e6bd8;
 WEAK int D_801e6bdc;
 WEAK int D_801e6be0;
 WEAK int D_801e6be4;
 WEAK int D_801e6be8;
-WEAK int D_801e6bf4;
-WEAK int D_801e6bf8;
 WEAK int D_801e6bfc;
 WEAK int D_801e6c00;
 WEAK int D_801e6c04;
 WEAK int D_801e6c08;
-WEAK int D_801e6c20;
-WEAK int D_801e6c24;
 WEAK int D_801e6c28;
 WEAK int D_801e6c2c;
 WEAK int D_801e6c30;
-WEAK int D_801e6c40;
-WEAK int D_801e6c44;
 WEAK int D_801e6c48;
 WEAK int D_801e6c4c;
 WEAK int D_801e6c50;
-WEAK int D_801e6c5c;
-WEAK int D_801e6c60;
 WEAK int D_801e6c64;
 WEAK int D_801e6c68;
 WEAK int D_801e6c6c;
-WEAK int D_801e6c78;
-WEAK int D_801e6c7c;
 WEAK int D_801e6c80;
 WEAK int D_801e6c84;
-WEAK int D_801e6c90;
 WEAK int D_801e6c94;
 WEAK int D_801e6d5c;
 WEAK int D_801e6d60;
@@ -378,10 +355,32 @@ WEAK int D_801e6ea8;
 WEAK int D_801e6eac;
 WEAK int D_801e6eb0;
 WEAK int D_801fac80;
-WEAK int D_80212d70;
 WEAK int D_80212db0;
 WEAK int D_80212dbc;
 WEAK int D_80212dc8;
 WEAK int D_80212dd0;
 WEAK int D_80212dd4;
+WEAK int rickity_gate10_timer;
+WEAK int rickity_gate11_timer;
+WEAK int rickity_gate12_timer;
+WEAK int rickity_gate13_timer;
+WEAK int rickity_gate14_timer;
+WEAK int rickity_gate15_timer;
+WEAK int rickity_gate16_timer;
+WEAK int rickity_gate17_timer;
+WEAK int rickity_gate18_timer;
+WEAK int rickity_gate19_timer;
+WEAK int rickity_gate1_timer;
+WEAK int rickity_gate20_timer;
+WEAK int rickity_gate21_timer;
+WEAK int rickity_gate22_timer;
+WEAK int rickity_gate2_timer;
+WEAK int rickity_gate3_timer;
+WEAK int rickity_gate4_timer;
+WEAK int rickity_gate5_timer;
+WEAK int rickity_gate6_timer;
+WEAK int rickity_gate7_timer;
+WEAK int rickity_gate8_timer;
+WEAK int rickity_gate9_timer;
+WEAK int script_section;
 WEAK int wave_lock;

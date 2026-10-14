@@ -355,3 +355,25 @@ Lessons from wave.c, main.c and player.c (the level flow):
   `p->unk24 = p->unk28 = v`.
 - The movie scripts are word streams in .text; `tools/extract_scripts.py` decodes them with
   do_script's opcode table into per-script arrays (labels become `&script[i]` casts).
+
+Lessons from the Rickety Town script gates, term.c and enemy.c (2026-10-13):
+- **File boundaries show as a padding word.** A source file's `.text` is padded to 8 bytes
+  with whatever the assembler had in its buffer: 0x80123f84 (`sw $v0, 0x6bc0($at)`),
+  0x8011539c (`lui $at, 0x801e`), 0x800fa71c and 0x80128394 are stray instructions in front
+  of the real entry points (0x80123f88, 0x801153a0, 0x800fa720, 0x80128398), which is also
+  where the script tables point. `config/functions_v103.txt` has the padded addresses.
+- **Switch trees.** Case values written as `case 0x1001: case 0x1002: case 0x1003:` in front
+  of one body become one range node; the original's tree for term_think tests 0x1003, then
+  0x1001/0x1002 separately, so those were separate bodies in the source (or the tree was
+  built from separate labels). term_setup's `== 1; < 2; == 0x201; == 0x801` chain is not
+  reproduced by a three- or four-case switch either way; both stay below 20%.
+- **Record sizes.** `malloc(0xec)` for an enemy record overruns the port's heap (the host's
+  pointers are 8 bytes); `malloc(sizeof(enemy_t))` and `malloc(n * sizeof(group_t))` compile
+  to the same immediates on the original toolchain. The port's allocator walks the heap on
+  every malloc under CARNEVIL_TRACE and names the overrun block.
+- **A path index parameter is `int`.** `short n` adds the `sll/sra` sign extension the
+  original lacks; the callers pass the record's short field and the callee takes an int.
+- **The movie script's gate loops.** `wave_lock` counts the replays of a section (the spawn
+  table's `min_lock` field waits for a given replay), `script_section` counts the sections;
+  each gate function clears its timer when its spawn slots are done and counts it down
+  otherwise, so a section ends after at most 32 replays.

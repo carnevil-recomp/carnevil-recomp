@@ -76,7 +76,7 @@ extern void	load_binn(void), load_skeleton(void), load_btop_weap_models(void);
 extern void	func_8010ffd4(void), remove_rinn_assets(void), remove_term_assets(void), remove_dino_assets(void), func_8012c214(void);
 extern void	remove_krampus_assets(void), remove_krinkle_assets(void), remove_smilingbob_assets(void), func_800d8f9c(void);
 extern void	load_rickity_texmap(void), load_smilingbob_texmap(void), load_krinkle_texmap(void), load_krampus_texmap(void);
-extern void	func_8012c0bc(void), load_dino_texmap(void), func_8012896c(void), func_8010fe84(void), load_smilingbob(void);
+extern void	func_8012c0bc(void), load_dino_texmap(void), load_term_texmap(void), func_8010fe84(void), load_smilingbob(void);
 extern void	load_krinkle(void), load_krampus(void), load_teen(void), load_dino(void), load_term(void), load_rinn(void), load_junk(void);
 
 int	loaded_wave;			/* 0x80212e30 (wave_id_g2): the wave loaded, 0 for none */
@@ -335,16 +335,16 @@ void load_wave_proc(void)
 		printf("Post load wave heap %d\n", get_free_mem_left());
 	}
 	free_mem_after_load = get_free_mem_left();
-	if(loaded_wave & WAVE_LEVEL)
+	if(loaded_wave & WAVE_LEVEL)		/* only the levels stream music from the disk */
 	{
 		stop_level_cue();
+		install_disk_info(0, 0, 0);
+		reset_stream_volume();
+		WAVE_TRACE("load_wave_proc: stream");
+		stream_select_wave(loaded_wave);
+		sleep(3);
+		stream_start();
 	}
-	install_disk_info(0, 0, 0);
-	reset_stream_volume();
-	WAVE_TRACE("load_wave_proc: stream");
-	stream_select_wave(loaded_wave);
-	sleep(3);
-	stream_start();
 	WAVE_TRACE("load_wave_proc: done");
 	wave_busy = 0;
 }
@@ -677,7 +677,7 @@ void load_rickity_town_assets(void)
 	load_krampus_texmap();
 	func_8012c0bc();
 	load_dino_texmap();
-	func_8012896c();
+	load_term_texmap();
 	func_8010fe84();
 	load_smilingbob();
 	load_krinkle();

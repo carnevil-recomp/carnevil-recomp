@@ -408,7 +408,7 @@ ENEMY(func_80122e40, func_801235ec, func_8012387c)
 ENEMY(func_8011dd80, func_8011e674, func_8011e890)
 ENEMY(func_80118728, func_8011905c, func_80119280)
 ENEMY(func_801222d0, func_80122818, func_801229d4)
-ENEMY(func_80128398, func_80128adc, func_80128d6c)
+ENEMY(term_draw, term_init, term_think)
 ENEMY(func_80124c68, func_8012562c, func_80125824)
 ENEMY(krinkle_draw, krinkle_init, func_80126fd8)
 ENEMY(func_801293b8, func_801298c8, func_80129a8c)
@@ -430,7 +430,7 @@ SETUP(func_80109260) SETUP(func_80117c88) SETUP(func_8011d704) SETUP(func_801213
 SETUP(func_8012f320) SETUP(krinkle_setup) SETUP(func_80123cd4) SETUP(func_80125eb4) SETUP(func_80129c40)
 SETUP(func_8012b260) SETUP(func_8012cce8) SETUP(func_80131a9c) SETUP(func_80134420) SETUP(func_8013cad4)
 SETUP(func_80133118) SETUP(func_80135f98) SETUP(func_8013aa34) SETUP(func_8013f324) SETUP(func_8013e518)
-SETUP(func_80137ae8) SETUP(func_80129120) SETUP(func_80122ca8) SETUP(func_8011be94)
+SETUP(func_80137ae8) SETUP(term_setup) SETUP(func_80122ca8) SETUP(func_8011be94)
 extern void	something_bat_state(enemy_t *, short), func_800f5278(enemy_t *, short);
 
 /* the spawn table entry becomes a game object of its type (its draw/init/think callbacks),
@@ -553,9 +553,9 @@ int construct_and_spawn_object(spawn_t *s, int index)
 		break;
 	case 0x2042:
 		type = (short)s->type;
-		draw = func_80128398;
-		init = func_80128adc;
-		think = func_80128d6c;
+		draw = term_draw;
+		init = term_init;
+		think = term_think;
 		break;
 	case 0x2044:
 		type = (short)s->type;
@@ -730,6 +730,14 @@ int construct_and_spawn_object(spawn_t *s, int index)
 		return(-1);
 	}
 	e = get_object_data(id);
+#ifdef PORT_HOST
+	if(e == NULL)			/* the type's init is still a stub: nothing was allocated */
+	{
+		extern int port_trace;
+		if(port_trace) fprintf(stderr, "[spawn] entry %d type %04x has no object data (init stubbed)\n", index, s->type);
+		return(-1);
+	}
+#endif
 	if(s->type != 0x800)
 	{
 		e->flags |= 0x8000;
@@ -784,7 +792,7 @@ int construct_and_spawn_object(spawn_t *s, int index)
 	case 0x2046: func_8012f320(e, e->ai_state); break;
 	case 0x2045: func_8012cce8(e, e->ai_state); break;
 	case 0x2040: func_80125eb4(e, e->ai_state); break;
-	case 0x2042: func_80129120(e, e->ai_state); break;
+	case 0x2042: term_setup(e, e->ai_state); break;
 	case 0x2044: func_8012b260(e, e->ai_state); break;
 	case 0x2028: func_80122ca8(e, e->ai_state); break;
 	case 0x2020: func_80117c88(e, e->ai_state); break;
