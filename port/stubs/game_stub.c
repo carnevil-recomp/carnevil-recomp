@@ -59,8 +59,6 @@ void game_dma0_handler(void) { }
 void func_800e74f0(void) { movie_start(); }	/* movie play start */
 void func_800e7568(void) { movie_stop(); }	/* movie play stop */
 /* script callees and level data the attract movies touch */
-void level_end_stats_wrapper(void) { STUB(level_end_stats_wrapper); }
-int end_of_wave(void) { STUB(end_of_wave); return 0; }
 int attract_high_scores(int arg) { STUB(attract_high_scores); (void)arg; return 0; }	/* high-score reset screen */
 void graphical_printf(char *buf, char *fmt, ...) { va_list ap; va_start(ap, fmt); vsprintf(buf, fmt, ap); va_end(ap); }
 char attract_text1[136], attract_text2[136], attract_text3[136];	/* 0x8021eed0.. filled by something_todo_with_credits */
@@ -122,7 +120,7 @@ void func_8013f6d8(void) { STUB(func_8013f6d8); }
 
 /* the boot callees the port does not have yet: level assets, models, the gun calibration */
 #define LOAD_STUB(n) void n(void) { STUB(n); }
-LOAD_STUB(load_inng_texmap) 
+
 
 
 
@@ -140,7 +138,7 @@ void load_credits(void) { STUB(load_credits); }
 
 /* ---- the level flow (main_game_proc, wave.c): what the port still lacks ---- */
 int  D_80212e10, D_801e0e24, D_801e70a8, D_801a25c8, D_80212da4, D_801e5cd4, D_801e0f0c_pad;
-int  something_with_reload_p1, something_with_reload_p2, hhouse_texmap_set;
+int  hhouse_texmap_set;
 void func_80162a10(int *size, int *avail, int *used, int *frag) { *size = *avail = *used = *frag = 0; }	/* texture memory statistics */
 void func_80163eec(int n) { (void)n; }
 void something_player_score(player_stats_t *p) { STUB(something_player_score); (void)p; }	/* 0x800e5560: high-score entry */

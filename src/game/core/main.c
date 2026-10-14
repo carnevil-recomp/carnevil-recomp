@@ -315,7 +315,6 @@ int		levels_cleared;				/* 0x80212e34: bit 0 Rickety Town, 1 haunted house, 2 fr
 int		next_wave;				/* 0x801fac6c: the level picked on the select screen, -1 while none */
 int		level_start_counter;			/* 0x80237400: the select screen's countdown */
 int		select_blink = 0;			/* 0x80177be4 (.data) */
-extern int	something_with_reload_p1, something_with_reload_p2;
 extern char	text_buffer[];
 int		game_start_time;				/* 0x801e09e8: D_801facc8 when the game started */
 
@@ -383,8 +382,8 @@ void main_game_proc(void)
 	grDepthBufferFunction(GR_CMP_LEQUAL);
 	player_stats[0].score = 0;
 	player_stats[1].score = 0;
-	something_with_reload_p1 = 0;
-	something_with_reload_p2 = 0;
+	player_stats[0].clicks = 0;
+	player_stats[1].clicks = 0;
 	disable_accuracy_tracking();
 	while(wave_busy == 1)
 	{
@@ -398,9 +397,13 @@ void main_game_proc(void)
 		level_start_counter = 400;
 		if(game_phase == 0x400)
 		{
+			/* back from a level: the gallery is loaded again. The first time round the
+			   attract wave is still loaded (it holds the gallery and the "select1" bank),
+			   and unloading it before the first level frees the attract's textures and
+			   sound banks (remove_level_sounds' fall-through) */
 			game_phase = 0x20;
+			preload_wave(WAVE_LEVEL_SELECT);
 		}
-		preload_wave(WAVE_LEVEL_SELECT);
 		next_wave = -1;
 		play_level_cue(2, "select1");
 		movie_load(8);

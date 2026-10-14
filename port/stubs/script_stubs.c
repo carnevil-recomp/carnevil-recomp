@@ -4,7 +4,6 @@
 #include <stdio.h>
 #define WEAK __attribute__((weak))
 WEAK void disable_spawning(void) { fprintf(stderr, "[script] disable_spawning not implemented\n"); }
-WEAK void end_of_wave(void) { fprintf(stderr, "[script] end_of_wave not implemented\n"); }
 WEAK void fade_out_level_stream(void) { fprintf(stderr, "[script] fade_out_level_stream not implemented\n"); }
 WEAK void func_800fa720(void) { fprintf(stderr, "[script] func_800fa720 not implemented\n"); }
 WEAK void func_801153a0(void) { fprintf(stderr, "[script] func_801153a0 not implemented\n"); }
@@ -38,7 +37,6 @@ WEAK void script_fade_in_90(void) { fprintf(stderr, "[script] script_fade_in_90 
 WEAK void script_fade_out_108(void) { fprintf(stderr, "[script] script_fade_out_108 not implemented\n"); }
 WEAK void script_fade_out_40(void) { fprintf(stderr, "[script] script_fade_out_40 not implemented\n"); }
 WEAK void script_fade_out_90(void) { fprintf(stderr, "[script] script_fade_out_90 not implemented\n"); }
-WEAK void script_level_end_stats(void) { fprintf(stderr, "[script] script_level_end_stats not implemented\n"); }
 WEAK void start_btopload(void) { fprintf(stderr, "[script] start_btopload not implemented\n"); }
 WEAK void sub_800e81e4(void) { fprintf(stderr, "[script] sub_800e81e4 not implemented\n"); }
 WEAK void sub_800e8210(void) { fprintf(stderr, "[script] sub_800e8210 not implemented\n"); }

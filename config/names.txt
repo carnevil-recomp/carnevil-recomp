@@ -1460,3 +1460,8 @@
 0x800fda08 move_effects
 0x800e44e0 show_pickup_message
 0x800cdc00 unlink_enemy
+0x80191fd0 inng_texmap
+# the level end (player.c)
+0x800e3560 end_of_wave
+0x800e44f4 level_end_stats_wrapper
+0x800e4538 level_end_stats

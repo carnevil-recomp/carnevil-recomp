@@ -29,11 +29,10 @@ extern void	graphical_printf(char *, char *, ...);
 extern void	draw_string_scaled(int, char *, float, float, unsigned int, float);
 extern void	draw_string_scaled_right(int, char *, float, float, unsigned int, float);
 extern void	draw_string_scaled_centered(int, char *, float, float, unsigned int, float);
-extern void	draw_string_centered_alpha(int, char *, float, float, unsigned int, float);
+extern void	draw_string_centered_alpha(int, char *, float, float, unsigned int, float), draw_string_centered(int, char *, float, float, unsigned int);
 extern void	func_800d3528(MidVertexWithTA *, MidVertexWithTA *, MidVertexWithTA *);	/* x, y, q, s/w, t/w, a with the depth gradients */
 extern void	func_800e7568(void);					/* movie stop */
 extern void	unload_wave(void), free_blood_drops(void), free_smoke(void), free_sparks(void), free_snow(void), free_flecks(void), free_chunks(void);
-extern int	something_with_reload_p1, something_with_reload_p2;
 extern int	D_801de8a4;						/* adjustment 0x31 (adjust.c) */
 
 /* 0x800e4bc0 */
@@ -329,6 +328,64 @@ void audit_level_time(player_stats_t *p)
 	}
 }
 
+/* 0x800e3560: the level's script ends it: stop the movie and the sounds, clear the objects
+   and the effects, audit the time the level took and mark it cleared, audit the players'
+   time, unload it, and send the main game process back to the gallery (phase 0x400) */
+int	D_801fac68;				/* when the last level ended */
+
+void end_of_wave(void)
+{
+	extern int	D_801e0e24, D_801facc8, levels_cleared, loaded_wave;
+	extern void	free_screen_sprites(void), free_world_sprites(void);
+	int		now, took;
+
+	printf("end of wave\n");
+	func_800e7568();
+	clean_up_level_sounds();
+	remove_all_objects();
+	free_blood_drops();
+	free_smoke();
+	free_snow();
+	free_chunks();
+	free_screen_sprites();
+	free_world_sprites();
+	free_die_list();
+	now = D_801facc8;
+	took = now - D_801e0e24;
+	D_801fac68 = now;
+	switch(loaded_wave)
+	{
+	case WAVE_HHOUSE:
+		average_audit(0x55, 0x54, took);
+		levels_cleared |= 2;
+		break;
+	case WAVE_FREAKSHOW:
+		average_audit(0x5a, 0x59, took);
+		levels_cleared |= 4;
+		break;
+	case WAVE_RICKITY:
+		average_audit(0x5f, 0x5e, took);
+		levels_cleared |= 1;
+		break;
+	case WAVE_BIGTOP:
+		average_audit(0x64, 0x63, took);
+		levels_cleared |= 8;
+		break;
+	}
+	if(player_stats[0].state)
+	{
+		audit_level_time(&player_stats[0]);
+	}
+	if(player_stats[1].state)
+	{
+		audit_level_time(&player_stats[1]);
+	}
+	unload_wave();
+	game_state[0] = 0x400;
+	player_stats[0].clicks = 0;
+	player_stats[1].clicks = 0;
+}
+
 /* 0x800e3c74: the player's health ran out: audit the time played, wait to continue (300
    frames), and stop the player's own music track */
 void kill_player(player_stats_t *p)
@@ -591,8 +648,8 @@ done_message:
 				player_stats[1].volume = 0x7f;
 				player_stats[0].state = 0;
 				player_stats[1].state = 0;
-				something_with_reload_p1 = 0;
-				something_with_reload_p2 = 0;
+				player_stats[0].clicks = 0;
+				player_stats[1].clicks = 0;
 			}
 		}
 		alpha = 100.0f;
@@ -635,6 +692,34 @@ void show_pickup_message(player_stats_t *p, int kind)
 {
 	p->unk10c = kind;
 	*(float *)&p->unk110 = 255.0f;
+}
+
+/* 0x800e44f4: the end-of-level stats (object 0x800, added by the level script): both
+   players' lines; the reload counters are cleared while it shows */
+void level_end_stats(player_stats_t *p);
+void level_end_stats_wrapper(game_object_t *obj)
+{
+	player_stats[0].clicks = 0;
+	player_stats[1].clicks = 0;
+	level_end_stats(&player_stats[0]);
+	level_end_stats(&player_stats[1]);
+}
+
+/* 0x800e4538: a player in the game (state 4 or 0x40) gets the score, shots, hits and
+   accuracy in red under their side of the screen ('=' prints as the font's percent sign) */
+void level_end_stats(player_stats_t *p)
+{
+	if(p->state & 0x44)
+	{
+		graphical_printf(text_buffer, "SCORE %d", p->score);
+		draw_string_centered(1, text_buffer, p->unk6c, 180.0f, 0xff0000);
+		graphical_printf(text_buffer, "SHOTS %d", p->shots);
+		draw_string_centered(1, text_buffer, p->unk6c, 150.0f, 0xff0000);
+		graphical_printf(text_buffer, "HITS %d", p->hits);
+		draw_string_centered(1, text_buffer, p->unk6c, 120.0f, 0xff0000);
+		graphical_printf(text_buffer, "ACCURACY %2.1f=", (double)(p->accuracy * 100.0f));
+		draw_string_centered(1, text_buffer, p->unk6c, 90.0f, 0xff0000);
+	}
 }
 
 /* 0x800e4650: an automatic weapon's gauge: a 32 by 128 column at (x - 16, y) filled from

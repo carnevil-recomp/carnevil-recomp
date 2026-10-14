@@ -96,6 +96,15 @@ void	remove_attract_assets(void), load_attract_assets(void), remove_gallery_asse
 extern int	port_trace;
 extern unsigned long hal_frame_count;
 #define WAVE_TRACE(what)	if(port_trace) fprintf(stderr, "[wave] vblank %lu %s\n", hal_frame_count, what)
+/* every sound bank load reports its result (0 = OK) */
+static int traced_bank_load(char *name)
+{
+	int	r = snd_bank_load_playing(name);
+
+	if(port_trace) fprintf(stderr, "[wave] bank %s -> %d\n", name, r);
+	return r;
+}
+#define snd_bank_load_playing(n)	traced_bank_load(n)
 #else
 #define WAVE_TRACE(what)
 #endif

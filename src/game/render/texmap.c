@@ -64,6 +64,9 @@ found:
 found2:
 	if(idx == -1)
 	{
+#ifdef PORT_HOST
+		{ extern int port_trace; extern unsigned long hal_frame_count; if(port_trace) fprintf(stderr, "[texmap] vblank %lu: no free surface for %s (key %#x)\n", hal_frame_count, t->name, t->key); }
+#endif
 		printf("Could not add surface.\n");
 		return(0);
 	}
@@ -151,6 +154,9 @@ have:
 		}
 		t++;
 	}
+#ifdef PORT_HOST
+	{ extern int port_trace; if(port_trace) { int u = 0; for(j = 0; j < MAX_SURFACES; j++) if(surfaces[j].key != -1) u++; fprintf(stderr, "[texmap] load %s (%d): %d of %d surfaces in use\n", label, n, u, MAX_SURFACES); } }
+#endif
 	if(debug_mode & DEBUG_TEXMAP_LOG)
 	{
 		func_80162a10(&m0, &m1, &m4, &m3);
@@ -165,6 +171,10 @@ void remove_surface(texmap_t *t, int n)
 	int		i;
 	int		j;
 	int		key;
+
+#ifdef PORT_HOST
+	{ extern int port_trace; if(port_trace) fprintf(stderr, "[texmap] remove %s (%d)\n", t->name, n); }
+#endif
 
 	for(i = 0; i < n; i++)
 	{

@@ -484,3 +484,17 @@ same way.
   aims stalls at the first gate. To exercise later enemies, a throwaway build that gives the first
   Krinkle rows another type, state and path (never committed) gets them spawned early.
 - **zsh**: `"$f:start1"` applies zsh's `:s` modifier; write `"${f}:start1"`.
+
+## Lessons from the Rickety Town playthrough fixes (2026-10-14)
+- **A call inside a condition can look unconditional in a careless transcription.** main_game_proc
+  preloads the gallery wave only when coming back from a level (phase 0x400); the first time the
+  attract wave is still loaded and its unload frees the attract's textures and sound banks (the
+  fall-through in remove_level_sounds). Calling the preload every time left 1.7 MB of attract
+  banks in the 2 MB sound memory, so every level bank failed to load, and the texture table
+  overflowed. Check the branch structure of every call in a transcribed process, not just the
+  call list.
+- **Two names for one field again**: `something_with_reload_p1/p2` are player_stats[0/1].clicks
+  (the original reaches both through one base register 0x108 apart). The port had them as
+  separate stand-ins, so the resets never reached the players.
+- **Port-only traces** (`#ifdef PORT_HOST`, printing with CARNEVIL_TRACE=1) in texmap.c and
+  wave.c report texture loads/removals with the slots in use and every bank load's result.
