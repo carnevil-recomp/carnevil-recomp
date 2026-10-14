@@ -122,8 +122,7 @@ void func_8013f6d8(void) { STUB(func_8013f6d8); }
 
 /* the boot callees the port does not have yet: level assets, models, the gun calibration */
 #define LOAD_STUB(n) void n(void) { STUB(n); }
-LOAD_STUB(load_jester_texmap) LOAD_STUB(load_jester_model) LOAD_STUB(load_inng_texmap)
-LOAD_STUB(load_shotgun_texmap) LOAD_STUB(load_health_texmap) LOAD_STUB(load_ammmo_texmap)
+LOAD_STUB(load_inng_texmap) LOAD_STUB(load_shotgun_texmap) LOAD_STUB(load_health_texmap) LOAD_STUB(load_ammmo_texmap)
 LOAD_STUB(load_machinegun_texmap) LOAD_STUB(load_flamethrower_texmap) LOAD_STUB(load_acid_texmap) LOAD_STUB(load_shotgun_model)
 LOAD_STUB(load_health_model) LOAD_STUB(load_ammo_model) LOAD_STUB(load_machinegun_model) LOAD_STUB(load_flamethrower_model)
 LOAD_STUB(load_acid_model)
@@ -145,10 +144,6 @@ int  something_with_reload_p1, something_with_reload_p2, hhouse_texmap_set;
 void func_80162a10(int *size, int *avail, int *used, int *frag) { *size = *avail = *used = *frag = 0; }	/* texture memory statistics */
 void func_80163eec(int n) { (void)n; }
 void something_player_score(player_stats_t *p) { STUB(something_player_score); (void)p; }	/* 0x800e5560: high-score entry */
-void func_80109260(void *o, int n) { STUB(func_80109260); (void)o; (void)n; }
-void func_80107e30(game_object_t *o) { STUB(func_80107e30); (void)o; }			/* the loading jester (object 0x2014) */
-int func_80108ab0(game_object_t *o) { STUB(func_80108ab0); (void)o; return 1; }
-void func_80108c94(game_object_t *o) { STUB(func_80108c94); (void)o; }
 
 /* the mouse's game-screen position as the raw gun reading the game's read_guns turns back
    into that position through the player's calibration (camera.c guns[]) */

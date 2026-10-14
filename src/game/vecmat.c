@@ -279,6 +279,19 @@ void mat_vec_mul(float *v, float *m, float *out)
 	out[2] = x * m[6] + y * m[7] + z * m[8];
 }
 
+/* 0x800cf8ac: n points moved by a vector */
+void translate_vectors(int n, float *out, float *in, float *by)
+{
+	int	i;
+
+	for(i = 0; i < n; i++)
+	{
+		*out++ = *in++ + by[0];
+		*out++ = *in++ + by[1];
+		*out++ = *in++ + by[2];
+	}
+}
+
 /* 0x800cf7ec */
 void vec_add(float *a, float *b, float *out)
 {

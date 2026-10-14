@@ -50,7 +50,9 @@ typedef struct enemy
 	float		unk9c, unka0;		/* 0x9c: a thrown object's knock side and factor (weapons.c) */
 	int		unka4;
 	int		unka8;			/* 0xa8: Krinkle's hit count; a thrown object's kind */
-	int		unkac, unkb0, unkb4, unkb8, unkbc, unkc0, unkc4, unkc8;
+	int		unkac, unkb0;
+	float		unkb4, unkb8, unkbc;	/* 0xb4: the jester keeps the angles he left his path with */
+	int		unkc0, unkc4, unkc8;
 	float		unkcc;			/* 0xcc: 0.92 for Krinkle */
 	int		unkd0;			/* 0xd0: a thrown coal's light, -1 for none */
 	unsigned short	prio_base;		/* 0xd4: priority of its sound n is prio_base - n */

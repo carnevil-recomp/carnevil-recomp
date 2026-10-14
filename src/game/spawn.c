@@ -382,7 +382,7 @@ extern void	level_end_stats_wrapper(game_object_t *);
 /* every enemy's draw, init and think callbacks, and its spawn-time set-up (its own file each) */
 #define ENEMY(d, i, t)	extern void d(game_object_t *); extern int i(game_object_t *); extern void t(game_object_t *);
 ENEMY(func_8011bf38, func_8011c8d4, func_8011cd18)
-ENEMY(func_80107e30, func_80108ab0, func_80108c94)
+ENEMY(draw_jester, init_jester, jester_think)
 ENEMY(func_800f4618, func_800f4c50, func_800f4e24)
 ENEMY(something_gool_anim, func_800eb150, func_800eb3e0)
 ENEMY(something_mari_anim, func_800edff0, func_800ee228)
@@ -426,7 +426,7 @@ ENEMY(func_8013cfb0, func_8013d794, func_8013d990)
 #define SETUP(f)	extern void f(enemy_t *, unsigned short);
 SETUP(func_80119894) SETUP(func_8010725c) SETUP(func_800eeeec) SETUP(func_800eb7d4) SETUP(func_800f96a8)
 SETUP(func_800f7960) SETUP(func_80105cb4) SETUP(func_801068c8) SETUP(func_8011af54) SETUP(func_8010b384)
-SETUP(func_80109260) SETUP(func_80117c88) SETUP(func_8011d704) SETUP(func_80121318) SETUP(func_8011f070)
+SETUP(set_jester_state) SETUP(func_80117c88) SETUP(func_8011d704) SETUP(func_80121318) SETUP(func_8011f070)
 SETUP(func_8012f320) SETUP(krinkle_setup) SETUP(func_80123cd4) SETUP(func_80125eb4) SETUP(func_80129c40)
 SETUP(func_8012b260) SETUP(func_8012cce8) SETUP(func_80131a9c) SETUP(func_80134420) SETUP(func_8013cad4)
 SETUP(func_80133118) SETUP(func_80135f98) SETUP(func_8013aa34) SETUP(func_8013f324) SETUP(func_8013e518)
@@ -667,9 +667,9 @@ int construct_and_spawn_object(spawn_t *s, int index)
 		break;
 	case 0x2014:
 		type = 0x2014;
-		draw = func_80107e30;
-		init = func_80108ab0;
-		think = func_80108c94;
+		draw = draw_jester;
+		init = init_jester;
+		think = jester_think;
 		break;
 	case 0x2008:
 		type = 0x2008;
@@ -812,7 +812,7 @@ int construct_and_spawn_object(spawn_t *s, int index)
 	case 0x2007: func_800f5278(e, e->ai_state); break;
 	case 0x2016: func_8010b384(e, e->ai_state); break;
 	case 0x2008: func_800f7960(e, e->ai_state); break;
-	case 0x2014: func_80109260(e, e->ai_state); break;
+	case 0x2014: set_jester_state(e, e->ai_state); break;
 	case 0x1104: func_800eeeec(e, e->ai_state); break;
 	}
 	return(1);

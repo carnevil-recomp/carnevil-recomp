@@ -464,3 +464,10 @@ same way.
   across the callback stores and is copied to s0 afterwards. The thrown objects' init reads
   `o->data` back instead. Both forms exist in the original; try the other when the first
   mismatches by one instruction.
+- **translate_vectors (0x800cf8ac) resists**: every loop form tried (pointer increments,
+  indices, locals, register, K&R, unsigned, do-while) compiles to the same body shifted by
+  one instruction: the original keeps the loop counter in a0 and copies n out to v1. Unknown
+  what source does that.
+- **Switch dispatch trees** depend on the case set: the jester's think has eleven cases and
+  the original's tree is rooted at 0x104, ours at 0x8080; three adjacent cases with one
+  body merge into a range node in ours, so they were written as separate bodies.

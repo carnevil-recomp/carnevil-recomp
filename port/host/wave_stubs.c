@@ -14,11 +14,6 @@ WEAK void func_800f8798(void) { STUB(func_800f8798); }
 WEAK void func_8010584c(void) { STUB(func_8010584c); }
 WEAK void func_80106504(void) { STUB(func_80106504); }
 WEAK void func_80106de0(void) { STUB(func_80106de0); }
-WEAK void func_801089e4(void) { STUB(func_801089e4); }
-WEAK void func_8010934c(void) { STUB(func_8010934c); }
-WEAK void func_80109388(void) { STUB(func_80109388); }
-WEAK void func_801093c4(void) { STUB(func_801093c4); }
-WEAK void func_80109400(void) { STUB(func_80109400); }
 WEAK void func_801101c0(void) { STUB(func_801101c0); }
 WEAK void func_8011536c(void) { STUB(func_8011536c); }
 WEAK void func_8012896c(void) { STUB(func_8012896c); }
@@ -31,7 +26,6 @@ WEAK void load_bat(void) { STUB(load_bat); }
 WEAK void load_bat_texmap(void) { STUB(load_bat_texmap); }
 WEAK void load_batb(void) { STUB(load_batb); }
 WEAK void load_batb_texmap(void) { STUB(load_batb_texmap); }
-WEAK void load_bigtop_jester_anim(void) { STUB(load_bigtop_jester_anim); }
 WEAK void load_binn(void) { STUB(load_binn); }
 WEAK void load_clown(void) { STUB(load_clown); }
 WEAK void load_clown_texmap(void) { STUB(load_clown_texmap); }
@@ -44,17 +38,14 @@ WEAK void load_finn(void) { STUB(load_finn); }
 WEAK void load_flash_texmap(void) { STUB(load_flash_texmap); }
 WEAK void load_flie(void) { STUB(load_flie); }
 WEAK void load_flie_texmap(void) { STUB(load_flie_texmap); }
-WEAK void load_freakshow_jester_anim(void) { STUB(load_freakshow_jester_anim); }
 WEAK void load_gool(void) { STUB(load_gool); }
 WEAK void load_gool_texmap(void) { STUB(load_gool_texmap); }
 WEAK void load_grub(void) { STUB(load_grub); }
 WEAK void load_grub_texmap(void) { STUB(load_grub_texmap); }
 WEAK void load_hand(void) { STUB(load_hand); }
 WEAK void load_hand_texmap(void) { STUB(load_hand_texmap); }
-WEAK void load_hhouse_jester_anim(void) { STUB(load_hhouse_jester_anim); }
 WEAK void load_hstd_texmap(void) { STUB(load_hstd_texmap); }
 WEAK void load_inng(void) { STUB(load_inng); }
-WEAK void load_jester_path(void) { STUB(load_jester_path); }
 WEAK void load_junior(void) { STUB(load_junior); }
 WEAK void load_junoir_texmap(void) { STUB(load_junoir_texmap); }
 WEAK void load_krampus(void) { STUB(load_krampus); }
@@ -73,7 +64,6 @@ WEAK void load_monk(void) { STUB(load_monk); }
 WEAK void load_monk_texmap(void) { STUB(load_monk_texmap); }
 WEAK void load_pood(void) { STUB(load_pood); }
 WEAK void load_pood_texmap(void) { STUB(load_pood_texmap); }
-WEAK void load_rickity_jester_anim(void) { STUB(load_rickity_jester_anim); }
 WEAK void load_rinn(void) { STUB(load_rinn); }
 WEAK void load_rodz(void) { STUB(load_rodz); }
 WEAK void load_rodz_texmap(void) { STUB(load_rodz_texmap); }
@@ -101,7 +91,6 @@ WEAK void load_zomb(void) { STUB(load_zomb); }
 WEAK void load_zombie_texmap(void) { STUB(load_zombie_texmap); }
 WEAK void remove_bat_assets(void) { STUB(remove_bat_assets); }
 WEAK void remove_batb_texmap(void) { STUB(remove_batb_texmap); }
-WEAK void remove_bigtop_jester_anim(void) { STUB(remove_bigtop_jester_anim); }
 WEAK void remove_binn_assets(void) { STUB(remove_binn_assets); }
 WEAK void remove_btop_gore_texmaps(void) { STUB(remove_btop_gore_texmaps); }
 WEAK void remove_clown_assets(void) { STUB(remove_clown_assets); }
@@ -110,10 +99,8 @@ WEAK void remove_ehstd_texmap(void) { STUB(remove_ehstd_texmap); }
 WEAK void remove_finn_assts(void) { STUB(remove_finn_assts); }
 WEAK void remove_flash_texmap(void) { STUB(remove_flash_texmap); }
 WEAK void remove_flie_assets(void) { STUB(remove_flie_assets); }
-WEAK void remove_freakshow_jester_anim(void) { STUB(remove_freakshow_jester_anim); }
 WEAK void remove_gool(void) { STUB(remove_gool); }
 WEAK void remove_grub_assets(void) { STUB(remove_grub_assets); }
-WEAK void remove_hhouse_jester_anim(void) { STUB(remove_hhouse_jester_anim); }
 WEAK void remove_hstd_texmap(void) { STUB(remove_hstd_texmap); }
 WEAK void remove_junior_texmap(void) { STUB(remove_junior_texmap); }
 WEAK void remove_krampus_assets(void) { STUB(remove_krampus_assets); }
@@ -123,7 +110,6 @@ WEAK void remove_mame_assets(void) { STUB(remove_mame_assets); }
 WEAK void remove_mari(void) { STUB(remove_mari); }
 WEAK void remove_mike_assets(void) { STUB(remove_mike_assets); }
 WEAK void remove_monk_asets(void) { STUB(remove_monk_asets); }
-WEAK void remove_rickity_jester_anim(void) { STUB(remove_rickity_jester_anim); }
 WEAK void remove_rinn_assets(void) { STUB(remove_rinn_assets); }
 WEAK void remove_rodz_assets(void) { STUB(remove_rodz_assets); }
 WEAK void remove_skeleton_assets(void) { STUB(remove_skeleton_assets); }

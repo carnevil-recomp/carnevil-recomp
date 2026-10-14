@@ -747,3 +747,9 @@ void lob_toward(float *pos, float *target, float *vel, float frames, int unused)
 	rot_matrix_neg_yxz(m, angles);
 	mat_vec_mul(vel, m, vel);
 }
+
+/* 0x800fd764 */
+float distance_between(float *a, float *b)
+{
+	return fsqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
+}

@@ -38,9 +38,9 @@ extern int	load_level_spawn(int);
 extern int	stream_select_wave(int);
 extern void	stream_start(void);
 extern void	reset_fog(void), free_lights(void), free_chunks(void);
-extern void	func_80109260(void *, int);
-extern void	func_80107e30(game_object_t *), func_80108c94(game_object_t *);	/* the loading jester (object 0x2014) */
-extern int	func_80108ab0(game_object_t *);
+extern void	set_jester_state(struct enemy *, int);
+extern void	draw_jester(game_object_t *), jester_think(game_object_t *);	/* the loading jester (object 0x2014) */
+extern int	init_jester(game_object_t *);
 int	available_free_mem;					/* 0x801de8a8 */
 int	sound_init_pending;					/* 0x801e6ec0 */
 extern int	D_801a25c8, D_80212da4, D_801e5cd4, D_801e0f10;
@@ -49,7 +49,7 @@ extern int	hhouse_texmap_set;
 /* the enemies' texmaps, models and animations, one file per enemy (all still assembly) */
 extern void	load_hhouse_jester_anim(void), load_rickity_jester_anim(void), load_bigtop_jester_anim(void), load_freakshow_jester_anim(void);
 extern void	remove_hhouse_jester_anim(void), remove_rickity_jester_anim(void), remove_bigtop_jester_anim(void), remove_freakshow_jester_anim(void);
-extern void	func_80109388(void), func_8010934c(void), func_801093c4(void), func_80109400(void);
+extern void	jester_cue_hhouse(void), jester_cue_freakshow(void), jester_cue_rickity(void), jester_cue_bigtop(void);
 extern void	load_ehstd_texmap(void), remove_ehstd_texmap(void), load_hstd_texmap(void), remove_hstd_texmap(void);
 extern void	load_attract_texmap(void), remove_attract_texmap(void), load_gallery_objects(void), remove_gallery_objects(void);
 extern void	remove_flash_texmap(void), remove_hhouse_enemy_weaps(void), remove_bat_assets(void), remove_gool(void), func_80106504(void);
@@ -69,7 +69,7 @@ extern void	load_freakshow_enemy_weap_texmaps(void), load_tops(void), load_tort(
 extern void	load_junior(void), load_taur(void), load_grub(void), load_finn(void), load_rodz(void), load_freakshow_enemy_weap_models(void);
 extern void	remove_btop_weaps(void), func_8013c2a4(void), remove_litl_assets(void), remove_clown_assets(void), remove_batb_texmap(void);
 extern void	remove_mame_assets(void), func_80131330(void), remove_binn_assets(void), remove_skeleton_assets(void);
-extern void	func_801089e4(void), func_80139444(void), remove_btop_gore_texmaps(void);
+extern void	remove_jester_path(void), func_80139444(void), remove_btop_gore_texmaps(void);
 extern void	load_toke_texmap(void), load_toke(void), load_jester_path(void);
 extern void	load_btop_gore_texmaps(void), load_pood_texmap(void), load_mame_texmap(void), load_batb_texmap(void), load_clown_texmap(void);
 extern void	load_litl_texmap(void), load_doctorklot_texmap(void), load_skeleton_texmap(void), load_btop_weap_texmaps(void);
@@ -209,10 +209,10 @@ void preload_wave(int wave)
 			load_freakshow_jester_anim();
 			break;
 		}
-		obj = add_object1_wrapper(0x2014, func_80107e30, func_80108ab0, func_80108c94);
+		obj = add_object1_wrapper(0x2014, draw_jester, init_jester, jester_think);
 		if(obj)
 		{
-			func_80109260(get_object_data(obj), 0x100);
+			set_jester_state(get_object_data(obj), 0x100);
 		}
 	}
 	clean_up_level_sounds();
@@ -281,19 +281,19 @@ void load_wave_proc(void)
 	{
 	case WAVE_HHOUSE:
 		snd_bank_load_playing("jesthhou");
-		func_80109388();
+		jester_cue_hhouse();
 		break;
 	case WAVE_FREAKSHOW:
 		snd_bank_load_playing("jestfrek");
-		func_8010934c();
+		jester_cue_freakshow();
 		break;
 	case WAVE_RICKITY:
 		snd_bank_load_playing("jesricky");
-		func_801093c4();
+		jester_cue_rickity();
 		break;
 	case WAVE_BIGTOP:
 		snd_bank_load_playing("jesbig");
-		func_80109400();
+		jester_cue_bigtop();
 		break;
 	}
 	load_level_sounds(loaded_wave);
@@ -599,7 +599,7 @@ void remove_bigtop_assets(void)
 	{
 		remove_binn_assets();
 		remove_skeleton_assets();
-		func_801089e4();
+		remove_jester_path();
 		func_80139444();
 	}
 	remove_btop_gore_texmaps();
