@@ -37,7 +37,7 @@ extern void	load_level_lights(int);
 extern int	load_level_spawn(int);
 extern int	stream_select_wave(int);
 extern void	stream_start(void);
-extern void	reset_fog(void), free_lights(void), func_800fe3d8(void);
+extern void	reset_fog(void), free_lights(void), free_chunks(void);
 extern void	func_80109260(void *, int);
 extern void	func_80107e30(game_object_t *), func_80108c94(game_object_t *);	/* the loading jester (object 0x2014) */
 extern int	func_80108ab0(game_object_t *);
@@ -727,7 +727,7 @@ void start_btopload(void)
 void btopload_proc(void)
 {
 	disable_guns();
-	func_800fe3d8();
+	free_chunks();
 	free_screen_sprites();
 	free_world_sprites();
 	movie_pause();

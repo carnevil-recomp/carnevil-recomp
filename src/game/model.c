@@ -67,6 +67,28 @@ void shiver_vertices(int n, float *src, float *dst)
 	}
 }
 
+/* 0x800e0268: a free-standing piece: its one submesh projected at the part's position,
+   rotation and scale, lit, and drawn with its alpha */
+void draw_part_model(part_t *p, submesh_t *sub, float *verts, int nverts, face_t *faces, int nfaces, float *normals, int nnormals)
+{
+	float	scaled[9], unscaled[9];
+	int	nv, nn;
+
+	build_light_list(p->pos);
+	rot_matrix_zyx(scaled, p->rot);
+	rot_matrix_zyx(unscaled, p->rot);
+	mat_scale(scaled, p->scale);
+	nv = sub->vert_end - sub->vert_start + 1;
+	project_vertices(nv, verts + sub->vert_start * 3, (float *)&proj_verts[sub->vert_start], scaled, p->pos);
+	nn = sub->norm_end - sub->norm_start + 1;
+	transform_vectors(nn, (float *)&proj_normals[sub->norm_start], normals + sub->norm_start * 3, unscaled);
+	nn = sub->norm_end - sub->norm_start + 1;
+	light_vertices(nn, (float *)&proj_normals[sub->norm_start], (float *)&lit_colors[sub->norm_start]);
+	guAlphaSource(GR_ALPHASOURCE_ITERATED_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
+	draw_faces_alpha(faces, proj_verts, lit_colors, sub->face_start, sub->face_end, 0, p->alpha);
+}
+
 /* 0x80114b8c: a group shot loose (flag 0x4000) flies on its own: while it is above its
    floor it moves by its velocity, spins by its spin and falls (the y velocity loses 0.22 a
    frame); its life counts down by its step and its alpha changes by its step; at the end of

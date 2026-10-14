@@ -881,17 +881,17 @@ void krinkle_end_path(enemy_t *e)
 extern int	shot_hits_sphere(float *, float, player_stats_t *);	/* objects.c */
 extern int	find_submesh_hit(enemy_t *, submesh_t *, int, player_stats_t *);
 extern void	start_hit_reaction(enemy_t *, int, int, submesh_t *, int);
-extern void	func_800fdc18(float *, float, int);
-extern void	func_800fdcf4(float *, float);
+extern void	burst_blood(float *, float);
+extern void	add_chunks(float *, float);
 extern void	add_world_sprite(float *, int, int);	/* sprites.c */
-extern void	func_800ff190(float *, unsigned int);
-extern void	*func_800febd0(float, float, group_t *);
+extern void	add_smoke(float *, unsigned int);
+extern void	*attach_flame(float, float, group_t *);
 extern float	shot_damage_of(player_stats_t *);
 extern void	award_points(int, int);
 extern int	mark_die();
 extern void	detach_group(group_t *, float *, float, float *);	/* model.c: a part flies off */
 extern void	func_8011459c(enemy_t *, group_t *, group_t *);	/* a group takes over another's place */
-extern void	*func_800fe7a4(float *, float *, group_t *);		/* a spray effect */
+extern void	*attach_spray(float *, float *, group_t *);		/* a spray effect */
 extern int	violence_level;
 int	krinkle_hurt_sounds[5] = { 3, 4, 7, 9, 10 };	/* 0x8019b0a8 */
 float	D_8019b088[3] = { 0, 0.05f, 0 };		/* the neck spray's two vectors */
@@ -955,8 +955,8 @@ int krinkle_die(game_object_t *obj, player_stats_t *p)
 		debug_enemy = e;
 		return(0);
 	}
-	func_800fdc18(p->hit_point, e->unk98, 0x800000);
-	func_800fdcf4(e->hit_group->pos, e->unk98);
+	burst_blood(p->hit_point, e->unk98);
+	add_chunks(e->hit_group->pos, e->unk98);
 	add_world_sprite(p->hit_point, 0, 0);
 	group = p->hit_group;
 	g = &e->groups[group];
@@ -965,7 +965,7 @@ int krinkle_die(game_object_t *obj, player_stats_t *p)
 		for(i = 0; i < 0x11; i++)
 		{
 			e->groups[i].flags |= 0x20;
-			func_800ff190(e->groups[i].pivot, 0xd0ff00);
+			add_smoke(e->groups[i].pivot, 0xd0ff00);
 		}
 		e->health = 0.01f;
 		gib = 1;
@@ -975,7 +975,7 @@ int krinkle_die(game_object_t *obj, player_stats_t *p)
 		if(!(g->flags & 2))
 		{
 			g->flags |= 2;
-			attach_effect(e, func_800febd0(0.0f, (submesh_info_krik[group].radius + submesh_info_krik[group].radius) * e->scale[0], g));
+			attach_effect(e, attach_flame(0.0f, (submesh_info_krik[group].radius + submesh_info_krik[group].radius) * e->scale[0], g));
 		}
 	}
 	if(violence_level >= 3)
@@ -1044,7 +1044,7 @@ int krinkle_die(game_object_t *obj, player_stats_t *p)
 					detach_group(&e->groups[16], e->groups[16].pos, e->y, e->scale);
 				}
 				func_8011459c(e, &e->groups[5], &e->groups[15]);
-				attach_effect(e, func_800fe7a4(D_8019b094, D_8019b088, &e->groups[15]));
+				attach_effect(e, attach_spray(D_8019b094, D_8019b088, &e->groups[15]));
 				e->ai_state = 0x2001;
 				e->frame = 0x12a;
 			}

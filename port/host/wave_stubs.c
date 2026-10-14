@@ -307,10 +307,6 @@ WEAK int remove_animation(void) { STUB(remove_animation); return 0; }
 WEAK int remove_model(void) { STUB(remove_model); return 0; }
 WEAK int remove_path(void) { STUB(remove_path); return 0; }
 /* term.c's helpers (hit tests, effects, steering, damage) still in assembly */
-WEAK void func_800fdc18(void) { STUB(func_800fdc18); }
-WEAK void func_800fdcf4(void) { STUB(func_800fdcf4); }
-WEAK void *func_800febd0(void) { return 0; }
-WEAK void func_800ff190(void) { STUB(func_800ff190); }
 /* krinkle.c's helpers still in assembly */
 WEAK void func_8010d818(void) { STUB(func_8010d818); }
 
@@ -320,13 +316,7 @@ WEAK int func_800cd31c(void) { STUB(func_800cd31c); return 0; }
 WEAK int func_800cd904(void) { STUB(func_800cd904); return 0; }
 WEAK void detach_group(void) { STUB(detach_group); }
 WEAK void func_8011459c(void) { STUB(func_8011459c); }
-WEAK void *func_800fe7a4(void) { return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */
 WEAK void func_800e7130(void) { STUB(func_800e7130); }
 WEAK int func_80162570(void) { STUB(func_80162570); return 0; }
 WEAK void func_800e59b8(void) { STUB(func_800e59b8); }
-WEAK void func_800fe748(void) { STUB(func_800fe748); }
-WEAK void func_800ff9cc(void) { STUB(func_800ff9cc); }
-WEAK void func_800ff05c(void) { STUB(func_800ff05c); }
-WEAK void func_800ffe0c(void) { STUB(func_800ffe0c); }
-WEAK void func_8010074c(void) { STUB(func_8010074c); }

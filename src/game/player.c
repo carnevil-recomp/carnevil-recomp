@@ -32,7 +32,7 @@ extern void	draw_string_scaled_centered(int, char *, float, float, unsigned int,
 extern void	draw_string_centered_alpha(int, char *, float, float, unsigned int, float);
 extern void	func_800d3528(MidVertexWithTA *, MidVertexWithTA *, MidVertexWithTA *);	/* x, y, q, s/w, t/w, a with the depth gradients */
 extern void	func_800e7568(void);					/* movie stop */
-extern void	unload_wave(void), func_800fe748(void), func_800ff9cc(void), func_800ff05c(void), func_800ffe0c(void), func_8010074c(void), func_800fe3d8(void);
+extern void	unload_wave(void), free_blood_drops(void), free_smoke(void), free_sparks(void), free_snow(void), free_flecks(void), free_chunks(void);
 extern int	something_with_reload_p1, something_with_reload_p2;
 extern int	D_801de8a4;						/* adjustment 0x31 (adjust.c) */
 
@@ -577,12 +577,12 @@ done_message:
 				func_800e7568();
 				clean_up_level_sounds();
 				remove_all_objects();
-				func_800fe748();
-				func_800ff9cc();
-				func_800ff05c();
-				func_800ffe0c();
-				func_8010074c();
-				func_800fe3d8();
+				free_blood_drops();
+				free_smoke();
+				free_sparks();
+				free_snow();
+				free_flecks();
+				free_chunks();
 				free_screen_sprites();
 				free_world_sprites();
 				free_die_list();

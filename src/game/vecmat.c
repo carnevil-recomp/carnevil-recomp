@@ -401,6 +401,46 @@ float ftan(float x)
 	return(x + 0.333333f * x * x * x + 0.1333333f * x * x * x * x * x + 0.053968 * x * x * x * x * x * x * x);
 }
 
+/* 0x800d07a8: p onto the screen when it is in view: out gets the screen x, y (snapped to
+   quarter pixels) and 1/z; returns the depth from the camera, or -1 when the point is nearer
+   than 1.1, farther than 400 or outside the field of view */
+float get_screen_pos(float *p, float *out)
+{
+	float	x, y, z, vx, vy, vz, q;
+
+	x = p[0] + camera_neg_pos[0];
+	y = p[1] + camera_neg_pos[1];
+	z = p[2] + camera_neg_pos[2];
+	vx = x * view_matrix[0] + y * view_matrix[1] + z * view_matrix[2];
+	vy = x * view_matrix[3] + y * view_matrix[4] + z * view_matrix[5];
+	vz = x * view_matrix[6] + y * view_matrix[7] + z * view_matrix[8];
+	if(vz < 1.1f || 400.0f < vz)
+	{
+		return(-1.0f);
+	}
+	q = 1.0f / vz;
+	vx *= q;
+	if(cull_x < vx || vx < -cull_x)
+	{
+		return(-1.0f);
+	}
+	vy *= q;
+	if(cull_y < vy || vy < -cull_y)
+	{
+		return(-1.0f);
+	}
+	x = vx * proj_x + 200.0f;
+	y = vy * proj_y + (float)half_height;
+	x += 2097152.0f;
+	y += 2097152.0f;
+	x -= 2097152.0f;
+	y -= 2097152.0f;
+	out[2] = q;
+	out[0] = x;
+	out[1] = y;
+	return(z);
+}
+
 /* 0x800d0b2c: p into view space and onto the screen: out is the screen x, y and 1/z (a
    MidVertex's first three), x and y snapped to quarter pixels; returns the 1/z (a million
    when z is 0) */

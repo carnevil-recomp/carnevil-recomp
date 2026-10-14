@@ -30,7 +30,7 @@ extern player_stats_t *get_target_player(void);		/* objects.c */
 extern player_stats_t *attack_target(enemy_t *);		/* objects.c */
 extern int	randrng(int);
 extern void	attach_effect(enemy_t *, void *);
-extern void	*func_800febd0(float, float, group_t *);	/* a blood effect on a group */
+extern void	*attach_flame(float, float, group_t *);	/* a blood effect on a group */
 extern void	path_place(enemy_t *, void *, short, float);	/* start along a path */
 extern void	path_place_upright(enemy_t *, void *, short, float);	/* step along a path */
 extern void	func_800fd6b0(enemy_t *);
@@ -46,10 +46,10 @@ extern void	set_goal_near_camera(enemy_t *, float *, float *, float, float, floa
 extern int	step_toward_goal(enemy_t *, float);
 extern int	shot_hits_sphere(float *, float, player_stats_t *);	/* the shot hits the sphere */
 extern int	find_submesh_hit(enemy_t *, submesh_t *, int, player_stats_t *);
-extern void	func_800fdc18(float *, float, int);
-extern void	func_800fdcf4(float *, float);
+extern void	burst_blood(float *, float);
+extern void	add_chunks(float *, float);
 extern void	add_world_sprite(float *, int, int);	/* sprites.c */
-extern void	func_800ff190(float *, unsigned int);
+extern void	add_smoke(float *, unsigned int);
 extern float	shot_damage_of(player_stats_t *);		/* the shot's damage */
 extern void	award_points(int, int);			/* award points */
 extern int	mark_die();					/* spawn.c; the original passes the player too */
@@ -155,8 +155,8 @@ int term_die(game_object_t *obj, player_stats_t *p)
 		debug_enemy = e;
 		return(0);
 	}
-	func_800fdc18(p->hit_point, e->unk98, 0x800000);
-	func_800fdcf4(e->hit_group->pos, e->unk98);
+	burst_blood(p->hit_point, e->unk98);
+	add_chunks(e->hit_group->pos, e->unk98);
 	add_world_sprite(p->hit_point, 0, 0);
 	group = p->hit_group;
 	g = &e->groups[group];
@@ -165,7 +165,7 @@ int term_die(game_object_t *obj, player_stats_t *p)
 		for(i = 0; i < 0xd; i++)
 		{
 			e->groups[i].flags |= 0x20;
-			func_800ff190(e->groups[i].pivot, 0xd0ff00);
+			add_smoke(e->groups[i].pivot, 0xd0ff00);
 		}
 		e->health = 0.01f;
 	}
@@ -174,7 +174,7 @@ int term_die(game_object_t *obj, player_stats_t *p)
 		if(!(g->flags & 2))
 		{
 			g->flags |= 2;
-			attach_effect(e, func_800febd0(0.0f, (submesh_info_term[group].radius + submesh_info_term[group].radius) * e->scale[0], g));
+			attach_effect(e, attach_flame(0.0f, (submesh_info_term[group].radius + submesh_info_term[group].radius) * e->scale[0], g));
 		}
 	}
 	if(violence_level >= 3)

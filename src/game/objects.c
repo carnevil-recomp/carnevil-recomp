@@ -26,11 +26,11 @@ extern void	sample_switches(void), debug_move_enemy(enemy_t *), debug_move_point
 extern void	draw_marker(float *, float, unsigned int);
 extern void	update_camera(int), update_lights(int);
 extern void	*camera_data;				/* camera.c: the level's camera file, 0 when none */	/* camera.c, and the lights */
-extern void	apply_fog(void), func_800ff418(void);
+extern void	apply_fog(void), draw_smoke(void);
 extern player_stats_t *resolve_shot(player_stats_t *);	/* 0x800d5a84 */
 extern void	func_800ce2f8(float *, float, float *);
-extern void	func_800fe580(void), func_800fef18(void), func_800ffbdc(void), func_800fe1fc(void);
-extern void	func_80100558(void), draw_hud(void), func_800c83bc(void);
+extern void	draw_blood_drops(void), draw_sparks(void), draw_snow(void), draw_chunks(void);
+extern void	draw_flecks(void), draw_hud(void), func_800c83bc(void);
 #include "sprites.h"
 extern void	func_800c9620(int), func_800c9bf0(void), print_heap_and_obj_info_onscreen(void);
 extern float	fsqrt(float);				/* 0x80144900 */
@@ -104,7 +104,7 @@ void draw_pass(void)
 	grDepthBufferFunction(GR_CMP_LEQUAL);
 	grDepthBiasLevel(0);
 	apply_fog();
-	func_800ff418();
+	draw_smoke();
 	i = objects[0].next;
 	while(i != OBJ_NONE)
 	{
@@ -154,12 +154,12 @@ void draw_pass(void)
 		graphical_printf(text_buffer, "XYZ %f %f %f", debug_p2x, debug_p2y, debug_p2z);
 		draw_string_color(0, text_buffer, 0.0f, 10.0f, 0xff00);
 	}
-	func_800fe580();
-	func_800fef18();
-	func_800ffbdc();
-	func_800fe1fc();
+	draw_blood_drops();
+	draw_sparks();
+	draw_snow();
+	draw_chunks();
 	draw_world_sprites();
-	func_80100558();
+	draw_flecks();
 	grDepthBufferFunction(GR_CMP_ALWAYS);
 	show_volume_level();
 	draw_hud();
@@ -727,6 +727,17 @@ void vec_max_normalize(float *v)
 
 extern void	world_to_view(float *, float *), view_to_world(float *);	/* vecmat.c */
 extern void	rot_matrix_zyx(float *, float *), mat_vec_mul(float *, float *, float *);
+
+/* 0x800ce344: the point dx to the right, dy up and dz nearer than pos as the camera sees
+   it, back in the world */
+void offset_in_view(float *pos, float dx, float dy, float dz, float *out)
+{
+	world_to_view(pos, out);
+	out[0] = out[0] + dx;
+	out[1] = out[1] + dy;
+	out[2] = out[2] - dz;
+	view_to_world(out);
+}
 
 /* 0x800cf190: the player an enemy's attack lands on: its target, unless both players are in
    the game, when the enemy's place on the screen decides: left of 180 player 1, right of

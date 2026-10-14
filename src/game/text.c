@@ -191,7 +191,7 @@ extern void	grAlphaTestReferenceValue(FxU8);
 extern void	draw_tri(MidVertex *, MidVertex *, MidVertex *);
 extern void	draw_tri_rgb(MidVertexWithTRGB *, MidVertexWithTRGB *, MidVertexWithTRGB *);	/* 0x800d1d8c */
 extern void	draw_tri_alpha(MidVertexWithTA *, MidVertexWithTA *, MidVertexWithTA *);	/* 0x800d2664 */
-extern float	get_screen_pos(int, float *);
+extern float	get_screen_pos(float *, float *);
 extern unsigned int strlen(char *);
 char		text_buffer[256];		/* 0x801e7100: scratch string shared with the attract credits */
 
@@ -270,7 +270,7 @@ void draw_string_at(int font, char *str, int pos)
 	float		screen[3];	/* get_screen_pos writes x, y, w */
 	char		*start;
 
-	if(get_screen_pos(pos, screen) == -1.0f)
+	if(get_screen_pos((float *)pos, screen) == -1.0f)
 	{
 		return;
 	}
@@ -347,7 +347,7 @@ void draw_string_at_color(int font, char *str, int pos, unsigned int color)
 	float		screen[3];	/* get_screen_pos writes x, y, w */
 	char		*start;
 
-	if(get_screen_pos(pos, screen) == -1.0f)
+	if(get_screen_pos((float *)pos, screen) == -1.0f)
 	{
 		return;
 	}
@@ -467,7 +467,7 @@ void draw_string_color(int font, char *str, float x, float y, unsigned int color
 	grChromakeyMode(GR_CHROMAKEY_DISABLE);
 }
 
-extern float	get_screen_pos(int, float *);		/* 0x800d07a8: world point -> screen x,y; -1 when off screen */
+extern float	get_screen_pos(float *, float *);		/* 0x800d07a8: world point -> screen x,y; -1 when off screen */
 
 /* 0x800dcbcc: string with a colour gradient: rgb[0..2]/[3..5] run along the top edge,
    rgb[6..8]/[9..11] along the bottom (chroma-keyed, iterated RGB) */

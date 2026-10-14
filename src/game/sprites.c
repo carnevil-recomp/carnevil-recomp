@@ -273,15 +273,16 @@ void draw_screen_sprites(void)
 /* 0x800db7a8: at level unload */
 void free_screen_sprites(void)
 {
-	screen_sprite_t	*s, *next;
+	screen_sprite_t	*s, *prev, *next;
 
 	s = screen_sprite_list;
+	prev = PREV_OF(screen_sprite_list, screen_sprite_t);
 	while(s)
 	{
 		next = s->next;
 		free(s);
 		s = next;
-		PREV_OF(screen_sprite_list, screen_sprite_t)->next = s;
+		prev->next = s;
 	}
 }
 
@@ -517,14 +518,15 @@ void draw_world_sprites(void)
 /* 0x800dbf04: at level unload */
 void free_world_sprites(void)
 {
-	world_sprite_t	*s, *next;
+	world_sprite_t	*s, *prev, *next;
 
 	s = world_sprite_list;
+	prev = PREV_OF(world_sprite_list, world_sprite_t);
 	while(s)
 	{
 		next = s->next;
 		free(s);
 		s = next;
-		PREV_OF(world_sprite_list, world_sprite_t)->next = s;
+		prev->next = s;
 	}
 }

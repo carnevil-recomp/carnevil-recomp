@@ -20,7 +20,7 @@
 
 extern float	fatan(float), ftan(float);			/* vecmat.c */
 extern void	rot_matrix_neg_zxy(float *, float *), vec_negate(float *, float *);
-extern void	func_800ffa20(float *pos);			/* something drawn around the camera when camera_follow is on */
+extern void	add_snow_around(float *pos);			/* something drawn around the camera when camera_follow is on */
 extern void	debug_move_camera(void);			/* 0x800c93c4: the player 3/4 switches move the camera */
 extern int	load_camera_file(void **, int, char *, int);	/* loaders.c */
 extern int	get_adjustment(int, int *), set_adjustment(int, int);
@@ -33,7 +33,7 @@ float		camera_x, camera_y, camera_z;		/* 0x801de8f0..f8: the view point */
 float		camera_rx, camera_ry, camera_rz;	/* 0x801de890..98: its angles */
 float		view_matrix[9];		/* 0x801fad48 */
 float		camera_neg_pos[3];	/* 0x801e5b58: -camera, for the view transform */
-int		camera_follow;		/* 0x801e5dd4: run func_800ffa20 on the camera position */
+int		camera_follow;		/* 0x801e5dd4: run add_snow_around on the camera position */
 float		fov_x, fov_y;		/* 0x801e5d98/9c: the field of view in degrees */
 float		cull_x, cull_y;		/* 0x801e5d8c/90 */
 float		proj_x;			/* 0x801e5db0 */
@@ -129,7 +129,7 @@ void update_camera(int frame)
 	vec_negate(&camera_x, camera_neg_pos);
 	if(camera_follow)
 	{
-		func_800ffa20(&camera_x);
+		add_snow_around(&camera_x);
 	}
 }
 
