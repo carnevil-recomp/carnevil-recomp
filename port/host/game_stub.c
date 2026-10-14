@@ -174,8 +174,11 @@ void port_gun_raw(int player, float sx, float sy, int *rx, int *ry)
 	extern gun_t guns[2];
 	gun_t *g = &guns[player];
 	if(g->scale_x == 0.0f || g->scale_y == 0.0f) { *rx = 128 << 4; *ry = 128 << 4; return; }
+	/* read_guns computes screen_x = (raw_x - off_x) / scale_x and screen_y = 256 - (raw_y - off_y) /
+	   scale_y, both in the Glide frame (y up from the bottom: the muzzle flash and the HUD draw at
+	   those coordinates), so the raw y grows downwards from the top of the picture */
 	*rx = (int)(sx * g->scale_x + g->off_x + 0.5f);
-	*ry = (int)(sy * g->scale_y + g->off_y + 0.5f);		/* the game's screen_y = 256 - (raw - off) / scale runs top-down */
+	*ry = (int)((256.0f - sy) * g->scale_y + g->off_y + 0.5f);
 	if(*rx < 0) *rx = 0; if(*rx > 0xfff) *rx = 0xfff;
 	if(*ry < 0) *ry = 0; if(*ry > 0x3ff) *ry = 0x3ff;
 }

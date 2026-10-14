@@ -197,11 +197,12 @@ void draw_model(enemy_t *e, submesh_t *sub, int nsub, float *verts, int nverts, 
 	t = 0.0f;
 	if(e->flags & 2)
 	{
+		/* a blend in progress: the root motion between its frames moves the enemy */
 		t = (float)e->blend_pos / (float)e->blend_len;
+		e->x = e->x + e->vel[0];
+		e->y = e->y + e->vel[1];
+		e->z = e->z + e->vel[2];
 	}
-	e->x = e->x + e->vel[0];
-	e->y = e->y + e->vel[1];
-	e->z = e->z + e->vel[2];
 	epos[0] = e->x;
 	epos[1] = e->y;
 	epos[2] = e->z;
