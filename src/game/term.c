@@ -27,7 +27,7 @@ extern void	func_800c99e4(enemy_t *, int);
 extern void	set_enemy_scale(enemy_t *, float);		/* objects.c */
 extern void	set_enemy_health(enemy_t *, float);		/* health by difficulty */
 extern player_stats_t *get_target_player(void);		/* objects.c */
-extern player_stats_t *get_player_info_struct2_(enemy_t *);
+extern player_stats_t *attack_target(enemy_t *);		/* objects.c */
 extern int	randrng(int);
 extern void	attach_effect(enemy_t *, void *);
 extern void	*func_800febd0(float, float, group_t *);	/* a blood effect on a group */
@@ -408,7 +408,7 @@ void term_think(game_object_t *obj)
 		{
 			if(group_near_camera(&e->groups[4], 13.0f))
 			{
-				hurt_player(get_player_info_struct2_(e), 0xaa, 3, 0.0f);
+				hurt_player(attack_target(e), 0xaa, 3, 0.0f);
 			}
 		}
 		if(e->frame < 0xf)
@@ -455,7 +455,7 @@ void term_think(game_object_t *obj)
 		}
 		if(group_near_camera(&e->groups[4], 8.0f))
 		{
-			hurt_player(get_player_info_struct2_(e), 0xaa, 3, 0.0f);
+			hurt_player(attack_target(e), 0xaa, 3, 0.0f);
 			remove_die(obj->id, 0);
 		}
 		path_place_upright(e, term_path, e->path, 1.0f);

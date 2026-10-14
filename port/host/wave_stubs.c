@@ -311,7 +311,6 @@ WEAK void func_800fdc18(void) { STUB(func_800fdc18); }
 WEAK void func_800fdcf4(void) { STUB(func_800fdcf4); }
 WEAK void *func_800febd0(void) { return 0; }
 WEAK void func_800ff190(void) { STUB(func_800ff190); }
-WEAK void *get_player_info_struct2_(void) { return 0; }
 /* krinkle.c's helpers still in assembly */
 WEAK void func_8010d818(void) { STUB(func_8010d818); }
 

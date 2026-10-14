@@ -34,6 +34,7 @@ extern void	func_80100558(void), draw_hud(void), func_800c83bc(void);
 #include "sprites.h"
 extern void	func_800c9620(int), func_800c9bf0(void), print_heap_and_obj_info_onscreen(void);
 extern float	fsqrt(float);				/* 0x80144900 */
+extern float	project_point(float *, float *);		/* vecmat.c */
 extern int	free_mem_left;				/* 0x801e0ee8 */
 extern int	shown_frame;				/* 0x80212da0: the movie frame on screen */
 extern int	loaded_wave;				/* 0x80212e30 */
@@ -726,6 +727,33 @@ void vec_max_normalize(float *v)
 
 extern void	world_to_view(float *, float *), view_to_world(float *);	/* vecmat.c */
 extern void	rot_matrix_zyx(float *, float *), mat_vec_mul(float *, float *, float *);
+
+/* 0x800cf190: the player an enemy's attack lands on: its target, unless both players are in
+   the game, when the enemy's place on the screen decides: left of 180 player 1, right of
+   220 player 2 (off screen keeps the target) */
+player_stats_t *attack_target(enemy_t *e)
+{
+	player_stats_t	*p;
+	float		scr[3];
+
+	p = e->target;
+	if(player_stats[0].state == 4 && player_stats[1].state == 4)
+	{
+		if(project_point(&e->x, scr) == -1.0f)
+		{
+			return(p);
+		}
+		if(scr[0] < 180.0f)
+		{
+			p = &player_stats[0];
+		}
+		if(220.0f < scr[0])
+		{
+			p = &player_stats[1];
+		}
+	}
+	return(p);
+}
 
 /* 0x800cdeac: the player's shot against a sphere of radius^2 r2 at pos: the shot's view-space
    ray is extended to the sphere's depth, the movie must not be nearer than the sphere (the

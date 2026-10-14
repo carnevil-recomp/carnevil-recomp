@@ -43,3 +43,15 @@
  
  
  void normal_screen(void)
+@@ -183,7 +187,11 @@
+ 	  	g = (int)(gamma * 255.0f);
+ 		val = (i << 24);
+ 		val |= (((unsigned)g << 16) |	((unsigned)g << 8) |	(unsigned)g);
++#ifdef PORT_HOST
++		port_gamma_entry(i, g);		/* the port's renderer stands in for the Voodoo gamma RAM */
++#else
+ 		*((volatile int *)0xa8000228) = val;
++#endif
+ #else
+ 		sg[i] = (unsigned long)(gamma * 255.0f);
+ #endif
