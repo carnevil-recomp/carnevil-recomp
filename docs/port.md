@@ -2,7 +2,7 @@
 
 `make port` builds `build/host/carnevil`: the GOOSE library, the DCS sound library and the
 game modules from `src/`, the same files the byte-exact MIPS build uses, compiled natively and
-linked with the host layer in `port/host/`.
+linked with the host layer in `port/`.
 
 ```
 make port
@@ -18,41 +18,41 @@ keyboard controls and the `--press` switch names.
 ## How the original code runs on a PC
 
 **One source, two targets.** `src/` is ILP32 C for the SN GCC 2.7.2; under `-DPORT_HOST`
-(`include/types.h`, `port/host/compat.h`) it compiles with clang. Nothing in `src/` is
+(`include/types.h`, `port/runtime/compat.h`) it compiles with clang. Nothing in `src/` is
 rewritten for the port; host-only paths are `#ifdef PORT_HOST` blocks (initg's `$gp` stub,
 lockup's BIOS vector install, switch's bus-timing spin).
 
 **Pointers are ints.** The SDK passes pointers through `int` (`_ioctl(4, req, (int)&val)`, the
 process-stack marker, `(int)verts & 0x1c`, process arguments). That is only correct if every
-address the game sees fits in 32 bits, so `port/host/mem.c` replaces malloc/free/calloc/
+address the game sees fits in 32 bits, so `port/runtime/mem.c` replaces malloc/free/calloc/
 realloc with an allocator on an arena mapped at 0x20000000, and every stack (the GOOSE main
 loop's in `main.c`, each process' in `sched.c`) is carved from it. The arm64 macOS kernel
 refuses executables that map below 4 GB, so on macOS the port is built as x86_64 and runs
 under Rosetta (the trick Wine uses); on Linux it is native with `-no-pie`. libc fortification
 trips on these idioms, so it is off (`PORT_FORTIFY=2` to turn it on while debugging).
 
-**Scheduler.** `port/host/sched.c` is mthread.c's `process_dispatch()` with the hand-written
+**Scheduler.** `port/runtime/sched.c` is mthread.c's `process_dispatch()` with the hand-written
 MIPS register switching replaced by ucontext: each process node gets a host stack and context
 the first time the dispatcher resumes it (create_process() leaves `_proc_shell` as a marker in
 the new stack, exactly as the MIPS code expects), `sleep()` ORs the tick count and yields,
 `die()` kills and switches back. process.c, the lists and the frame loop order (gamma table,
 vblank wait, DMA kick, pre-proc, processes, post-proc, draws, sort) are the original.
 
-**Hardware.** `port/host/hal.c`: the extracted partition is the disk (paths resolve
+**Hardware.** `port/runtime/hal.c`: the extracted partition is the disk (paths resolve
 case-insensitively; `pci:` and `pic:` are fake fds for the system controller and the
 security PIC), fd 3 is the CMOS (`cmos.bin` in the state directory, one byte per word as
 GOOSE expects), ioctl device 4 is the I/O ASIC (switch words from the keyboard or `--press`,
 the sound port wired to the virtual DCS board), device 5 the timers; the light-gun port and
 the gun board's control byte are mapped pages. Interrupt handlers are recorded and the
 vblank one is called once per display refresh (54 Hz) by `hal_wait_frame()`.
-`port/host/render_gl.c` is the Glide stand-in on OpenGL, `disk.c` the raw-partition reader
-for the movies, `dcs_board.cpp` the sound board, `audio_*.c` the output. `port/host/game_stub.c`
+`port/video/render_gl.c` is the Glide stand-in on OpenGL, `disk.c` the raw-partition reader
+for the movies, `dcs_board.cpp` the sound board, `audio_*.c` the output. `port/stubs/game_stub.c`
 holds what is still missing from the game code (the level assets and scripts, the game
 proper, diagnostics) as printing stubs.
 
 ## Status
 The port boots through GOOSE main() into the game's real main process (boot sequence
-below), then the attract process (`src/game/attract.c`, the real `game_proc`) runs on the
+below), then the attract process (`src/game/core/attract.c`, the real `game_proc`) runs on the
 decompiled object list, texmap, text, movie, sound and credits modules. Verify with
 
 ```
@@ -64,11 +64,11 @@ The game flow runs through the real code: a start creates the main game process
 (main.c, `main_game_proc`), which loads the level-select gallery (wave.c), lets the
 countdown pick a level (no gun aiming yet, so Rickety Town first), loads it with its sound
 banks, camera file, spawn table and music stream, and plays its movie under the level
-script (movie_scripts.c, extracted by `tools/extract_scripts.py`), lights (lights.c), the
+script (movie_scripts.c, extracted by `tools/extract/extract_scripts.py`), lights (lights.c), the
 light gun (shoot.c), the enemies the spawn table places (krinkle.c, term.c through model.c
 and the sprite and clipper files) and their sounds. What the level still lacks is stubbed:
-the other enemies' models and texmaps (`port/host/wave_stubs.c`), the script's per-level
-callbacks (`port/host/script_stubs.c`, weak definitions a real one overrides), the HUD and
+the other enemies' models and texmaps (`port/stubs/wave_stubs.c`), the script's per-level
+callbacks (`port/stubs/script_stubs.c`, weak definitions a real one overrides), the HUD and
 the per-level collision tests. Every stub reports the first time it is reached
 (`[stub] name reached at vblank N`, `stub_reached` in hal.c) and the run ends with the
 list, so nothing missing is a silent no-op; the hardware stand-ins (heap size, refresh rate,
@@ -83,7 +83,7 @@ through the first level:
 ./build/host/carnevil --partition original/partition --raw original/carn.raw \
     --headless --fast --frames 3000 --press 600:coin,610:coin,650:start1
 ```
-Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-13):
+Matching status of the game modules (per function, `tools/match/trymatch.sh`, 2026-10-13):
 
 | module | profile | matched |
 |---|---|---|
@@ -111,7 +111,7 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | vecmat.c | game2 | 23 of 23 exact (0x800cfb18-0x800d1370: 3x3 matrices, the twelve rotation-order products, fatan, ftan) plus screen_to_ray and screen_to_point exact; world_to_view and view_to_world are transcriptions (1-2%) |
 | loaders.c | game2 | 0 of 1 (load_camera_file 4%: the retry loop's two counters are allocated differently; the port uses it as is) |
 | model.c | game2 | init_groups exact; draw_model and the eight face drawers are first transcriptions (0-31%); the port draws every enemy through them. draw_submesh_at (0x800e06d8, one submesh at a given matrix: the held weapons) 19%, the register choice for the projection buffers |
-| lights.c, fog.c | game0 (-O0) / game2 | lights.c 12 of 23 exact (the list operations, the ambient override, the fog switch); load_level_lights, add_light_group, update_lights, build_light_list and light_vertices are behaviourally complete transcriptions whose -O0 stack layouts do not match yet. The light tables are generated into lights_data.c by tools/extract_lights.py. fog.c 4 of 4 |
+| lights.c, fog.c | game0 (-O0) / game2 | lights.c 12 of 23 exact (the list operations, the ambient override, the fog switch); load_level_lights, add_light_group, update_lights, build_light_list and light_vertices are behaviourally complete transcriptions whose -O0 stack layouts do not match yet. The light tables are generated into lights_data.c by tools/extract/extract_lights.py. fog.c 4 of 4 |
 | krinkle.c | game2 | load_krinkle_texmap, remove_krinkle_assets, krinkle_remove, krinkle_drop_arm_parts, krinkle_drop_head_parts exact; krinkle_steer 95%, load_krinkle 86%, krinkle_hit 76%, krinkle_setup 54%, krinkle_think 50%, krinkle_init 50%, krinkle_draw 31%, krinkle_end_path 26%, krinkle_die 2% (one saved register off). He walks, strikes, reacts to hits and dies in the port |
 | effects.c | game2 | 4 of 5 exact (the effect list on an enemy: attach, draw, think, free); detach_effect 33% |
 | rickity_script.c | game2 | 38 of 38 exact (0x80123f88-0x80124c68: the script entry, the 22 section gates the movie script calls between its replays, the unused timers and counters). Unregistered: its timers are interleaved with the other levels' in .bss |
@@ -119,12 +119,12 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | enemy.c | game2 | 9 of 14 exact (health by adjustment, the path helpers, the reach test, set_goal_near_camera); step_toward_goal and _xz 50%, move_cd 16% (the per-level collision tests are stubs), face_camera 3%; the thrown objects' helpers near_camera, group_point, aim_at_camera, aim_at_point, knock_sideways and lob_toward all exact |
 | sprites.c | game2 | the screen and world sprite lists (0x800db148-0x800dbf58: muzzle flashes, hit marks, the dust of a miss, drops, sparks): the list resets exact, the creators 31-55%, the draw/update loops 58-64%, the reapers 10% (loop shape). The kind tables are in the source (0x8017d230, 0x8017d3b0) |
 | draw2d.c | game2 | draw_quad and draw_quad_mirrored exact, the alpha quads 94%; the four billboards (0x800da0f0-0x800dac0c) are transcriptions (0-4%: the original keeps the corners in 16-byte slots and inlines everything); the five point sprites (0x800d9550-0x800d9eb4: a screen-aligned textured quad at a world point, sized by its distance; the flame and the explosion use them) 97-98%, draw_life_bar 23%, the two flat quads exact, the rotated quads 69% and 58% |
-| texmaps.c | game2 | load_misc_texmaps exact, the per-level loaders 70-91% (the violence choice is `t = noblood; if(violence_level >= 2) t = blood;`); the 25 tables are generated into texmaps_data.c by tools/extract_texmaps.py |
+| texmaps.c | game2 | load_misc_texmaps exact, the per-level loaders 70-91% (the violence choice is `t = noblood; if(violence_level >= 2) t = blood;`); the 25 tables are generated into texmaps_data.c by tools/extract/extract_texmaps.py |
 | effects.c | game2 | the whole effects file (0x800fd990-0x801007a0): 23 of 43 exact (the effect list, every init and free, burst_blood, the spray and flame set-up, add_snow_around, blow_snow 92%, spray_think 92%, draw_blood_drops); the other particle draw loops 28-74% and draw_smoke 4% (the two cross quads' vertex stores). The chunk model's tables are in the source. The host stands in for the flat depth triangle (0x800d2dd4); the flame draws through draw_flame_sprite (draw2d.c) |
 | particle.c | game2 | draw_particle (0x800ecd20, one textured triangle at a world point, 30%); the rest of its file (0x800ec540-0x800ed030) is not decompiled |
 | jester.c | game2 | the jester (0x801072e0-0x80109688): the loading-screen dancer, the level introductions and the enemy that shatters into 2530 shards. 21 of 31 exact (the loaders, the cues, the sounds, the name plate, the removal); init_jester 94%, jester_die 90%, jester_take_damage 89% (dead code in the original), jester_hit 81%; the switch dispatch trees of jester_think (5%) and set_jester_state (22%) and the shard loops (draw_jester_shards 1%, get_jester_shards 18%: the original strength-reduces the shard fields through a second, biased pointer) are the open problems. Tables generated into jester_data.c |
 | select.c | game2 | the level-select gallery's targets (0x80101908-0x801026b0): the draw, the loaders, the init, the removal, the think and the light reset exact; select_target_hit 80% (the shared next_wave store's layout), aim_select_light 20% (the off paths' layout). Tables generated into select_data.c |
-| weapons.c | game2 | the enemies' weapons, one original file (0x8010d818-0x80110270): the held objects (an effect in a hand group: attach_held_object, draw_held_object with its 0x44-way switch, all exact), the thrown objects (game object 0x1900: the five throwers, the draw, the hit, the die and the removal exact, the think 93%: the shot case's float register choice), the twelve loaders exact. The tables (texmaps and submesh tables for fifteen models, 0x80193ad0-0x80194650) are generated into weapons_data.c by tools/extract_texmaps.py. Kinds and states in weapons.h |
+| weapons.c | game2 | the enemies' weapons, one original file (0x8010d818-0x80110270): the held objects (an effect in a hand group: attach_held_object, draw_held_object with its 0x44-way switch, all exact), the thrown objects (game object 0x1900: the five throwers, the draw, the hit, the die and the removal exact, the think 93%: the shot case's float register choice), the twelve loaders exact. The tables (texmaps and submesh tables for fifteen models, 0x80193ad0-0x80194650) are generated into weapons_data.c by tools/extract/extract_texmaps.py. Kinds and states in weapons.h |
 | clip.c | game2 | the three edge interpolators exact; draw_world_tri (0x8010bf30, near-plane clip and projection) and clip_screen_tri (0x8010cd54, the screen edges, recursive) are complete transcriptions at 1-10%: the original assigns the vertex pointers to the saved registers in a different order and does not interleave the quarter-pixel snaps |
 
 A module is registered in `config/modules.txt` once every function in its source file's
@@ -144,7 +144,7 @@ Ninja guess (`decompress_movie` -> `decode_movie_8pal`, `decoode_movie2` ->
 `load_fram_wrapper` -> `movie_init`) the override lives in `config/names.txt` and the
 original guess stays in `config/functions_v103.txt`.
 
-## The light gun (`src/game/shoot.c`, `objects.c`, `port/host/hal.c`)
+## The light gun (`src/game/core/shoot.c`, `objects.c`, `port/runtime/hal.c`)
 
 The original samples the guns from the I/O ASIC every vblank (`read_guns`): a 12-bit x and a
 10-bit y per gun, and a bit saying the gun sees the screen. The calibration (eight CMOS
@@ -206,7 +206,7 @@ the font glyph tables index rows from the file top and came out blank.)
 
 ## Text
 
-`src/game/text.c` is the game's own glyph renderer (it never uses GOOSE fonts/ostrings):
+`src/game/render/text.c` is the game's own glyph renderer (it never uses GOOSE fonts/ostrings):
 three glyph tables for FONT0001.WMS, `draw_string`, `draw_string_color`, `draw_string_at`,
 `draw_string_centered`, `string_width`. The attract "play mode" screen (`do_play_mode` in
 attract.c) draws the LEGAL1 texmap plus the credit lines with it. The per-frame buffer clear
@@ -214,7 +214,7 @@ comes from the game's draw pass (`draw_pass` in objects.c, 0x800cbbb4: the movie
 movie_draw_frame, then the level's 3D, every game object's draw function, the overlays and
 the debug displays); the port runs that pass with the level routines stubbed.
 
-## Movies (`src/game/movie.c`, `port/host/disk.c`)
+## Movies (`src/game/movie/movie.c`, `port/runtime/disk.c`)
 
 The attract sequences, the intro and ending, and every level's background are "movies":
 raw TRAP partitions of fixed-size frames (0xd0, 0xc9, 0x12e or 0x135 sectors). `movie_load(id)`
@@ -227,7 +227,7 @@ hold, sound cues, end) to pick the next frame. Level movies carry a per-pixel de
 3D objects sort against the background.
 
 The port needs the whole disk image for this: `--raw IMAGE` (or `CARNEVIL_RAW`, default
-`original/carn.raw`, which `setup.sh` links). `port/host/disk.c` parses the TRAP table and
+`original/carn.raw`, which `setup.sh` links). `port/runtime/disk.c` parses the TRAP table and
 serves `_SecReads` synchronously, firing the game's completion callback before returning;
 `port_movie_blit` in render_gl.c draws the frame as a texture (row 0 is the bottom line, a
 positive scroll pushes the picture up). Without an image the frames are black and the
@@ -235,14 +235,14 @@ sequence still runs. The attract scripts are in `movie_scripts.c` (generated fro
 0x801130b8-0x80113218); the level scripts (hhouse, freakshow, rickity, bigtop) are not
 extracted yet.
 
-## Sound (`port/host/dcs_board.cpp`, `port/third_party/dcsdecoder`, `src/game/soundio.c`)
+## Sound (`port/audio/dcs_board.cpp`, `port/third_party/dcsdecoder`, `src/game/sound/soundio.c`)
 
 CarnEvil's DCS2 board is RAM based: the game's own sound library (src/sound/sound.c, byte-exact)
 resets it through the I/O ASIC sound control register, uploads the DCS operating system
 (`F_OSYS.BIN`, `F_COMP.BIN`, `F_DM_EXT.BIN`, `F_DM_INT.BIN` from the partition) word by word
 through the sound data port, builds a 4096-entry sound-call table in the board's DRAM, uploads
 each `*.BNK` bank behind it, and then sends sound calls as three words (call, volume/pan,
-priority). `port/host/dcs_board.cpp` is the board: it answers the monitor and OS protocol
+priority). `port/audio/dcs_board.cpp` is the board: it answers the monitor and OS protocol
 (checksums, 0x0A/0x0C acks, version 0x0223), keeps the DRAM image, runs the bank track programs
 (DCSExplorer's byte code: play stream, stop, levels, loops...) and uses Michael Roberts'
 native DCS decoder (vendored, BSD-3) as the codec. Output is mono 16-bit at 31250 Hz through
@@ -250,7 +250,7 @@ CoreAudio (`audio_macos.m`); `--wav FILE` instead renders in lock step with the 
 and writes the soundtrack of a headless run. The level music is a second path: raw stereo 16-bit little-endian PCM in the disk's raw
 partitions (3, 5, 7, 9; the level waves select one in `stream_select_wave`), read in 32 KB
 pieces into a 96 KB ring by the movie player's disk process and pushed 512 words at a time
-into the I/O ASIC's sound FIFO from the ASIC's FIFO interrupt (`src/game/stream.c`,
+into the I/O ASIC's sound FIFO from the ASIC's FIFO interrupt (`src/game/core/stream.c`,
 0x8013f508-0x8014012c); the board plays the FIFO after command 0x55D6. The HAL raises that
 interrupt between frames while the board's FIFO (a few frames deep here, 512 words on the
 hardware) has room, and the port's `FIFO_WRITE` seam replaces the register store. The
@@ -258,7 +258,7 @@ attract mode never starts this stream (load_wave_proc only selects and starts it
 level waves; the gallery and the high-score entry run on bank cues); `CARNEVIL_STREAM_TEST=0x1040000`
 starts the haunted house music under the attract so the path can be heard.
 
-The board side was checked against the real sound OS: `tools/adsp21xx_dasm.py` (MAME's ADSP-2100
+The board side was checked against the real sound OS: `tools/analysis/adsp21xx_dasm.py` (MAME's ADSP-2100
 disassembler in Python) lists F_OSYS.BIN (PM 0) and F_COMP.BIN (PM 0x2800). The host command
 dispatch is at PM 0x3633; 0x55D6/0x55D7 set and clear the stream-on word (DM 0x381C), 0x55D8
 clears the 13 stream buffers (480 words each, states at DM 0x382E, free count 0x381B), 0x55E7
@@ -277,7 +277,7 @@ a coin sound no longer replaces the intro music. A program is {u16 wait, op, arg
 op follows its wait: reading another wait after one expires ran the interpreter off the end
 of the coin program into the neighbouring weapon sounds of generic1 (fixed 2026-10-12).
 
-`src/game/soundio.c` has the game's sound start-up (main_init_sound) and the cue helpers; the
+`src/game/sound/soundio.c` has the game's sound start-up (main_init_sound) and the cue helpers; the
 attract wave's banks (select1, midway, intro4, attract) are loaded by the port's preload_wave
 stand-in until load_level_sounds is decompiled. The HAL now serves the BIOS timers in
 nanoseconds, a word-per-byte CMOS at a real address (GOOSE CRCs it directly), findfirst with
@@ -285,19 +285,19 @@ file sizes, and defines a plain `_fopen` on macOS so the SDK-built objects hit t
 Adjustments come from GOOSE's factory defaults when the CMOS is blank (attract sounds on, volume
 127); the game's own adjustment table and CMOS setup are not decompiled yet.
 
-## Inputs, coins and credits (`src/game/credits.c`, `port/host/hal.c`)
+## Inputs, coins and credits (`src/game/core/credits.c`, `port/runtime/hal.c`)
 
 The cabinet switches reach the game exactly as on the board: GOOSE's `scan_switches` (called
 from the game's own vertical-retrace handler, 0x800c6030, now in `game_stub.c`) reads the
 I/O ASIC words through ioctl 'i'0 (dips), 'i'1 (coins, starts, service, test, volume, slam),
 'i'2/'i'3 (player buttons), all active low, and calls the handlers `main_proc` installed.
-`src/game/credits.c` is that module (0x800c6a64-0x800c8198): coin and service-credit
+`src/game/core/credits.c` is that module (0x800c6a64-0x800c8198): coin and service-credit
 handlers, `add_coin` with the per-slot units, bonus credits and the max-credit clamp, the
 credit counter process ("ccproc", meter pulses through ioctl 'i'5), the slam lockout, the
 volume buttons and bar, `init_credits` (free play from dip or adjustment, pricing from the
 continent/country/price adjustments, the custom table or the dip switches; the 80 pricing
 records, continent tables, dip table and currency names are generated into
-`src/game/pricing_data.c` by `tools/gen_pricing.py`), `credit_info` (the "CREDITS: n" /
+`src/game/core/pricing_data.c` by `tools/extract/gen_pricing.py`), `credit_info` (the "CREDITS: n" /
 "INSERT COIN" / "PRESS START" lines) and `start_proc`, which takes the credits and starts a
 player (the game proper, `init_player_stats` / `init_main_game_proc`, is still a stub that
 prints "GAME START requested"). Credits live in audit 10 in the CMOS (`cmos.bin` in the
@@ -312,7 +312,7 @@ mouse button trigger. Scripted presses for headless tests:
 `carnevil_gun_r` layout) is a mapped page the HAL refreshes every frame with the trigger and
 pump bits and a centred position; aiming comes later.
 
-## Boot sequence (`src/game/main.c`, `hwinfo.c`, `adjust.c`, `hiscore.c`, `gun.c`)
+## Boot sequence (`src/game/core/main.c`, `hwinfo.c`, `adjust.c`, `hiscore.c`, `gun.c`)
 
 The port now runs the game's real main process (0x800c50ac). In order: game init, the
 security PIC's serial number through the BIOS `pic:` device (the HAL answers like MAME's

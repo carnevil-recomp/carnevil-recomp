@@ -3,9 +3,9 @@
 #
 #   ./setup.sh --partition DIR        DIR holds the files of the game's filesystem partition
 #                                     (GAME.EXE, DIAG.EXE, *.WMS, ...) as produced by your own
-#                                     extractor or by tools/lfn32.py
+#                                     extractor or by tools/rom/lfn32.py
 #   ./setup.sh --raw IMAGE.raw        a raw dump of the CarnEvil hard disk (e.g. chdman extractraw
-#                                     of carnevil.chd); the partition is extracted with tools/lfn32.py
+#                                     of carnevil.chd); the partition is extracted with tools/rom/lfn32.py
 #   ./setup.sh --sdk DIR              your clone of github.com/historicalsource/midwayvideo
 #   ./setup.sh --roms DIR             (optional) the boot/sound ROM dumps for the MAME-based tests
 #   ./setup.sh                        defaults from CARNEVIL_PARTITION / CARNEVIL_RAW / MIDWAY_SDK /
@@ -32,12 +32,12 @@ done
 mkdir -p original
 if [ ! -d "$PART" ] && [ -f "$RAW" ]; then
   echo "extracting the game partition from $RAW ..."
-  python3 tools/lfn32.py extract "$RAW@1" "$PART"
+  python3 tools/rom/lfn32.py extract "$RAW@1" "$PART"
 fi
 [ -f "$PART/GAME.EXE" ] || { echo "no GAME.EXE in $PART: run with --partition DIR or --raw IMAGE"; exit 1; }
 ln -sfn "$PART" original/partition
 [ -f "$RAW" ] && ln -sfn "$RAW" original/carn.raw
 [ -d "$SDK" ] && ln -sfn "$SDK" original/sdk || echo "warning: SDK not found at $SDK (set MIDWAY_SDK); the matching build needs it"
 [ -d "$ROMS" ] && ln -sfn "$ROMS" original/roms
-python3 tools/exe.py check original/partition/GAME.EXE
+python3 tools/build/exe.py check original/partition/GAME.EXE
 echo "linked:"; ls -l original

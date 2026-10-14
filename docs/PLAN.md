@@ -42,13 +42,13 @@ phases never block on earlier ones being "100%".
 The two builds differ in GAME.EXE, DIAG.EXE, the adjustment/audit scripts, the high-score
 textures, two sound banks and a few textures (v1.0.3 adds `J.PRC`, drops `A.PRC`/`TIMEZONE.PRC`).
 
-- Sector 0 holds a `TRAP` partition table (`tools/trap.py`, format from SDK `putil/lib/PD.H`):
+- Sector 0 holds a `TRAP` partition table (`tools/rom/trap.py`, format from SDK `putil/lib/PD.H`):
   entry 0 spans the whole drive, entries 1–16 are the real partitions (start, length, type).
 - Partition 1 (98.8 MB, type FATFS) = Midway **LFN32 flat filesystem** (Joe Linhoff's
   `FILESYS.C` in the BIOS source: no subdirectories, 16-bit FAT, 4 KB clusters, 24-byte
   directory entries with packed names, CRCs in `FILESYS.CHK` from `tools/genfchk`).
-  `tools/lfn32.py` lists/extracts it and reproduces the manual extraction byte for byte
-  (the original hand extractors are kept in `tools/legacy/`). Users extract their own disk:
+  `tools/rom/lfn32.py` lists/extracts it and reproduces the manual extraction byte for byte
+  (the original hand extractors are kept in `tools/rom/legacy/`). Users extract their own disk:
   `./setup.sh --raw IMAGE` or `--partition DIR`; the repo never contains game data.
 - Partitions 3–16 (`part2`..`part16` in the manual dump) = raw **movie streams** written straight to partitions by `tools/movie`
   (frame = 194 x 512-byte blocks: 192 pixel blocks + 2 palette blocks; 386 blocks when a
@@ -136,10 +136,10 @@ Steps:
    test/              oracle traces, golden hashes, unit tests for decoders
    ```
    `assets/` and `original/` are git-ignored; a `setup.sh` extracts from the user's `carn.raw`.
-2. Tool for the exe container: `tools/exe.py` pack/unpack (header = magic/checksum + load
+2. Tool for the exe container: `tools/build/exe.py` pack/unpack (header = magic/checksum + load
    address). Determine how the 4-byte first word is computed (check `buildrom`/BIOS `EXEC.C`).
-3. Write `tools/lfn32.py` (reader/writer for part0, using `FILESYS.C` as spec) and
-   `tools/trap.py` (partition table) so extraction is reproducible from `carn.raw`.
+3. Write `tools/rom/lfn32.py` (reader/writer for part0, using `FILESYS.C` as spec) and
+   `tools/rom/trap.py` (partition table) so extraction is reproducible from `carn.raw`.
 4. ROMs: boot ROM and sound ROM are in `~/Downloads/carnevil/` and verified against MAME's
    SHA1s. Still needed: the security PIC dump `486_carnevil.u96` (or MAME run with a missing
    ROM override) for the oracle. Document SHA1s in `docs/`.
@@ -151,7 +151,7 @@ Steps:
 Exit: `make` reassembles the raw disassembly and `sha1(GAME.EXE)` matches the original.
 Progress script reports 0% C, 100% asm.
 **Status 2026-10-10: done** — `make` rebuilds v1.0.3 GAME.EXE byte-exact (see `docs/build.md`);
-`tools/exe.py`, `tools/trap.py`, `tools/lfn32.py` exist; toolchain reproduced (`docs/toolchain.md`).
+`tools/build/exe.py`, `tools/rom/trap.py`, `tools/rom/lfn32.py` exist; toolchain reproduced (`docs/toolchain.md`).
 
 ### Phase 1 — Toolchain reproduction (weeks 1-3, parallel with Phase 2)
 
@@ -159,7 +159,7 @@ Goal: compile C with the *original* compiler so function matching is possible.
 
 Steps:
 1. Run `CC1MIPS.EXE` (DJGPP/CWSDPMI) under DOSBox-X or dosemu2 in a wrapper script
-   (`tools/sncc.sh`) that takes preprocessed C in, assembly out. Pattern: the PS1 decomp
+   (`tools/build/sncc.sh`) that takes preprocessed C in, assembly out. Pattern: the PS1 decomp
    community's Psy-Q wrappers (same GCC 2.7.2 SN lineage).
 2. Assemble with modern GNU `as` (`-mips4 -mabi=32 -EL -G0`), as the SDK's `CYGNUS` path does.
    Verify the GNU-assembled output of SDK sources is byte-identical to Psy-Q-assembled
@@ -324,7 +324,7 @@ Exit criteria per milestone:
 2. **Port replay**: same input log drives the port; compare (a)/(b) exactly, (c) exactly for
    the software rasterizer tier and within tolerance for the GPU tier.
 3. **Build matching CI**: every commit reassembles `GAME.EXE` and fails on mismatch; progress
-   badge from `tools/progress.py`.
+   badge from `tools/match/progress.py`.
 4. **Decoder tests**: golden hashes per asset file.
 
 ### Phase 7 — Polish and optional enhancements (after P3)

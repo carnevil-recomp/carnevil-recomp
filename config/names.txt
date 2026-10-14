@@ -423,7 +423,7 @@
 0x801e6ec0 sound_init_pending
 0x801de954 stereo_output
 0x8018e04c cue_priority_rotor
-# game audits.c (0x800f18e0-0x800f1d84, -O): audit groups, built from src/game/audits.c
+# game audits.c (0x800f18e0-0x800f1d84, -O): audit groups, built from src/game/core/audits.c
 0x800f18e0 clear_audits
 0x800f1948 clear_coin_audits
 0x800f1970 clear_credit_audits
@@ -450,7 +450,7 @@
 0x800e8510 decode_movie_8pal
 0x800e878c decode_movie_1pal_depth
 0x800e8b78 decode_movie_8pal_depth
-# game attract.c (0x800caf80-0x800cbb6c, -O2): the attract process, built from src/game/attract.c
+# game attract.c (0x800caf80-0x800cbb6c, -O2): the attract process, built from src/game/core/attract.c
 0x800cb17c attract_playmode
 0x800cb3f0 attract_movie_violence
 0x800cb478 attract_generic
@@ -467,7 +467,7 @@
 0x80179d34 credits_step_counter
 0x80179d38 play_mode_timer
 0x80179d3c credit_line_timer
-# game script.c (0x80110270-0x80110b04, -O2): the movie script interpreter, built from src/game/script.c
+# game script.c (0x80110270-0x80110b04, -O2): the movie script interpreter, built from src/game/movie/script.c
 0x80110270 movie_script_init
 0x801102a8 movie_script_abort
 0x801102bc movie_script_skip
@@ -499,7 +499,7 @@
 0x8021ef58 attract_text2
 0x8021eff0 attract_text3
 0x801fad18 attract_text_state
-# game levelsnd.c (0x800ebb18-0x800ec53c, -O2): the level sound helpers, built from src/game/levelsnd.c
+# game levelsnd.c (0x800ebb18-0x800ec53c, -O2): the level sound helpers, built from src/game/sound/levelsnd.c
 0x800ebb18 reset_stream_volume
 0x800ebb44 fade_out_level_stream
 0x800ebb58 fade_in_level_stream

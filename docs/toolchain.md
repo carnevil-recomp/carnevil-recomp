@@ -2,7 +2,7 @@
 
 ## Result
 The SDK's DOS build of **GCC 2.7.2.SN16.3.3** (`original/sdk/tools/bin/CC1MIPS.EXE`, run under
-DOSBox-X by `tools/sncc.sh`) reproduces GAME.EXE code **instruction-for-instruction** for the
+DOSBox-X by `tools/build/sncc.sh`) reproduces GAME.EXE code **instruction-for-instruction** for the
 GOOSE library sources tested so far:
 
 | source | function | v1.0.3 address | v1.0.1 address | match |
@@ -16,7 +16,7 @@ GOOSE library sources tested so far:
 crc.c and sincos.c are now built from source inside `make` and the whole image stays
 byte-identical (see `docs/build.md`), which is the end-to-end proof of the toolchain.
 
-`tools/match.py` compares against `original/partition/GAME.EXE` (v1.0.3) by default; set
+`tools/match/match.py` compares against `original/partition/GAME.EXE` (v1.0.3) by default; set
 `GAME_EXE=...` to compare against another build.
 
 "100%" = every instruction identical after masking link-time relocations (hi16/lo16 of
@@ -47,7 +47,7 @@ at a glance (`sw $a0,0x20($sp)` prologues and `lw $v0,0x10($sp)` reloads = noopt
 
 ## Game code: what the matcher taught us (2026-10-13)
 Matching the first game modules (credits, hwinfo, adjust/audits, hiscore, gun, soundio, stream,
-main) against the original with `tools/trymatch.sh <file> <profile> name=0xaddr ...` settled
+main) against the original with `tools/match/trymatch.sh <file> <profile> name=0xaddr ...` settled
 the flags and a set of source idioms. `MATCH_MAXDIFF=N` lengthens the diff it prints.
 - **Game objects are `-O2`, not `-O3`** (`game2` profile: `-O2 -mips3 -fsigned-char ...`).
   text.c and objects.c match identically at either level because they have no inlinable
@@ -123,7 +123,7 @@ the flags and a set of source idioms. `MATCH_MAXDIFF=N` lengthens the diff it pr
 - **script.c (10 of 10, registered)**: the interpreter's helpers (0x801109c0-0x80110ad8)
   come *after* `do_script` in the file; `script_level_end_stats` calls `func_800d6758()`
   with no argument. The level and attract scripts that follow the file (0x80110b04-0x80113218)
-  are data stored in `.text`: `tools/disasm.py` now labels referenced words inside the
+  are data stored in `.text`: `tools/build/disasm.py` now labels referenced words inside the
   padding it emits after a C module (`asm/functions/<addr>_pad.s`).
 - **levelsnd.c (36 of 36, registered)**: the level sound file is the music/stream fade state
   (four `.data` ints initialised to 0xff, 0, 0xaa, 0) and thin wrappers around
@@ -166,7 +166,7 @@ the flags and a set of source idioms. `MATCH_MAXDIFF=N` lengthens the diff it pr
   `add_to_print_`, `attract_high_scores` for `sub_800e4d90`).
 - Per-function matching status lives in `docs/port.md`.
 
-## Assembler behaviour (`tools/sn2gas.py`)
+## Assembler behaviour (`tools/build/sn2gas.py`)
 The original assembler was SN's `asmmips`, not GNU as. Two behaviours must be emulated for
 GNU as (`tools/mipsel-elf-binutils`, binutils 2.43 built with `--target=mipsel-elf`):
 1. **No delay-slot filling by reordering.** asmmips only appends a `nop` after a branch or
@@ -190,7 +190,7 @@ GNU as (`tools/mipsel-elf-binutils`, binutils 2.43 built with `--target=mipsel-e
    overflow check (`addiu $at,-1; bne; lui $at,0x8000; bne; nop; break 6`); gas puts the
    divide in the `bnez` delay slot.
 Other macros (`la`, `li`, `subu $sp`, `j $31`) expand identically.
-`tools/match.py` compares instruction *words* with relocation fields masked (it used to
+`tools/match/match.py` compares instruction *words* with relocation fields masked (it used to
 compare alias text, which hid the `move` encoding difference).
 
 ## Preprocessing
@@ -201,10 +201,10 @@ copy or `CPPMIPS.EXE` under DOSBox).
 
 ## Pipeline
 ```
-clang -E  ->  tools/sncc.sh (cc1 in DOSBox-X)  ->  tools/sn2gas.py  ->  mipsel-elf-as
-                                                   ->  tools/match.py (compare to GAME.EXE)
+clang -E  ->  tools/build/sncc.sh (cc1 in DOSBox-X)  ->  tools/build/sn2gas.py  ->  mipsel-elf-as
+                                                   ->  tools/match/match.py (compare to GAME.EXE)
 ```
-`tools/match.py file.s name=0xADDR ...` prints per-function match percentage and diffs.
+`tools/match/match.py file.s name=0xADDR ...` prints per-function match percentage and diffs.
 
 ## Source revisions differ from the SDK
 Every GOOSE module embeds a `$Revision: N $` string. The game's process.c is revision **17**;
@@ -248,23 +248,23 @@ so unreferenced modules are absent. Do not expect every SDK function to appear.
 ## Assembler emulation, round two (found while importing GOOSE modules)
 - `lw $2,sym+20($7)` (symbolic address plus base register): asmmips goes through `$at`
   (`lui $at,%hi; addu $at,$at,$7; lw $2,%lo($at)`), gas through the destination register.
-  `tools/sn2gas.py` expands these itself (cmos.c needed it).
+  `tools/build/sn2gas.py` expands these itself (cmos.c needed it).
 - `.def/.val/.scl/.type/.endef` SDB records appear in cc1 output for functions written as
   inline asm (mthread.c); gas has no COFF debug, so sn2gas drops them.
 - The original linker aligned every object's sections to 8 bytes and left **uninitialised
   garbage** in the padding (`0xC0`, text fragments, even a stray instruction word). Module
   ranges in `config/modules.txt` therefore end at the real content; the padding stays in asm
-  chunks, and `tools/disasm.py` never decodes module padding words as instructions.
+  chunks, and `tools/build/disasm.py` never decodes module padding words as instructions.
 - Uninitialised globals (COMMON) and `static` BSS: the C object defines them as COMMON and the
   linker script's absolute assignment (`config/symbols_abs.ld`, from `config/names.txt`)
   wins, so the object's own allocation is discarded. Every BSS name in `names.txt` is always
   defined, referenced or not. Mapping names to addresses is done by reading the function that
   initialises them (cmos.c: `config_cmos`).
 - GCC 2.7.2 allowed raw newlines inside string literals; the SDK's inline asm uses them.
-  `tools/fixasmstr.py` rewrites those files before `clang -E`.
+  `tools/build/fixasmstr.py` rewrites those files before `clang -E`.
 - `sleep(n)` in the SDK is `qyield(n)` in the game's older revisions (process.c, anim2d.c).
 
-## Module import workflow (`tools/sweep.sh` → `tools/modfit.py` → `tools/findsec.py`)
+## Module import workflow (`tools/match/sweep.sh` → `tools/match/modfit.py` → `tools/match/findsec.py`)
 1. `sweep.sh` compiles every SDK source under each profile and `findfn.py` locates its
    functions in the image; `build/sweep/report.txt` says how many hit per file/profile.
 2. `modfit.py file.s` infers the addresses of the non-matching functions from their SDK-order
@@ -279,7 +279,7 @@ Profiles: `goose` for the library (process.c and mthread.c are `noopt`).
 ## The game's own objects: `-fsigned-char`, `-mips3`, FPU compare hazard (found with text.c)
 
 Three things separate CarnEvil's own objects from the GOOSE library objects, all discovered
-while matching the text renderer (src/game/text.c) and all now in profile `game`:
+while matching the text renderer (src/game/render/text.c) and all now in profile `game`:
 
 - **`-fsigned-char`.** This SN build of GCC defaults to *unsigned* `char`. The game was
   compiled with signed chars: `while(*str)` on a `char *` compiles to `lb` (sign-extended
@@ -292,7 +292,7 @@ while matching the text renderer (src/game/text.c) and all now in profile `game`
   `-mips4 -mcpu=r5000`.
 - **FPU compare hazard nops.** Every `c.cond.fmt` in game code is followed by a `nop` before
   its `bc1t/bc1f` (627 sites); no library/Glide/libc object has one. asmmips inserted them
-  for the pre-R5000 target the game objects were assembled for. `tools/sn2gas.py --fpu-hazard`
+  for the pre-R5000 target the game objects were assembled for. `tools/build/sn2gas.py --fpu-hazard`
   (env `SN2GAS_FPU_HAZARD=1`) emulates it; the Makefile passes it for profile `game` only.
 
 Other lessons from text.c:
@@ -353,7 +353,7 @@ Lessons from wave.c, main.c and player.c (the level flow):
   into a temporary first.
 - `a = b = v` stores b first: init_player_stats writes +0x28 before +0x24, so the source is
   `p->unk24 = p->unk28 = v`.
-- The movie scripts are word streams in .text; `tools/extract_scripts.py` decodes them with
+- The movie scripts are word streams in .text; `tools/extract/extract_scripts.py` decodes them with
   do_script's opcode table into per-script arrays (labels become `&script[i]` casts).
 
 Lessons from the Rickety Town script gates, term.c and enemy.c (2026-10-13):
@@ -402,7 +402,7 @@ Lessons from the Rickety Town script gates, term.c and enemy.c (2026-10-13):
   `(sprite_t *)((char *)&list - offsetof(sprite_t, next))`, so `prev->next = next` also
   rewrites the head. Keep it; it is what the original compiles to (D_801e5898 = list - 0x80).
 - **Weak stubs must be loud.** A missing function that links as a weak no-op hides a gap
-  in the transcription; every stub in `port/host/` now reports through `stub_reached()`.
+  in the transcription; every stub in `port/` now reports through `stub_reached()`.
 - **A value chosen by two equality tests with no default** (`if(w == 1) key = 0x6003; else
   if(w == 2) key = 0x6004;`, key otherwise unset) compiles to the first assignment in the
   first branch's delay slot and a `beql` for the second: write it that way, not as a default

@@ -17,7 +17,7 @@ experiments/**/work/
 asm/
 # per-user save state of the port (CMOS, audits.fmt, high-score photos)
 state/
-# library sources generated from the SDK checkout by tools/sdksrc.py (see config/sdk_sources.txt)
+# library sources generated from the SDK checkout by tools/build/sdksrc.py (see config/sdk_sources.txt)
 src/goose/*.c
 src/goose/pshell.s
 src/sound/sound.c

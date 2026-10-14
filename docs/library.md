@@ -5,9 +5,9 @@ game carries (the SDK clone is newer); differences are commented in the module s
 
 The library sources are not committed: `make` generates `src/goose/*.c`, `src/goose/pshell.s`
 and `src/sound/sound.c` from your SDK checkout (`config/sdk_sources.txt` maps each file;
-`tools/sdksrc.py` strips the CR line endings and applies `patches/<file>.patch`). The patches
+`tools/build/sdksrc.py` strips the CR line endings and applies `patches/<file>.patch`). The patches
 are the differences between the SDK's revision of a file and the one CarnEvil links, plus
-the build fixes; three files (adjust.c, cmos.c, sincos.c) need none. `python3 tools/sdksrc.py
+the build fixes; three files (adjust.c, cmos.c, sincos.c) need none. `python3 tools/build/sdksrc.py
 --check` reports a generated file that was edited by hand: edit the patch instead
 (`make sdksrc` regenerates), or regenerate the patch from the edited file with difflib.
 

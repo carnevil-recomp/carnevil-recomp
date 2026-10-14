@@ -1,5 +1,5 @@
 # library sources generated from the SDK checkout: <our path> <path under original/sdk>
-# (CR line endings stripped, then patches/<our path>.patch applied when present); tools/sdksrc.py
+# (CR line endings stripped, then patches/<our path>.patch applied when present); tools/build/sdksrc.py
 src/goose/adjust.c lib/goose/adjust.c
 src/goose/anim2d.c lib/goose/anim2d.c
 src/goose/bgnd.c lib/goose/bgnd.c
