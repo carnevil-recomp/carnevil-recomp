@@ -189,11 +189,11 @@ int face_camera(enemy_t *e, float rate)
 		{
 			if(0.0f < d[2])
 			{
-				v[1] = a;
+				v[1] = 3.1415927f - a;
 			}
 			else
 			{
-				v[1] = 3.1415927f - a;
+				v[1] = a;
 			}
 		}
 		else
