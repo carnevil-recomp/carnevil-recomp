@@ -337,3 +337,33 @@ int load_path(void **out, int count, char *name, int given_crc)
 	*out = buf;
 	return(0);
 }
+
+/* 0x800cae68: free each submesh's animation frames (the count and name are the loader's,
+   unused here) */
+void remove_animation(submesh_t *sub, int nsub, int nframes, char *name)
+{
+	int	i;
+
+	for(i = 0; i < nsub; i++)
+	{
+		if(sub[i].anim)
+		{
+			free(sub[i].anim);
+		}
+		sub[i].anim = 0;
+	}
+}
+
+/* 0x800caed0: free a model's faces, normals and vertices (the pointers are left as they are) */
+void remove_model(void **verts, int nverts, void **faces, int nfaces, void **normals, int nnormals, char *name)
+{
+	free(*faces);
+	free(*normals);
+	free(*verts);
+}
+
+/* 0x800caf24 */
+void remove_path(void **path, int count, char *name)
+{
+	free(*path);
+}
