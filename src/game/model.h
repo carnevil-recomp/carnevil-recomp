@@ -88,6 +88,7 @@ extern float	lit_colors[MAX_MODEL_VERTS][3];	/* 0x80212ea0 */
 struct enemy;
 void	draw_model(struct enemy *e, submesh_t *sub, int nsub, float *verts, int nverts, face_t *faces, int nfaces, float *normals, int nnormals);
 void	init_groups(struct enemy *e, submesh_t *sub, int nsub);	/* 0x801149b4 */
+void	draw_submesh_at(struct group *g, submesh_t *sub, float *verts, int nverts, face_t *faces, int nfaces, float *normals, int nnormals, float *mat, float *pos, float *scale);	/* 0x800e06d8 */
 void	draw_part_model(part_t *p, submesh_t *sub, float *verts, int nverts, face_t *faces, int nfaces, float *normals, int nnormals);	/* 0x800e0268 */
 
 int	load_anim(submesh_t *sub, int nsub, int nframes, char *name, int crc);

@@ -15,6 +15,7 @@
 #include "credits.h"			/* debug_mode */
 #include "levelsnd.h"
 #include "camera.h"
+#include "weapons.h"
 
 extern void	draw_effects(enemy_t *);			/* run the attached effects */
 extern void	graphical_printf(char *, char *, ...);
@@ -26,8 +27,6 @@ extern void	set_enemy_scale(enemy_t *, float);		/* objects.c */
 extern void	set_enemy_health(enemy_t *, float);		/* health by difficulty */
 extern player_stats_t *get_target_player(void);		/* objects.c */
 extern int	randrng(int);
-extern void	*func_8010eefc(group_t *, int, float, float, float, float, float, int, float *);
-extern void	attach_effect(enemy_t *, void *);
 extern void	path_place(enemy_t *, void *, short, float);	/* start along a path */
 extern void	free_effects(enemy_t *);
 int	krinkle_hit(game_object_t *, player_stats_t *);
@@ -124,7 +123,7 @@ void krinkle_draw(game_object_t *obj)
    to submesh 11), then the state picks the animation frame */
 void krinkle_setup(enemy_t *e, unsigned short state)
 {
-	void	*p;
+	effect_t *p;
 
 	e->ai_state = state;
 	if(state & 0x100)
@@ -147,7 +146,7 @@ void krinkle_setup(enemy_t *e, unsigned short state)
 		e->ai_state &= 0xffbf;
 		e->flags2 |= 0x40;
 		e->groups[0].flags = 0;
-		p = func_8010eefc(&e->groups[11], 0x24, 0.06f, 0.15f, 0.16f, 4.2f, -2.9f, 0, e->scale);
+		p = attach_held_object(&e->groups[11], WEAPON_PRESENT, 0.06f, 0.15f, 0.16f, 4.2f, -2.9f, 0.0f, e->scale);
 		attach_effect(e, p);
 	}
 	switch(e->ai_state)
@@ -211,7 +210,7 @@ int krinkle_init(game_object_t *obj)
 	obj->die = krinkle_die;
 	obj->remove = krinkle_remove;
 	e->unk4 = 0x14;
-	e->unk2 = 0;
+	e->counter = 0;
 	e->frame = 0;
 	e->num = 0;
 	e->flags = 0xc;
@@ -283,7 +282,6 @@ extern int	group_near_camera(group_t *, float);		/* enemy.c */
 extern int	face_camera(enemy_t *, float);			/* enemy.c */
 extern void	hurt_player(player_stats_t *, int, int, float);
 extern void	blend_to_frame(enemy_t *, submesh_t *, int, int, int);	/* blend to a frame */
-extern void	func_8010d818(float *, int, float *);		/* a part flies off */
 extern void	detach_effect(enemy_t *, group_t *);		/* drop the effect on a group */
 extern void	set_goal_near_camera(enemy_t *, float *, float *, float, float, float);
 extern int	step_toward_goal_xz(enemy_t *, float);
@@ -300,7 +298,7 @@ void krinkle_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	short	frame;
-	void	*p;
+	effect_t *p;
 
 	if(debug_mode & 0x10000)
 	{
@@ -551,7 +549,7 @@ void krinkle_think(game_object_t *obj)
 		{
 			if(e->groups[11].flags & 0x2000)
 			{
-				func_8010d818(e->groups[11].pos, 0x24, e->scale);
+				throw_at_camera(e->groups[11].pos, WEAPON_PRESENT, e->scale);
 				detach_effect(e, &e->groups[11]);
 			}
 		}
@@ -559,7 +557,7 @@ void krinkle_think(game_object_t *obj)
 		{
 			if(e->groups[14].flags & 0x2000)
 			{
-				p = func_8010eefc(&e->groups[14], 0x24, 0.06f, 0.15f, 0.16f, 4.2f, -2.9f, 0, e->scale);
+				p = attach_held_object(&e->groups[14], WEAPON_PRESENT, 0.06f, 0.15f, 0.16f, 4.2f, -2.9f, 0.0f, e->scale);
 				attach_effect(e, p);
 			}
 		}
@@ -567,7 +565,7 @@ void krinkle_think(game_object_t *obj)
 		{
 			if(e->groups[14].flags & 0x2000)
 			{
-				func_8010d818(e->groups[14].pos, 0x24, e->scale);
+				throw_at_camera(e->groups[14].pos, WEAPON_PRESENT, e->scale);
 				detach_effect(e, &e->groups[14]);
 			}
 		}
@@ -577,11 +575,11 @@ void krinkle_think(game_object_t *obj)
 		}
 		if(e->groups[11].flags & 0x2000)
 		{
-			p = func_8010eefc(&e->groups[11], 0x24, 0.06f, 0.15f, 0.16f, 4.2f, -2.9f, 0, e->scale);
+			p = attach_held_object(&e->groups[11], WEAPON_PRESENT, 0.06f, 0.15f, 0.16f, 4.2f, -2.9f, 0.0f, e->scale);
 			attach_effect(e, p);
 		}
 		e->ai_state = 6;
-		e->unk2 = 0;
+		e->counter = 0;
 		e->frame--;
 		blend_to_frame(e, submesh_info_krik, 5, 0x308, 2);
 		break;
@@ -592,14 +590,14 @@ void krinkle_think(game_object_t *obj)
 		{
 			break;
 		}
-		e->unk2++;
-		if((unsigned short)e->unk2 < 2)
+		e->counter++;
+		if((unsigned short)e->counter < 2)
 		{
 			e->frame = 0x308;
 			break;
 		}
 		e->ai_state = 0x202;
-		e->unk2 = 0;
+		e->counter = 0;
 		e->frame--;
 		blend_to_frame(e, submesh_info_krik, 5, 0x2a9, 2);
 		break;
@@ -885,13 +883,11 @@ extern void	burst_blood(float *, float);
 extern void	add_chunks(float *, float);
 extern void	add_world_sprite(float *, int, int);	/* sprites.c */
 extern void	add_smoke(float *, unsigned int);
-extern void	*attach_flame(float, float, group_t *);
 extern float	shot_damage_of(player_stats_t *);
 extern void	award_points(int, int);
 extern int	mark_die();
 extern void	detach_group(group_t *, float *, float, float *);	/* model.c: a part flies off */
 extern void	func_8011459c(enemy_t *, group_t *, group_t *);	/* a group takes over another's place */
-extern void	*attach_spray(float *, float *, group_t *);		/* a spray effect */
 extern int	violence_level;
 int	krinkle_hurt_sounds[5] = { 3, 4, 7, 9, 10 };	/* 0x8019b0a8 */
 float	D_8019b088[3] = { 0, 0.05f, 0 };		/* the neck spray's two vectors */

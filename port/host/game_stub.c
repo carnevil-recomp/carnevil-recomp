@@ -93,7 +93,6 @@ void func_800d3528(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, -1, 5)
 /* 0x800d2dd4: x, y, q in the constant colour with the depth gradients (the flecks) */
 void func_800d2dd4(void *a, void *b, void *c) { port_draw_tri(a, b, c, 0, -1, -1); }
 /* 0x800d9cc0: the quad the flame effect draws (draw2d's file), not in C yet */
-void func_800d9cc0(int key, float w, float h, float a, float *pos) { STUB(func_800d9cc0); (void)key; (void)w; (void)h; (void)a; (void)pos; }
 
 /* ---- the per-frame passes (objects.c: draw_pass 0x800cbbb4, think_pass 0x800cca70) call
    into level code the port does not have yet; these keep them no-ops in the attract ---- */
@@ -101,7 +100,6 @@ void draw_pass(void);
 void think_pass(void *);
 int get_free_mem_left(void) { return 0x400000; }			/* GOOSE 0x80143e90 */
 float fsqrt(float x) { return sqrtf(x); }				/* 0x80144900: sqrt.s */
-void func_800ce2f8(float *a, float b, float *c) { STUB(func_800ce2f8); (void)a; (void)b; c[0] = c[1] = c[2] = 0.0f; }
 void func_800c83bc(void) { STUB(func_800c83bc); }
 void func_800c9620(int a) { STUB(func_800c9620); (void)a; }
 void func_800c9bf0(void) { STUB(func_800c9bf0); }

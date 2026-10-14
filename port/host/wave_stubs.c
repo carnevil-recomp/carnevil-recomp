@@ -5,6 +5,10 @@
 #include "hal.h"
 #define STUB(n)	do { static int seen; if(!seen) { seen = 1; stub_reached(#n); } } while(0)
 WEAK int D_801e6e70;
+/* the skeleton's and the 0x8019fcf0 model's tables and model pointers (weapons.c draws them held or thrown; their loaders are not in C yet) */
+WEAK int skeleton_anim_blob[8], D_8019fcf0[8];
+WEAK float *D_801e5b28, *D_801e57e4, *D_801e5b74, *D_801e5824;
+WEAK void *D_8021eec8, *D_8021f088;
 WEAK void func_800f75f8(void) { STUB(func_800f75f8); }
 WEAK void func_800f8798(void) { STUB(func_800f8798); }
 WEAK void func_8010584c(void) { STUB(func_8010584c); }
@@ -15,8 +19,6 @@ WEAK void func_8010934c(void) { STUB(func_8010934c); }
 WEAK void func_80109388(void) { STUB(func_80109388); }
 WEAK void func_801093c4(void) { STUB(func_801093c4); }
 WEAK void func_80109400(void) { STUB(func_80109400); }
-WEAK void func_8010e848(void) { STUB(func_8010e848); }
-WEAK void func_8010ffd4(void) { STUB(func_8010ffd4); }
 WEAK void func_801101c0(void) { STUB(func_801101c0); }
 WEAK void func_8011536c(void) { STUB(func_8011536c); }
 WEAK void func_8012896c(void) { STUB(func_8012896c); }
@@ -31,8 +33,6 @@ WEAK void load_batb(void) { STUB(load_batb); }
 WEAK void load_batb_texmap(void) { STUB(load_batb_texmap); }
 WEAK void load_bigtop_jester_anim(void) { STUB(load_bigtop_jester_anim); }
 WEAK void load_binn(void) { STUB(load_binn); }
-WEAK void load_btop_weap_models(void) { STUB(load_btop_weap_models); }
-WEAK void load_btop_weap_texmaps(void) { STUB(load_btop_weap_texmaps); }
 WEAK void load_clown(void) { STUB(load_clown); }
 WEAK void load_clown_texmap(void) { STUB(load_clown_texmap); }
 WEAK void load_dino(void) { STUB(load_dino); }
@@ -44,8 +44,6 @@ WEAK void load_finn(void) { STUB(load_finn); }
 WEAK void load_flash_texmap(void) { STUB(load_flash_texmap); }
 WEAK void load_flie(void) { STUB(load_flie); }
 WEAK void load_flie_texmap(void) { STUB(load_flie_texmap); }
-WEAK void load_freakshow_enemy_weap_models(void) { STUB(load_freakshow_enemy_weap_models); }
-WEAK void load_freakshow_enemy_weap_texmaps(void) { STUB(load_freakshow_enemy_weap_texmaps); }
 WEAK void load_freakshow_jester_anim(void) { STUB(load_freakshow_jester_anim); }
 WEAK void load_gallery_objects(void) { STUB(load_gallery_objects); }
 WEAK void load_gool(void) { STUB(load_gool); }
@@ -54,14 +52,11 @@ WEAK void load_grub(void) { STUB(load_grub); }
 WEAK void load_grub_texmap(void) { STUB(load_grub_texmap); }
 WEAK void load_hand(void) { STUB(load_hand); }
 WEAK void load_hand_texmap(void) { STUB(load_hand_texmap); }
-WEAK void load_hhouse_enemy_weap_models(void) { STUB(load_hhouse_enemy_weap_models); }
-WEAK void load_hhouse_enemy_weap_texmaps(void) { STUB(load_hhouse_enemy_weap_texmaps); }
 WEAK void load_hhouse_jester_anim(void) { STUB(load_hhouse_jester_anim); }
 WEAK void load_hstd_texmap(void) { STUB(load_hstd_texmap); }
 WEAK void load_inng(void) { STUB(load_inng); }
 WEAK void load_jester_path(void) { STUB(load_jester_path); }
 WEAK void load_junior(void) { STUB(load_junior); }
-WEAK void load_junk(void) { STUB(load_junk); }
 WEAK void load_junoir_texmap(void) { STUB(load_junoir_texmap); }
 WEAK void load_krampus(void) { STUB(load_krampus); }
 WEAK void load_krampus_texmap(void) { STUB(load_krampus_texmap); }
@@ -117,7 +112,6 @@ WEAK void remove_finn_assts(void) { STUB(remove_finn_assts); }
 WEAK void remove_flash_texmap(void) { STUB(remove_flash_texmap); }
 WEAK void remove_flie_assets(void) { STUB(remove_flie_assets); }
 WEAK void remove_freakshow_jester_anim(void) { STUB(remove_freakshow_jester_anim); }
-WEAK void remove_freakshow_weaps(void) { STUB(remove_freakshow_weaps); }
 WEAK void remove_gallery_objects(void) { STUB(remove_gallery_objects); }
 WEAK void remove_gool(void) { STUB(remove_gool); }
 WEAK void remove_grub_assets(void) { STUB(remove_grub_assets); }
@@ -301,14 +295,12 @@ WEAK int spawn_krampus_(void) { STUB(spawn_krampus_); return 0; }
 WEAK int func_800c8938(void) { STUB(func_800c8938); return 0; }
 WEAK int func_800c99e4(void) { STUB(func_800c99e4); return 0; }
 WEAK int func_800d14a4(void) { STUB(func_800d14a4); return 0; }
-WEAK int func_8010eefc(void) { STUB(func_8010eefc); return 0; }
 WEAK int func_8015f30c(void) { STUB(func_8015f30c); return 0; }
 WEAK int remove_animation(void) { STUB(remove_animation); return 0; }
 WEAK int remove_model(void) { STUB(remove_model); return 0; }
 WEAK int remove_path(void) { STUB(remove_path); return 0; }
 /* term.c's helpers (hit tests, effects, steering, damage) still in assembly */
 /* krinkle.c's helpers still in assembly */
-WEAK void func_8010d818(void) { STUB(func_8010d818); }
 
 /* the per-level collision tests, the part fly-off and the spray effect are still assembly */
 WEAK int func_800cd094(void) { STUB(func_800cd094); return 0; }

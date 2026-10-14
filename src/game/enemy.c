@@ -258,8 +258,8 @@ int face_camera(enemy_t *e, float rate)
 
 extern void	world_to_view(float *, float *), view_to_world(float *);	/* vecmat.c */
 extern int	loaded_wave;
-extern float	fatan(float), ffabs(float);				/* vecmat.c, objects.c */
-extern void	rot_y(float *, float *), rot_matrix_neg_zyx(float *, float *), mat_vec_mul(float *, float *, float *);
+extern float	fatan(float), ffabs(float), fsqrt(float);		/* vecmat.c, objects.c */
+extern void	rot_y(float *, float *), rot_matrix_neg_zyx(float *, float *), rot_matrix_neg_yxz(float *, float *), mat_vec_mul(float *, float *, float *);
 extern int	func_800cd094(float *, float *, int), func_800cd31c(float *, float *, int), step_blocked_rickity(float *, float *, int), func_800cd904(float *, float *, int);
 extern int	printf(const char *, ...);
 
@@ -530,4 +530,220 @@ void func_800fd6b0(enemy_t *e)
 	rot_matrix_neg_zyx(m, angles);
 	mat_vec_mul(ahead, m, p);
 	angles_to(p, origin, &e->rx);
+}
+
+/* 0x800fd03c: is the enemy within r of the camera */
+int near_camera(enemy_t *e, float r)
+{
+	float	dx, dy, dz;
+
+	dx = e->x - camera_x;
+	dx = dx * dx;
+	dy = e->y - camera_y;
+	dy = dy * dy;
+	dz = e->z - camera_z;
+	dz = dz * dz;
+	if(dx + dy + dz < r * r)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+/* 0x800fd1e8: a point in a group's own space moved into the world */
+void group_point(group_t *g, float *p)
+{
+	mat_vec_mul(p, g->mat, p);
+	p[0] = p[0] + g->pos[0];
+	p[1] = p[1] + g->pos[1];
+	p[2] = p[2] + g->pos[2];
+}
+
+/* 0x800fd258: the velocity that carries the enemy to the camera: the vector to it scaled
+   so its largest component is speed, each component clamped to the distance left on its
+   axis (it never overshoots in one step) */
+void aim_at_camera(enemy_t *e, float speed, float *vel)
+{
+	float	dx, dy, dz, ax, ay, az;
+
+	dx = camera_x - e->x;
+	dy = camera_y - e->y;
+	dz = camera_z - e->z;
+	ax = ffabs(dx);
+	ay = ffabs(dy);
+	az = ffabs(dz);
+	if(ay < ax && az < ax)
+	{
+		speed = speed / ax;
+	}
+	else if(ax < ay && az < ay)
+	{
+		speed = speed / ay;
+	}
+	else
+	{
+		speed = speed / az;
+	}
+	ax = ffabs(dx * speed);
+	ay = ffabs(dy * speed);
+	az = ffabs(dz * speed);
+	if(ax < dx)
+	{
+		dx = ax;
+	}
+	else if(dx < -ax)
+	{
+		dx = -ax;
+	}
+	if(ay < dy)
+	{
+		dy = ay;
+	}
+	else if(dy < -ay)
+	{
+		dy = -ay;
+	}
+	if(az < dz)
+	{
+		dz = az;
+	}
+	else if(dz < -az)
+	{
+		dz = -az;
+	}
+	vel[0] = dx;
+	vel[1] = dy;
+	vel[2] = dz;
+}
+
+/* 0x800fd3f0: the same toward a point */
+void aim_at_point(enemy_t *e, float speed, float *vel, float *target)
+{
+	float	dx, dy, dz, ax, ay, az;
+
+	dx = target[0] - e->x;
+	dy = target[1] - e->y;
+	dz = target[2] - e->z;
+	ax = ffabs(dx);
+	ay = ffabs(dy);
+	az = ffabs(dz);
+	if(ay < ax && az < ax)
+	{
+		speed = speed / ax;
+	}
+	else if(ax < ay && az < ay)
+	{
+		speed = speed / ay;
+	}
+	else
+	{
+		speed = speed / az;
+	}
+	ax = ffabs(dx * speed);
+	ay = ffabs(dy * speed);
+	az = ffabs(dz * speed);
+	if(ax < dx)
+	{
+		dx = ax;
+	}
+	else if(dx < -ax)
+	{
+		dx = -ax;
+	}
+	if(ay < dy)
+	{
+		dy = ay;
+	}
+	else if(dy < -ay)
+	{
+		dy = -ay;
+	}
+	if(az < dz)
+	{
+		dz = az;
+	}
+	else if(dz < -az)
+	{
+		dz = -az;
+	}
+	vel[0] = dx;
+	vel[1] = dy;
+	vel[2] = dz;
+}
+
+/* 0x800fd614: the enemy's goal becomes a velocity of speed across the camera's line of
+   sight to it (minus speed along the x axis turned by the yaw from the camera) */
+void knock_sideways(enemy_t *e, float speed)
+{
+	float	v[3], angles[3], m[9];
+
+	angles_to(camera_pos, &e->x, angles);
+	angles[0] = angles[2] = 0.0f;
+	rot_matrix_neg_zyx(m, angles);
+	v[0] = -speed;
+	v[2] = v[1] = 0.0f;
+	mat_vec_mul(v, m, e->goal);
+}
+
+/* 0x800fd7b8: the velocity that lobs a thing from pos to target in frames frames under
+   the 0.22 a frame gravity the thrown objects fall with (the fifth argument is unused) */
+void lob_toward(float *pos, float *target, float *vel, float frames, int unused)
+{
+	float	goal[3], angles[3], m[9], d[3];
+	float	dist, a, vy, vz;
+
+	goal[0] = target[0];
+	goal[2] = target[2];
+	goal[1] = pos[1];
+	dist = fsqrt((pos[0] - goal[0]) * (pos[0] - goal[0]) + (pos[1] - goal[1]) * (pos[1] - goal[1]) + (pos[2] - goal[2]) * (pos[2] - goal[2]));
+	vy = (target[1] - pos[1]) / frames;
+	vz = dist / frames;
+	vy = vy + frames * 0.11f;
+	vel[0] = 0.0f;
+	vel[2] = vz;
+	vel[1] = vy;
+	d[0] = pos[0] - target[0];
+	d[1] = pos[1] - target[1];
+	d[2] = pos[2] - target[2];
+	if(d[2] == 0.0f)
+	{
+		if(d[0] > 0.0f)
+		{
+			angles[1] = 1.5707964f;
+		}
+		else
+		{
+			angles[1] = 4.712389f;
+		}
+	}
+	else
+	{
+		a = fatan(ffabs(d[0] / d[2]));
+		if(d[0] > 0.0f)
+		{
+			if(d[2] > 0.0f)
+			{
+				angles[1] = 3.1415927f - a;
+			}
+			else
+			{
+				angles[1] = a;
+			}
+		}
+		else
+		{
+			if(d[2] > 0.0f)
+			{
+				angles[1] = a + 3.1415927f;
+			}
+			else
+			{
+				angles[1] = 6.2831855f - a;
+			}
+		}
+	}
+	angles[0] = 0.0f;
+	angles[2] = 0.0f;
+	rot_matrix_neg_yxz(m, angles);
+	mat_vec_mul(vel, m, vel);
 }

@@ -27,8 +27,8 @@ extern void	draw_particle(float *, float, float);	/* particle.c */
 extern void	rot_matrix_zyx(float *, float *), rot_matrix_yxz(float *, float *), rot_matrix_neg_xyz(float *, float *);
 extern void	mat_vec_mul(float *, float *, float *), vec_add(float *, float *, float *);
 extern void	offset_in_view(float *, float, float, float, float *);	/* objects.c */
-extern void	func_800ce2f8(float *, float, float *);	/* objects.c: a point above a group */
-extern void	func_800d9cc0(int, float, float, float, float *);	/* a quad drawer the flame uses (draw2d's file) */
+extern void	point_toward_camera(float *, float, float *);	/* objects.c */
+extern void	draw_flame_sprite(int, float *, float, float, unsigned int);	/* draw2d.c */
 extern void	func_800d326c(MidVertex *, MidVertex *, MidVertex *);	/* a textured triangle with the depth gradients */
 extern void	func_800d2dd4(void *, void *, void *);	/* a flat-coloured triangle with the depth gradients */
 extern int	load_model(void **, int, void **, int, void **, int, char *, int);
@@ -648,8 +648,8 @@ void flame_draw(effect_t *list, void *param, group_t *g)
 	f = (flame_t *)param;
 	size = ((float)randrng(50) + 75.0f) * 0.01f;
 	grDepthMask(FXFALSE);
-	func_800ce2f8(g->pivot, f->scale, p);
-	func_800d9cc0(f->frame + 0x5031, f->y * size, 128.0f, *(float *)&f->unk8, p);
+	point_toward_camera(g->pivot, f->scale, p);
+	draw_flame_sprite(f->frame + 0x5031, p, f->y * size, 128.0f, *(unsigned int *)&f->unk8);
 	grDepthMask(FXTRUE);
 	f->frame++;
 	if(f->frame >= 5)

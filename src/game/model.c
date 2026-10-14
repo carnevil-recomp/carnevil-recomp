@@ -90,6 +90,43 @@ void draw_part_model(part_t *p, submesh_t *sub, float *verts, int nverts, face_t
 	draw_faces_alpha(faces, proj_verts, lit_colors, sub->face_start, sub->face_end, 0, p->alpha);
 }
 
+/* 0x800e06d8: one submesh drawn at a matrix and position of the caller's choosing with a
+   group's draw flags (the held weapons: the group is the hand): alpha-blended with the
+   group's alpha for flag 0x80, textured and alpha-tested for 0x40, plain otherwise */
+void draw_submesh_at(group_t *g, submesh_t *sub, float *verts, int nverts, face_t *faces, int nfaces, float *normals, int nnormals, float *mat, float *pos, float *scale)
+{
+	float	unscaled[9];
+	int	nv, nn;
+
+	nv = sub->vert_end - sub->vert_start + 1;
+	project_vertices(nv, verts + sub->vert_start * 3, (float *)&proj_verts[sub->vert_start], mat, pos);
+	mat_copy(mat, unscaled);
+	mat_unscale(unscaled, scale);
+	nn = sub->norm_end - sub->norm_start + 1;
+	transform_vectors(nn, (float *)&proj_normals[sub->norm_start], normals + sub->norm_start * 3, unscaled);
+	nn = sub->norm_end - sub->norm_start + 1;
+	light_vertices(nn, (float *)&proj_normals[sub->norm_start], (float *)&lit_colors[sub->norm_start]);
+	if(g->flags & 0x80)
+	{
+		guAlphaSource(GR_ALPHASOURCE_ITERATED_ALPHA);
+		grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
+		draw_faces_alpha(faces, proj_verts, lit_colors, sub->face_start, sub->face_end, g->flags & 0xffff0000, g->alpha);
+	}
+	else
+	{
+		if(g->flags & 0x40)
+		{
+			guAlphaSource(GR_ALPHASOURCE_TEXTURE_ALPHA);
+			grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
+		}
+		else
+		{
+			grAlphaBlendFunction(GR_BLEND_ONE, GR_BLEND_ZERO, GR_BLEND_ONE, GR_BLEND_ZERO);
+		}
+		draw_faces_tex_or_const2(faces, proj_verts, lit_colors, sub->face_start, sub->face_end, g->flags & 0xffff0000);
+	}
+}
+
 /* 0x80114b8c: a group shot loose (flag 0x4000) flies on its own: while it is above its
    floor it moves by its velocity, spins by its spin and falls (the y velocity loses 0.22 a
    frame); its life counts down by its step and its alpha changes by its step; at the end of

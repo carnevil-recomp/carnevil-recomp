@@ -22,13 +22,14 @@ extern void	draw_string_centered(int, char *, float, float, unsigned int);
 extern void	attract_credit_lines(void);
 extern void	show_volume_level(void);
 extern float	get_screen_pos(float *, float *);	/* 0x800d07a8 */
+extern void	world_to_view(float *, float *), view_to_world(float *);	/* vecmat.c */
 extern void	sample_switches(void), debug_move_enemy(enemy_t *), debug_move_point(float *), debug_move_vectors(void);	/* scene.c */
 extern void	draw_marker(float *, float, unsigned int);
 extern void	update_camera(int), update_lights(int);
 extern void	*camera_data;				/* camera.c: the level's camera file, 0 when none */	/* camera.c, and the lights */
 extern void	apply_fog(void), draw_smoke(void);
 extern player_stats_t *resolve_shot(player_stats_t *);	/* 0x800d5a84 */
-extern void	func_800ce2f8(float *, float, float *);
+void	point_toward_camera(float *, float, float *);
 extern void	draw_blood_drops(void), draw_sparks(void), draw_snow(void), draw_chunks(void);
 extern void	draw_flecks(void), draw_hud(void), func_800c83bc(void);
 #include "sprites.h"
@@ -47,7 +48,7 @@ extern float	debug_p1x, debug_p1y, debug_p1z, debug_p2x, debug_p2y, debug_p2z, d
 extern char	text_buffer[];
 
 extern enemy_t	*debug_enemy;				/* 0x80179bfc: the enemy being debugged (scene.c) */
-extern float		*D_80194650;
+#include "weapons.h"		/* last_held_object */
 
 game_object_t	objects[MAX_OBJECTS];
 short		num_objects_on_heap;
@@ -132,16 +133,16 @@ void draw_pass(void)
 			graphical_printf(text_buffer, "AI 0X%04X FRAME %d PATH %d", debug_enemy->ai_state, debug_enemy->frame, debug_enemy->path);
 			draw_string_color(0, text_buffer, 0.0f, 146.0f, 0xff00);
 		}
-		func_800ce2f8(camera_pos, -30.0f, pt);
+		point_toward_camera(camera_pos, -30.0f, pt);
 		draw_marker(pt, 1.0f, 0xffff00ff);
 		graphical_printf(text_buffer, "XYZ %f %f %f", pt[0], pt[1], pt[2]);
 		draw_string_color(0, text_buffer, 40.0f, 20.0f, 0xffffff);
 		draw_string_color(0, text_buffer, 40.0f, 0.0f, 0);
 	}
-	if((debug_mode & DEBUG_POINT) && D_80194650)
+	if((debug_mode & DEBUG_POINT) && last_held_object)
 	{
-		debug_move_point(D_80194650);
-		graphical_printf(text_buffer, "XYZ %f %f %f", D_80194650[0], D_80194650[1], D_80194650[2]);
+		debug_move_point(last_held_object->off);
+		graphical_printf(text_buffer, "XYZ %f %f %f", last_held_object->off[0], last_held_object->off[1], last_held_object->off[2]);
 		draw_string_color(0, text_buffer, 0.0f, 80.0f, 0xff00);
 		graphical_printf(text_buffer, "ROT %f %f %f", debug_angles[0], debug_angles[1], debug_angles[2]);
 		draw_string_color(0, text_buffer, 0.0f, 60.0f, 0xff00);
@@ -655,6 +656,14 @@ void set_enemy_scale(enemy_t *e, float s)
 	e->scale[1] = s * 10.0f;
 	e->scale[2] = s * 8.3333f;
 	e->radius = e->unkcc * e->scale[1];
+}
+
+/* 0x800ce2f8: the point d units nearer the camera than pos (view space z less d) */
+void point_toward_camera(float *pos, float d, float *out)
+{
+	world_to_view(pos, out);
+	out[2] = out[2] - d;
+	view_to_world(out);
 }
 
 /* 0x800ce294: the player the next enemy goes for: the two players in turn, each turn

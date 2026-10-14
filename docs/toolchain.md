@@ -435,3 +435,27 @@ position (enemies floating, unhittable, too near). Where the original binary's l
 order makes an in-place call safe, the C must copy the inputs to locals first; mat_vec_mul
 still matches with the locals. Check any three-output helper the game calls in place the
 same way.
+
+## Lessons from the weapons file (2026-10-14)
+- **An object init stores its callbacks before it reads the record back.** `o->data =
+  malloc(n); if(!o->data) return 1; o->hit = ...; e = o->data;` reloads `o->data` after the
+  stores (the original); reading `e` before the callback stores keeps malloc's register and
+  mismatches. The explosion and the thrown object inits became exact this way.
+- **A switch whose cases each call the same drawer** (draw_thrown_object, draw_held_object)
+  is written with the call in every case; the compiler merges the tails itself. Collecting
+  the arguments into locals and calling once after the switch matches 7%.
+- **A store inside a call argument.** The second knock of a shot object is
+  `knock_sideways(e, e->unk9c * (e->unka0 = e->unka0 * 1.5f))`: the product stays in a register
+  and the store lands in the call's delay slot. Storing first and reloading mismatches.
+- **A local array passed through a pointer variable.** The coal's light position is
+  `p = at; point_toward_camera(&e->x, 1.0f, p); add_dynamic_light(1, p, colour, ...)`: the
+  original keeps the array's address in a saved register, which only a pointer variable
+  produces (the volley reuses its goal array the same way).
+- **Both half sizes before the height test.** The point sprites compute hw and hh, then test
+  hh > 128: the second multiply lands in the branch's delay slot. Testing first moves it.
+- **`0.0f * x` not `x * 0.0f`** for the zero texture coordinate the original multiplies out:
+  the operand order picks which load comes first.
+- **A countdown tested after the decrement** is `if(--e->counter == 0)` on an `unsigned
+  short`: the test is the `andi` of the decremented register, never a reload.
+- **The frame of draw_thrown_object is 0x28 bytes larger** than its locals need; a ten-word
+  unused local reproduces it. The original presumably declared something it never used.

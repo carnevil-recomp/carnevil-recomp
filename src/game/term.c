@@ -288,7 +288,7 @@ int term_init(game_object_t *obj)
 	obj->die = term_die;
 	obj->remove = term_remove;
 	e->unk4 = 0x14;
-	e->unk2 = 0;
+	e->counter = 0;
 	e->frame = 0;
 	e->num = 0;
 	e->flags = 0xc;

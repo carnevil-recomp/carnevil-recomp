@@ -44,7 +44,6 @@ enemy_t		*debug_enemy = 0;				/* 0x80179bfc: the enemy the debug overlay follows
 float		debug_p1x = 10.0f, debug_p1y = 0.1f, debug_p1z = 10.0f;	/* 0x80179c00: two debug points (separate variables: */
 float		debug_p2x = 0.1f, debug_p2y = 0.0f, debug_p2z = 0.0f;		/* 0x80179c0c  their stores are not through one address) */
 float		debug_angles[3];				/* 0x80179c44 */
-float		*D_80194650;					/* a positioned thing the debug overlay can nudge */
 short		nearest_enemy;					/* 0x80212d92 */
 
 /* 0x800c8ef0: a marker on the screen position of a world point (size in world units) */

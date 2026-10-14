@@ -10,7 +10,8 @@
 typedef struct enemy
 {
 	short		id;			/* 0x00: the game object id, written by add_object() */
-	short		unk2, unk4;
+	unsigned short	counter;		/* 0x02: Krinkle counts hits, a thrown object counts down its life */
+	short		unk4;
 	short		unk6;			/* 0x06: from the spawn entry */
 	short		frame;			/* 0x08: animation frame */
 	unsigned short	flags2;			/* 0x0a: the state bits 0x100/0x80/0x40/0x20 stripped by the set-up */
@@ -46,9 +47,12 @@ typedef struct enemy
 	short		path;			/* 0x94 */
 	short		unk96;
 	float		unk98;			/* 0x98: from the spawn entry */
-	int		unk9c, unka0, unka4, unka8, unkac, unkb0, unkb4, unkb8, unkbc, unkc0, unkc4, unkc8;
+	float		unk9c, unka0;		/* 0x9c: a thrown object's knock side and factor (weapons.c) */
+	int		unka4;
+	int		unka8;			/* 0xa8: Krinkle's hit count; a thrown object's kind */
+	int		unkac, unkb0, unkb4, unkb8, unkbc, unkc0, unkc4, unkc8;
 	float		unkcc;			/* 0xcc: 0.92 for Krinkle */
-	int		unkd0;
+	int		unkd0;			/* 0xd0: a thrown coal's light, -1 for none */
 	unsigned short	prio_base;		/* 0xd4: priority of its sound n is prio_base - n */
 	unsigned short	prio_flags;		/* 0xd6 */
 	int		unkd8, unkdc, unke0, unke4, unke8;
