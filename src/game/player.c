@@ -562,7 +562,7 @@ done_message:
 	{
 		guColorCombineFunction(GR_COLORCOMBINE_DECAL_TEXTURE);
 		guTexSource(find_surface(0x7010)->handle);
-		draw_quad(p->unk6c - 10.0f, p->unk70 + 32.0f, 256.0f, 64.0f, 63.0f, 255.0f);
+		draw_quad(p->unk6c - 10.0f, p->unk70 + 32.0f, 256.0f, 64.0f, 255.0f, 63.0f);
 		graphical_printf(text_buffer, "%d", p->time_to_continue / 20 + 1);
 		draw_string_scaled_centered(1, text_buffer, p->unk6c, p->unk70 - 32.0f, 0xffffff, 1.5f);
 		p->time_to_continue--;
