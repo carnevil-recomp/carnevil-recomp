@@ -54,7 +54,7 @@ extern void	load_ehstd_texmap(void), remove_ehstd_texmap(void), load_hstd_texmap
 extern void	load_attract_texmap(void), remove_attract_texmap(void), load_gallery_objects(void), remove_gallery_objects(void);
 extern void	remove_flash_texmap(void), func_8010e848(void), remove_bat_assets(void), remove_gool(void), func_80106504(void);
 extern void	func_80106de0(void), func_8010584c(void), func_800f75f8(void), remove_spider_assets(void), func_800f8798(void);
-extern void	remove_mari(void), remove_mike_assets(void), func_800d8e00(void), func_800d8d6c(void);
+extern void	remove_mari(void), remove_mike_assets(void), remove_hhouse_texmap(void), load_hhouse_texmap(void);
 extern void	load_mike_texmap(void), load_mari_texmap(void), load_zombie_texmap(void), load_spider_texmap(void), load_hand_texmap(void);
 extern void	load_spdl_texmap(void), load_vict_texmap(void), load_bat_texmap(void), load_hhouse_enemy_weap_texmaps(void);
 extern void	load_gool_texmap(void), load_flash_texmap(void), load_zomb(void), load_mari(void), load_mike(void), load_gool(void);
@@ -62,7 +62,7 @@ extern void	load_spider(void), load_hand(void), load_inng(void), load_spdl(void)
 extern void	load_hhouse_enemy_weap_models(void), func_8011536c(void);
 extern void	remove_freakshow_weaps(void), remove_taur_assets(void), remove_rodz_assets(void), remove_tort_assets(void);
 extern void	remove_junior_texmap(void), remove_grub_assets(void), remove_monk_asets(void), remove_flie_assets(void);
-extern void	remove_tops_assets(void), remove_finn_assts(void), func_800d8ee8(void);
+extern void	remove_tops_assets(void), remove_finn_assts(void), remove_freakshow_texmap(void);
 extern void	load_freakshow_texmap(void), load_tops_texmap(void), load_flie_texmap(void), load_monk_texmap(void), load_grub_texmap(void);
 extern void	load_junoir_texmap(void), load_tort_texmap(void), load_rodz_texmap(void), load_taur_texmap(void);
 extern void	load_freakshow_enemy_weap_texmaps(void), load_tops(void), load_tort(void), load_monk(void), load_flie(void);
@@ -76,7 +76,7 @@ extern void	load_litl_texmap(void), load_doctorklot_texmap(void), load_skeleton_
 extern void	load_pood(void), load_mame(void), load_batb(void), load_clown(void), load_litl(void), load_doctor_klot(void);
 extern void	load_binn(void), load_skeleton(void), load_btop_weap_models(void);
 extern void	func_8010ffd4(void), remove_rinn_assets(void), remove_term_assets(void), remove_dino_assets(void), func_8012c214(void);
-extern void	remove_krampus_assets(void), remove_krinkle_assets(void), remove_smilingbob_assets(void), func_800d8f9c(void);
+extern void	remove_krampus_assets(void), remove_krinkle_assets(void), remove_smilingbob_assets(void), remove_rickity_texmap(void);
 extern void	load_rickity_texmap(void), load_smilingbob_texmap(void), load_krinkle_texmap(void), load_krampus_texmap(void);
 extern void	func_8012c0bc(void), load_dino_texmap(void), load_term_texmap(void), func_8010fe84(void), load_smilingbob(void);
 extern void	load_krinkle(void), load_krampus(void), load_teen(void), load_dino(void), load_term(void), load_rinn(void), load_junk(void);
@@ -366,13 +366,13 @@ void remove_hhouse_assets(void)
 	func_800f8798();
 	remove_mari();
 	remove_mike_assets();
-	func_800d8e00();
+	remove_hhouse_texmap();
 }
 
 void load_hhouse_assets(void)
 {
 	install_disk_callback(0);
-	func_800d8d6c();
+	load_hhouse_texmap();
 	load_mike_texmap();
 	load_mari_texmap();
 	load_zombie_texmap();
@@ -552,7 +552,7 @@ void remove_freakshow_assets(void)
 	remove_flie_assets();
 	remove_tops_assets();
 	remove_finn_assts();
-	func_800d8ee8();
+	remove_freakshow_texmap();
 }
 
 void load_freakshow_assets(void)
@@ -668,7 +668,7 @@ void remove_rickitytown_assets(void)
 	remove_krampus_assets();
 	remove_krinkle_assets();
 	remove_smilingbob_assets();
-	func_800d8f9c();
+	remove_rickity_texmap();
 }
 
 void load_rickity_town_assets(void)

@@ -58,6 +58,25 @@ static int	verbose = 0;
 static const char *wav_path;
 int		port_trace = 0;
 
+/* ---- stubs: every stand-in for game code the port lacks reports the first time it is
+   reached, and the run ends with the list, so a missing function is never a silent no-op ---- */
+static const char *stubs_seen[512];
+static int	nstubs_seen;
+static void stubs_report(void)
+{
+	int	i;
+	if(!nstubs_seen) return;
+	fprintf(stderr, "[stub] %d stubbed functions were reached this run:", nstubs_seen);
+	for(i = 0; i < nstubs_seen; i++) fprintf(stderr, "%s %s", i ? "," : "", stubs_seen[i]);
+	fprintf(stderr, "\n");
+}
+void stub_reached(const char *name)
+{
+	if(!nstubs_seen) atexit(stubs_report);
+	if(nstubs_seen < 512) stubs_seen[nstubs_seen++] = name;
+	fprintf(stderr, "[stub] %s reached at vblank %lu (not in C yet: a no-op in the port)\n", name, hal_frame_count);
+}
+
 /* ---- data the library expects the surrounding image to define ---- */
 int		gt_fd;
 int		hwconfig[64];

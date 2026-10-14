@@ -934,3 +934,26 @@
 0x8017d3b0 world_sprite_kinds
 0x801e5918 screen_sprite_list
 0x801e5cb4 world_sprite_list
+# texmaps.c (0x800d8c60-0x800d90c8) and its tables (texmaps_data.c)
+0x800d8d6c load_hhouse_texmap
+0x800d8e00 remove_hhouse_texmap
+0x800d8ee8 remove_freakshow_texmap
+0x800d8f9c remove_rickity_texmap
+0x8017c650 blood_drops_texmap
+0x8017c6d0 blood_drops_nv_texmap
+0x8017cbf0 hhouse_texmap
+0x8017cc70 hhouse_blood_texmap
+0x8017ccb0 hhouse_noblood_texmap
+0x8017ccf0 freakshow_texmap
+0x8017cd50 freakshow_alt_texmap
+0x8017cdb0 freakshow_blood_texmap
+0x8017ce10 freakshow_noblood_texmap
+0x8017ce70 rickity_texmap
+0x8017ce90 rickity_blood_texmap
+0x8017ced0 rickity_noblood_texmap
+# clip.c (0x8010bf30-0x8010d814)
+0x8010bf30 draw_world_tri
+0x8010cd54 clip_screen_tri
+0x8010d64c clip_vertex_y
+0x8010d6e4 clip_vertex_x
+0x8010d77c clip_vertex_z

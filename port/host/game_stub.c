@@ -12,6 +12,7 @@
 #include <goose/object.h>
 #include <glide/glide.h>
 #include "hal.h"
+#define STUB(n)	do { static int seen; if(!seen) { seen = 1; stub_reached(#n); } } while(0)
 #include "../../src/game/objects.h"
 #include "../../src/game/credits.h"
 #include "../../src/game/texmap.h"
@@ -58,15 +59,15 @@ void game_dma0_handler(void) { }
 void func_800e74f0(void) { movie_start(); }	/* movie play start */
 void func_800e7568(void) { movie_stop(); }	/* movie play stop */
 /* script callees and level data the attract movies touch */
-void level_end_stats_wrapper(void) { }
-int  end_of_wave(void) { return 0; }
-int  attract_high_scores(int arg) { (void)arg; return 0; }	/* high-score reset screen */
-float get_screen_pos(int pos, float *out) { (void)pos; out[0] = out[1] = 0.0f; return -1.0f; }	/* 3D point -> screen: no camera yet */
+void level_end_stats_wrapper(void) { STUB(level_end_stats_wrapper); }
+int end_of_wave(void) { STUB(end_of_wave); return 0; }
+int attract_high_scores(int arg) { STUB(attract_high_scores); (void)arg; return 0; }	/* high-score reset screen */
+float get_screen_pos(int pos, float *out) { STUB(get_screen_pos); (void)pos; out[0] = out[1] = 0.0f; return -1.0f; }	/* 3D point -> screen: no camera yet */
 void graphical_printf(char *buf, char *fmt, ...) { va_list ap; va_start(ap, fmt); vsprintf(buf, fmt, ap); va_end(ap); }
 char attract_text1[136], attract_text2[136], attract_text3[136];	/* 0x8021eed0.. filled by something_todo_with_credits */
 int attract_text_state;
 /* the game proper: not decompiled yet */
-void dispatch_diags_proc(int closed, int swid) { (void)closed; (void)swid; fprintf(stderr, "[stub] test switch: diagnostics not implemented\n"); }
+void dispatch_diags_proc(int closed, int swid) { STUB(dispatch_diags_proc); (void)closed; (void)swid; }
 
 /* the triangle setup (0x800d1750) writes Voodoo commands; here it is a plain draw */
 void draw_tri(MidVertex *a, MidVertex *b, MidVertex *c) { grDrawTriangleDma(a, b, c, 0); }
@@ -88,80 +89,26 @@ void func_800d3bf0(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, 6, 5);
 /* 0x800d326c: x, y, q, s/w, t/w with the depth gradients (the billboards, draw2d.c) */
 void func_800d326c(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, -1, -1); }
 
-/* 0x8010bf30: a world-space textured alpha triangle (x, y, z, u, v, a per vertex) taken into
-   view space, clipped to z between 1.1 and 400, projected as project_point does and drawn with
-   the alpha. The original's clipper (0x8010bf30-0x8010e000) is not in C yet; this does its job
-   for the port without the in-place transform of the caller's vertices. */
-extern float	view_matrix[9], camera_neg_pos[3], proj_x, proj_y;
-extern int	half_height;
-#define CLIP_NEAR	1.1f
-#define CLIP_FAR	400.0f
-static int clip_plane(float in[][6], int n, float out[][6], float plane, int keep_beyond)
-{
-	int	i, m = 0;
-	for(i = 0; i < n; i++)
-	{
-		float	*a = in[i], *b = in[(i + 1) % n], t;
-		int	ina = keep_beyond ? a[2] >= plane : a[2] <= plane, inb = keep_beyond ? b[2] >= plane : b[2] <= plane;
-		int	k;
-		if(ina) { for(k = 0; k < 6; k++) out[m][k] = a[k]; m++; }
-		if(ina != inb)
-		{
-			t = (plane - a[2]) / (b[2] - a[2]);
-			for(k = 0; k < 6; k++) out[m][k] = a[k] + (b[k] - a[k]) * t;
-			out[m][2] = plane;
-			m++;
-		}
-	}
-	return m;
-}
-void func_8010bf30(float *a, float *b, float *c)
-{
-	float	v[3][6], p1[9][6], p2[9][6], scr[9][6];
-	int	i, n;
-	for(i = 0; i < 3; i++)
-	{
-		float	*s = i == 0 ? a : i == 1 ? b : c;
-		float	x = s[0] + camera_neg_pos[0], y = s[1] + camera_neg_pos[1], z = s[2] + camera_neg_pos[2];
-		v[i][0] = x * view_matrix[0] + y * view_matrix[1] + z * view_matrix[2];
-		v[i][1] = x * view_matrix[3] + y * view_matrix[4] + z * view_matrix[5];
-		v[i][2] = x * view_matrix[6] + y * view_matrix[7] + z * view_matrix[8];
-		v[i][3] = s[3]; v[i][4] = s[4]; v[i][5] = s[5];
-	}
-	n = clip_plane(v, 3, p1, CLIP_NEAR, 1);
-	n = clip_plane(p1, n, p2, CLIP_FAR, 0);
-	if(n < 3) return;
-	for(i = 0; i < n; i++)
-	{
-		float	q = 1.0f / p2[i][2];
-		scr[i][0] = p2[i][0] * q * proj_x + 200.0f;
-		scr[i][1] = p2[i][1] * q * proj_y + (float)half_height;
-		scr[i][2] = q;
-		scr[i][3] = p2[i][3] * q;
-		scr[i][4] = p2[i][4] * q;
-		scr[i][5] = p2[i][5];
-	}
-	for(i = 1; i + 1 < n; i++)
-		port_draw_tri(scr[0], scr[i], scr[i + 1], 1, -1, 5);
-}
+/* 0x800d3528: x, y, q, s/w, t/w, a with the depth gradients (the clipper, clip.c) */
+void func_800d3528(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, -1, 5); }
 
 /* ---- the per-frame passes (objects.c: draw_pass 0x800cbbb4, think_pass 0x800cca70) call
    into level code the port does not have yet; these keep them no-ops in the attract ---- */
 void draw_pass(void);
 void think_pass(void *);
-int  get_free_mem_left(void) { return 0x400000; }			/* GOOSE 0x80143e90 */
+int get_free_mem_left(void) { return 0x400000; }			/* GOOSE 0x80143e90 */
 float fsqrt(float x) { return sqrtf(x); }				/* 0x80144900: sqrt.s */
-void func_800ff418(void) { }
-void func_800ce2f8(float *a, float b, float *c) { (void)a; (void)b; c[0] = c[1] = c[2] = 0.0f; }
-void func_800fe580(void) { }
-void func_800fef18(void) { }
-void func_800ffbdc(void) { }
-void func_800fe1fc(void) { }
-void func_80100558(void) { }
-void func_800e2fe4(void) { }
-void func_800c83bc(void) { }
-void func_800c9620(int a) { (void)a; }
-void func_800c9bf0(void) { }
+void func_800ff418(void) { STUB(func_800ff418); }
+void func_800ce2f8(float *a, float b, float *c) { STUB(func_800ce2f8); (void)a; (void)b; c[0] = c[1] = c[2] = 0.0f; }
+void func_800fe580(void) { STUB(func_800fe580); }
+void func_800fef18(void) { STUB(func_800fef18); }
+void func_800ffbdc(void) { STUB(func_800ffbdc); }
+void func_800fe1fc(void) { STUB(func_800fe1fc); }
+void func_80100558(void) { STUB(func_80100558); }
+void func_800e2fe4(void) { STUB(func_800e2fe4); }
+void func_800c83bc(void) { STUB(func_800c83bc); }
+void func_800c9620(int a) { STUB(func_800c9620); (void)a; }
+void func_800c9bf0(void) { STUB(func_800c9bf0); }
 int	shown_frame, RTP_val, DMA_val, D_801e0ecc, please_wait_timer;
 extern unsigned int background_color;
 
@@ -170,25 +117,24 @@ extern unsigned int background_color;
 spawn_t hhouse_spawn_blob[1], freakshow_spawn_blob[1], rickity_spawn_blob[1], bigtop_spawn_blob[1];
 int D_801e0f0c;
 /* game_init (0x800ca3a0, scene.c) is real; the set-up calls it makes that the port lacks */
-void func_800c836c(void) { }
-void func_800c865c(void) { }
+void func_800c836c(void) { STUB(func_800c836c); }
+void func_800c865c(void) { STUB(func_800c865c); }
 void init_surfaces(void)			/* 0x800d6768: the texmap surface table */
 {
 	int	i;
 	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }
 }
-void func_800c8a44(float x, float y, float w, float r, unsigned int c) { (void)x; (void)y; (void)w; (void)r; (void)c; }	/* a screen marker */
+void func_800c8a44(float x, float y, float w, float r, unsigned int c) { STUB(func_800c8a44); (void)x; (void)y; (void)w; (void)r; (void)c; }	/* a screen marker */
 /* load_level_assets (0x800ca448, scene.c) is real; its loaders are not */
-void load_misc_texmaps(void) { fprintf(stderr, "[stub] load_misc_texmaps (0x800d8c60): level texmaps not loaded\n"); }
-void func_800ff0b0(void) { }
-void func_800fe440(void) { }
-void func_800fedd8(void) { }
-void func_800ffb08(void) { }
-void func_80100478(void) { }
-void func_8013f6d8(void) { }
+void func_800ff0b0(void) { STUB(func_800ff0b0); }
+void func_800fe440(void) { STUB(func_800fe440); }
+void func_800fedd8(void) { STUB(func_800fedd8); }
+void func_800ffb08(void) { STUB(func_800ffb08); }
+void func_80100478(void) { STUB(func_80100478); }
+void func_8013f6d8(void) { STUB(func_8013f6d8); }
 
 /* the boot callees the port does not have yet: level assets, models, the gun calibration */
-#define LOAD_STUB(n) void n(void) { }
+#define LOAD_STUB(n) void n(void) { STUB(n); }
 LOAD_STUB(load_jester_texmap) LOAD_STUB(load_jester_model) LOAD_STUB(load_inng_texmap) LOAD_STUB(load_chnk_texmap)
 LOAD_STUB(load_chnk_model) LOAD_STUB(load_shotgun_texmap) LOAD_STUB(load_health_texmap) LOAD_STUB(load_ammmo_texmap)
 LOAD_STUB(load_machinegun_texmap) LOAD_STUB(load_flamethrower_texmap) LOAD_STUB(load_acid_texmap) LOAD_STUB(load_shotgun_model)
@@ -196,33 +142,33 @@ LOAD_STUB(load_health_model) LOAD_STUB(load_ammo_model) LOAD_STUB(load_machinegu
 LOAD_STUB(load_acid_model)
 extern int randrng(int);
 float func_800fe8dc(float range) { return (float)(randrng(10000) - 5000) / (5000.0f / range); }	/* 0x800fe8dc: a random float in +-range */
-void func_800ffa20(float *pos) { (void)pos; }					/* 0x800ffa20: drawn around the camera when camera_follow is set */
-void debug_move_camera(void) { }						/* 0x800c93c4: the player 3/4 switches move the camera (debug) */
-void load_backup_file(char *name) { fprintf(stderr, "[stub] load_backup_file(%s)\n", name); }	/* 0x800caf48 */
-void startaudit(FILE *f) { (void)f; }					/* 0x800ef870: the audit names for audits.fmt */
-void game_proc2(void) { fprintf(stderr, "[stub] game_proc2: debug attract not implemented\n"); for(;;) sleep(1); }
+void func_800ffa20(float *pos) { STUB(func_800ffa20); (void)pos; }					/* 0x800ffa20: drawn around the camera when camera_follow is set */
+void debug_move_camera(void) { STUB(debug_move_camera); }						/* 0x800c93c4: the player 3/4 switches move the camera (debug) */
+void load_backup_file(char *name) { STUB(load_backup_file); }	/* 0x800caf48 */
+void startaudit(FILE *f) { STUB(startaudit); (void)f; }					/* 0x800ef870: the audit names for audits.fmt */
+void game_proc2(void) { STUB(game_proc2); for(;;) sleep(1); }
 void ide_set_partition(int n) { (void)n; }				/* GOOSE IDE: the HAL maps partition 1 itself */
 int gfx_scale_from_refresh(void) { return 54; }				/* 0x80157004: frames per second of the display mode */
 
 /* 0x801410a4 load_credits reloads the pricing (after a won game) */
-void load_credits(void) { fprintf(stderr, "[stub] load_credits (0x801410a4)\n"); }
+void load_credits(void) { STUB(load_credits); }
 
 /* ---- the level flow (main_game_proc, wave.c): what the port still lacks ---- */
 int  D_80212e10, D_801e0e24, D_801e70a8, D_801a25c8, D_80212da4, D_801e5cd4, D_801e0f0c_pad;
 int  something_with_reload_p1, something_with_reload_p2, hhouse_texmap_set;
 void func_80162a10(int *size, int *avail, int *used, int *frag) { *size = *avail = *used = *frag = 0; }	/* texture memory statistics */
 void func_80163eec(int n) { (void)n; }
-void func_80102690(void) { }			/* 0x80102690: three select-screen words cleared */
-void func_80102500(player_stats_t *p) { (void)p; }	/* the player's panel on the select screen */
-void something_player_score(player_stats_t *p) { (void)p; }	/* 0x800e5560: high-score entry */
-void L_80101908(game_object_t *o) { (void)o; }			/* the level-select targets */
-int  func_801020b4(game_object_t *o) { (void)o; return 1; }
-void func_80102454(game_object_t *o) { (void)o; }
-void func_800fe3d8(void) { }
-void func_80109260(void *o, int n) { (void)o; (void)n; }
-void func_80107e30(game_object_t *o) { (void)o; }			/* the loading jester (object 0x2014) */
-int  func_80108ab0(game_object_t *o) { (void)o; return 1; }
-void func_80108c94(game_object_t *o) { (void)o; }
+void func_80102690(void) { STUB(func_80102690); }			/* 0x80102690: three select-screen words cleared */
+void func_80102500(player_stats_t *p) { STUB(func_80102500); (void)p; }	/* the player's panel on the select screen */
+void something_player_score(player_stats_t *p) { STUB(something_player_score); (void)p; }	/* 0x800e5560: high-score entry */
+void L_80101908(game_object_t *o) { STUB(L_80101908); (void)o; }			/* the level-select targets */
+int func_801020b4(game_object_t *o) { STUB(func_801020b4); (void)o; return 1; }
+void func_80102454(game_object_t *o) { STUB(func_80102454); (void)o; }
+void func_800fe3d8(void) { STUB(func_800fe3d8); }
+void func_80109260(void *o, int n) { STUB(func_80109260); (void)o; (void)n; }
+void func_80107e30(game_object_t *o) { STUB(func_80107e30); (void)o; }			/* the loading jester (object 0x2014) */
+int func_80108ab0(game_object_t *o) { STUB(func_80108ab0); (void)o; return 1; }
+void func_80108c94(game_object_t *o) { STUB(func_80108c94); (void)o; }
 
 /* the mouse's game-screen position as the raw gun reading the game's read_guns turns back
    into that position through the player's calibration (camera.c guns[]) */

@@ -7,12 +7,12 @@
 #include <glide/glide.h>
 #include "camera.h"
 #include "sprites.h"
+#include "clip.h"
 
 extern void	guAlphaSource(int);
 extern void	draw_tri(MidVertex *, MidVertex *, MidVertex *);
 extern void	draw_tri_alpha(MidVertexWithTA *, MidVertexWithTA *, MidVertexWithTA *);	/* 0x800d2664 */
 extern void	func_800d326c(MidVertex *, MidVertex *, MidVertex *);	/* a textured triangle with the depth gradients */
-extern void	func_8010bf30(float *, float *, float *);		/* a world-space textured alpha triangle, clipped */
 extern void	rot_matrix_zyx(float *, float *), rot_matrix_yxz(float *, float *);
 extern void	mat_mul(float *, float *, float *), mat_vec_mul(float *, float *, float *);
 extern float	project_point(float *, float *);			/* vecmat.c */
@@ -170,14 +170,6 @@ void draw_quad_alpha_mirrored(float x, float y, float w, float h, float u, float
 	draw_tri_alpha(&a, &d, &c);
 }
 
-/* a vertex of a world-space triangle handed to the clipper: position, texture, alpha */
-typedef struct wvert
-{
-	float	x, y, z;
-	float	u, v;
-	float	a;
-} wvert_t;
-
 /* ---- billboards: a w by h quad at pos, spun by rot and then turned to face the camera ---- */
 
 /* turn the four corners (about the origin) into world space */
@@ -233,7 +225,7 @@ static void billboard_draw(float *c0, float *c1, float *c2, float *c3, float u, 
 /* hand the corners to the clipper with the texture corners and a common alpha */
 static void billboard_draw_alpha(float *c0, float *c1, float *c2, float *c3, float u, float v, float alpha)
 {
-	wvert_t	v0, v1, v2, v3, t0, t3;
+	cvert_t	v0, v1, v2, v3, t0, t3;
 
 	v0.x = c0[0]; v0.y = c0[1]; v0.z = c0[2]; v0.u = u;    v0.v = v;    v0.a = alpha;
 	v1.x = c1[0]; v1.y = c1[1]; v1.z = c1[2]; v1.u = 0.0f; v1.v = v;    v1.a = alpha;
@@ -241,8 +233,8 @@ static void billboard_draw_alpha(float *c0, float *c1, float *c2, float *c3, flo
 	v3.x = c3[0]; v3.y = c3[1]; v3.z = c3[2]; v3.u = 0.0f; v3.v = 0.0f; v3.a = alpha;
 	t0 = v0;
 	t3 = v3;
-	func_8010bf30((float *)&v0, (float *)&v1, (float *)&v3);
-	func_8010bf30((float *)&t0, (float *)&v2, (float *)&t3);
+	draw_world_tri(&v0, &v1, &v3);
+	draw_world_tri(&t0, &v2, &t3);
 }
 
 /* 0x800da0f0: centred on pos, w by h either side */
