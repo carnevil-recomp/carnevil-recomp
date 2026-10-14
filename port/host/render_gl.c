@@ -234,6 +234,8 @@ static void apply_state(void)
 	glDisable(GL_CULL_FACE);
 }
 
+static int	vp_x, vp_y;		/* the letterboxed frame's place in the window and its scale */
+static float	vp_s = 1.0f;
 static void frame_setup(void)
 {
 	video_size(&win_w, &win_h);
@@ -242,7 +244,8 @@ static void frame_setup(void)
 	{
 		float sx = win_w / hres, sy = win_h / vres, s = sx < sy ? sx : sy;
 		int vw = (int)(hres * s), vh = (int)(vres * s);
-		glViewport((win_w - vw) / 2, (win_h - vh) / 2, vw, vh);
+		vp_x = (win_w - vw) / 2; vp_y = (win_h - vh) / 2; vp_s = s;
+		glViewport(vp_x, vp_y, vw, vh);
 	}
 	glMatrixMode(GL_PROJECTION); glLoadIdentity();
 	/* GOOSE opens the Voodoo with GR_ORIGIN_LOWER_LEFT: y grows upward from the bottom edge */
@@ -290,6 +293,9 @@ void port_draw_tri(const float *a, const float *b, const float *c, int has_uv, i
 	apply_state();
 	have_uv = 1;
 	t = (has_uv && st.tex != GR_NULL_MIPMAP_HANDLE && glIsEnabled(GL_TEXTURE_2D)) ? port_texture(st.tex) : 0;
+	if(dump_every && getenv("CARNEVIL_TRACE") && !(hal_frame_count % dump_every))
+		fprintf(stderr, "[tri] f%lu tex %d cc %d as %d col %08x blend %d/%d/%d/%d depth m%d f%d mask %d atest %d  q %.4f %.4f %.4f at (%.0f,%.0f) (%.0f,%.0f) (%.0f,%.0f)\n", hal_frame_count, (int)st.tex, st.color_combine, st.alpha_source, st.const_color, st.blend_rgb_src, st.blend_rgb_dst, st.blend_a_src, st.blend_a_dst,
+			st.depth_mode, st.depth_func, st.depth_mask, st.alpha_test, a[2], b[2], c[2], a[0], a[1], b[0], b[1], c[0], c[1]);
 	glBegin(GL_TRIANGLES);
 	vertex_rgba((const MidVertex *)a, t, rgb_at >= 0 ? a + rgb_at : 0, alpha_at >= 0 ? a + alpha_at : 0);
 	vertex_rgba((const MidVertex *)b, t, rgb_at >= 0 ? b + rgb_at : 0, alpha_at >= 0 ? b + alpha_at : 0);
@@ -368,16 +374,34 @@ static void apply_brightness(void)
 }
 
 /* ---- the movie frame: 400x256 LFB words written with grLfbWriteMode(13) = RGB555 + depth;
-   row 0 is the bottom scan line ---- */
+   row 0 is the bottom scan line. The high half of each word is the Voodoo's 16-bit w-buffer
+   value (a 4-bit exponent and a 12-bit mantissa of the distance, see depth_word_to_float in
+   scene.c); the hardware writes it into the depth buffer with the pixel, which is what hides
+   an enemy behind the scenery. The port writes the same distances as GL depth, in the mapping
+   vertex_rgba uses for the triangles' 1/w ---- */
 static GLuint	movie_tex;
+static float	depth_of_word[65536];
+static int	depth_table_built;
+static void build_depth_table(void)
+{
+	int	i;
+	for(i = 0; i < 65536; i++)
+	{
+		float	dist = (float)(1 << (i >> 12)) * (1.0f + (float)(i & 0xfff) / 4096.0f), oow = 1.0f / dist;
+		depth_of_word[i] = 1.0f - (oow > 1.0f ? 1.0f : oow);
+	}
+	depth_table_built = 1;
+}
 void port_movie_blit(const unsigned int *buf, int scroll)
 {
 	static unsigned short	rgb[400 * 256];
+	static float		depth[400 * 256];
 	int	i;
 	float	y0, y1;
 	if(!have_display) return;
 	frame_setup();
-	for(i = 0; i < 400 * 256; i++) rgb[i] = (unsigned short)buf[i];
+	if(!depth_table_built) build_depth_table();
+	for(i = 0; i < 400 * 256; i++) { rgb[i] = (unsigned short)buf[i]; depth[i] = depth_of_word[buf[i] >> 16]; }
 	if(!movie_tex) glGenTextures(1, &movie_tex);
 	glBindTexture(GL_TEXTURE_2D, movie_tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 400, 256, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, rgb);
@@ -399,6 +423,14 @@ void port_movie_blit(const unsigned int *buf, int scroll)
 	glTexCoord2f(1, 1); glVertex3f((float)400, y1, 0);
 	glTexCoord2f(0, 1); glVertex3f(0, y1, 0);
 	glEnd();
+	/* the movie's depth plane, scaled like the picture (row 0 at the bottom) */
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glEnable(GL_DEPTH_TEST); glDepthFunc(GL_ALWAYS); glDepthMask(GL_TRUE);
+	if(origin_lower_left) { glPixelZoom(vp_s, vp_s); glWindowPos2f((float)vp_x, (float)vp_y + y0 * vp_s); }
+	else { glPixelZoom(vp_s, -vp_s); glWindowPos2f((float)vp_x, (float)vp_y + (vres - y0) * vp_s); }
+	glDrawPixels(400, 256, GL_DEPTH_COMPONENT, GL_FLOAT, depth);
+	glPixelZoom(1.0f, 1.0f);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glDepthMask(GL_TRUE);
 }
 

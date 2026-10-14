@@ -30,7 +30,8 @@ extern void	apply_fog(void), func_800ff418(void);
 extern player_stats_t *resolve_shot(player_stats_t *);	/* 0x800d5a84 */
 extern void	func_800ce2f8(float *, float, float *);
 extern void	func_800fe580(void), func_800fef18(void), func_800ffbdc(void), func_800fe1fc(void);
-extern void	func_800dbb80(void), func_80100558(void), func_800e2fe4(void), func_800db4b8(void), func_800c83bc(void);
+extern void	func_80100558(void), func_800e2fe4(void), func_800c83bc(void);
+#include "sprites.h"
 extern void	func_800c9620(int), func_800c9bf0(void), print_heap_and_obj_info_onscreen(void);
 extern float	fsqrt(float);				/* 0x80144900 */
 extern int	free_mem_left;				/* 0x801e0ee8 */
@@ -156,12 +157,12 @@ void draw_pass(void)
 	func_800fef18();
 	func_800ffbdc();
 	func_800fe1fc();
-	func_800dbb80();
+	draw_world_sprites();
 	func_80100558();
 	grDepthBufferFunction(GR_CMP_ALWAYS);
 	show_volume_level();
 	func_800e2fe4();
-	func_800db4b8();
+	draw_screen_sprites();
 	func_800c83bc();
 	if(game_phase == 0x80)
 	{

@@ -38,7 +38,8 @@ static struct press	presses[64];
 static int		npresses;
 static void		parse_presses(const char *spec);
 static void		gun_update(void);
-static float	mouse_gx = 200.0f, mouse_gy = 128.0f;	/* CARNEVIL_AIM=x,y sets the start (headless tests) */
+static float	mouse_gx = 200.0f, mouse_gy = 128.0f;	/* CARNEVIL_AIM=x,y fixes the aim (tests) */
+static int	aim_fixed;
 static unsigned int	sound_control = 1, main_control;
 unsigned		dcs_fifo_space(void);
 void			dcs_fifo_reset(void);
@@ -79,7 +80,7 @@ void hal_init(int argc, char **argv)
 	if(getenv("CARNEVIL_RAW")) hal_raw_image = getenv("CARNEVIL_RAW");
 	if(getenv("CARNEVIL_STATE")) hal_state_root = getenv("CARNEVIL_STATE");
 	if(getenv("CARNEVIL_TRACE")) port_trace = 1;
-	if(getenv("CARNEVIL_AIM")) sscanf(getenv("CARNEVIL_AIM"), "%f,%f", &mouse_gx, &mouse_gy);
+	if(getenv("CARNEVIL_AIM")) { sscanf(getenv("CARNEVIL_AIM"), "%f,%f", &mouse_gx, &mouse_gy); aim_fixed = 1; }
 	/* fd 3 is the BIOS CMOS device: park /dev/null there so no real file ever gets it */
 	resolve();
 	nul = real_open("/dev/null", O_RDONLY, 0);
@@ -144,6 +145,7 @@ static int	mouse_on = 1;				/* headless runs shoot at the centre */
 void port_gun_raw(int player, float sx, float sy, int *rx, int *ry);
 void hal_mouse(float gx, float gy, int on)
 {
+	if(aim_fixed) return;
 	mouse_gx = gx; mouse_gy = gy; mouse_on = on;
 }
 static void gun_update(void)

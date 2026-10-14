@@ -85,6 +85,65 @@ void func_800d1a38(void *a, void *b, void *c) { port_draw_tri(a, b, c, 0, 3, -1)
 void func_800d299c(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, 6, 5); }
 void func_800d3834(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, 5, -1); }
 void func_800d3bf0(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, 6, 5); }
+/* 0x800d326c: x, y, q, s/w, t/w with the depth gradients (the billboards, draw2d.c) */
+void func_800d326c(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, -1, -1); }
+
+/* 0x8010bf30: a world-space textured alpha triangle (x, y, z, u, v, a per vertex) taken into
+   view space, clipped to z between 1.1 and 400, projected as project_point does and drawn with
+   the alpha. The original's clipper (0x8010bf30-0x8010e000) is not in C yet; this does its job
+   for the port without the in-place transform of the caller's vertices. */
+extern float	view_matrix[9], camera_neg_pos[3], proj_x, proj_y;
+extern int	half_height;
+#define CLIP_NEAR	1.1f
+#define CLIP_FAR	400.0f
+static int clip_plane(float in[][6], int n, float out[][6], float plane, int keep_beyond)
+{
+	int	i, m = 0;
+	for(i = 0; i < n; i++)
+	{
+		float	*a = in[i], *b = in[(i + 1) % n], t;
+		int	ina = keep_beyond ? a[2] >= plane : a[2] <= plane, inb = keep_beyond ? b[2] >= plane : b[2] <= plane;
+		int	k;
+		if(ina) { for(k = 0; k < 6; k++) out[m][k] = a[k]; m++; }
+		if(ina != inb)
+		{
+			t = (plane - a[2]) / (b[2] - a[2]);
+			for(k = 0; k < 6; k++) out[m][k] = a[k] + (b[k] - a[k]) * t;
+			out[m][2] = plane;
+			m++;
+		}
+	}
+	return m;
+}
+void func_8010bf30(float *a, float *b, float *c)
+{
+	float	v[3][6], p1[9][6], p2[9][6], scr[9][6];
+	int	i, n;
+	for(i = 0; i < 3; i++)
+	{
+		float	*s = i == 0 ? a : i == 1 ? b : c;
+		float	x = s[0] + camera_neg_pos[0], y = s[1] + camera_neg_pos[1], z = s[2] + camera_neg_pos[2];
+		v[i][0] = x * view_matrix[0] + y * view_matrix[1] + z * view_matrix[2];
+		v[i][1] = x * view_matrix[3] + y * view_matrix[4] + z * view_matrix[5];
+		v[i][2] = x * view_matrix[6] + y * view_matrix[7] + z * view_matrix[8];
+		v[i][3] = s[3]; v[i][4] = s[4]; v[i][5] = s[5];
+	}
+	n = clip_plane(v, 3, p1, CLIP_NEAR, 1);
+	n = clip_plane(p1, n, p2, CLIP_FAR, 0);
+	if(n < 3) return;
+	for(i = 0; i < n; i++)
+	{
+		float	q = 1.0f / p2[i][2];
+		scr[i][0] = p2[i][0] * q * proj_x + 200.0f;
+		scr[i][1] = p2[i][1] * q * proj_y + (float)half_height;
+		scr[i][2] = q;
+		scr[i][3] = p2[i][3] * q;
+		scr[i][4] = p2[i][4] * q;
+		scr[i][5] = p2[i][5];
+	}
+	for(i = 1; i + 1 < n; i++)
+		port_draw_tri(scr[0], scr[i], scr[i + 1], 1, -1, 5);
+}
 
 /* ---- the per-frame passes (objects.c: draw_pass 0x800cbbb4, think_pass 0x800cca70) call
    into level code the port does not have yet; these keep them no-ops in the attract ---- */
@@ -98,10 +157,8 @@ void func_800fe580(void) { }
 void func_800fef18(void) { }
 void func_800ffbdc(void) { }
 void func_800fe1fc(void) { }
-void func_800dbb80(void) { }
 void func_80100558(void) { }
 void func_800e2fe4(void) { }
-void func_800db4b8(void) { }
 void func_800c83bc(void) { }
 void func_800c9620(int a) { (void)a; }
 void func_800c9bf0(void) { }
@@ -122,8 +179,6 @@ void init_surfaces(void)			/* 0x800d6768: the texmap surface table */
 }
 void func_800c8a44(float x, float y, float w, float r, unsigned int c) { (void)x; (void)y; (void)w; (void)r; (void)c; }	/* a screen marker */
 /* load_level_assets (0x800ca448, scene.c) is real; its loaders are not */
-void func_800db148(void) { }
-void func_800db800(void) { }
 void load_misc_texmaps(void) { fprintf(stderr, "[stub] load_misc_texmaps (0x800d8c60): level texmaps not loaded\n"); }
 void func_800ff0b0(void) { }
 void func_800fe440(void) { }
@@ -164,12 +219,10 @@ void L_80101908(game_object_t *o) { (void)o; }			/* the level-select targets */
 int  func_801020b4(game_object_t *o) { (void)o; return 1; }
 void func_80102454(game_object_t *o) { (void)o; }
 void func_800fe3d8(void) { }
-void func_800db7a8(void) { }
 void func_80109260(void *o, int n) { (void)o; (void)n; }
 void func_80107e30(game_object_t *o) { (void)o; }			/* the loading jester (object 0x2014) */
 int  func_80108ab0(game_object_t *o) { (void)o; return 1; }
 void func_80108c94(game_object_t *o) { (void)o; }
-void some_sort_of_free(void) { }
 
 /* the mouse's game-screen position as the raw gun reading the game's read_guns turns back
    into that position through the player's calibration (camera.c guns[]) */

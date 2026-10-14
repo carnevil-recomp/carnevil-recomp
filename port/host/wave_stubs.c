@@ -314,7 +314,6 @@ WEAK int remove_model(void) { return 0; }
 WEAK int remove_path(void) { return 0; }
 /* term.c's helpers (hit tests, effects, steering, damage) still in assembly */
 WEAK void decrenent_health_(void) { }
-WEAK void func_800db810(void) { }
 WEAK void func_800fc34c(void) { }
 WEAK void func_800fd6b0(void) { }
 WEAK void func_800fdc18(void) { }
@@ -335,7 +334,6 @@ WEAK void detach_group(void) { }
 WEAK void func_8011459c(void) { }
 WEAK void *func_800fe7a4(void) { return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */
-WEAK void func_800db158(void) { }
 WEAK void func_800e7130(void) { }
 WEAK int func_80162570(void) { return 0; }
 WEAK void func_800e59b8(void) { }

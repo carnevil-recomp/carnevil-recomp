@@ -27,7 +27,8 @@ extern int	loaded_wave;					/* 0x80212e30 */
 int		D_80212e60, D_80212e28, D_80212e24, D_80212e2c, D_802372b8;
 int		D_801e0960;					/* the player 1/2 switches at boot, inverted */
 extern void	load_font_texmap(void);
-extern void	func_800db148(void), func_800db800(void), load_misc_texmaps(void), func_800ff0b0(void), func_800fe440(void);
+extern void	load_misc_texmaps(void), func_800ff0b0(void), func_800fe440(void);
+#include "sprites.h"
 extern void	func_800fedd8(void), func_800ffb08(void), func_80100478(void), func_8013f6d8(void);
 extern void	draw_pass(void), think_pass(void *);
 extern int	free_mem_left;					/* 0x801e0ee8 */
@@ -305,8 +306,8 @@ void game_init(void)
 /* 0x800ca448: the level assets loaded once at boot */
 void load_level_assets(void)
 {
-	func_800db148();
-	func_800db800();
+	init_screen_sprites();
+	init_world_sprites();
 	load_misc_texmaps();
 	func_800ff0b0();
 	func_800fe440();

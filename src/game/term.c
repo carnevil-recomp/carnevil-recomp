@@ -48,7 +48,7 @@ extern int	shot_hits_sphere(float *, float, player_stats_t *);	/* the shot hits 
 extern int	find_submesh_hit(enemy_t *, submesh_t *, int, player_stats_t *);
 extern void	func_800fdc18(float *, float, int);
 extern void	func_800fdcf4(float *, float);
-extern void	func_800db810(float *, int, int);
+extern void	add_world_sprite(float *, int, int);	/* sprites.c */
 extern void	func_800ff190(float *, unsigned int);
 extern float	shot_damage_of(player_stats_t *);		/* the shot's damage */
 extern void	award_points(int, int);			/* award points */
@@ -157,7 +157,7 @@ int term_die(game_object_t *obj, player_stats_t *p)
 	}
 	func_800fdc18(p->hit_point, e->unk98, 0x800000);
 	func_800fdcf4(e->hit_group->pos, e->unk98);
-	func_800db810(p->hit_point, 0, 0);
+	add_world_sprite(p->hit_point, 0, 0);
 	group = p->hit_group;
 	g = &e->groups[group];
 	if(p->shot_weapon == 0x1000005)

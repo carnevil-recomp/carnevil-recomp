@@ -28,7 +28,8 @@ extern void	func_80163eec(int);
 extern int	snd_bank_load_playing(char *), snd_bank_delete(char *), snd_stop_all(void), snd_delay(int);
 extern int	snd_scall_bank(char *, int, int, int, int);
 extern void	check_sound_os(void);
-extern void	remove_all_objects(void), disable_spawning(void), some_sort_of_free(void);
+extern void	remove_all_objects(void), disable_spawning(void);
+#include "sprites.h"
 extern void	free_level_camera(void), update_view_matrix(void), load_level_camera(int);
 extern void	enable_guns(void), disable_guns(void), func_800d4978(void);
 extern float	camera_x, camera_y, camera_z, camera_rx, camera_ry, camera_rz;
@@ -36,7 +37,7 @@ extern void	load_level_lights(int);
 extern int	load_level_spawn(int);
 extern int	stream_select_wave(int);
 extern void	stream_start(void);
-extern void	reset_fog(void), free_lights(void), func_800fe3d8(void), func_800db7a8(void);
+extern void	reset_fog(void), free_lights(void), func_800fe3d8(void);
 extern void	func_80109260(void *, int);
 extern void	func_80107e30(game_object_t *), func_80108c94(game_object_t *);	/* the loading jester (object 0x2014) */
 extern int	func_80108ab0(game_object_t *);
@@ -237,7 +238,7 @@ void preload_wave(int wave)
 	if(wave & WAVE_LEVEL)
 	{
 		remove_all_objects();
-		some_sort_of_free();
+		free_world_sprites();
 		switch(wave)
 		{
 		case WAVE_HHOUSE:
@@ -310,7 +311,7 @@ void load_wave_proc(void)
 	case WAVE_BIGTOP:
 		bigtop_act2 = 0;
 		load_bigtop_assets();
-		some_sort_of_free();
+		free_world_sprites();
 		break;
 	case WAVE_ATTRACT:
 		load_attract_assets();
@@ -727,8 +728,8 @@ void btopload_proc(void)
 {
 	disable_guns();
 	func_800fe3d8();
-	func_800db7a8();
-	some_sort_of_free();
+	free_screen_sprites();
+	free_world_sprites();
 	movie_pause();
 	while(movie.flags & MOVIE_READING)
 	{

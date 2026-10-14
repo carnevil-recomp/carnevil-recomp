@@ -401,6 +401,37 @@ float ftan(float x)
 	return(x + 0.333333f * x * x * x + 0.1333333f * x * x * x * x * x + 0.053968 * x * x * x * x * x * x * x);
 }
 
+/* 0x800d0b2c: p into view space and onto the screen: out is the screen x, y and 1/z (a
+   MidVertex's first three), x and y snapped to quarter pixels; returns the 1/z (a million
+   when z is 0) */
+float project_point(float *p, float *out)
+{
+	float	x, y, z, vx, vy, vz, q;
+
+	x = p[0] + camera_neg_pos[0];
+	y = p[1] + camera_neg_pos[1];
+	z = p[2] + camera_neg_pos[2];
+	vx = x * view_matrix[0] + y * view_matrix[1] + z * view_matrix[2];
+	vy = x * view_matrix[3] + y * view_matrix[4] + z * view_matrix[5];
+	vz = x * view_matrix[6] + y * view_matrix[7] + z * view_matrix[8];
+	if(vz == 0.0f)
+		q = 1000000.0f;
+	else
+		q = 1.0f / vz;
+	vx *= q;
+	vy *= q;
+	x = vx * proj_x + 200.0f;
+	y = vy * proj_y + (float)half_height;
+	x += 2097152.0f;
+	y += 2097152.0f;
+	x -= 2097152.0f;
+	y -= 2097152.0f;
+	out[2] = q;
+	out[0] = x;
+	out[1] = y;
+	return q;
+}
+
 /* 0x800d0c70, 0x800d0d34: a point into and out of view space (camera.c's matrix, angles and
    negated position) */
 void world_to_view(float *p, float *out)

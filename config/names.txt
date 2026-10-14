@@ -912,3 +912,25 @@
 0x800e29b0 shot_damage_of
 0x800e29bc shot_damage_shared
 0x800e2a08 heal_player
+# sprites.c (0x800db148-0x800dbf58), the quad drawers in draw2d.c, project_point in vecmat.c
+0x800d0b2c project_point
+0x800d91dc draw_quad_mirrored
+0x800d92f0 draw_quad_alpha
+0x800d9420 draw_quad_alpha_mirrored
+0x800da0f0 draw_billboard
+0x800da3d0 draw_billboard_alpha
+0x800da668 draw_billboard_raised
+0x800da94c draw_billboard_raised_alpha
+0x800db148 init_screen_sprites
+0x800db158 add_screen_sprite
+0x800db320 add_screen_sprite_mirror
+0x800db4b8 draw_screen_sprites
+0x800db7a8 free_screen_sprites
+0x800db800 init_world_sprites
+0x800db810 add_world_sprite
+0x800dbb80 draw_world_sprites
+0x800dbf04 free_world_sprites
+0x8017d230 screen_sprite_kinds
+0x8017d3b0 world_sprite_kinds
+0x801e5918 screen_sprite_list
+0x801e5cb4 world_sprite_list

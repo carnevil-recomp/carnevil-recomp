@@ -47,8 +47,7 @@ extern int	loaded_wave;
 extern int	increment_audit(int);
 extern unsigned int read_coin_direct(void);
 extern void	func_800e7130(player_stats_t *);
-extern void	func_800db810(float *, int, int);	/* a bullet hole */
-extern void	func_800db158(float, float, int, int);	/* the muzzle flash at a screen position */
+#include "sprites.h"			/* the muzzle flashes and the dust of a miss */
 extern void	shoot_objects(player_stats_t *);	/* objects.c */
 extern int	randrng(int);
 extern void	specific_gamma_load(float, float);
@@ -399,13 +398,13 @@ player_stats_t *resolve_shot(player_stats_t *p)
 		}
 		else if(p->shot_depth > 4.0f)
 		{
-			func_800db810(p->hit_point, 2, 0);
+			add_world_sprite(p->hit_point, 2, 0);
 		}
 		if(accuracy_tracking)
 		{
 			p->accuracy = (float)p->hits / (float)p->shots;
 		}
-		func_800db158(p->shot_x, p->shot_y, p->index, 0);
+		add_screen_sprite(p->shot_x, p->shot_y, p->index, 0);
 		play_generic_sound(p, randrng(1) + 0x3d);
 		p->shooting = 0;
 		break;
@@ -436,7 +435,7 @@ player_stats_t *resolve_shot(player_stats_t *p)
 				p->hits++;
 			}
 		}
-		func_800db158(p->shot_x, p->shot_y, p->index + 2, 0);
+		add_screen_sprite(p->shot_x, p->shot_y, p->index + 2, 0);
 		play_generic_sound(p, randrng(2) + 0x38);
 		if(accuracy_tracking)
 		{
@@ -471,7 +470,7 @@ player_stats_t *resolve_shot(player_stats_t *p)
 				p->hits++;
 			}
 		}
-		func_800db158(p->shot_x, p->shot_y, p->index, 0);
+		add_screen_sprite(p->shot_x, p->shot_y, p->index, 0);
 		play_generic_sound(p, randrng(2) + 0x38);
 		if(accuracy_tracking)
 		{
@@ -494,7 +493,7 @@ player_stats_t *resolve_shot(player_stats_t *p)
 		{
 			p->hits++;
 		}
-		func_800db158(p->shot_x, p->shot_y, 5, 0);
+		add_screen_sprite(p->shot_x, p->shot_y, 5, 0);
 		if(accuracy_tracking)
 		{
 			p->accuracy = (float)p->hits / (float)p->shots;
@@ -516,7 +515,7 @@ player_stats_t *resolve_shot(player_stats_t *p)
 		{
 			p->hits++;
 		}
-		func_800db158(p->shot_x, p->shot_y, 4, 0);
+		add_screen_sprite(p->shot_x, p->shot_y, 4, 0);
 		if(accuracy_tracking)
 		{
 			p->accuracy = (float)p->hits / (float)p->shots;
