@@ -141,7 +141,8 @@ static int name_to_bits(const char *name, unsigned int *coin, unsigned int *play
 		{ "coin4", 0, 1 << 8 }, { "voldown", 0, 1 << 11 }, { "volup", 0, 1 << 12 }, { "bill", 0, 1 << 15 },
 		{ "p1a", 1, 1 << 4 }, { "p1b", 1, 1 << 5 }, { "p1c", 1, 1 << 6 }, { "p1d", 1, 1 << 7 },
 		{ "p2a", 1, 1 << 12 }, { "p2b", 1, 1 << 13 },
-		{ "trigger", 2, 1 }, { "pump", 2, 2 }, { "trigger2", 2, 0x10 }, { "pump2", 2, 0x20 } };
+		{ "trigger", 2, 1 }, { "pump", 2, 2 }, { "trigger2", 2, 0x10 }, { "pump2", 2, 0x20 },
+		{ "reload", 2, 0x100 } };	/* a port input: player 1's gun points off the screen while held */
 	size_t i;
 	*coin = *player = *gun = 0;
 	for(i = 0; i < sizeof t / sizeof t[0]; i++)
@@ -149,7 +150,7 @@ static int name_to_bits(const char *name, unsigned int *coin, unsigned int *play
 	return 0;
 }
 /* keyboard: 5 = coin, 1/2 = start, 9 = service credit, F2 = test, - and = volume, space = pump,
-   left ctrl / mouse button = trigger (the gun itself comes later) */
+   left ctrl / mouse button = trigger, right mouse button / R = reload (gun off the screen) */
 void hal_key(const char *name, int down)
 {
 	unsigned int c, p, g;
@@ -162,10 +163,21 @@ void hal_key(const char *name, int down)
    game's reader expects are computed back through its calibration (port_gun_raw, game_stub.c) */
 static int	mouse_on = 1;				/* headless runs shoot at the centre */
 void port_gun_raw(int player, float sx, float sy, int *rx, int *ry);
+/* The cabinet reloads when the gun points off the screen. Pointing the mouse off the picture
+   used to stand for that, but then moving or resizing the window (the pointer on the title bar)
+   reloaded too; so the pointer is now held to the picture's edge and the reload is its own
+   input ("reload": the right mouse button or R, which points the gun off the screen and pulls
+   the trigger, the cabinet's reload), as in other light-gun ports. The game code is unchanged:
+   it sees the gun off the screen exactly as before. */
 void hal_mouse(float gx, float gy, int on)
 {
+	(void)on;
 	if(aim_fixed) return;
-	mouse_gx = gx; mouse_gy = gy; mouse_on = on;
+	if(gx < 0.0f) gx = 0.0f;
+	if(gx > 400.0f) gx = 400.0f;
+	if(gy < 0.0f) gy = 0.0f;
+	if(gy > 256.0f) gy = 256.0f;
+	mouse_gx = gx; mouse_gy = gy; mouse_on = 1;
 }
 static void gun_update(void)
 {
@@ -174,7 +186,7 @@ static void gun_update(void)
 	port_gun_raw(0, mouse_gx, mouse_gy, &rx, &ry);
 	port_gun_raw(1, 200.0f, 128.0f, &rx2, &ry2);
 	/* MAME carnevil_gun_r layout, one byte per 32-bit slot: X low, X high | buttons | 0x40 (sees the screen), Y low, Y high; P2 at +0x10 */
-	hal_gun_regs[0x00] = rx & 0xff; hal_gun_regs[0x04] = ((rx >> 8) & 0xf) | ((gun_held & 3) << 4) | (mouse_on ? 0x40 : 0);
+	hal_gun_regs[0x00] = rx & 0xff; hal_gun_regs[0x04] = ((rx >> 8) & 0xf) | (((gun_held & 3) | (gun_held & 0x100 ? 1 : 0)) << 4) | (mouse_on && !(gun_held & 0x100) ? 0x40 : 0);
 	hal_gun_regs[0x08] = ry & 0xff; hal_gun_regs[0x0c] = (ry >> 8) & 3;
 	hal_gun_regs[0x10] = rx2 & 0xff; hal_gun_regs[0x14] = ((rx2 >> 8) & 0xf) | (gun_held & 0x30) | 0x40;
 	hal_gun_regs[0x18] = ry2 & 0xff; hal_gun_regs[0x1c] = (ry2 >> 8) & 3;

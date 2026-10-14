@@ -92,8 +92,9 @@ environment equivalents.
 ## Controls
 The cabinet's switches are mapped to the keyboard, and the mouse is player 1's light gun:
 move it over the picture to aim (the game's own gun code converts the position through its
-calibration) and click to shoot. Pointing off the picture counts as pointing off the screen,
-which is how the original reloads.
+calibration) and click to shoot. The cabinet reloads when you point the gun away from the
+screen and pull the trigger; the right mouse button (or `R`) does exactly that. The pointer
+leaving the picture, for instance to move the window, no longer counts as pointing away.
 
 | Key | Cabinet switch |
 |---|---|
@@ -103,13 +104,14 @@ which is how the original reloads.
 | `9` | Service credit |
 | `-` / `=` | Volume down / up (hold: the volume bar appears) |
 | `Space` | Player 1 pump |
+| Right mouse button or `R` | Player 1 reload (gun off screen + trigger) |
 | Left mouse button or `Left Ctrl` | Player 1 trigger |
 | Mouse position | Player 1 aim |
 | `F2` | Test switch (diagnostics not implemented yet) |
 
 For scripted runs, `--press` takes these switch names: `coin`, `coin2`, `coin3`, `coin4`,
 `bill`, `start1`, `start2`, `service`, `test`, `slam`, `voldown`, `volup`, `p1a`..`p1d`,
-`p2a`, `p2b`, `trigger`, `pump`, `trigger2`, `pump2` (each press is held for 6 frames);
+`p2a`, `p2b`, `trigger`, `pump`, `reload`, `trigger2`, `pump2` (each press is held for 6 frames);
 headless shots go to the screen centre, or to `CARNEVIL_AIM=x,y` (x 0..400, y 0..256 from
 the bottom):
 
