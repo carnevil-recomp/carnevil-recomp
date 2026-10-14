@@ -18,7 +18,6 @@ static const char *key_name(NSEvent *ev)
 	case '-': return "voldown";
 	case '=': return "volup";
 	case ' ': return "pump";
-	case 'r': case 'R': return "reload";
 	case NSF2FunctionKey: return "test";
 	default: return 0;
 	}
@@ -88,15 +87,7 @@ void video_present(void)
 				if(k) { hal_key(k, t == NSEventTypeKeyDown); continue; }
 			}
 			else if(t == NSEventTypeFlagsChanged) { hal_key("trigger", ([ev modifierFlags] & NSEventModifierFlagControl) != 0); continue; }
-			else if(t == NSEventTypeLeftMouseDown)
-			{
-				/* a click outside the picture's view (the title bar, a resize edge) is the
-				   window's, not the trigger */
-				NSPoint p = [view convertPoint:[ev locationInWindow] fromView:nil];
-				if(NSPointInRect(p, [view bounds])) { mouse_to_gun(ev); hal_key("trigger", 1); continue; }
-			}
-			else if(t == NSEventTypeLeftMouseUp) { hal_key("trigger", 0); }
-			else if(t == NSEventTypeRightMouseDown || t == NSEventTypeRightMouseUp) { hal_key("reload", t == NSEventTypeRightMouseDown); continue; }
+			else if(t == NSEventTypeLeftMouseDown || t == NSEventTypeLeftMouseUp) { mouse_to_gun(ev); hal_key("trigger", t == NSEventTypeLeftMouseDown); continue; }
 			else if(t == NSEventTypeMouseMoved || t == NSEventTypeLeftMouseDragged) { mouse_to_gun(ev); continue; }
 			[NSApp sendEvent:ev];
 		}

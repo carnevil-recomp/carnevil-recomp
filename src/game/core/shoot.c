@@ -341,9 +341,6 @@ void gun_trigger(int player, int down)
 /* 0x800d5a14: the off-screen reload: the pistol's magazine refills with a sound */
 void reload_gun(player_stats_t *p)
 {
-#ifdef PORT_HOST
-	{ extern int port_trace; extern unsigned long hal_frame_count; if(port_trace) fprintf(stderr, "[gun] vblank %lu player %d reloads (ammo %d)\n", hal_frame_count, p->index, p->ammo); }
-#endif
 	if(p->has_mag)
 	{
 		play_generic_sound(p, 0x20);
