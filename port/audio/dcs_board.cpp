@@ -13,6 +13,7 @@
  * args}. The DRAM image keeps the file bytes in file order, so stream pointers (24-bit, big
  * endian, relative to their own position) index straight into it.
  */
+#include <cmath>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -78,6 +79,7 @@ public:
 	bool		stream_on = false;
 	int		stream_volume = 255;
 	int		master_volume = 255;
+	double		master_mult = 1.0;	/* the DCS master volume curve, kept with master_volume */
 	unsigned long	stream_underruns = 0;
 	void fifo_reset() { fifo_head = fifo_tail = fifo_count = 0; }
 	unsigned fifo_space() { return FIFO_WORDS - fifo_count; }
@@ -229,7 +231,7 @@ public:
 			sth.push_back(sum & 0xffff);
 			return;
 		}
-		case 0x55AA: master_volume = args[0] >> 8; SetMasterVolume(master_volume); if(verbose) fprintf(stderr, "[dcs] master volume %d\n", master_volume); return;
+		case 0x55AA: master_volume = args[0] >> 8; master_mult = master_volume ? pow(0.981201, 255 - master_volume) : 0.0; SetMasterVolume(master_volume); if(verbose) fprintf(stderr, "[dcs] master volume %d\n", master_volume); return;
 		case 0x55B3: stream_volume = args[0] & 0xff; if(verbose) fprintf(stderr, "[dcs] stream volume %d\n", stream_volume); return;
 		case 0x55AB:			/* track volume: mask << 8 | volume */
 			for(int ch = 0; ch < MAX_CHANNELS; ch++) if((args[0] >> 8) & (1 << ch)) channel[ch].channelVolume = args[0] & 0xff;
@@ -392,7 +394,10 @@ public:
 				if(fifo_count >= 2)
 				{
 					int l = fifo_read(), r = fifo_read();
-					s += ((l + r) / 2) * stream_volume / 255 * master_volume / 255;
+					/* the stream goes through the DSP's output stage like every other sound, so the
+					   master volume scales it with the DCS curve (0.981201 per step below 255,
+					   as the decoder does), not linearly; the stream volume command is linear */
+					s += (int)(((l + r) / 2) * stream_volume / 255 * master_mult);
 				}
 				else stream_underruns++;
 			}

@@ -106,6 +106,10 @@ void clean_up_level_sounds(void)
 /* 0x800ebcf4, 0x800ebd30: an enemy's sound n at its own priority (noint: no interrupt) */
 void play_enemy_sound(enemy_t *obj, int scall, char *bank, int n)
 {
+#ifdef PORT_HOST
+	{ extern int port_trace; extern unsigned long hal_frame_count; int r = snd_scall_bank(bank, scall, 0xe6, 0x80, (obj->prio_base - n) | obj->prio_flags);
+	  if(port_trace) fprintf(stderr, "[snd] vblank %lu %s %d prio %#x -> %s\n", hal_frame_count, bank, scall, (obj->prio_base - n) | obj->prio_flags, r ? "ERROR" : "ok"); return; }
+#endif
 	snd_scall_bank(bank, scall, 0xe6, 0x80, (obj->prio_base - n) | obj->prio_flags);
 }
 void play_enemy_sound_noint(enemy_t *obj, int scall, char *bank, int n)

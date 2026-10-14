@@ -344,8 +344,8 @@ void load_wave_proc(void)
 	if(debug_mode & DEBUG_HEAP)
 	{
 		printf("Post load wave heap %d\n", get_free_mem_left());
+		free_mem_after_load = get_free_mem_left();
 	}
-	free_mem_after_load = get_free_mem_left();
 	if(loaded_wave & WAVE_LEVEL)		/* only the levels stream music from the disk */
 	{
 		stop_level_cue();

@@ -58,7 +58,7 @@ sprite_kind_t	screen_sprite_kinds[16] =
 };
 
 /* 0x8017d3b0: sizes in world units */
-sprite_kind_t	world_sprite_kinds[8] =
+sprite_kind_t	world_sprite_kinds[12] =
 {
 	{ 0x5021, 4, 4.0f, 4.0f, 255.0f, 255.0f },
 	{ 0x5068, 4, 3.0f, 3.0f, 255.0f, 255.0f },
@@ -68,6 +68,10 @@ sprite_kind_t	world_sprite_kinds[8] =
 	{ 0x5001, 5, 1.5f, 3.0f, 128.0f, 255.5f },
 	{ 0x5041, 5, 4.0f, 4.0f, 255.0f, 255.0f },
 	{ 0x6104, 1, 5.0f, 5.0f, 255.0f, 255.0f },
+	{ 0x7302, 1, 28.0f, 28.0f, 255.0f, 255.0f },	/* 8: the loading screen's spiral behind the jester */
+	{ 0x5041, 5, 2.0f, 2.0f, 255.0f, 255.0f },
+	{ 0x5061, 6, 6.5f, 6.5f, 255.0f, 255.0f },
+	{ 0x5071, 6, 6.5f, 6.5f, 255.0f, 255.0f },
 };
 
 screen_sprite_t	*screen_sprite_list;		/* 0x801e5918 */

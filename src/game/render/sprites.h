@@ -70,7 +70,7 @@ typedef struct world_sprite
 } world_sprite_t;
 
 extern sprite_kind_t	screen_sprite_kinds[16];	/* 0x8017d230 */
-extern sprite_kind_t	world_sprite_kinds[8];		/* 0x8017d3b0 */
+extern sprite_kind_t	world_sprite_kinds[12];		/* 0x8017d3b0 */
 extern screen_sprite_t	*screen_sprite_list;		/* 0x801e5918 */
 extern world_sprite_t	*world_sprite_list;		/* 0x801e5cb4 */
 
