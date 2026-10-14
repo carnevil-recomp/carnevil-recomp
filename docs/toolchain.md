@@ -415,3 +415,13 @@ Lessons from the Rickety Town script gates, term.c and enemy.c (2026-10-13):
   231.8 and 57.27 twice because each vertex's texture coordinate was written as its own
   `255 * OOW` / `63 * OOW` expression. To match such a block, write the assignments in the
   order the pool lists their constants.
+- **Reaper loops keep a previous-record pointer in a register.** `prev = PREV_OF(list);
+  while(p) { next = p->next; free(p); p = next; prev->next = p; }` is byte-exact for every
+  free_* routine; writing `PREV_OF(list)->next = p` inline folds to a store through the head's
+  address and loses the register. In the draw loops the free branch is sometimes
+  `p = next; prev->next = p;` (draw_blood_drops, exact) and sometimes `prev->next = next; ...
+  p = next;` (the sparks, snow, flecks): try both.
+- **The same push on a list head compiles two ways in one file**: add_blood_drop materialises
+  `&drop_list` (`la`, then `lw 0(..)` / `sw 0(..)`), spray_think uses two `lui/%lo` accesses.
+  A one-element array reproduces the first and breaks the second, so the plain global stays
+  and add_blood_drop sits at 81%.

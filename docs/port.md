@@ -72,8 +72,8 @@ callbacks (`port/host/script_stubs.c`, weak definitions a real one overrides), t
 the per-level collision tests. Every stub reports the first time it is reached
 (`[stub] name reached at vblank N`, `stub_reached` in hal.c) and the run ends with the
 list, so nothing missing is a silent no-op; the hardware stand-ins (heap size, refresh rate,
-texture memory statistics) are not stubs and stay quiet. A Rickety Town run reaches 61
-stubs (2026-10-14). With `CARNEVIL_TRACE=1` the loaders report their steps; a headless run
+texture memory statistics) are not stubs and stay quiet. A Rickety Town run reached 61
+stubs on 2026-10-14 and 53 by the end of that day. With `CARNEVIL_TRACE=1` the loaders report their steps; a headless run
 through the first level:
 
 ```
@@ -117,6 +117,8 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | sprites.c | game2 | the screen and world sprite lists (0x800db148-0x800dbf58: muzzle flashes, hit marks, the dust of a miss, drops, sparks): the list resets exact, the creators 31-55%, the draw/update loops 58-64%, the reapers 10% (loop shape). The kind tables are in the source (0x8017d230, 0x8017d3b0) |
 | draw2d.c | game2 | draw_quad and draw_quad_mirrored exact, the alpha quads 94%; the four billboards (0x800da0f0-0x800dac0c) are transcriptions (0-4%: the original keeps the corners in 16-byte slots and inlines everything) |
 | texmaps.c | game2 | load_misc_texmaps exact, the per-level loaders 70-91% (the violence choice is `t = noblood; if(violence_level >= 2) t = blood;`); the 25 tables are generated into texmaps_data.c by tools/extract_texmaps.py |
+| effects.c | game2 | the whole effects file (0x800fd990-0x801007a0): 23 of 43 exact (the effect list, every init and free, burst_blood, the spray and flame set-up, add_snow_around, blow_snow 92%, spray_think 92%, draw_blood_drops); the other particle draw loops 28-74% and draw_smoke 4% (the two cross quads' vertex stores). The chunk model's tables are in the source. The host stands in for the flat depth triangle (0x800d2dd4); the flame's quad drawer (0x800d9cc0) is still a stub |
+| particle.c | game2 | draw_particle (0x800ecd20, one textured triangle at a world point, 30%); the rest of its file (0x800ec540-0x800ed030) is not decompiled |
 | clip.c | game2 | the three edge interpolators exact; draw_world_tri (0x8010bf30, near-plane clip and projection) and clip_screen_tri (0x8010cd54, the screen edges, recursive) are complete transcriptions at 1-10%: the original assigns the vertex pointers to the saved registers in a different order and does not interleave the quarter-pixel snaps |
 
 A module is registered in `config/modules.txt` once every function in its source file's
