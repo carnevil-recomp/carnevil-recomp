@@ -45,7 +45,6 @@ WEAK void load_flash_texmap(void) { STUB(load_flash_texmap); }
 WEAK void load_flie(void) { STUB(load_flie); }
 WEAK void load_flie_texmap(void) { STUB(load_flie_texmap); }
 WEAK void load_freakshow_jester_anim(void) { STUB(load_freakshow_jester_anim); }
-WEAK void load_gallery_objects(void) { STUB(load_gallery_objects); }
 WEAK void load_gool(void) { STUB(load_gool); }
 WEAK void load_gool_texmap(void) { STUB(load_gool_texmap); }
 WEAK void load_grub(void) { STUB(load_grub); }
@@ -112,7 +111,6 @@ WEAK void remove_finn_assts(void) { STUB(remove_finn_assts); }
 WEAK void remove_flash_texmap(void) { STUB(remove_flash_texmap); }
 WEAK void remove_flie_assets(void) { STUB(remove_flie_assets); }
 WEAK void remove_freakshow_jester_anim(void) { STUB(remove_freakshow_jester_anim); }
-WEAK void remove_gallery_objects(void) { STUB(remove_gallery_objects); }
 WEAK void remove_gool(void) { STUB(remove_gool); }
 WEAK void remove_grub_assets(void) { STUB(remove_grub_assets); }
 WEAK void remove_hhouse_jester_anim(void) { STUB(remove_hhouse_jester_anim); }

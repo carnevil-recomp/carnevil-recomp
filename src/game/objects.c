@@ -658,6 +658,22 @@ void set_enemy_scale(enemy_t *e, float s)
 	e->radius = e->unkcc * e->scale[1];
 }
 
+/* 0x800cdc38: the enemy fields an init does not set: the effects list and the spare words */
+void clear_enemy_fields(enemy_t *e)
+{
+	e->unk9c = 0.0f;
+	e->unka0 = 0.0f;
+	e->unka4 = 0;
+	e->effects = 0;
+	e->unk54 = 0;
+	e->unkd8 = 0;
+	e->unkdc = 0;
+	e->unke0 = 0;
+	e->unke4 = 0;
+	e->unke8 = 0;
+	e->unk6 = 0;
+}
+
 /* 0x800ce2f8: the point d units nearer the camera than pos (view space z less d) */
 void point_toward_camera(float *pos, float d, float *out)
 {

@@ -459,3 +459,8 @@ same way.
   short`: the test is the `andi` of the decremented register, never a reload.
 - **The frame of draw_thrown_object is 0x28 bytes larger** than its locals need; a ten-word
   unused local reproduces it. The original presumably declared something it never used.
+- **Two pseudos for one malloc.** The select targets' init is `data = malloc(n); o->data =
+  data; if(!data) return 1; o->hit = ...; e = (enemy_t *)data;`: the result stays in a0
+  across the callback stores and is copied to s0 afterwards. The thrown objects' init reads
+  `o->data` back instead. Both forms exist in the original; try the other when the first
+  mismatches by one instruction.

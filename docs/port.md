@@ -73,8 +73,10 @@ the per-level collision tests. Every stub reports the first time it is reached
 (`[stub] name reached at vblank N`, `stub_reached` in hal.c) and the run ends with the
 list, so nothing missing is a silent no-op; the hardware stand-ins (heap size, refresh rate,
 texture memory statistics) are not stubs and stay quiet. A Rickety Town run reached 61
-stubs on 2026-10-14, 53 by the end of that day and 39 the next morning (the weapons file,
-the point sprites and the explosion object came in). With `CARNEVIL_TRACE=1` the loaders report their steps; a headless run
+stubs on 2026-10-14, 53 by the end of that day, 39 the next morning (the weapons file,
+the point sprites and the explosion object came in) and 35 with the select screen. At game
+over the console shows "Error, already have a camera!": the original prints it too (its
+game-over path preloads the high-score wave before unloading the level). With `CARNEVIL_TRACE=1` the loaders report their steps; a headless run
 through the first level:
 
 ```
@@ -120,6 +122,7 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | texmaps.c | game2 | load_misc_texmaps exact, the per-level loaders 70-91% (the violence choice is `t = noblood; if(violence_level >= 2) t = blood;`); the 25 tables are generated into texmaps_data.c by tools/extract_texmaps.py |
 | effects.c | game2 | the whole effects file (0x800fd990-0x801007a0): 23 of 43 exact (the effect list, every init and free, burst_blood, the spray and flame set-up, add_snow_around, blow_snow 92%, spray_think 92%, draw_blood_drops); the other particle draw loops 28-74% and draw_smoke 4% (the two cross quads' vertex stores). The chunk model's tables are in the source. The host stands in for the flat depth triangle (0x800d2dd4); the flame draws through draw_flame_sprite (draw2d.c) |
 | particle.c | game2 | draw_particle (0x800ecd20, one textured triangle at a world point, 30%); the rest of its file (0x800ec540-0x800ed030) is not decompiled |
+| select.c | game2 | the level-select gallery's targets (0x80101908-0x801026b0): the draw, the loaders, the init, the removal, the think and the light reset exact; select_target_hit 80% (the shared next_wave store's layout), aim_select_light 20% (the off paths' layout). Tables generated into select_data.c |
 | weapons.c | game2 | the enemies' weapons, one original file (0x8010d818-0x80110270): the held objects (an effect in a hand group: attach_held_object, draw_held_object with its 0x44-way switch, all exact), the thrown objects (game object 0x1900: the five throwers, the draw, the hit, the die and the removal exact, the think 93%: the shot case's float register choice), the twelve loaders exact. The tables (texmaps and submesh tables for fifteen models, 0x80193ad0-0x80194650) are generated into weapons_data.c by tools/extract_texmaps.py. Kinds and states in weapons.h |
 | clip.c | game2 | the three edge interpolators exact; draw_world_tri (0x8010bf30, near-plane clip and projection) and clip_screen_tri (0x8010cd54, the screen edges, recursive) are complete transcriptions at 1-10%: the original assigns the vertex pointers to the saved registers in a different order and does not interleave the quarter-pixel snaps |
 

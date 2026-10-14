@@ -301,10 +301,10 @@ extern void	enable_guns(void), normal_screen(void), delete_process_id(int);
 extern void	remove_all_objects(void), preload_wave(int), unload_wave(void), load_credits(void);
 extern void	fade(float, int, int), script_level_end_stats(void), graphical_printf(char *, char *, ...);
 extern void	draw_string_centered(int, char *, float, float, unsigned int);
-extern void	enable_accuracy_tracking(void), disable_accuracy_tracking(void), func_80102690(void), set_weapon(player_stats_t *, int);
-extern void	set_level_start_time(player_stats_t *), func_80102500(player_stats_t *), something_player_score(player_stats_t *);
-extern void	L_80101908(game_object_t *), func_80102454(game_object_t *);	/* the level-select targets (objects 0x710-0x713) */
-extern int	func_801020b4(game_object_t *);
+extern void	enable_accuracy_tracking(void), disable_accuracy_tracking(void), reset_select_lights(void), set_weapon(player_stats_t *, int);
+extern void	set_level_start_time(player_stats_t *), aim_select_light(player_stats_t *), something_player_score(player_stats_t *);
+extern void	draw_select_target(game_object_t *), select_target_think(game_object_t *);	/* select.c: the level-select targets (objects 0x710-0x713) */
+extern int	init_select_target(game_object_t *);
 extern int	increment_audit(int);
 extern void	clear_bonus_count(void);				/* 0x800c7c78 (credits.c) */
 extern void	average_audit(int count_audit, int average_audit, int value);	/* 0x800f24c8 */
@@ -365,8 +365,8 @@ void print_select_countdown(game_object_t *obj)
 		graphical_printf(text_buffer, "%d", level_start_counter / 10);
 		draw_string_centered(1, text_buffer, 200.0f, 180.0f, (blink & 0xff) << 16);
 	}
-	func_80102500(&player_stats[0]);
-	func_80102500(&player_stats[1]);
+	aim_select_light(&player_stats[0]);
+	aim_select_light(&player_stats[1]);
 }
 
 /* 0x800c5830: the main game process: the level-select gallery (a shot target or the countdown
@@ -405,7 +405,7 @@ void main_game_proc(void)
 		play_level_cue(2, "select1");
 		movie_load(8);
 		movie_start();
-		func_80102690();
+		reset_select_lights();
 		enable_guns();
 		set_weapon(&player_stats[0], 1);
 		set_weapon(&player_stats[1], 1);
@@ -414,21 +414,21 @@ void main_game_proc(void)
 		sleep(5);
 		if(!(levels_cleared & 1))
 		{
-			add_object1_wrapper(0x710, L_80101908, func_801020b4, func_80102454);
+			add_object1_wrapper(0x710, draw_select_target, init_select_target, select_target_think);
 		}
 		if(!(levels_cleared & 4))
 		{
-			add_object1_wrapper(0x711, L_80101908, func_801020b4, func_80102454);
+			add_object1_wrapper(0x711, draw_select_target, init_select_target, select_target_think);
 		}
 		if(!(levels_cleared & 2))
 		{
-			add_object1_wrapper(0x712, L_80101908, func_801020b4, func_80102454);
+			add_object1_wrapper(0x712, draw_select_target, init_select_target, select_target_think);
 		}
 		add_object1_wrapper(0x20, print_select_countdown, 0, 0);
 		if(levels_cleared == 7)
 		{
 			sleep(20);
-			add_object1_wrapper(0x713, L_80101908, func_801020b4, func_80102454);
+			add_object1_wrapper(0x713, draw_select_target, init_select_target, select_target_think);
 		}
 		if(next_wave == -1)
 		{

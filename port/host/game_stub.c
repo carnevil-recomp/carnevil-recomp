@@ -144,12 +144,7 @@ int  D_80212e10, D_801e0e24, D_801e70a8, D_801a25c8, D_80212da4, D_801e5cd4, D_8
 int  something_with_reload_p1, something_with_reload_p2, hhouse_texmap_set;
 void func_80162a10(int *size, int *avail, int *used, int *frag) { *size = *avail = *used = *frag = 0; }	/* texture memory statistics */
 void func_80163eec(int n) { (void)n; }
-void func_80102690(void) { STUB(func_80102690); }			/* 0x80102690: three select-screen words cleared */
-void func_80102500(player_stats_t *p) { STUB(func_80102500); (void)p; }	/* the player's panel on the select screen */
 void something_player_score(player_stats_t *p) { STUB(something_player_score); (void)p; }	/* 0x800e5560: high-score entry */
-void L_80101908(game_object_t *o) { STUB(L_80101908); (void)o; }			/* the level-select targets */
-int func_801020b4(game_object_t *o) { STUB(func_801020b4); (void)o; return 1; }
-void func_80102454(game_object_t *o) { STUB(func_80102454); (void)o; }
 void func_80109260(void *o, int n) { STUB(func_80109260); (void)o; (void)n; }
 void func_80107e30(game_object_t *o) { STUB(func_80107e30); (void)o; }			/* the loading jester (object 0x2014) */
 int func_80108ab0(game_object_t *o) { STUB(func_80108ab0); (void)o; return 1; }
