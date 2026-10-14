@@ -4,6 +4,7 @@
  * decompiled object/texmap modules. Each stub disappears as its function is decompiled.
  */
 #include <stdio.h>
+#include "../../src/game/camera.h"		/* gun_t, guns[] */
 #include <math.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -33,9 +34,11 @@ int	D_801fad10, D_801e0f10;
 /* ---- GOOSE main() callees ---- */
 extern void scan_switches(void);
 extern int tick_counter, gfx_scale, got_interrupt, uptime;
-int  D_801facc8, D_80179d50;
+int  D_801facc8;
+extern int D_80179d50;			/* camera.c: guns sampled every vblank */
 extern int D_80212e60;
 /* 0x800c6030: the game's own vertical-retrace handler (it does not call the library's) */
+extern void read_guns(void), gun_vblank(void);
 int  vblank_handler(void)
 {
 	tick_counter++;
@@ -45,7 +48,7 @@ int  vblank_handler(void)
 		uptime++;
 		if(D_80212e60 != 1) D_801facc8++;
 	}
-	/* if(D_80212e50 == 1) { func_800d4f6c(); func_800d57b0(); }  gun sampling: later */
+	if(D_80179d50 == 1) { read_guns(); gun_vblank(); }
 	scan_switches();
 	return 1;
 }
@@ -57,7 +60,6 @@ void func_800e7568(void) { movie_stop(); }	/* movie play stop */
 /* script callees and level data the attract movies touch */
 void level_end_stats_wrapper(void) { }
 int  end_of_wave(void) { return 0; }
-float func_800c9158(unsigned int *px) { return (float)(*px >> 16); }	/* depth word -> distance (placeholder scale) */
 int  attract_high_scores(int arg) { (void)arg; return 0; }	/* high-score reset screen */
 float get_screen_pos(int pos, float *out) { (void)pos; out[0] = out[1] = 0.0f; return -1.0f; }	/* 3D point -> screen: no camera yet */
 void graphical_printf(char *buf, char *fmt, ...) { va_list ap; va_start(ap, fmt); vsprintf(buf, fmt, ap); va_end(ap); }
@@ -91,7 +93,6 @@ void think_pass(void *);
 int  get_free_mem_left(void) { return 0x400000; }			/* GOOSE 0x80143e90 */
 float fsqrt(float x) { return sqrtf(x); }				/* 0x80144900: sqrt.s */
 void func_800ff418(void) { }
-player_stats_t *something_to_do_with_shooting_(player_stats_t *p) { return p; }
 void func_800ce2f8(float *a, float b, float *c) { (void)a; (void)b; c[0] = c[1] = c[2] = 0.0f; }
 void func_800fe580(void) { }
 void func_800fef18(void) { }
@@ -143,9 +144,6 @@ float func_800fe8dc(float range) { return (float)(randrng(10000) - 5000) / (5000
 void func_800ffa20(float *pos) { (void)pos; }					/* 0x800ffa20: drawn around the camera when camera_follow is set */
 void debug_move_camera(void) { }						/* 0x800c93c4: the player 3/4 switches move the camera (debug) */
 void load_backup_file(char *name) { fprintf(stderr, "[stub] load_backup_file(%s)\n", name); }	/* 0x800caf48 */
-void func_800d5478(int player, int bit) { (void)player; (void)bit; }		/* 0x800d5478: a gun switch bit for a player */
-void func_800d6038(player_stats_t *player, int bit) { (void)player; (void)bit; }		/* 0x800d6038: the other gun switch bit */
-void cmos_calibration_(void) { fprintf(stderr, "[stub] cmos_calibration_ (0x800d4d00): gun calibration from CMOS not loaded\n"); }
 void startaudit(FILE *f) { (void)f; }					/* 0x800ef870: the audit names for audits.fmt */
 void game_proc2(void) { fprintf(stderr, "[stub] game_proc2: debug attract not implemented\n"); for(;;) sleep(1); }
 void ide_set_partition(int n) { (void)n; }				/* GOOSE IDE: the HAL maps partition 1 itself */
@@ -160,7 +158,6 @@ int  something_with_reload_p1, something_with_reload_p2, hhouse_texmap_set;
 void func_80162a10(int *size, int *avail, int *used, int *frag) { *size = *avail = *used = *frag = 0; }	/* texture memory statistics */
 void func_80163eec(int n) { (void)n; }
 void func_80102690(void) { }			/* 0x80102690: three select-screen words cleared */
-void func_800d5f34(player_stats_t *p, int a) { (void)p; (void)a; }
 void func_80102500(player_stats_t *p) { (void)p; }	/* the player's panel on the select screen */
 void something_player_score(player_stats_t *p) { (void)p; }	/* 0x800e5560: high-score entry */
 void L_80101908(game_object_t *o) { (void)o; }			/* the level-select targets */
@@ -173,3 +170,16 @@ void func_80107e30(game_object_t *o) { (void)o; }			/* the loading jester (objec
 int  func_80108ab0(game_object_t *o) { (void)o; return 1; }
 void func_80108c94(game_object_t *o) { (void)o; }
 void some_sort_of_free(void) { }
+
+/* the mouse's game-screen position as the raw gun reading the game's read_guns turns back
+   into that position through the player's calibration (camera.c guns[]) */
+void port_gun_raw(int player, float sx, float sy, int *rx, int *ry)
+{
+	extern gun_t guns[2];
+	gun_t *g = &guns[player];
+	if(g->scale_x == 0.0f || g->scale_y == 0.0f) { *rx = 128 << 4; *ry = 128 << 4; return; }
+	*rx = (int)(sx * g->scale_x + g->off_x + 0.5f);
+	*ry = (int)(sy * g->scale_y + g->off_y + 0.5f);		/* the game's screen_y = 256 - (raw - off) / scale runs top-down */
+	if(*rx < 0) *rx = 0; if(*rx > 0xfff) *rx = 0xfff;
+	if(*ry < 0) *ry = 0; if(*ry > 0x3ff) *ry = 0x3ff;
+}

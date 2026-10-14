@@ -8,6 +8,7 @@
 #include "model.h"
 #include "credits.h"			/* player_stats */
 #include "camera.h"			/* camera_x/y/z */
+#include "waves.h"
 
 extern int	D_80237438;		/* adjust.c: adjustment 0x32 (0..4) */
 
@@ -153,4 +154,274 @@ int group_near_camera(group_t *g, float r)
 		return(1);
 	}
 	return(0);
+}
+
+extern float	fatan(float);
+extern float	ffabs(float);
+int	move_cd(enemy_t *, float, float, float);
+
+/* 0x800fc66c: turn the enemy towards the view point by at most rate radians: 1 when it turned,
+   0 when it already faces it (within the rate) */
+int face_camera(enemy_t *e, float rate)
+{
+	float	d[3];
+	float	v[3];
+	float	a, diff;
+
+	d[0] = e->x - camera_x;
+	d[1] = e->y - camera_y;
+	d[2] = e->z - camera_z;
+	if(d[2] == 0.0f)
+	{
+		if(0.0f < d[0])
+		{
+			v[1] = 1.570796f;
+		}
+		else
+		{
+			v[1] = 4.712388f;
+		}
+	}
+	else
+	{
+		a = fatan(ffabs(d[0] / d[2]));
+		if(0.0f < d[0])
+		{
+			if(0.0f < d[2])
+			{
+				v[1] = a;
+			}
+			else
+			{
+				v[1] = 3.1415927f - a;
+			}
+		}
+		else
+		{
+			if(0.0f < d[2])
+			{
+				v[1] = a + 3.1415927f;
+			}
+			else
+			{
+				v[1] = 6.2831855f - a;
+			}
+		}
+	}
+	v[0] = 0;
+	v[2] = 0;
+	diff = v[1] - e->ry;
+	if(diff < -3.1415927f)
+	{
+		diff += 6.2831855f;
+		while(diff < -3.1415927f)
+		{
+			diff += 6.2831855f;
+		}
+	}
+	if(3.1415927f < diff)
+	{
+		diff -= 6.2831855f;
+		while(3.1415927f < diff)
+		{
+			diff -= 6.2831855f;
+		}
+	}
+	if(diff == 0.0f)
+	{
+		return(0);
+	}
+	if(0.0f < diff ? diff < rate : rate < diff)
+	{
+		return(0);
+	}
+	if(diff < -3.1415927f)
+	{
+		e->ry = e->ry + rate;
+	}
+	else if(diff < 0.0f)
+	{
+		e->ry = e->ry - rate;
+	}
+	else if(diff < 3.1415927f)
+	{
+		e->ry = e->ry + rate;
+	}
+	else
+	{
+		e->ry = e->ry - rate;
+	}
+	return(1);
+}
+
+/* ---- steering (0x800fb934-0x800fc0f4) ---- */
+
+extern void	world_to_view(float *, float *), view_to_world(float *);	/* vecmat.c */
+extern int	loaded_wave;
+extern int	func_800cd094(float *, float *, int), func_800cd31c(float *, float *, int), func_800cd610(float *, float *, int), func_800cd904(float *, float *, int);
+extern int	printf(const char *, ...);
+
+/* 0x800fb934: the enemy's goal: a point dz in front of from (the view point), dy below it
+   and side to the left for player 1, the right for player 2 */
+void set_goal_near_camera(enemy_t *e, float *from, float *goal, float side, float dy, float dz)
+{
+	world_to_view(from, goal);
+	goal[2] = goal[2] - dz;
+	goal[1] = goal[1] - dy;
+	if(e->target == player_stats)
+	{
+		goal[0] = goal[0] - side;
+	}
+	else
+	{
+		goal[0] = goal[0] + side;
+	}
+	view_to_world(goal);
+}
+
+/* 0x800fbc6c: a step of at most `step` on the largest axis towards the goal: 2 when the goal
+   is within a step (the enemy snaps to it), else whether the move was clear */
+int step_toward_goal(enemy_t *e, float step)
+{
+	float	dx, dy, dz;
+	float	ax, ay, az;
+	float	mx, my, mz;
+
+	dx = e->goal[0] - e->hit_group->pos[0];
+	dy = e->goal[1] - e->hit_group->pos[1];
+	dz = e->goal[2] - e->hit_group->pos[2];
+	ax = ffabs(dx);
+	ay = ffabs(dy);
+	az = ffabs(dz);
+	if(ax < step && ay < step && az < step)
+	{
+		e->x = e->x + dx;
+		e->y = e->y + dy;
+		e->z = e->z + dz;
+		return(2);
+	}
+	if(ay < ax && az < ax)
+	{
+		step = step / ax;
+	}
+	else if(ax < ay && az < ay)
+	{
+		step = step / ay;
+	}
+	else
+	{
+		step = step / az;
+	}
+	mx = ffabs(dx * step);
+	my = ffabs(dy * step);
+	mz = ffabs(dz * step);
+	if(mx < dx)
+	{
+		dx = mx;
+	}
+	else if(dx < -mx)
+	{
+		dx = -mx;
+	}
+	if(my < dy)
+	{
+		dy = my;
+	}
+	else if(dy < -my)
+	{
+		dy = -my;
+	}
+	if(mz < dz)
+	{
+		dz = mz;
+	}
+	else if(dz < -mz)
+	{
+		dz = -mz;
+	}
+	return(move_cd(e, dx, dy, dz) == 0);
+}
+
+/* 0x800fbe5c: the same on the ground (x and z only) */
+int step_toward_goal_xz(enemy_t *e, float step)
+{
+	float	dx, dz;
+	float	ax, az;
+	float	mx, mz;
+
+	dx = e->goal[0] - e->hit_group->pos[0];
+	dz = e->goal[2] - e->hit_group->pos[2];
+	ax = ffabs(dx);
+	az = ffabs(dz);
+	if(ax < step && az < step)
+	{
+		e->x = e->x + dx;
+		e->z = e->z + dz;
+		return(2);
+	}
+	if(az < ax)
+	{
+		step = step / ax;
+	}
+	else
+	{
+		step = step / az;
+	}
+	mx = ffabs(dx * step);
+	mz = ffabs(dz * step);
+	if(mx < dx)
+	{
+		dx = mx;
+	}
+	else if(dx < -mx)
+	{
+		dx = -mx;
+	}
+	if(mz < dz)
+	{
+		dz = mz;
+	}
+	else if(dz < -mz)
+	{
+		dz = -mz;
+	}
+	return(move_cd(e, dx, 0.0f, dz) == 0);
+}
+
+/* 0x800fbfa0: move by (dx, dy, dz) unless the level's collision test objects: 1 when moved */
+int move_cd(enemy_t *e, float dx, float dy, float dz)
+{
+	float	np[3];
+	int	blocked;
+
+	np[0] = e->x + dx;
+	np[1] = e->y + dy;
+	np[2] = e->z + dz;
+	switch(loaded_wave)
+	{
+	case WAVE_HHOUSE:
+		blocked = func_800cd094(np, &e->x, e->id);
+		break;
+	case WAVE_FREAKSHOW:
+		blocked = func_800cd31c(np, &e->x, e->id);
+		break;
+	case WAVE_RICKITY:
+		blocked = func_800cd610(np, &e->x, e->id);
+		break;
+	case WAVE_BIGTOP:
+		blocked = func_800cd904(np, &e->x, e->id);
+		break;
+	default:
+		printf("unknown wave in move_cd!\n");
+		blocked = 1;
+		break;
+	}
+	if(blocked)
+	{
+		return(0);
+	}
+	e->x = e->x + dx;
+	e->y = e->y + dy;
+	e->z = e->z + dz;
+	return(1);
 }

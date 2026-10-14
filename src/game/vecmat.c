@@ -4,6 +4,7 @@
  * still in assembly). Matrices are nine floats, row major; a rotation about an axis takes
  * the angle from the matching element of a three-float array and negates it.
  */
+#include "camera.h"			/* view_matrix, camera_neg_pos, camera_rx */
 extern float	fsin(float), fcos(float);		/* GOOSE sincos.c */
 
 /* 0x800cfb18 */
@@ -398,4 +399,47 @@ float fatan(float x)
 float ftan(float x)
 {
 	return(x + 0.333333f * x * x * x + 0.1333333f * x * x * x * x * x + 0.053968 * x * x * x * x * x * x * x);
+}
+
+/* 0x800d0c70, 0x800d0d34: a point into and out of view space (camera.c's matrix, angles and
+   negated position) */
+void world_to_view(float *p, float *out)
+{
+	out[0] = (p[0] + camera_neg_pos[0]) * view_matrix[0] + (p[1] + camera_neg_pos[1]) * view_matrix[1] + (p[2] + camera_neg_pos[2]) * view_matrix[2];
+	out[1] = (p[0] + camera_neg_pos[0]) * view_matrix[3] + (p[1] + camera_neg_pos[1]) * view_matrix[4] + (p[2] + camera_neg_pos[2]) * view_matrix[5];
+	out[2] = (p[0] + camera_neg_pos[0]) * view_matrix[6] + (p[1] + camera_neg_pos[1]) * view_matrix[7] + (p[2] + camera_neg_pos[2]) * view_matrix[8];
+}
+
+void view_to_world(float *p)
+{
+	float	m[9], mx[9], my[9], mz[9], t[9];
+	float	x, y, z;
+
+	rot_x(mx, &camera_rx);
+	rot_y(my, &camera_rx);
+	rot_z(mz, &camera_rx);
+	mat_mul(my, mx, t);
+	mat_mul(t, mz, m);
+	x = p[0] * m[0] + p[1] * m[1] + p[2] * m[2];
+	y = p[0] * m[3] + p[1] * m[4] + p[2] * m[5];
+	z = p[0] * m[6] + p[1] * m[7] + p[2] * m[8];
+	p[0] = x - camera_neg_pos[0];
+	p[1] = y - camera_neg_pos[1];
+	p[2] = z - camera_neg_pos[2];
+}
+
+/* 0x800d0e44, 0x800d0ea0: a screen position as a view-space ray (z = 400) or as the point at
+   a depth; the screen's centre is (200, half_height) */
+void screen_to_ray(float *out, float x, float y)
+{
+	out[2] = 400.0f;
+	out[1] = (y - (float)half_height) * 400.0f / proj_y;
+	out[0] = (x - 200.0f) * 400.0f / proj_x;
+}
+
+void screen_to_point(float *out, float x, float y, float depth)
+{
+	out[2] = depth;
+	out[1] = depth * (y - (float)half_height) / proj_y;
+	out[0] = depth * (x - 200.0f) / proj_x;
 }

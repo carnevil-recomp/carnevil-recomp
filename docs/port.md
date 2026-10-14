@@ -93,20 +93,21 @@ Matching status of the game modules (per function, `tools/trymatch.sh`, 2026-10-
 | attract.c | game2 | 18 of 18, registered in modules.txt (text 0x800caf80-0x800cbb6c, rodata 0x8016f600-0x8016f704, data 0x80179c50-0x80179d40) |
 | scene.c | game2 | 10 of 10 (the switch sampler, the debug nudges, the heap display, init_game_state, game_init, load_level_assets); the rest of that file (0x800c8280-0x800ca4d0: screen markers, 3D helpers) is still assembly |
 | spawn.c | game2 | 11 of 12 exact; add_die 38% (its failure return is laid out differently); the port runs spawn_wave_enemies with construct_and_spawn_object (0x800e9570, 3.8 KB) stubbed |
-| objects.c | game2 | 17 of 18 (re-verified after the camera moved to camera.c): the list routines, the per-frame draw pass (0x800cbbb4, `draw_pass`), think pass (0x800cca70) and the four nearest-enemy searches exact; add_object 43% (the type-ordered insert loop keeps a redundant `next` test the compiler folds for us; frame 0x38 vs 0x20). The port runs the real passes; the level routines they call are stubs |
+| objects.c | game2 | the list routines, draw_pass and think_pass exact; the shot tests (shot_hits_sphere 43%, find_submesh_hit 7%), the animation blends (start_hit_reaction exact, the rest 15-33%) and shoot_objects (5%) are transcriptions the port runs |
 | wave.c | game2 | 19 of 21 exact (unload_wave, preload_wave, the bank lists, the per-level asset lists, the big top's act change); load_wave_proc 26% and btopload_proc 8% keep an address in a saved register that ours does not. The 25% transcription had put the music stream start outside the `loaded_wave & WAVE_LEVEL` test, so the attract and the gallery streamed the haunted house partition under their own cues (fixed 2026-10-13: only the four levels stream) |
 | main.c (game) | game2 | init_main_game_proc 61%, print_select_countdown 63%, main_game_proc 7% (first transcription; the flow is right) |
 | player.c | game2 | set_level_start_time exact, init_player_stats 92%, init_player 25% (store order) |
-| shoot.c | game2 | 3 of 3 (set_player_gun and the two level-play flags) |
+| shoot.c | game2 | 6 of 14 exact (set_player_gun, the accuracy flags, reload_gun, set_weapon, give_pistol); read_guns 13%, gun_trigger 10%, resolve_shot 14%, gun_pump 4%, use_ammo 36% (first transcriptions; the whole light-gun path runs in the port) |
 | camera.c | game2 | 17 of 23 exact (update_camera, update_view_matrix, get_camera_pos, the file loader's callers, the gun pollers, kss_reset_w_calib_, take_calibration_request, default_calibration ...); set_field_of_view 67% and init_camera 12% / load_level_camera 5% (the original combines the field-of-view constants at run time where our compiler folds them: 67.74+10 is an `add.s` in the game), kss_reset_ 59%, gun_board_reset 89% (one scheduling swap), the two `&&`/`\|\|` gun tests 53-60% (register choice). Absorbs the old gun.c: the file at 0x800d4070-0x800d4f6c holds the camera and the light guns |
-| vecmat.c | game2 | 23 of 23 exact (0x800cfb18-0x800d1370: 3x3 matrices, the twelve rotation-order products, fatan, ftan); the rest of the file (get_screen_pos, the projection helpers, draw_tri) is still assembly |
+| vecmat.c | game2 | 23 of 23 exact (0x800cfb18-0x800d1370: 3x3 matrices, the twelve rotation-order products, fatan, ftan) plus screen_to_ray and screen_to_point exact; world_to_view and view_to_world are transcriptions (1-2%) |
 | loaders.c | game2 | 0 of 1 (load_camera_file 4%: the retry loop's two counters are allocated differently; the port uses it as is) |
 | model.c | game2 | init_groups exact; draw_model and the eight face drawers are first transcriptions (0-31%); the port draws every enemy through them |
 | lights.c, fog.c | game0 (-O0) / game2 | lights.c 12 of 23 exact (the list operations, the ambient override, the fog switch); load_level_lights, add_light_group, update_lights, build_light_list and light_vertices are behaviourally complete transcriptions whose -O0 stack layouts do not match yet. The light tables are generated into lights_data.c by tools/extract_lights.py. fog.c 4 of 4 |
-| krinkle.c | game2 | load_krinkle_texmap, remove_krinkle_assets, krinkle_remove exact; load_krinkle 86%, krinkle_setup 54%, krinkle_init 50%, krinkle_draw 31%; the think, hit and die callbacks are still assembly (stubs in the port) |
+| krinkle.c | game2 | load_krinkle_texmap, remove_krinkle_assets, krinkle_remove, krinkle_drop_arm_parts, krinkle_drop_head_parts exact; krinkle_steer 95%, load_krinkle 86%, krinkle_hit 76%, krinkle_setup 54%, krinkle_think 50%, krinkle_init 50%, krinkle_draw 31%, krinkle_end_path 26%, krinkle_die 2% (one saved register off). He walks, strikes, reacts to hits and dies in the port |
+| effects.c | game2 | 4 of 5 exact (the effect list on an enemy: attach, draw, think, free); detach_effect 33% |
 | rickity_script.c | game2 | 38 of 38 exact (0x80123f88-0x80124c68: the script entry, the 22 section gates the movie script calls between its replays, the unused timers and counters). Unregistered: its timers are interleaved with the other levels' in .bss |
 | term.c | game2 | 5 of 12 exact (the loaders, term_remove), term_die 94%, term_end_path 96%, term_steer 94%, term_hit 76%, term_init 59%, term_draw 33%, term_think 17%, term_setup 15% (case-tree shapes); the port runs all of it: the bugs follow their path and reach the screen |
-| enemy.c | game2 | 8 of 8 exact (0x800fb4a0-0x800fcfc4: health by adjustment 0x32, the five path placement/follow helpers, the attack reach test); the steering and facing routines of that file are still assembly |
+| enemy.c | game2 | 9 of 14 exact (health by adjustment, the path helpers, the reach test, set_goal_near_camera); step_toward_goal and _xz 50%, move_cd 16% (the per-level collision tests are stubs), face_camera 3% |
 
 A module is registered in `config/modules.txt` once every function in its source file's
 address range matches and its data is laid out in the file's order (the audit file was the
@@ -124,6 +125,25 @@ Ninja guess (`decompress_movie` -> `decode_movie_8pal`, `decoode_movie2` ->
 `decode_movie_8pal_depth`, `show_debug_frame_data` -> `movie_draw_frame`,
 `load_fram_wrapper` -> `movie_init`) the override lives in `config/names.txt` and the
 original guess stays in `config/functions_v103.txt`.
+
+## The light gun (`src/game/shoot.c`, `objects.c`, `port/host/hal.c`)
+
+The original samples the guns from the I/O ASIC every vblank (`read_guns`): a 12-bit x and a
+10-bit y per gun, and a bit saying the gun sees the screen. The calibration (eight CMOS
+adjustments in triplicate, `cmos_calibration_`, factory values when the CMOS is blank) turns
+them into a screen position, 1..399 by 1..255 with y counted from the top. `gun_vblank` runs
+the trigger and pump edges: a pull fires at once when the gun sees the screen, otherwise it
+waits with the screen held bright until it does (the off-screen reload); the draw pass then
+resolves the shot (`resolve_shot`): `shoot_objects` builds the aim ray from the screen
+position, reads the movie's depth under it for the hit point, runs every object's hit
+callback and the hit object's die callback. The sphere and submesh tests extend the ray to
+the target's depth and refuse a target the movie is nearer than.
+
+In the port the mouse is player 1's gun: the window converts its position to game-screen
+units (`video_to_game`), `port_gun_raw` folds it back through the player's calibration into
+the raw readings, and the left button or left control is the trigger. Headless runs aim at
+the screen centre, or at `CARNEVIL_AIM=x,y` (y from the bottom), and `--press N:trigger`
+pulls the trigger. `CARNEVIL_TRACE=1` prints `[gun]`, `[shot]` and `[krinkle]` lines.
 
 ## Lighting and the colour combine
 

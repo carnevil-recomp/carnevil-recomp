@@ -38,6 +38,7 @@ static struct press	presses[64];
 static int		npresses;
 static void		parse_presses(const char *spec);
 static void		gun_update(void);
+static float	mouse_gx = 200.0f, mouse_gy = 128.0f;	/* CARNEVIL_AIM=x,y sets the start (headless tests) */
 static unsigned int	sound_control = 1, main_control;
 unsigned		dcs_fifo_space(void);
 void			dcs_fifo_reset(void);
@@ -78,6 +79,7 @@ void hal_init(int argc, char **argv)
 	if(getenv("CARNEVIL_RAW")) hal_raw_image = getenv("CARNEVIL_RAW");
 	if(getenv("CARNEVIL_STATE")) hal_state_root = getenv("CARNEVIL_STATE");
 	if(getenv("CARNEVIL_TRACE")) port_trace = 1;
+	if(getenv("CARNEVIL_AIM")) sscanf(getenv("CARNEVIL_AIM"), "%f,%f", &mouse_gx, &mouse_gy);
 	/* fd 3 is the BIOS CMOS device: park /dev/null there so no real file ever gets it */
 	resolve();
 	nul = real_open("/dev/null", O_RDONLY, 0);
@@ -135,14 +137,26 @@ void hal_key(const char *name, int down)
 	if(down) { coin_held |= c; player_held |= p; gun_held |= g; }
 	else { coin_held &= ~c; player_held &= ~p; gun_held &= ~g; }
 }
+/* the mouse stands in for player 1's gun: its position in game-screen units (x 0..400 from the
+   left, y 0..256 from the bottom, the Glide origin), set by the window; the raw gun values the
+   game's reader expects are computed back through its calibration (port_gun_raw, game_stub.c) */
+static int	mouse_on = 1;				/* headless runs shoot at the centre */
+void port_gun_raw(int player, float sx, float sy, int *rx, int *ry);
+void hal_mouse(float gx, float gy, int on)
+{
+	mouse_gx = gx; mouse_gy = gy; mouse_on = on;
+}
 static void gun_update(void)
 {
+	int rx = 128 << 4, ry = 128 << 4, rx2 = 128 << 4, ry2 = 128 << 4;
 	if(!hal_gun_regs) return;
-	/* MAME carnevil_gun_r layout, one byte per 32-bit slot: X low, X high | buttons | 0x40, Y low, Y high; P2 at +0x10 */
-	hal_gun_regs[0x00] = (128 << 4) & 0xff; hal_gun_regs[0x04] = (128 >> 4) | ((gun_held & 3) << 4) | 0x40;
-	hal_gun_regs[0x08] = (128 << 4) & 0xff; hal_gun_regs[0x0c] = 128 >> 4;
-	hal_gun_regs[0x10] = (128 << 4) & 0xff; hal_gun_regs[0x14] = (128 >> 4) | (gun_held & 0x30) | 0x40;
-	hal_gun_regs[0x18] = (128 << 4) & 0xff; hal_gun_regs[0x1c] = 128 >> 4;
+	port_gun_raw(0, mouse_gx, mouse_gy, &rx, &ry);
+	port_gun_raw(1, 200.0f, 128.0f, &rx2, &ry2);
+	/* MAME carnevil_gun_r layout, one byte per 32-bit slot: X low, X high | buttons | 0x40 (sees the screen), Y low, Y high; P2 at +0x10 */
+	hal_gun_regs[0x00] = rx & 0xff; hal_gun_regs[0x04] = ((rx >> 8) & 0xf) | ((gun_held & 3) << 4) | (mouse_on ? 0x40 : 0);
+	hal_gun_regs[0x08] = ry & 0xff; hal_gun_regs[0x0c] = (ry >> 8) & 3;
+	hal_gun_regs[0x10] = rx2 & 0xff; hal_gun_regs[0x14] = ((rx2 >> 8) & 0xf) | (gun_held & 0x30) | 0x40;
+	hal_gun_regs[0x18] = ry2 & 0xff; hal_gun_regs[0x1c] = (ry2 >> 8) & 3;
 }
 static void presses_update(void)
 {

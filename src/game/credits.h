@@ -30,32 +30,47 @@ extern pricing_record_t	*pricing_by_dip[32];		/* 0x80179b60 */
 extern char		*currency_names[12];		/* 0x80177be8 */
 
 /* per-player state block (0x801e0f64 + player * 0x120): only the fields credits.c uses */
+struct gun;
 typedef struct player_stats
 {
 	int	unk0;			/* +0x00 (the record starts 4 bytes before Binary Ninja's player_stats) */
 	int	state;			/* +0x04 (0x801e0f64): 0 idle, 4 playing, 8 waiting to continue, 0x20 joining */
-	int	unk8;			/* +0x08: cleared when the main game process starts */
+	int	score;			/* +0x08: cleared when the main game process starts */
 	unsigned int colour;		/* +0x0c: 0xff00 player 1, 0xff00ff player 2 */
-	int	unk10, unk14, unk18, unk1c, unk20;
-	float	unk24, unk28;		/* +0x24, +0x28: both start at 1300 - 200 * adjustment 0x31 */
+	int	unk10, unk14;
+	int	shots;			/* +0x18: shots fired this level (accuracy_tracking) */
+	int	hits;			/* +0x1c */
+	float	accuracy;		/* +0x20: hits / shots */
+	float	health, max_health;	/* +0x24, +0x28: both start at 1300 - 200 * adjustment 0x31 */
 	int	unk2c;
 	int	start_time;		/* +0x30: D_801facc8 when the player joined */
 	int	unk34;
 	int	level_start_time;	/* +0x38: D_801facc8 when the level started */
 	int	unk3c;
 	int	continues;		/* +0x40 */
-	void	*gun;			/* +0x44: the player's gun record (camera.c guns[]) */
-	int	unk48, unk4c, unk50, unk54, unk58, unk5c, unk60, unk64, unk68;
+	struct gun *gun;		/* +0x44: the player's gun record (camera.c guns[]) */
+	int	unk48, unk4c, unk50, unk54;
+	int	shot_pending;		/* +0x58: 1 fire when the gun sees the screen, 2 pointed off screen (a reload) */
+	int	offscreen_timer;	/* +0x5c */
+	int	trigger_was;		/* +0x60: the trigger bit last vblank */
+	int	pump_was;		/* +0x64 */
+	int	autofire;		/* +0x68: frames the trigger has been held (the big weapons fire every 6th) */
 	float	unk6c;			/* +0x6c: 100 player 1, 300 player 2 (a screen x) */
 	float	unk70;			/* +0x70: 128 (a screen y) */
 	int	priority;		/* +0x74: sound priority word (levelsnd.c) */
 	int	priority2;		/* +0x78 */
 	int	unk7c, unk80, unk84;
 	int	volume;			/* +0x88: sound volume (levelsnd.c) */
-	int	unk8c[11];
+	int	unk8c, unk90, unk94;
+	int	weapon;			/* +0x98: 1 pistol, 2 shotgun, 0x1000003 machine gun, 0x1000004 flame thrower, 0x1000005 the acid gun (bit 24 = automatic) */
+	int	ammo;			/* +0x9c */
+	int	ammo_max;		/* +0xa0 */
+	int	has_mag;		/* +0xa4: the pistol reloads instead of running out */
+	float	damage;			/* +0xa8 */
+	float	aim_dir[3];		/* +0xac: the shot's direction in view space (objects.c shot tests) */
 	int	shooting;		/* +0xb8: 1 while the player's shot is being resolved */
-	int	weapon;			/* +0xbc: 0x1000004 the gun, 0x1000005 the heavy weapon (term.c) */
-	int	unkc0;
+	int	shot_weapon;		/* +0xbc: the weapon the shot being resolved came from */
+	float	shot_damage;		/* +0xc0 */
 	int	hit;			/* +0xc4: 1 when the shot landed on an enemy */
 	int	hit_id;			/* +0xc8: the object hit */
 	int	hit_group;		/* +0xcc: the submesh hit */
@@ -65,9 +80,11 @@ typedef struct player_stats
 	float	hit_point[3];		/* +0xe4: where it landed on the enemy */
 	void	*die;			/* +0xf0: the enemy's die callback, (game_object_t *, player_stats_t *) */
 	int	time_to_continue;	/* +0xf4 */
-	int	unkf8, unkfc, unk100;
-	int	unk104;			/* +0x104: 6 at a start */
-	int	unk108, unk10c, unk110, unk114, unk118, unk11c;
+	float	shot_x, shot_y;		/* +0xf8: the shot's screen position */
+	float	shot_depth;		/* +0x100: the movie's depth under it */
+	int	pistol_ammo;		/* +0x104: 6 at a start, 10 with a refill */
+	int	clicks;			/* +0x108: empty-gun pulls (every 4th clicks louder) */
+	int	unk10c, unk110, unk114, unk118, unk11c;
 } player_stats_t;
 
 /* the credit counters (0x801de8d8) */

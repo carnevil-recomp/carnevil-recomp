@@ -109,3 +109,157 @@ void average_audit(int count_audit, int mean_audit, int value)
 	set_audit(count_audit, count);
 	set_audit(mean_audit, mean);
 }
+
+/* 0x800f2578: a float adjustment is kept in three consecutive slots */
+int set_float_adjustment(int adj, float value)
+{
+	int	v;
+
+	v = *(int *)&value;
+	set_adjustment(adj, v);
+	set_adjustment(adj + 1, v);
+	set_adjustment(adj + 2, v);
+	return(0);
+}
+
+/* 0x800f25d0: read the three copies of a float adjustment: the value the readable copies
+   agree on, else the default, and the three are rewritten unless they all agreed; the return
+   code says which copies were bad or disagreed */
+int get_float_adjustment(int adj, float *out, float def)
+{
+	float	a, b, c;
+	int	ea, eb, ec;
+	int	v;
+
+	ea = get_adjustment(adj, (int *)&a);
+	eb = get_adjustment(adj + 1, (int *)&b);
+	ec = get_adjustment(adj + 2, (int *)&c);
+	if(!ea && !eb && !ec)
+	{
+		if(a == b && b == c)
+		{
+			*out = a;
+			return(0);
+		}
+		if(a == b)
+		{
+			*out = a;
+			v = *(int *)&a;
+			set_adjustment(adj, v);
+			set_adjustment(adj + 1, v);
+			set_adjustment(adj + 2, v);
+			return(4);
+		}
+		if(a == c)
+		{
+			*out = a;
+			v = *(int *)&a;
+			set_adjustment(adj, v);
+			set_adjustment(adj + 1, v);
+			set_adjustment(adj + 2, v);
+			return(2);
+		}
+		if(b == c)
+		{
+			*out = b;
+			v = *(int *)&b;
+			set_adjustment(adj, v);
+			set_adjustment(adj + 1, v);
+			set_adjustment(adj + 2, v);
+			return(1);
+		}
+		v = *(int *)&def;
+		set_adjustment(adj, v);
+		set_adjustment(adj + 1, v);
+		set_adjustment(adj + 2, v);
+		*out = def;
+		return(7);
+	}
+	if(!ea && !eb)
+	{
+		if(a == b)
+		{
+			*out = a;
+			v = *(int *)&a;
+			set_adjustment(adj, v);
+			set_adjustment(adj + 1, v);
+			set_adjustment(adj + 2, v);
+			return(0x40);
+		}
+		v = *(int *)&def;
+		set_adjustment(adj, v);
+		set_adjustment(adj + 1, v);
+		set_adjustment(adj + 2, v);
+		*out = def;
+		return(0x47);
+	}
+	if(!ea && !ec)
+	{
+		if(a == c)
+		{
+			*out = a;
+			v = *(int *)&a;
+			set_adjustment(adj, v);
+			set_adjustment(adj + 1, v);
+			set_adjustment(adj + 2, v);
+			return(0x20);
+		}
+		v = *(int *)&def;
+		set_adjustment(adj, v);
+		set_adjustment(adj + 1, v);
+		set_adjustment(adj + 2, v);
+		*out = def;
+		return(0x27);
+	}
+	if(!ec && !eb)
+	{
+		if(c == b)
+		{
+			*out = c;
+			v = *(int *)&c;
+			set_adjustment(adj, v);
+			set_adjustment(adj + 1, v);
+			set_adjustment(adj + 2, v);
+			return(0x10);
+		}
+		v = *(int *)&def;
+		set_adjustment(adj, v);
+		set_adjustment(adj + 1, v);
+		set_adjustment(adj + 2, v);
+		*out = def;
+		return(0x47);
+	}
+	if(!ea)
+	{
+		*out = a;
+		v = *(int *)&a;
+		set_adjustment(adj, v);
+		set_adjustment(adj + 1, v);
+		set_adjustment(adj + 2, v);
+		return(0x60);
+	}
+	if(!eb)
+	{
+		*out = b;
+		v = *(int *)&b;
+		set_adjustment(adj, v);
+		set_adjustment(adj + 1, v);
+		set_adjustment(adj + 2, v);
+		return(0x50);
+	}
+	if(ec)
+	{
+		v = *(int *)&def;
+		set_adjustment(adj, v);
+		set_adjustment(adj + 1, v);
+		set_adjustment(adj + 2, v);
+		*out = def;
+		return(0x70);
+	}
+	*out = c;
+	v = *(int *)&c;
+	set_adjustment(adj, v);
+	set_adjustment(adj + 1, v);
+	set_adjustment(adj + 2, v);
+	return(0x30);
+}

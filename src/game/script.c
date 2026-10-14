@@ -17,7 +17,7 @@ extern void	play_level_music(int, char *), play_level_speech(int, char *), start
 extern void	stop_level_music(void), fade_out_level_music(void), fade_out_level_stream(void), disable_guns(void);
 extern void	play_bigtop_cue(int, int), play_bigtop2_cue(int);
 extern void	stream_set_loop(int, int), stream_jump(int, int, int);	/* 0x801400a4, 0x801400dc */
-extern void	*func_800d6758();
+extern void	*disable_accuracy_tracking();
 extern short	add_object1_wrapper(int, void (*)(), int, int);
 extern void	level_end_stats_wrapper();
 
@@ -233,7 +233,7 @@ void script_fade_out_40(void) { fade(0.0f, 40, 0); }
 void script_fade_out_40b(void) { fade(0.0f, 40, 0); }
 void script_level_end_stats(void)
 {
-	func_800d6758();
+	disable_accuracy_tracking();
 	add_object1_wrapper(0x800, level_end_stats_wrapper, 0, 0);
 }
 void script_end_cleanup(void)

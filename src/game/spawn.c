@@ -374,7 +374,7 @@ void free_die_list(void)
 
 /* ---- 0x800e9570: the per-type constructor ---- */
 extern int	violence_level;				/* 0x801e5bfc */
-extern void	func_800d6758(void);
+extern void	disable_accuracy_tracking(void);
 extern void	set_enemy_scale(enemy_t *, float);	/* objects.c */
 extern void	level_end_stats_wrapper(game_object_t *);
 #define NO_INIT		((int (*)(game_object_t *))0)
@@ -410,7 +410,7 @@ ENEMY(func_80118728, func_8011905c, func_80119280)
 ENEMY(func_801222d0, func_80122818, func_801229d4)
 ENEMY(term_draw, term_init, term_think)
 ENEMY(func_80124c68, func_8012562c, func_80125824)
-ENEMY(krinkle_draw, krinkle_init, func_80126fd8)
+ENEMY(krinkle_draw, krinkle_init, krinkle_think)
 ENEMY(func_801293b8, func_801298c8, func_80129a8c)
 ENEMY(func_80129d58, func_8012a818, func_8012aa28)
 ENEMY(func_801348e0, func_801352f4, func_801354fc)
@@ -461,7 +461,7 @@ int construct_and_spawn_object(spawn_t *s, int index)
 	switch(s->type)
 	{
 	case 0x800:
-		func_800d6758();
+		disable_accuracy_tracking();
 		type = (short)s->type;
 		draw = level_end_stats_wrapper;
 		init = NO_INIT;
@@ -531,7 +531,7 @@ int construct_and_spawn_object(spawn_t *s, int index)
 		type = (short)s->type;
 		draw = krinkle_draw;
 		init = krinkle_init;
-		think = func_80126fd8;
+		think = krinkle_think;
 		break;
 	case 0x2046:
 		type = (short)s->type;

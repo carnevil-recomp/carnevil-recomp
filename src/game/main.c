@@ -301,7 +301,7 @@ extern void	enable_guns(void), normal_screen(void), delete_process_id(int);
 extern void	remove_all_objects(void), preload_wave(int), unload_wave(void), load_credits(void);
 extern void	fade(float, int, int), script_level_end_stats(void), graphical_printf(char *, char *, ...);
 extern void	draw_string_centered(int, char *, float, float, unsigned int);
-extern void	func_800d6744(void), func_800d6758(void), func_80102690(void), func_800d5f34(player_stats_t *, int);
+extern void	enable_accuracy_tracking(void), disable_accuracy_tracking(void), func_80102690(void), set_weapon(player_stats_t *, int);
 extern void	set_level_start_time(player_stats_t *), func_80102500(player_stats_t *), something_player_score(player_stats_t *);
 extern void	L_80101908(game_object_t *), func_80102454(game_object_t *);	/* the level-select targets (objects 0x710-0x713) */
 extern int	func_801020b4(game_object_t *);
@@ -381,11 +381,11 @@ void main_game_proc(void)
 #endif
 	grDepthBufferMode(GR_DEPTHBUFFER_WBUFFER);
 	grDepthBufferFunction(GR_CMP_LEQUAL);
-	player_stats[0].unk8 = 0;
-	player_stats[1].unk8 = 0;
+	player_stats[0].score = 0;
+	player_stats[1].score = 0;
 	something_with_reload_p1 = 0;
 	something_with_reload_p2 = 0;
-	func_800d6758();
+	disable_accuracy_tracking();
 	while(wave_busy == 1)
 	{
 		sleep(1);
@@ -407,8 +407,8 @@ void main_game_proc(void)
 		movie_start();
 		func_80102690();
 		enable_guns();
-		func_800d5f34(&player_stats[0], 1);
-		func_800d5f34(&player_stats[1], 1);
+		set_weapon(&player_stats[0], 1);
+		set_weapon(&player_stats[1], 1);
 		sleep(2);
 		normal_screen();
 		sleep(5);
@@ -498,7 +498,7 @@ void main_game_proc(void)
 		movie_start();
 		please_wait_timer = 0;
 		game_phase = 2;
-		func_800d6744();
+		enable_accuracy_tracking();
 		if(player_stats[0].state)
 		{
 			set_level_start_time(&player_stats[0]);

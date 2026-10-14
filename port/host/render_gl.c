@@ -474,3 +474,13 @@ void render_set_dump(const char *path, unsigned long every) { dump_path = path; 
 void grFogMode(int mode) { (void)mode; }
 void grFogColorValue(unsigned int c) { (void)c; }
 void grFogTable(const unsigned char *t) { (void)t; }
+
+/* a window position (backing pixels, origin bottom-left) in game-screen units; 0 when outside the picture */
+int video_to_game(float wx, float wy, float *gx, float *gy)
+{
+	float sx = win_w / hres, sy = win_h / vres, s = sx < sy ? sx : sy;
+	int vw = (int)(hres * s), vh = (int)(vres * s), vx = (win_w - vw) / 2, vy = (win_h - vh) / 2;
+	*gx = (wx - vx) / s; *gy = (wy - vy) / s;
+	if(!origin_lower_left) *gy = vres - *gy;
+	return *gx >= 0 && *gx <= hres && *gy >= 0 && *gy <= vres;
+}

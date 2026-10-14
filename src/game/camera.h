@@ -8,10 +8,11 @@
 /* a light gun's record (0x801e70b0 player 1, 0x801e70d4 player 2) */
 typedef struct gun
 {
-	int	unk0, unk4, unk8;
+	int	raw_x, raw_y;		/* +0x00: the I/O ASIC's 12 and 10 bit readings */
+	int	on_screen;		/* +0x08: the gun sees the screen (bit 0x40) */
 	float	scale_x, scale_y;	/* +0x0c, +0x10: raw gun units per pixel */
 	float	off_x, off_y;		/* +0x14, +0x18 */
-	int	unk1c, unk20;
+	int	screen_x, screen_y;	/* +0x1c, +0x20: 1..399, 1..255 */
 } gun_t;
 
 extern gun_t	guns[2];
@@ -23,6 +24,8 @@ extern float	view_matrix[9], camera_neg_pos[3];
 extern int	camera_follow;
 extern float	fov_x, fov_y, cull_x, cull_y, proj_x, proj_y, screen_aspect, screen_w, screen_h;
 extern int	half_height, guns_active;
+extern int	gun_min_x, gun_max_x, gun_min_y, gun_max_y;
+extern int	accuracy_tracking;		/* shoot.c */
 
 void	set_field_of_view(float x_degrees, float y_degrees);
 void	update_camera(int frame);

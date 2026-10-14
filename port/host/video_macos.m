@@ -58,8 +58,19 @@ int video_open(int width, int height, const char *title)
 		[win makeKeyAndOrderFront:nil];
 		[NSApp activateIgnoringOtherApps:YES];
 		[NSApp finishLaunching];
+		[win setAcceptsMouseMovedEvents:YES];
 	}
 	return 1;
+}
+
+extern int video_to_game(float wx, float wy, float *gx, float *gy);
+static void mouse_to_gun(NSEvent *ev)
+{
+	NSPoint p = [view convertPoint:[ev locationInWindow] fromView:nil];
+	NSPoint b = [view convertPointToBacking:p];
+	float gx, gy;
+	int on = video_to_game((float)b.x, (float)b.y, &gx, &gy);
+	hal_mouse(gx, gy, on);
 }
 
 void video_present(void)
@@ -76,7 +87,8 @@ void video_present(void)
 				if(k) { hal_key(k, t == NSEventTypeKeyDown); continue; }
 			}
 			else if(t == NSEventTypeFlagsChanged) { hal_key("trigger", ([ev modifierFlags] & NSEventModifierFlagControl) != 0); continue; }
-			else if(t == NSEventTypeLeftMouseDown || t == NSEventTypeLeftMouseUp) { hal_key("trigger", t == NSEventTypeLeftMouseDown); continue; }
+			else if(t == NSEventTypeLeftMouseDown || t == NSEventTypeLeftMouseUp) { mouse_to_gun(ev); hal_key("trigger", t == NSEventTypeLeftMouseDown); continue; }
+			else if(t == NSEventTypeMouseMoved || t == NSEventTypeLeftMouseDragged) { mouse_to_gun(ev); continue; }
 			[NSApp sendEvent:ev];
 		}
 		[ctx makeCurrentContext];

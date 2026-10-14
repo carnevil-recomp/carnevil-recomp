@@ -7,6 +7,7 @@
 
 #include "objects.h"
 #include "enemy.h"
+#include "model.h"			/* submesh_t, group_t, frame_t */
 #include "credits.h"			/* game_phase, player_stats */
 #include "levelsnd.h"
 #include "movie.h"
@@ -26,7 +27,7 @@ extern void	draw_marker(float *, float, unsigned int);
 extern void	update_camera(int), update_lights(int);
 extern void	*camera_data;				/* camera.c: the level's camera file, 0 when none */	/* camera.c, and the lights */
 extern void	apply_fog(void), func_800ff418(void);
-extern player_stats_t *something_to_do_with_shooting_(player_stats_t *);	/* 0x800d5a84 */
+extern player_stats_t *resolve_shot(player_stats_t *);	/* 0x800d5a84 */
 extern void	func_800ce2f8(float *, float, float *);
 extern void	func_800fe580(void), func_800fef18(void), func_800ffbdc(void), func_800fe1fc(void);
 extern void	func_800dbb80(void), func_80100558(void), func_800e2fe4(void), func_800db4b8(void), func_800c83bc(void);
@@ -111,11 +112,11 @@ void draw_pass(void)
 	}
 	if(player_stats[0].shooting == 1)
 	{
-		something_to_do_with_shooting_(&player_stats[0]);
+		resolve_shot(&player_stats[0]);
 	}
 	if(player_stats[1].shooting == 1)
 	{
-		something_to_do_with_shooting_(&player_stats[1]);
+		resolve_shot(&player_stats[1]);
 	}
 	if(debug_mode & DEBUG_CHARACTERS)
 	{
@@ -285,8 +286,8 @@ short add_object(game_object_t *tmpl)
 	obj = &objects[id];
 	*obj = *tmpl;
 	obj->id = id;
-	obj->unused18 = 0;
-	obj->unused1c = 0;
+	obj->hit = 0;
+	obj->die = 0;
 	obj->remove = 0;
 	obj->data = 0;
 
@@ -671,4 +672,246 @@ void vec_max_normalize(float *v)
 	v[0] = v[0] * m;
 	v[1] = v[1] * m;
 	v[2] = v[2] * m;
+}
+
+/* ---- the shot tests and the animation blends (0x800cdeac-0x800cf028) ---- */
+
+extern void	world_to_view(float *, float *), view_to_world(float *);	/* vecmat.c */
+extern void	rot_matrix_zyx(float *, float *), mat_vec_mul(float *, float *, float *);
+
+/* 0x800cdeac: the player's shot against a sphere of radius^2 r2 at pos: the shot's view-space
+   ray is extended to the sphere's depth, the movie must not be nearer than the sphere (the
+   hit point under the crosshair), and on a hit the aim point is converted to the world */
+int shot_hits_sphere(float *pos, float r2, player_stats_t *p)
+{
+	float	v[3];
+	float	a[3];
+
+	world_to_view(pos, v);
+	if((double)v[2] < 1.1 || v[2] > 400.0f)
+	{
+		return(0);
+	}
+	p->aim[2] = v[2] * p->aim_dir[2];
+	p->aim[0] = p->aim_dir[0] * p->aim[2];
+	p->aim[1] = p->aim_dir[1] * p->aim[2];
+	world_to_view(p->hit_point, a);
+#ifdef PORT_HOST
+	{ extern int port_trace; if(port_trace) fprintf(stderr, "[shot]   sphere at view (%.1f %.1f %.1f) r2 %.1f: aim (%.1f %.1f %.1f), the movie at %.1f\n", v[0], v[1], v[2], r2, p->aim[0], p->aim[1], p->aim[2], a[2]); }
+#endif
+	if(a[2] < v[2])
+	{
+		return(0);
+	}
+	if((p->aim[0] - v[0]) * (p->aim[0] - v[0]) + (p->aim[1] - v[1]) * (p->aim[1] - v[1]) < r2)
+	{
+		p->aim[2] = v[2];
+		view_to_world(p->aim);
+		return(1);
+	}
+	return(0);
+}
+
+/* 0x800cdfb4: the first of n submeshes (visible, or a hit target) whose sphere the shot
+   lands in, or -1 */
+int find_submesh_hit(enemy_t *e, submesh_t *subs, int n, player_stats_t *p)
+{
+	int	i;
+	group_t	*g;
+	float	r2;
+	float	v[3];
+	float	a[3];
+	int	hit;
+
+	for(i = 0; i < n; i++, subs++)
+	{
+		g = &e->groups[i];
+		if(!(g->flags & 0x3001))
+		{
+			continue;
+		}
+		r2 = (subs->radius * e->scale[0]) * (subs->radius * e->scale[0]);
+		world_to_view(g->pivot, v);
+		if((double)v[2] < 1.1 || v[2] > 400.0f)
+		{
+			hit = 0;
+		}
+		else
+		{
+			p->aim[2] = v[2] * p->aim_dir[2];
+			p->aim[0] = p->aim_dir[0] * p->aim[2];
+			p->aim[1] = p->aim_dir[1] * p->aim[2];
+			world_to_view(p->hit_point, a);
+			if(a[2] < v[2])
+			{
+				hit = 0;
+			}
+			else if((p->aim[0] - v[0]) * (p->aim[0] - v[0]) + (p->aim[1] - v[1]) * (p->aim[1] - v[1]) < r2)
+			{
+				p->aim[2] = v[2];
+				view_to_world(p->aim);
+				hit = 1;
+			}
+			else
+			{
+				hit = 0;
+			}
+		}
+		if(hit)
+		{
+			return(i);
+		}
+	}
+	return(-1);
+}
+
+/* 0x800ce720: a blend has been set up (frame_from, frame_to, blend_len): the root motion
+   between the two frames, turned by the enemy's rotation, becomes its velocity */
+void start_blend(enemy_t *e, submesh_t *subs, int n)
+{
+	float	d[3];
+	float	m[9];
+	frame_t	*anim;
+
+	rot_matrix_zyx(m, &e->rx);
+	anim = subs[n].anim;
+	d[0] = anim[e->frame_from].pos[0] - anim[e->frame_to].pos[0];
+	d[1] = anim[e->frame_from].pos[1] - anim[e->frame_to].pos[1];
+	d[2] = anim[e->frame_from].pos[2] - anim[e->frame_to].pos[2];
+	mat_vec_mul(d, m, d);
+	e->vel[0] = d[0] * e->scale[0] / (float)e->blend_len;
+	e->vel[1] = 0;
+	e->vel[2] = d[2] * e->scale[2] / (float)e->blend_len;
+}
+
+/* 0x800ce884: jump to a frame, moving the enemy by the root motion between the frames */
+void blend_from_pose(enemy_t *e, submesh_t *subs, int n, int frame)
+{
+	float	d[3];
+	float	m[9];
+	frame_t	*anim;
+
+	rot_matrix_zyx(m, &e->rx);
+	anim = subs[n].anim;
+	d[0] = anim[e->frame].pos[0] - anim[frame].pos[0];
+	d[1] = anim[e->frame].pos[1] - anim[frame].pos[1];
+	d[2] = anim[e->frame].pos[2] - anim[frame].pos[2];
+	mat_vec_mul(d, m, d);
+	e->x = e->x + d[0] * e->scale[0];
+	e->z = e->z + d[2] * e->scale[2];
+	e->frame = frame;
+}
+
+/* 0x800ced14: blend from the current frame to another over len draws */
+void blend_to_frame(enemy_t *e, submesh_t *subs, int n, int frame, int len)
+{
+	short	old;
+
+	if(e->frame != frame)
+	{
+		old = e->frame;
+		e->frame_to = frame;
+		e->frame = frame;
+		e->blend_pos = 0;
+		e->blend_len = len;
+		e->flags |= 2;
+		e->frame_from = old;
+		start_blend(e, subs, n);
+	}
+}
+
+/* 0x800cef8c: a hit reaction: remember the state and frame to come back to, then jump to
+   the reaction's frame (through the blend when one is running) */
+void start_hit_reaction(enemy_t *e, int frame, int state, submesh_t *subs, int n)
+{
+	unsigned short old_state;
+	short	old_frame;
+
+	if(e->flags & 2)
+	{
+		old_state = e->ai_state;
+		old_frame = e->frame;
+		e->flags &= 0xfffd;
+		e->frame = frame;
+		e->ai_state = state;
+		e->resume_state = old_state;
+		e->resume_frame = old_frame;
+	}
+	else if(!(e->ai_state & 0x1000))
+	{
+		e->resume_state = e->ai_state;
+		e->resume_frame = e->frame;
+		blend_from_pose(e, subs, n, frame);
+		e->ai_state = state;
+	}
+	else if(state != e->ai_state)
+	{
+		blend_from_pose(e, subs, n, frame);
+		e->ai_state = state;
+	}
+	else
+	{
+		e->frame = frame;
+		e->ai_state = state;
+	}
+}
+
+/* ---- the shot (0x800ccbd0) ---- */
+
+extern void	screen_to_ray(float *, float, float), screen_to_point(float *, float, float, float);	/* vecmat.c */
+extern float	movie_depth_at(float, float);
+int	D_801faca4, D_801facb4;			/* the debug aim point */
+
+/* 0x800ccbd0: a player's shot: the aim ray from the screen position, the hit point from
+   the movie's depth under it, every object's hit test, then the hit object's die callback */
+void shoot_objects(player_stats_t *p)
+{
+	int	x, y;
+	float	depth;
+	game_object_t *obj;
+	short	i;
+
+	if(debug_mode & 2)
+	{
+		x = D_801faca4;
+		y = D_801facb4;
+	}
+	else
+	{
+		x = *(int *)&p->shot_x;
+		y = *(int *)&p->shot_y;
+	}
+	screen_to_ray(p->aim_dir, *(float *)&x, *(float *)&y);
+	p->aim_dir[2] = 1.0f / p->aim_dir[2];
+	p->hit = 0;
+	p->unk10 = p->colour;
+	depth = movie_depth_at(p->shot_x, p->shot_y);
+	p->shot_depth = depth;
+	if(depth <= 1.0f)
+	{
+		p->shot_depth = 1.1f;
+	}
+	screen_to_point(p->hit_point, *(float *)&x, *(float *)&y, p->shot_depth);
+	view_to_world(p->hit_point);
+#ifdef PORT_HOST
+	{ extern int port_trace; extern unsigned long hal_frame_count;
+	  if(port_trace) fprintf(stderr, "[shot] vblank %lu player %d at (%.0f, %.0f) depth %.1f aim (%.3f %.3f %.3f) point (%.1f %.1f %.1f)\n", hal_frame_count, p->index, p->shot_x, p->shot_y, p->shot_depth, p->aim_dir[0], p->aim_dir[1], p->aim_dir[2], p->hit_point[0], p->hit_point[1], p->hit_point[2]); }
+#endif
+	i = objects[0].next;
+	while(i != OBJ_NONE)
+	{
+		obj = &objects[i];
+		i = obj->next;
+		if(obj->hit)
+		{
+			obj->hit(obj, p);
+		}
+	}
+	if(p->hit == 1)
+	{
+#ifdef PORT_HOST
+		{ extern int port_trace; if(port_trace) fprintf(stderr, "[shot] hit object %d type %04x group %d weapon %#x damage %.1f\n", p->hit_id, objects[p->hit_id].type, p->hit_group, p->shot_weapon, p->shot_damage); }
+#endif
+		((int (*)(game_object_t *, player_stats_t *))p->die)(&objects[p->hit_id], p);
+	}
 }

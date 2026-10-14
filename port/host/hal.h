@@ -11,5 +11,6 @@ extern int hal_fast;                      /* --fast: do not sleep between frames
 extern int hal_headless;                  /* --headless: no window */
 extern unsigned long hal_frame_count;
 extern const char *hal_state_root;
-void hal_key(const char *name, int down);  /* a cabinet switch by name (see hal.c), pressed or released */
+void hal_key(const char *name, int down);
+void hal_mouse(float gx, float gy, int on);   /* the mouse as player 1's gun: game-screen x 0..400, y 0..256 from the bottom; on = over the picture */  /* a cabinet switch by name (see hal.c), pressed or released */
 #endif

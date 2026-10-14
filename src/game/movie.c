@@ -33,14 +33,14 @@ extern int	stream_kick(void);		/* 0x8013ff24: queue the next music stream read, 
 extern void	stream_fill_done(void);		/* 0x8013fea4 */
 extern int	end_of_wave(void);
 extern void	increment_audit(int);
-extern float	func_800c9158(unsigned int *);	/* depth word -> distance */
+extern float	depth_word_to_float(unsigned int *);	/* depth word -> distance */
 extern void	specific_gamma_load(float, float);
 extern void	stop_level_cue_and_stream(void), play_level_cue(int, char *);
 extern void	play_level_music(int, char *), play_level_speech(int, char *), start_level_music(int, char *);
 extern void	stop_level_music(void), fade_out_level_music(void), fade_out_level_stream(void), disable_guns(void);
 extern void	play_bigtop_cue(int, int), play_bigtop2_cue(int);
 extern void	stream_set_loop(int, int), stream_jump(int, int, int);	/* 0x801400a4, 0x801400dc */
-extern void	*func_800d6758(int);
+extern void	*disable_accuracy_tracking(int);
 extern short	add_object1_wrapper(int, void (*)(), int, int);
 extern void	level_end_stats_wrapper();
 extern unsigned int	background_color;
@@ -445,7 +445,7 @@ float movie_depth_at(float x, float y)
 	}
 	ix = (int)x;
 	iy = (int)y;
-	return(func_800c9158(&((unsigned int *)movie.disp->buffer)[iy * MOVIE_WIDTH + ix]));
+	return(depth_word_to_float(&((unsigned int *)movie.disp->buffer)[iy * MOVIE_WIDTH + ix]));
 }
 
 #ifdef PORT_HOST

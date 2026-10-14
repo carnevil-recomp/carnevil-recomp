@@ -1,5 +1,6 @@
 #ifndef GAME_OBJECTS_H
 #define GAME_OBJECTS_H
+struct player_stats;
 typedef struct game_object
 {
 	unsigned short	type;			/* 0xffff = free slot, 0xfffe = list head, bit 15 = keep on remove_all */
@@ -10,8 +11,8 @@ typedef struct game_object
 	int		(*init)(struct game_object *);
 	void		(*draw)(struct game_object *);	/* run by the "FOO" GOOSE object's draw pass */
 	void		(*think)(struct game_object *);	/* run by object_draw_func() each frame */
-	int		unused18;
-	int		unused1c;
+	int		(*hit)(struct game_object *, struct player_stats *);	/* the player's shot against it (shoot_objects) */
+	int		(*die)(struct game_object *, struct player_stats *);	/* unused by the objects code: the enemies keep their die callback here too */
 	void		(*remove)(struct game_object *);
 	int		unused24;
 } game_object_t;

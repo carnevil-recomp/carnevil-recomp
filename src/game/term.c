@@ -18,7 +18,7 @@
 #include "levelsnd.h"
 #include "camera.h"			/* camera_x */
 
-extern void	func_800fd9ac(enemy_t *);			/* run the attached effects */
+extern void	draw_effects(enemy_t *);			/* run the attached effects */
 extern void	graphical_printf(char *, char *, ...);
 extern void	draw_string_at_color(int, char *, int, unsigned int);
 extern void	func_800c8938(float *, float, unsigned int);
@@ -29,29 +29,29 @@ extern void	set_enemy_health(enemy_t *, float);		/* health by difficulty */
 extern player_stats_t *get_target_player(void);		/* objects.c */
 extern player_stats_t *get_player_info_struct2_(enemy_t *);
 extern int	randrng(int);
-extern void	func_800fd990(enemy_t *, void *);		/* attach an effect */
+extern void	attach_effect(enemy_t *, void *);
 extern void	*func_800febd0(float, float, group_t *);	/* a blood effect on a group */
 extern void	path_place(enemy_t *, void *, short, float);	/* start along a path */
 extern void	path_place_upright(enemy_t *, void *, short, float);	/* step along a path */
 extern void	func_800fd6b0(enemy_t *);
-extern void	func_800fda34(enemy_t *);
-extern void	func_800fda88(enemy_t *);
+extern void	think_effects(enemy_t *);
+extern void	free_effects(enemy_t *);
 extern void	func_80114b8c(enemy_t *, int);
 extern void	func_800fc34c(float *, float *, float *);	/* turn to face a point */
 extern int	group_near_camera(group_t *, float);		/* a group within reach of the player */
-extern void	decrenent_health_(player_stats_t *, int, int, int);
-extern void	func_800ced14(enemy_t *, submesh_t *, int, int, int);	/* blend to a frame */
-extern void	func_800cef8c(enemy_t *, int, int, submesh_t *, int);	/* hit reaction */
-extern void	func_800fb934(enemy_t *, float *, float *, float, int, float);
-extern int	func_800fbc6c(enemy_t *, float);
-extern int	func_800cdeac(float *, float, player_stats_t *);	/* the shot hits the sphere */
-extern int	do_something_with_submesh(enemy_t *, submesh_t *, int, player_stats_t *);
+extern void	decrenent_health_(player_stats_t *, int, int, float);
+extern void	blend_to_frame(enemy_t *, submesh_t *, int, int, int);	/* blend to a frame */
+extern void	start_hit_reaction(enemy_t *, int, int, submesh_t *, int);	/* hit reaction */
+extern void	set_goal_near_camera(enemy_t *, float *, float *, float, float, float);
+extern int	step_toward_goal(enemy_t *, float);
+extern int	shot_hits_sphere(float *, float, player_stats_t *);	/* the shot hits the sphere */
+extern int	find_submesh_hit(enemy_t *, submesh_t *, int, player_stats_t *);
 extern void	func_800fdc18(float *, float, int);
 extern void	func_800fdcf4(float *, float);
 extern void	func_800db810(float *, int, int);
 extern void	func_800ff190(float *, unsigned int);
-extern float	func_800e29b0(player_stats_t *);		/* the shot's damage */
-extern void	func_800e2958(int, int);			/* award points */
+extern float	shot_damage_of(player_stats_t *);		/* the shot's damage */
+extern void	award_points(int, int);			/* award points */
 extern int	mark_die();					/* spawn.c; the original passes the player too */
 extern int	remove_die();
 extern void	remove_animation(submesh_t *, int, int, char *), remove_model(void **, int, void **, int, void **, int, char *), remove_path(void **, int, char *);
@@ -79,7 +79,7 @@ void term_draw(game_object_t *obj)
 
 	e = (enemy_t *)obj->data;
 	draw_model(e, submesh_info_term, 0xd, term_verts, 0x179, term_faces, 0x27c, term_normals, 0x198);
-	func_800fd9ac(e);
+	draw_effects(e);
 	if(debug_mode & 0x400)
 	{
 		graphical_printf(text_buffer, "%d", e->num);
@@ -124,9 +124,9 @@ int term_hit(game_object_t *obj, player_stats_t *p)
 	int	group;
 
 	e = (enemy_t *)obj->data;
-	if(func_800cdeac(e->hit_group->pos, e->radius * e->radius, p))
+	if(shot_hits_sphere(e->hit_group->pos, e->radius * e->radius, p))
 	{
-		group = do_something_with_submesh(e, submesh_info_term, 0xd, p);
+		group = find_submesh_hit(e, submesh_info_term, 0xd, p);
 		if(group != -1)
 		{
 			p->hit = 1;
@@ -160,7 +160,7 @@ int term_die(game_object_t *obj, player_stats_t *p)
 	func_800db810(p->hit_point, 0, 0);
 	group = p->hit_group;
 	g = &e->groups[group];
-	if(p->weapon == 0x1000005)
+	if(p->shot_weapon == 0x1000005)
 	{
 		for(i = 0; i < 0xd; i++)
 		{
@@ -169,12 +169,12 @@ int term_die(game_object_t *obj, player_stats_t *p)
 		}
 		e->health = 0.01f;
 	}
-	if(p->weapon == 0x1000004)
+	if(p->shot_weapon == 0x1000004)
 	{
 		if(!(g->flags & 2))
 		{
 			g->flags |= 2;
-			func_800fd990(e, func_800febd0(0.0f, (submesh_info_term[group].radius + submesh_info_term[group].radius) * e->scale[0], g));
+			attach_effect(e, func_800febd0(0.0f, (submesh_info_term[group].radius + submesh_info_term[group].radius) * e->scale[0], g));
 		}
 	}
 	if(violence_level >= 3)
@@ -183,10 +183,10 @@ int term_die(game_object_t *obj, player_stats_t *p)
 	}
 	if(!(e->ai_state & 0x6000))
 	{
-		e->health -= func_800e29b0(p);
+		e->health -= shot_damage_of(p);
 		if(e->health <= 0.0f)
 		{
-			func_800e2958(p->index, 500);
+			award_points(p->index, 500);
 			play_enemy_sound((snd_object_t *)e, term_sounds[randrng(3)], "rickity", 2);
 			e->killer = p;
 			mark_die(obj->id, p);
@@ -203,7 +203,7 @@ int term_die(game_object_t *obj, player_stats_t *p)
 		}
 		else
 		{
-			func_800e2958(p->index, 50);
+			award_points(p->index, 50);
 			play_enemy_sound((snd_object_t *)e, term_sounds[randrng(3)], "rickity", 2);
 		}
 	}
@@ -213,15 +213,15 @@ int term_die(game_object_t *obj, player_stats_t *p)
 	}
 	if(group == 3)
 	{
-		func_800cef8c(e, 0x2d, 0x1003, submesh_info_term, 6);
+		start_hit_reaction(e, 0x2d, 0x1003, submesh_info_term, 6);
 	}
 	else if(group < 4 && group == 1)
 	{
-		func_800cef8c(e, 0x2d, 0x1002, submesh_info_term, 6);
+		start_hit_reaction(e, 0x2d, 0x1002, submesh_info_term, 6);
 	}
 	else
 	{
-		func_800cef8c(e, 0x2d, 0x1001, submesh_info_term, 6);
+		start_hit_reaction(e, 0x2d, 0x1001, submesh_info_term, 6);
 	}
 	return(0);
 }
@@ -284,8 +284,8 @@ int term_init(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->unused18 = (int)(long)term_hit;
-	obj->unused1c = (int)(long)term_die;
+	obj->hit = term_hit;
+	obj->die = term_die;
 	obj->remove = term_remove;
 	e->unk4 = 0x14;
 	e->unk2 = 0;
@@ -351,7 +351,7 @@ void term_remove(game_object_t *obj)
 	{
 		debug_enemy = 0;
 	}
-	func_800fda88(e);
+	free_effects(e);
 	free(e->groups);
 	free(e);
 }
@@ -371,7 +371,7 @@ void term_think(game_object_t *obj)
 		return;
 	}
 	e = (enemy_t *)obj->data;
-	func_800fda34(e);
+	think_effects(e);
 	func_80114b8c(e, 0xd);
 	if(e->flags & 2)
 	{
@@ -389,7 +389,7 @@ void term_think(game_object_t *obj)
 			break;
 		}
 		e->frame = frame;
-		func_800ced14(e, submesh_info_term, 6, e->resume_frame, 1);
+		blend_to_frame(e, submesh_info_term, 6, e->resume_frame, 1);
 		e->ai_state = e->resume_state;
 		break;
 	case 1:
@@ -408,7 +408,7 @@ void term_think(game_object_t *obj)
 		{
 			if(group_near_camera(&e->groups[4], 13.0f))
 			{
-				decrenent_health_(get_player_info_struct2_(e), 0xaa, 3, 0);
+				decrenent_health_(get_player_info_struct2_(e), 0xaa, 3, 0.0f);
 			}
 		}
 		if(e->frame < 0xf)
@@ -455,7 +455,7 @@ void term_think(game_object_t *obj)
 		}
 		if(group_near_camera(&e->groups[4], 8.0f))
 		{
-			decrenent_health_(get_player_info_struct2_(e), 0xaa, 3, 0);
+			decrenent_health_(get_player_info_struct2_(e), 0xaa, 3, 0.0f);
 			remove_die(obj->id, 0);
 		}
 		path_place_upright(e, term_path, e->path, 1.0f);
@@ -492,8 +492,8 @@ void term_steer(enemy_t *e)
 			e->target = p;
 		}
 	}
-	func_800fb934(e, &camera_x, &e->unk70, 2.0f, 0, -8.0f);
-	r = func_800fbc6c(e, 1.8f);
+	set_goal_near_camera(e, &camera_x, e->goal, 2.0f, 0, -8.0f);
+	r = step_toward_goal(e, 1.8f);
 	switch(r)
 	{
 	case 1:
@@ -507,7 +507,7 @@ void term_steer(enemy_t *e)
 		{
 			e->frame = frame - 1;
 		}
-		func_800ced14(e, submesh_info_term, 6, 0x3c, 1);
+		blend_to_frame(e, submesh_info_term, 6, 0x3c, 1);
 		e->ai_state = 3;
 		break;
 	case 2:
@@ -521,7 +521,7 @@ void term_steer(enemy_t *e)
 		{
 			e->frame = frame - 1;
 		}
-		func_800ced14(e, submesh_info_term, 6, 0, 1);
+		blend_to_frame(e, submesh_info_term, 6, 0, 1);
 		e->ai_state = 0x201;
 		break;
 	case 0:
@@ -534,7 +534,7 @@ void term_steer(enemy_t *e)
 		{
 			e->frame = frame - 1;
 		}
-		func_800ced14(e, submesh_info_term, 6, 0xf, 1);
+		blend_to_frame(e, submesh_info_term, 6, 0xf, 1);
 		e->ai_state = 1;
 		break;
 	}
@@ -547,7 +547,7 @@ void term_end_path(enemy_t *e)
 	{
 		e->unk6 = 0;
 		e->frame--;
-		func_800ced14(e, submesh_info_term, 6, 0xf, 2);
+		blend_to_frame(e, submesh_info_term, 6, 0xf, 2);
 		e->ai_state = 2;
 	}
 	else

@@ -24,8 +24,8 @@ extern void	func_800ffa20(float *pos);			/* something drawn around the camera wh
 extern void	debug_move_camera(void);			/* 0x800c93c4: the player 3/4 switches move the camera */
 extern int	load_camera_file(void **, int, char *, int);	/* loaders.c */
 extern int	get_adjustment(int, int *), set_adjustment(int, int);
-extern void	cmos_calibration_(void);			/* 0x800d4d00 */
-extern void	func_800d5478(int player, int bit), func_800d6038(player_stats_t *player, int bit);
+void	cmos_calibration_(void);			/* 0x800d4d00 */
+extern void	gun_trigger(int player, int bit), gun_pump(player_stats_t *player, int bit);
 
 void		*camera_data;		/* 0x801e5cbc: the level's camera file, 0 when none */
 int		camera_data_count;	/* 0x801e70fc: entries in it */
@@ -44,7 +44,7 @@ int		half_height = 128;	/* 0x8017dfd8 */
 gun_t		guns[2];		/* 0x801e70b0 (player 1), 0x801e70d4 (player 2) */
 int		guns_active;		/* 0x80179d54 (.data) */
 int		D_80212da4, D_80212da8;
-extern int	D_801f8848;					/* shoot.c */
+extern int	accuracy_tracking;					/* shoot.c */
 int		gun_min_x, gun_max_x, gun_min_y, gun_max_y;	/* 0x801e0e10/18/1c/20: the gun's raw range */
 
 extern signed char nss_control;				/* 0xb7f00000: the gun board's control byte, as a variable */
@@ -295,10 +295,10 @@ void poll_guns(void)
 {
 	if(guns_active)
 	{
-		func_800d5478(0, *GUN_P1 & 0x10);
-		func_800d5478(1, *GUN_P2 & 0x10);
-		func_800d6038(&player_stats[0], *GUN_P1 & 0x20);
-		func_800d6038(&player_stats[1], *GUN_P2 & 0x20);
+		gun_trigger(0, *GUN_P1 & 0x10);
+		gun_trigger(1, *GUN_P2 & 0x10);
+		gun_pump(&player_stats[0], *GUN_P1 & 0x20);
+		gun_pump(&player_stats[1], *GUN_P2 & 0x20);
 	}
 }
 
@@ -318,7 +318,7 @@ int kss_reset_(void)
 	v = nss_control;
 	printf("NSS reset = %x\n", v);
 	nss_control = v | 0x10;
-	D_801f8848 = 0;
+	accuracy_tracking = 0;
 	return(2);
 }
 
@@ -331,7 +331,7 @@ int kss_reset_w_calib_(void)
 	printf("NSS reset = %x\n", v);
 	nss_control = v | 0x10;
 	cmos_calibration_();
-	D_801f8848 = 0;
+	accuracy_tracking = 0;
 	return(2);
 }
 
@@ -362,4 +362,80 @@ void default_calibration(int player)
 	guns[player].off_y = ((float)gun_min_y / guns[player].scale_y - 20.0f) * guns[player].scale_y;
 	gun_max_x = 1720;
 	gun_max_y = 220;
+}
+
+extern int	set_float_adjustment(int, float), get_float_adjustment(int, float *, float);	/* adjust.c */
+extern int	set_adjustment(int, int);
+extern int	do_draw_background;
+extern int	D_801de8a0;			/* shoot.c: the calibration step */
+int	D_80179d50 = 0;			/* 0x80179d50 (.data): 1 once the guns may be sampled every vblank */
+
+/* 0x800d4d00: the guns' calibration from the CMOS adjustments 0x53-0x6a (each in triplicate),
+   guarded by a magic word at 0x52 and the "calibrate" request at 0x39: when any of that is
+   wrong the factory values are written back first */
+void cmos_calibration_(void)
+{
+	int	bad;
+	int	magic;
+	int	req;
+	int	phase;
+	int	r;
+
+	bad = 0;
+	D_80179d50 = 1;
+	D_801de8a0 = 0;
+	guns[0].scale_x = -1.0f;
+	guns[0].scale_y = -1.0f;
+	guns[1].scale_x = -1.0f;
+	guns[1].scale_y = -1.0f;
+	if(get_adjustment(0x52, &magic))
+	{
+		printf("bad cmos valid calib\n");
+		bad = 1;
+	}
+	if(magic != 0x23a4729)
+	{
+		printf("invalid calib, got %d (0x%08X), wanted %d\n", magic, magic, 0x23a4729);
+		bad = 1;
+	}
+	if(get_adjustment(0x39, &req) == 0 && req == 0)
+	{
+		r = 0;
+	}
+	else
+	{
+		set_adjustment(0x39, 0);
+		r = 1;
+	}
+	if(r)
+	{
+		printf("samhack calib\n");
+		bad = 1;
+	}
+	if(bad)
+	{
+		phase = game_phase;
+		do_draw_background = 1;
+		default_calibration(0);
+		default_calibration(1);
+		game_phase = phase;
+		set_float_adjustment(0x53, guns[0].scale_x);
+		set_float_adjustment(0x56, guns[0].scale_y);
+		set_float_adjustment(0x59, guns[0].off_x);
+		set_float_adjustment(0x5c, guns[0].off_y);
+		set_float_adjustment(0x5f, guns[1].scale_x);
+		set_float_adjustment(0x62, guns[1].scale_y);
+		set_float_adjustment(0x65, guns[1].off_x);
+		set_float_adjustment(0x68, guns[1].off_y);
+		set_adjustment(0x52, 0x23a4729);
+	}
+	get_float_adjustment(0x53, &guns[0].scale_x, 4.0235300f);
+	get_float_adjustment(0x56, &guns[0].scale_y, 0.94736803f);
+	get_float_adjustment(0x59, &guns[0].off_x, 285.52942f);
+	get_float_adjustment(0x5c, &guns[0].off_y, 25.052631f);
+	get_float_adjustment(0x5f, &guns[1].scale_x, 4.0117650f);
+	get_float_adjustment(0x62, &guns[1].scale_y, 0.89473701f);
+	get_float_adjustment(0x65, &guns[1].off_x, 271.76471f);
+	get_float_adjustment(0x68, &guns[1].off_y, 39.105263f);
+	D_801de8a0 = 0;
 }

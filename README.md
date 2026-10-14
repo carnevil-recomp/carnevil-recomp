@@ -71,8 +71,10 @@ ioctl) for traces. `CARNEVIL_PARTITION`, `CARNEVIL_RAW` and `CARNEVIL_STATE` are
 environment equivalents.
 
 ## Controls
-The cabinet's switches are mapped to the keyboard. Light-gun aiming is not implemented yet
-(the port reports a centred gun); it comes with the game code.
+The cabinet's switches are mapped to the keyboard, and the mouse is player 1's light gun:
+move it over the picture to aim (the game's own gun code converts the position through its
+calibration) and click to shoot. Pointing off the picture counts as pointing off the screen,
+which is how the original reloads.
 
 | Key | Cabinet switch |
 |---|---|
@@ -82,12 +84,15 @@ The cabinet's switches are mapped to the keyboard. Light-gun aiming is not imple
 | `9` | Service credit |
 | `-` / `=` | Volume down / up (hold: the volume bar appears) |
 | `Space` | Player 1 pump |
-| `Left Ctrl` or left mouse button | Player 1 trigger |
+| Left mouse button or `Left Ctrl` | Player 1 trigger |
+| Mouse position | Player 1 aim |
 | `F2` | Test switch (diagnostics not implemented yet) |
 
 For scripted runs, `--press` takes these switch names: `coin`, `coin2`, `coin3`, `coin4`,
 `bill`, `start1`, `start2`, `service`, `test`, `slam`, `voldown`, `volup`, `p1a`..`p1d`,
-`p2a`, `p2b`, `trigger`, `pump`, `trigger2`, `pump2` (each press is held for 6 frames):
+`p2a`, `p2b`, `trigger`, `pump`, `trigger2`, `pump2` (each press is held for 6 frames);
+headless shots go to the screen centre, or to `CARNEVIL_AIM=x,y` (x 0..400, y 0..256 from
+the bottom):
 
 ```
 build/host/carnevil --partition original/partition --raw original/carn.raw \

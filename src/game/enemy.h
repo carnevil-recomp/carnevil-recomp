@@ -36,9 +36,7 @@ typedef struct enemy
 	float		vel[3];			/* 0x60: added to the position each draw */
 	short		resume_frame;		/* 0x6c: a hit reaction blends back to this frame ... */
 	short		resume_state;		/* 0x6e: ... and this state */
-	float		unk70;
-	int		sound_priority;		/* 0x74 */
-	int		unk78;
+	float		goal[3];		/* 0x70: where the steering walks it to */
 	float		radius;			/* 0x7c: unkcc times the y scale */
 	int		unk80;
 	struct group	*hit_group;		/* 0x84 */

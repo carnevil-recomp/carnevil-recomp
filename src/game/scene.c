@@ -321,3 +321,16 @@ void record_free_mem(void)
 {
 	free_mem_left = get_free_mem_left();
 }
+
+/* 0x800c9158: a movie depth word (the high half: a 4-bit exponent and a 12-bit mantissa) as
+   the distance it encodes */
+float depth_word_to_float(unsigned int *p)
+{
+	unsigned int w;
+	unsigned int e;
+
+	w = *p & 0xffff0000;
+	e = (w >> 28) + 0x7f;
+	w = (((w >> 16) & 0xfff) << 11) | (e << 23);
+	return(*(float *)&w);
+}
