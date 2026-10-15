@@ -549,6 +549,10 @@ void draw_model(enemy_t *e, submesh_t *sub, int nsub, float *verts, int nverts, 
 					draw_faces_alpha2(faces, proj_verts, lit_colors, s->face_start, s->face_end, key, g->alpha);
 					goto drawn;
 				}
+				/* without 8 the part is drawn with its alpha like a 0x100 part (0x800dfc28,
+				   the call the 0x100 branch falls into); the transcription had left it undrawn */
+				draw_faces_alpha(faces, proj_verts, lit_colors, s->face_start, s->face_end, key, g->alpha);
+				goto drawn;
 			}
 			else if(g->flags & 0x40)
 			{
