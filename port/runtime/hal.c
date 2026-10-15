@@ -48,7 +48,7 @@ const char	*hal_raw_image = 0;
 int		hal_frame_limit = 0;
 int		hal_fast = 0;
 int		hal_headless = 0;
-double		hal_load_time = 2.6;	/* --load-time: see load_time_word() */
+double		hal_load_time = 2.8;	/* --load-time: see load_time_word() */
 void render_set_dump(const char *, unsigned long);
 void audio_wav_close(void);
 unsigned long	hal_frame_count = 0;
@@ -303,7 +303,7 @@ static void cmos_save(void)
  * It matters because the jester's level introduction has no fixed length: it plays, then
  * loops its last stretch until load_wave_proc finishes. With only the sleeps a Rickety Town
  * load lasts ~285 frames, but the introduction needs ~690 to play through, which is how it is
- * remembered on the cabinet. As a TEST we stretch the load by --load-time (default 2.6, a
+ * remembered on the cabinet. As a TEST we stretch the load by --load-time (default 2.8, a
  * trial value; 690 / 285 = 2.4 is the bare minimum): each bank word sent during play adds
  * (load_time - 1) / 8192 of a frame, waited out with sleep() so the rest of the game keeps
  * running. This is a calibration guess to be replaced by a timing from real hardware or by

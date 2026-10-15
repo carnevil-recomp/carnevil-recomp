@@ -85,7 +85,7 @@ Options: `--state DIR` where the port keeps the game's CMOS image and the files 
 writes (default `state/`; delete it for a factory-fresh boot), `--wav FILE` to capture the
 soundtrack, `--frames N` to stop after N frames, `--fast` to disable frame pacing,
 `--headless` for no window, `--dump frame.ppm` or `--dump-every PREFIX N` for screenshots,
-`--load-time X` to scale level-load time (default 2.6, a test calibration explained in
+`--load-time X` to scale level-load time (default 2.8, a test calibration explained in
 docs/port.md; 1 is the port's instant loading), `--press FRAME:SWITCH,...` to script cabinet switches for tests, `-v` (twice for every
 ioctl) for traces. `CARNEVIL_PARTITION`, `CARNEVIL_RAW` and `CARNEVIL_STATE` are the
 environment equivalents.
@@ -112,7 +112,7 @@ For scripted runs, `--press` takes these switch names: `coin`, `coin2`, `coin3`,
 `bill`, `start1`, `start2`, `service`, `test`, `slam`, `voldown`, `volup`, `p1a`..`p1d`,
 `p2a`, `p2b`, `trigger`, `pump`, `trigger2`, `pump2` (each press is held for 6 frames);
 headless shots go to the screen centre, or to `CARNEVIL_AIM=x,y` (x 0..400, y 0..256 from
-the bottom). Coins are not counted while the boot load runs (until about frame 900 with
+the bottom). Coins are not counted while the boot load runs (until about frame 960 with
 the default `--load-time`), so scripts press later:
 
 ```
