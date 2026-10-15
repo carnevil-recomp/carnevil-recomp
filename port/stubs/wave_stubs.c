@@ -15,7 +15,6 @@ WEAK void func_8010584c(void) { STUB(func_8010584c); }
 WEAK void func_80106504(void) { STUB(func_80106504); }
 WEAK void func_80106de0(void) { STUB(func_80106de0); }
 WEAK void func_801101c0(void) { STUB(func_801101c0); }
-WEAK void func_8011536c(void) { STUB(func_8011536c); }
 WEAK void func_8012896c(void) { STUB(func_8012896c); }
 WEAK void func_80131330(void) { STUB(func_80131330); }
 WEAK void func_80139444(void) { STUB(func_80139444); }
@@ -30,7 +29,6 @@ WEAK void load_clown_texmap(void) { STUB(load_clown_texmap); }
 WEAK void load_doctor_klot(void) { STUB(load_doctor_klot); }
 WEAK void load_doctorklot_texmap(void) { STUB(load_doctorklot_texmap); }
 WEAK void load_finn(void) { STUB(load_finn); }
-WEAK void load_flash_texmap(void) { STUB(load_flash_texmap); }
 WEAK void load_flie(void) { STUB(load_flie); }
 WEAK void load_flie_texmap(void) { STUB(load_flie_texmap); }
 WEAK void load_gool(void) { STUB(load_gool); }
@@ -83,7 +81,6 @@ WEAK void remove_binn_assets(void) { STUB(remove_binn_assets); }
 WEAK void remove_btop_gore_texmaps(void) { STUB(remove_btop_gore_texmaps); }
 WEAK void remove_clown_assets(void) { STUB(remove_clown_assets); }
 WEAK void remove_finn_assts(void) { STUB(remove_finn_assts); }
-WEAK void remove_flash_texmap(void) { STUB(remove_flash_texmap); }
 WEAK void remove_flie_assets(void) { STUB(remove_flie_assets); }
 WEAK void remove_gool(void) { STUB(remove_gool); }
 WEAK void remove_grub_assets(void) { STUB(remove_grub_assets); }
@@ -233,3 +230,6 @@ WEAK int func_800cd904(void) { STUB(func_800cd904); return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */
 /* the Haunted House zombie's walk to the player (0x800fa1c4, the zombie file is not in C yet); the Rickety Town girl calls it on her holder when she dies */
 WEAK void func_800fa1c4(void) { STUB(func_800fa1c4); }
+/* enemy.c's steer-at-a-point-by-the-camera (0x800fbaac, 2 on arrival) and its step routine 0x800fc16c are still
+   assembly; the flash (flash.c), the vict and Mike call it. Until then a flash never arrives. */
+WEAK int func_800fbaac(void *e, float a, float b, float c, float d) { STUB(func_800fbaac); return 0; }
