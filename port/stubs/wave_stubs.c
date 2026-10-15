@@ -42,13 +42,9 @@ WEAK void load_rodz(void) { STUB(load_rodz); }
 WEAK void load_rodz_texmap(void) { STUB(load_rodz_texmap); }
 WEAK void load_skeleton(void) { STUB(load_skeleton); }
 WEAK void load_skeleton_texmap(void) { STUB(load_skeleton_texmap); }
-WEAK void load_taur(void) { STUB(load_taur); }
-WEAK void load_taur_texmap(void) { STUB(load_taur_texmap); }
 WEAK void load_term(void) { STUB(load_term); }
 WEAK void load_toke(void) { STUB(load_toke); }
 WEAK void load_toke_texmap(void) { STUB(load_toke_texmap); }
-WEAK void load_tops(void) { STUB(load_tops); }
-WEAK void load_tops_texmap(void) { STUB(load_tops_texmap); }
 WEAK void load_tort(void) { STUB(load_tort); }
 WEAK void load_tort_texmap(void) { STUB(load_tort_texmap); }
 WEAK void remove_batb_texmap(void) { STUB(remove_batb_texmap); }
@@ -65,18 +61,8 @@ WEAK void remove_mame_assets(void) { STUB(remove_mame_assets); }
 WEAK void remove_monk_asets(void) { STUB(remove_monk_asets); }
 WEAK void remove_rodz_assets(void) { STUB(remove_rodz_assets); }
 WEAK void remove_skeleton_assets(void) { STUB(remove_skeleton_assets); }
-WEAK void remove_taur_assets(void) { STUB(remove_taur_assets); }
 WEAK void remove_term_assets(void) { STUB(remove_term_assets); }
-WEAK void remove_tops_assets(void) { STUB(remove_tops_assets); }
 WEAK void remove_tort_assets(void) { STUB(remove_tort_assets); }
-WEAK int func_801163e8(void) { STUB(func_801163e8); return 0; }
-WEAK int func_80116e10(void) { STUB(func_80116e10); return 0; }
-WEAK int func_80117080(void) { STUB(func_80117080); return 0; }
-WEAK int func_80117c88(void) { STUB(func_80117c88); return 0; }
-WEAK int func_80118728(void) { STUB(func_80118728); return 0; }
-WEAK int func_8011905c(void) { STUB(func_8011905c); return 0; }
-WEAK int func_80119280(void) { STUB(func_80119280); return 0; }
-WEAK int func_80119894(void) { STUB(func_80119894); return 0; }
 WEAK int func_8011a170(void) { STUB(func_8011a170); return 0; }
 WEAK int func_8011a6f8(void) { STUB(func_8011a6f8); return 0; }
 WEAK int func_8011a8d0(void) { STUB(func_8011a8d0); return 0; }
