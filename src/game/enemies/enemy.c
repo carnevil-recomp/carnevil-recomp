@@ -281,6 +281,31 @@ void set_goal_near_camera(enemy_t *e, float *from, float *goal, float side, floa
 	view_to_world(goal);
 }
 
+/* 0x800fbaac: come at the camera: turn towards it (0.2 rad at most), set the goal side to the
+   left (player 1) or right of the view point, dy below it and dz beyond it, and take a free
+   step of at most `step` towards it: 2 when the goal was within the step (reached), else 0 */
+int func_800fc16c(enemy_t *e, float step);
+int func_800fbaac(enemy_t *e, float side, float dy, float dz, float step)
+{
+	float	*goal;
+
+	face_camera(e, 0.2f);
+	goal = e->goal;
+	world_to_view(&camera_x, goal);
+	goal[2] = goal[2] - dz;
+	goal[1] = goal[1] - dy;
+	if(e->target == player_stats)
+	{
+		goal[0] = goal[0] - side;
+	}
+	else
+	{
+		goal[0] = goal[0] + side;
+	}
+	view_to_world(goal);
+	return((func_800fc16c(e, step) != 0) * 2);
+}
+
 /* 0x800fbc6c: a step of at most `step` on the largest axis towards the goal: 2 when the goal
    is within a step (the enemy snaps to it), else whether the move was clear */
 int step_toward_goal(enemy_t *e, float step)
@@ -426,6 +451,69 @@ int move_cd(enemy_t *e, float dx, float dy, float dz)
 	e->y = e->y + dy;
 	e->z = e->z + dz;
 	return(1);
+}
+
+/* 0x800fc16c: step_toward_goal measured from the enemy's own position and moved without the
+   collision test (func_800cde74): 1 when the goal was within a step (it moves there), else 0 */
+extern int	func_800cde74(enemy_t *, float, float, float);
+int func_800fc16c(enemy_t *e, float step)
+{
+	float	dx, dy, dz;
+	float	ax, ay, az;
+	float	mx, my, mz;
+
+	dx = e->goal[0] - e->x;
+	dy = e->goal[1] - e->y;
+	dz = e->goal[2] - e->z;
+	ax = ffabs(dx);
+	ay = ffabs(dy);
+	az = ffabs(dz);
+	if(ax < step && ay < step && az < step)
+	{
+		func_800cde74(e, dx, dy, dz);
+		return(1);
+	}
+	if(ay < ax && az < ax)
+	{
+		step = step / ax;
+	}
+	else if(ax < ay && az < ay)
+	{
+		step = step / ay;
+	}
+	else
+	{
+		step = step / az;
+	}
+	mx = ffabs(dx * step);
+	my = ffabs(dy * step);
+	mz = ffabs(dz * step);
+	if(mx < dx)
+	{
+		dx = mx;
+	}
+	else if(dx < -mx)
+	{
+		dx = -mx;
+	}
+	if(my < dy)
+	{
+		dy = my;
+	}
+	else if(dy < -my)
+	{
+		dy = -my;
+	}
+	if(mz < dz)
+	{
+		dz = mz;
+	}
+	else if(dz < -mz)
+	{
+		dz = -mz;
+	}
+	func_800cde74(e, dx, dy, dz);
+	return(0);
 }
 
 /* 0x800fc34c: the pitch (rot[0]) and yaw (rot[1]) that point from `from` at `to`; rot[2] = 0.

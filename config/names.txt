@@ -1513,3 +1513,14 @@
 0x8016110c grLfbEnd
 0x80143c30 remove
 0x80143d58 rename
+# the Haunted House innocent (hhouse_innocent.c, hhouse_innocent_data.c; functions keep their
+# address names until the merge renames them) and VICT (vict.c, vict_data.c)
+0x801922b0 inng_submesh
+0x801924d0 inng_cries
+0x80182938 inng_path
+0x801e5b1c inng_verts
+0x80212e90 inng_faces
+0x801e57c4 inng_normals
+0x801e5b9c vict_verts
+0x8021f0e0 vict_faces
+0x801e585c vict_normals
