@@ -1691,6 +1691,29 @@
 0x802372b0 finn_path
 0x801992b0 finn_submesh
 0x801994d0 finn_cries
+# tort.c / tort_data.c (0x8011bf38-0x8011dd7c; data 0x80196670-0x80196e9c) and rodz.c / rodz_data.c
+# (0x8011dd80-0x8011f4e0; data 0x80196ea0-0x80197844): functions keep their address names until
+# the merge renames them
+0x80196670 tort_texmap
+0x80196bb0 submesh_info_tort
+0x80196e50 tort_neck_spray_dir
+0x80196e5c tort_neck_spray_base
+0x80196e68 tort_larm_spray_dir
+0x80196e74 tort_larm_spray_base
+0x80196e80 tort_rarm_spray_dir
+0x80196e8c tort_rarm_spray_base
+0x80196e98 tort_hits
+0x801e5bf4 tort_verts
+0x802372b4 tort_faces
+0x801e5b70 tort_normals
+0x80237440 tort_path
+0x80196ea0 rodz_texmap
+0x80197580 submesh_info_rodz
+0x80197840 rodz_hits
+0x801e5bd0 rodz_verts
+0x8022b188 rodz_faces
+0x801e5944 rodz_normals
+0x80237410 rodz_path
 # the Freak Show knife thrower TOPS (tops.c, tops_data.c; functions keep their address names
 # until the merge renames them) and the boss TAUR (taur.c, taur_data.c)
 0x801946d8 tops_texmap
