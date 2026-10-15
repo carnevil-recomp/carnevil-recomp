@@ -11,10 +11,7 @@ WEAK float *D_801e5b28, *D_801e57e4, *D_801e5b74, *D_801e5824;
 WEAK void *D_8021eec8, *D_8021f088;
 WEAK void func_800f75f8(void) { STUB(func_800f75f8); }
 WEAK void func_800f8798(void) { STUB(func_800f8798); }
-WEAK void func_8010584c(void) { STUB(func_8010584c); }
-WEAK void func_80106504(void) { STUB(func_80106504); }
 WEAK void func_801101c0(void) { STUB(func_801101c0); }
-WEAK void func_8011536c(void) { STUB(func_8011536c); }
 WEAK void func_8012896c(void) { STUB(func_8012896c); }
 WEAK void func_80131330(void) { STUB(func_80131330); }
 WEAK void func_80139444(void) { STUB(func_80139444); }
@@ -29,7 +26,6 @@ WEAK void load_clown_texmap(void) { STUB(load_clown_texmap); }
 WEAK void load_doctor_klot(void) { STUB(load_doctor_klot); }
 WEAK void load_doctorklot_texmap(void) { STUB(load_doctorklot_texmap); }
 WEAK void load_finn(void) { STUB(load_finn); }
-WEAK void load_flash_texmap(void) { STUB(load_flash_texmap); }
 WEAK void load_flie(void) { STUB(load_flie); }
 WEAK void load_flie_texmap(void) { STUB(load_flie_texmap); }
 WEAK void load_gool(void) { STUB(load_gool); }
@@ -38,7 +34,6 @@ WEAK void load_grub(void) { STUB(load_grub); }
 WEAK void load_grub_texmap(void) { STUB(load_grub_texmap); }
 WEAK void load_hand(void) { STUB(load_hand); }
 WEAK void load_hand_texmap(void) { STUB(load_hand_texmap); }
-WEAK void load_inng(void) { STUB(load_inng); }
 WEAK void load_junior(void) { STUB(load_junior); }
 WEAK void load_junoir_texmap(void) { STUB(load_junoir_texmap); }
 WEAK void load_krinkle(void) { STUB(load_krinkle); }
@@ -68,8 +63,6 @@ WEAK void load_tops(void) { STUB(load_tops); }
 WEAK void load_tops_texmap(void) { STUB(load_tops_texmap); }
 WEAK void load_tort(void) { STUB(load_tort); }
 WEAK void load_tort_texmap(void) { STUB(load_tort_texmap); }
-WEAK void load_vict(void) { STUB(load_vict); }
-WEAK void load_vict_texmap(void) { STUB(load_vict_texmap); }
 WEAK void load_zomb(void) { STUB(load_zomb); }
 WEAK void load_zombie_texmap(void) { STUB(load_zombie_texmap); }
 WEAK void remove_bat_assets(void) { STUB(remove_bat_assets); }
@@ -78,7 +71,6 @@ WEAK void remove_binn_assets(void) { STUB(remove_binn_assets); }
 WEAK void remove_btop_gore_texmaps(void) { STUB(remove_btop_gore_texmaps); }
 WEAK void remove_clown_assets(void) { STUB(remove_clown_assets); }
 WEAK void remove_finn_assts(void) { STUB(remove_finn_assts); }
-WEAK void remove_flash_texmap(void) { STUB(remove_flash_texmap); }
 WEAK void remove_flie_assets(void) { STUB(remove_flie_assets); }
 WEAK void remove_gool(void) { STUB(remove_gool); }
 WEAK void remove_grub_assets(void) { STUB(remove_grub_assets); }
@@ -116,14 +108,6 @@ WEAK int func_800f7988(void) { STUB(func_800f7988); return 0; }
 WEAK int func_800f8860(void) { STUB(func_800f8860); return 0; }
 WEAK int func_800f8c84(void) { STUB(func_800f8c84); return 0; }
 WEAK int func_800f96a8(void) { STUB(func_800f96a8); return 0; }
-WEAK int func_80105388(void) { STUB(func_80105388); return 0; }
-WEAK int func_801058bc(void) { STUB(func_801058bc); return 0; }
-WEAK int func_80105a78(void) { STUB(func_80105a78); return 0; }
-WEAK int func_80105cb4(void) { STUB(func_80105cb4); return 0; }
-WEAK int func_80105e38(void) { STUB(func_80105e38); return 0; }
-WEAK int func_80106584(void) { STUB(func_80106584); return 0; }
-WEAK int func_8010674c(void) { STUB(func_8010674c); return 0; }
-WEAK int func_801068c8(void) { STUB(func_801068c8); return 0; }
 WEAK int func_801163e8(void) { STUB(func_801163e8); return 0; }
 WEAK int func_80116e10(void) { STUB(func_80116e10); return 0; }
 WEAK int func_80117080(void) { STUB(func_80117080); return 0; }
@@ -219,3 +203,5 @@ WEAK int func_800cd904(void) { STUB(func_800cd904); return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */
 /* the Haunted House zombie's walk to the player (0x800fa1c4, the zombie file is not in C yet); the Rickety Town girl calls it on her holder when she dies */
 WEAK void func_800fa1c4(void) { STUB(func_800fa1c4); }
+/* enemy.c's steer-at-a-point-by-the-camera (0x800fbaac, 2 on arrival) and its step routine 0x800fc16c are still
+   assembly; the flash (flash.c), the vict and Mike call it. Until then a flash never arrives. */
