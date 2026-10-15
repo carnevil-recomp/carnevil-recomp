@@ -9,8 +9,6 @@ WEAK int D_801e6e70;
 WEAK int skeleton_anim_blob[8], D_8019fcf0[8];
 WEAK float *D_801e5b28, *D_801e57e4, *D_801e5b74, *D_801e5824;
 WEAK void *D_8021eec8, *D_8021f088;
-WEAK void func_800f75f8(void) { STUB(func_800f75f8); }
-WEAK void func_800f8798(void) { STUB(func_800f8798); }
 WEAK void func_80106de0(void) { STUB(func_80106de0); }
 WEAK void func_801101c0(void) { STUB(func_801101c0); }
 WEAK void func_8012896c(void) { STUB(func_8012896c); }
@@ -33,8 +31,6 @@ WEAK void load_gool(void) { STUB(load_gool); }
 WEAK void load_gool_texmap(void) { STUB(load_gool_texmap); }
 WEAK void load_grub(void) { STUB(load_grub); }
 WEAK void load_grub_texmap(void) { STUB(load_grub_texmap); }
-WEAK void load_hand(void) { STUB(load_hand); }
-WEAK void load_hand_texmap(void) { STUB(load_hand_texmap); }
 WEAK void load_junior(void) { STUB(load_junior); }
 WEAK void load_junoir_texmap(void) { STUB(load_junoir_texmap); }
 WEAK void load_krinkle(void) { STUB(load_krinkle); }
@@ -68,8 +64,6 @@ WEAK void load_tops(void) { STUB(load_tops); }
 WEAK void load_tops_texmap(void) { STUB(load_tops_texmap); }
 WEAK void load_tort(void) { STUB(load_tort); }
 WEAK void load_tort_texmap(void) { STUB(load_tort_texmap); }
-WEAK void load_zomb(void) { STUB(load_zomb); }
-WEAK void load_zombie_texmap(void) { STUB(load_zombie_texmap); }
 WEAK void remove_bat_assets(void) { STUB(remove_bat_assets); }
 WEAK void remove_batb_texmap(void) { STUB(remove_batb_texmap); }
 WEAK void remove_binn_assets(void) { STUB(remove_binn_assets); }
@@ -106,14 +100,6 @@ WEAK int func_800f4618(void) { STUB(func_800f4618); return 0; }
 WEAK int func_800f4c50(void) { STUB(func_800f4c50); return 0; }
 WEAK int func_800f4e24(void) { STUB(func_800f4e24); return 0; }
 WEAK int func_800f5278(void) { STUB(func_800f5278); return 0; }
-WEAK int func_800f70b8(void) { STUB(func_800f70b8); return 0; }
-WEAK int func_800f7680(void) { STUB(func_800f7680); return 0; }
-WEAK int func_800f7824(void) { STUB(func_800f7824); return 0; }
-WEAK int func_800f7960(void) { STUB(func_800f7960); return 0; }
-WEAK int func_800f7988(void) { STUB(func_800f7988); return 0; }
-WEAK int func_800f8860(void) { STUB(func_800f8860); return 0; }
-WEAK int func_800f8c84(void) { STUB(func_800f8c84); return 0; }
-WEAK int func_800f96a8(void) { STUB(func_800f96a8); return 0; }
 WEAK int func_80106928(void) { STUB(func_80106928); return 0; }
 WEAK int func_80106e78(void) { STUB(func_80106e78); return 0; }
 WEAK int func_8010701c(void) { STUB(func_8010701c); return 0; }
@@ -215,7 +201,5 @@ WEAK int func_800cd094(void) { STUB(func_800cd094); return 0; }
 WEAK int func_800cd31c(void) { STUB(func_800cd31c); return 0; }
 WEAK int func_800cd904(void) { STUB(func_800cd904); return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */
-/* the Haunted House zombie's walk to the player (0x800fa1c4, the zombie file is not in C yet); the Rickety Town girl calls it on her holder when she dies */
-WEAK void func_800fa1c4(void) { STUB(func_800fa1c4); }
 /* enemy.c's steer-at-a-point-by-the-camera (0x800fbaac, 2 on arrival) and its step routine 0x800fc16c are still
    assembly; the flash (flash.c), the vict and Mike call it. Until then a flash never arrives. */

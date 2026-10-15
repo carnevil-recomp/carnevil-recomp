@@ -1566,3 +1566,27 @@
 0x802372e4 D_802372e4
 # flash.c (0x80114df0-0x8011539c): Mari's flash
 0x80194658 flash_texmap
+# hand.c (0x800f70b8-0x800f7984) and hand_data.c: the Haunted House hand (0x2008)
+0x8018ffa0 hand_texmap
+0x80190020 submesh_info_hand
+0x80190060 hand_spare
+0x80190064 hand_loaded
+0x801e57f8 hand_verts
+0x80212dcc hand_faces
+0x801e0f30 hand_normals
+# zombie.c (0x800f7988-0x800fa71c) and zombie_data.c: the Haunted House zombie (0x200c)
+0x80190068 zombie_texmap
+0x80190608 submesh_info_zomb
+0x801908a8 zomb_spray_neck
+0x801908b4 zomb_spray_neck_dir
+0x801908c0 zomb_spray_arm5
+0x801908cc zomb_spray_arm5_dir
+0x801908d8 zomb_spray_arm4
+0x801908e4 zomb_spray_arm4_dir
+0x801908f0 zomb_spray_body
+0x801908fc zomb_spray_body_dir
+0x80190908 zomb_hurt_sounds
+0x801e5bb0 zomb_verts
+0x8021f0f8 zomb_faces
+0x801e5874 zomb_normals
+0x802373f8 zomb_path
