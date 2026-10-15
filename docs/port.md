@@ -89,9 +89,10 @@ Matching status of the game modules (per function, `tools/match/trymatch.sh`, 20
 |---|---|---|
 | credits.c | game2 (-O2) | 28 of 32 at 100%; credit_info 99%, setup_pricing 98%, ccproc_proc 98%, draw_hbar 78%, start_proc 7% (a branch the compiler turns into `sltu`) |
 | hwinfo.c | game2 | 2 of 2 |
+| auditfmt.c | game1 (-O) | 1 of 1 (startaudit, 2076 instructions: the audit pages written into audits.fmt), registered (text 0x800ef870-0x800f18e0, rodata 0x80171148-0x80171a5f) |
 | audits.c | game1 (-O) | 16 of 16, registered in modules.txt (text 0x800f18e0-0x800f1d84, data 0x8018ea60-0x8018ed48) |
 | adjust.c | game2 | 2 of 3; game_setup_cmos 98% |
-| hiscore.c | game0 (-O0, `register`) | 4 of 4 |
+| hiscore.c | game0 (-O0, `register`) | 19 of 19 (0x800e4c70-0x800e7184: the place pictures, the attract table, the table drawer, check_high_score, the autograph and initials entries, create_hstd_tex); not registered yet (its data/bss layout is unchecked) |
 | soundio.c | game2 | 2 of 2 (main_init_sound, check_sound_os; the cue helpers moved to levelsnd.c) |
 | levelsnd.c | game2 | 36 of 36, registered in modules.txt (text 0x800ebb18-0x800ec53c, rodata 0x80170f08-0x80170f40, data 0x8018e038-0x8018e050) |
 | stream.c | game2 | 19 of 23; stream_select_wave 86%, stream_debug_display 96%, stream_jump 60%, stream_fill 52% |
@@ -100,7 +101,7 @@ Matching status of the game modules (per function, `tools/match/trymatch.sh`, 20
 | script.c | game2 | 10 of 10, registered in modules.txt (text 0x80110270-0x80110b04, rodata 0x80173318-0x8017345c) |
 | shake.c | game2 | 8 of 8 (update_movie_scroll, request_scroll and the explosion sprite object 0x800f36b0-0x800f38c4: add_explosion, its draw, think, init, remove and place); the start of its file, 0x800f3420-0x800f3580, is not decompiled |
 | attract.c | game2 | 18 of 18, registered in modules.txt (text 0x800caf80-0x800cbb6c, rodata 0x8016f600-0x8016f704, data 0x80179c50-0x80179d40) |
-| scene.c | game2 | 10 of 10 (the switch sampler, the debug nudges, the heap display, init_game_state, game_init, load_level_assets); the rest of that file (0x800c8280-0x800ca4d0: screen markers, 3D helpers) is still assembly |
+| scene.c | game2 | 14 of 14 (the switch sampler, the debug nudges, the heap display, init_game_state, game_init, load_level_assets, the debug overlay pass func_800c83bc, the light markers func_800c918c, the disc func_800c8a44, draw_ring 0x800c8c98); vecmat's map dot func_800d14a4 96%; the rest of that file (0x800c8280-0x800ca4d0: screen markers, 3D helpers) is still assembly |
 | spawn.c | game2 | 11 of 12 exact; add_die 38% (its failure return is laid out differently); the port runs spawn_wave_enemies with construct_and_spawn_object (0x800e9570, 3.8 KB) stubbed |
 | objects.c | game2 | the list routines, draw_pass and think_pass exact; the shot tests (shot_hits_sphere 43%, find_submesh_hit 7%), the animation blends (start_hit_reaction exact, the rest 15-33%) and shoot_objects (5%) are transcriptions the port runs |
 | wave.c | game2 | 19 of 21 exact (unload_wave, preload_wave, the bank lists, the per-level asset lists, the big top's act change); load_wave_proc 26% and btopload_proc 8% keep an address in a saved register that ours does not. The 25% transcription had put the music stream start outside the `loaded_wave & WAVE_LEVEL` test, so the attract and the gallery streamed the haunted house partition under their own cues (fixed 2026-10-13: only the four levels stream) |
