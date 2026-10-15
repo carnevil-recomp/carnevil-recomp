@@ -24,8 +24,6 @@ WEAK void load_doctorklot_texmap(void) { STUB(load_doctorklot_texmap); }
 WEAK void load_finn(void) { STUB(load_finn); }
 WEAK void load_flie(void) { STUB(load_flie); }
 WEAK void load_flie_texmap(void) { STUB(load_flie_texmap); }
-WEAK void load_grub(void) { STUB(load_grub); }
-WEAK void load_grub_texmap(void) { STUB(load_grub_texmap); }
 WEAK void load_junior(void) { STUB(load_junior); }
 WEAK void load_junoir_texmap(void) { STUB(load_junoir_texmap); }
 WEAK void load_krinkle(void) { STUB(load_krinkle); }
@@ -34,8 +32,6 @@ WEAK void load_litl(void) { STUB(load_litl); }
 WEAK void load_litl_texmap(void) { STUB(load_litl_texmap); }
 WEAK void load_mame(void) { STUB(load_mame); }
 WEAK void load_mame_texmap(void) { STUB(load_mame_texmap); }
-WEAK void load_monk(void) { STUB(load_monk); }
-WEAK void load_monk_texmap(void) { STUB(load_monk_texmap); }
 WEAK void load_pood(void) { STUB(load_pood); }
 WEAK void load_pood_texmap(void) { STUB(load_pood_texmap); }
 WEAK void load_rodz(void) { STUB(load_rodz); }
@@ -57,12 +53,10 @@ WEAK void remove_btop_gore_texmaps(void) { STUB(remove_btop_gore_texmaps); }
 WEAK void remove_clown_assets(void) { STUB(remove_clown_assets); }
 WEAK void remove_finn_assts(void) { STUB(remove_finn_assts); }
 WEAK void remove_flie_assets(void) { STUB(remove_flie_assets); }
-WEAK void remove_grub_assets(void) { STUB(remove_grub_assets); }
 WEAK void remove_junior_texmap(void) { STUB(remove_junior_texmap); }
 WEAK void remove_krinkle_assets(void) { STUB(remove_krinkle_assets); }
 WEAK void remove_litl_assets(void) { STUB(remove_litl_assets); }
 WEAK void remove_mame_assets(void) { STUB(remove_mame_assets); }
-WEAK void remove_monk_asets(void) { STUB(remove_monk_asets); }
 WEAK void remove_rodz_assets(void) { STUB(remove_rodz_assets); }
 WEAK void remove_skeleton_assets(void) { STUB(remove_skeleton_assets); }
 WEAK void remove_taur_assets(void) { STUB(remove_taur_assets); }
@@ -77,14 +71,6 @@ WEAK int func_80118728(void) { STUB(func_80118728); return 0; }
 WEAK int func_8011905c(void) { STUB(func_8011905c); return 0; }
 WEAK int func_80119280(void) { STUB(func_80119280); return 0; }
 WEAK int func_80119894(void) { STUB(func_80119894); return 0; }
-WEAK int func_8011a170(void) { STUB(func_8011a170); return 0; }
-WEAK int func_8011a6f8(void) { STUB(func_8011a6f8); return 0; }
-WEAK int func_8011a8d0(void) { STUB(func_8011a8d0); return 0; }
-WEAK int func_8011af54(void) { STUB(func_8011af54); return 0; }
-WEAK int func_8011b510(void) { STUB(func_8011b510); return 0; }
-WEAK int func_8011ba5c(void) { STUB(func_8011ba5c); return 0; }
-WEAK int func_8011bc34(void) { STUB(func_8011bc34); return 0; }
-WEAK int func_8011be94(void) { STUB(func_8011be94); return 0; }
 WEAK int func_8011bf38(void) { STUB(func_8011bf38); return 0; }
 WEAK int func_8011c8d4(void) { STUB(func_8011c8d4); return 0; }
 WEAK int func_8011cd18(void) { STUB(func_8011cd18); return 0; }

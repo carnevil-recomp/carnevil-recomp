@@ -1655,3 +1655,15 @@
 0x800f5568 spider_drop_limb6
 0x800f55e0 spider_drop_limb7
 0x800f5658 spider_drop_limb8
+# the Freak Show's monkey (monkey.c, monkey_data.c, 0x8011a170-0x8011b50c) and grub (grub.c,
+# grub_data.c, 0x8011b510-0x8011bf38); functions keep their address names until the merge
+0x801960b0 submesh_info_monk
+0x801e5b88 monk_verts
+0x8021f0c8 monk_faces
+0x801e5848 monk_normals
+0x802373dc monk_path
+0x801965d0 submesh_info_grub
+0x801e5b30 grub_verts
+0x8021ef50 grub_faces
+0x801e57ec grub_normals
+0x802372d4 grub_path
