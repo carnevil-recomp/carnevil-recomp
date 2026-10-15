@@ -169,7 +169,6 @@ WEAK int func_8015f30c(void) { STUB(func_8015f30c); return 0; }
 /* krinkle.c's helpers still in assembly */
 
 /* the per-level collision tests, the part fly-off and the spray effect are still assembly */
-WEAK int func_800cd094(void) { STUB(func_800cd094); return 0; }
 WEAK int func_800cd31c(void) { STUB(func_800cd31c); return 0; }
 WEAK int func_800cd904(void) { STUB(func_800cd904); return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */

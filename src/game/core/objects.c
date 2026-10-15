@@ -524,6 +524,49 @@ int step_blocked_rickity(float *np, float *pos, int id)
 	return(0);
 }
 
+/* 0x800cd094: the Haunted House's step test for move_cd: the step to np from pos is blocked when
+   it ends inside a ghoul (0x1102) or zombie (0x200c) other than the mover, one not in a 0x400
+   state, that it was not already inside */
+int func_800cd094(float *np, float *pos, int id)
+{
+	game_object_t	*o;
+	enemy_t		*e;
+	short		i;
+	float		d, dx, dz;
+
+	i = objects[0].next;
+	while(i != OBJ_NONE)
+	{
+		o = &objects[i];
+		i = o->next;
+		if(o->id == (short)id)
+		{
+			continue;
+		}
+		if(o->type == 0x1102 || o->type == 0x200c)
+		{
+			e = (enemy_t *)o->data;
+			if(e->ai_state & 0x400)
+			{
+				continue;
+			}
+			dx = e->x - np[0];
+			dz = e->z - np[2];
+			d = fsqrt(dx * dx + dz * dz);
+			if(d < e->radius)
+			{
+				dx = e->x - pos[0];
+				dz = e->z - pos[2];
+				if(d < fsqrt(dx * dx + dz * dz))
+				{
+					return(1);
+				}
+			}
+		}
+	}
+	return(0);
+}
+
 /* 0x800cd1f8-0x800cdaa0: the id of the nearest live enemy of the level's kinds within
    1000 units of the camera (in x and z), 0 when none */
 short nearest_enemy_hhouse(void)
