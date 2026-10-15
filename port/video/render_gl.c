@@ -28,6 +28,7 @@ static int	have_display;
 static int	origin_lower_left;
 static float	alpha_ref = 0.5f;
 static int	win_w, win_h;
+extern int	port_hires;		/* cabinet mode below; --hires */
 
 /* ---- Glide state ---- */
 static struct {
@@ -41,6 +42,7 @@ static struct {
 	int		depth_func, depth_mask, depth_mode;
 	int		alpha_test;
 	int		cull;
+	int		dither;			/* grDitherMode: GR_DITHER_DISABLE / 2x2 / 4x4 */
 } st;
 
 static void glide_defaults(void)
@@ -52,6 +54,7 @@ static void glide_defaults(void)
 	st.blend_a_src = GR_BLEND_ONE; st.blend_a_dst = GR_BLEND_ZERO;
 	st.alpha_test = GR_CMP_ALWAYS; st.color_combine = GR_COLORCOMBINE_DECAL_TEXTURE;
 	st.const_color = 0xffffffff; st.filter_min = st.filter_mag = GR_TEXTUREFILTER_BILINEAR;
+	st.dither = GR_DITHER_4x4;		/* Glide's window open (0x80161814) sets 4x4 */
 }
 
 /* ---- texture upload: Glide texel formats -> RGBA8 ---- */
@@ -297,15 +300,73 @@ static void apply_state(void)
 		glFogi(GL_FOG_COORD_SRC, GL_FOG_COORD); glFogfv(GL_FOG_COLOR, c);
 	}
 	else glDisable(GL_FOG);
+	if(!port_hires)
+	{
+		/* mark the pixels this draw writes with the dither mode it is drawn under */
+		glEnable(GL_STENCIL_TEST);
+		glStencilFunc(GL_ALWAYS, st.dither == GR_DITHER_DISABLE ? 0 : 1, 1);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	}
 	glDisable(GL_CULL_FACE);
 }
 
 static int	vp_x, vp_y;		/* the letterboxed frame's place in the window and its scale */
 static float	vp_s = 1.0f;
+
+/* ---- Cabinet mode (the default; --hires turns it off) ----
+   The Seattle board's Voodoo draws the game at 400x256 into a 16-bit RGB565 frame buffer and
+   scans that out through the gamma RAM. The port draws each frame into an offscreen 400x256
+   target, marks in the stencil buffer the pixels written while the game's dither mode is 4x4,
+   then on the CPU turns the frame into RGB565 as the Voodoo writes it (the 4x4 ordered dither
+   where marked, truncation elsewhere: MAME's voodoo tables), widens it back by bit repetition,
+   runs it through the 33-entry gamma RAM with the hardware's interpolation, and shows it scaled
+   with sharp pixels. On the cabinet dithering is on only until the first movie frame: Glide's
+   window open sets 4x4, the movie's LFB write sets GR_DITHER_DISABLE and nothing sets it back.
+   The one simplification: a blended pixel is reduced to 16 bits once per frame, not at each
+   write, so overlapping translucent effects can differ by a step. With --hires the port draws
+   straight to the window at its resolution in 24-bit colour, and the gamma ramp is applied
+   with two blend passes. */
+int		port_hires = 0;
+static GLuint	cab_fbo, cab_color, cab_depth;
+static int	cab_ready;
+static void cabinet_target(void)
+{
+	if(!cab_ready)
+	{
+		glGenFramebuffersEXT(1, &cab_fbo);
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, cab_fbo);
+		glGenRenderbuffersEXT(1, &cab_color);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, cab_color);
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA8, (int)hres, (int)vres);
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT, cab_color);
+		glGenRenderbuffersEXT(1, &cab_depth);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, cab_depth);
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8_EXT, (int)hres, (int)vres);
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, cab_depth);
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, cab_depth);
+		if(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+		{
+			fprintf(stderr, "[render] no offscreen target: falling back to --hires\n");
+			glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+			port_hires = 1;
+			return;
+		}
+		cab_ready = 1;
+	}
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, cab_fbo);
+}
+
 static void frame_setup(void)
 {
 	video_size(&win_w, &win_h);
 	if(win_w <= 0) return;
+	if(!port_hires) cabinet_target();
+	if(!port_hires)
+	{
+		vp_x = vp_y = 0; vp_s = 1.0f;
+		glViewport(0, 0, (int)hres, (int)vres);
+	}
+	else
 	/* letterbox the 400x256 (or whatever grSstOpen chose) frame into the window */
 	{
 		float sx = win_w / hres, sy = win_h / vres, s = sx < sy ? sx : sy;
@@ -402,11 +463,22 @@ void grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU16 depth)
 	frame_setup();
 	glClearColor(((color >> 16) & 255) / 255.0f, ((color >> 8) & 255) / 255.0f, (color & 255) / 255.0f, 1.0f);
 	glDepthMask(GL_TRUE);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearStencil(st.dither == GR_DITHER_DISABLE ? 0 : 1);	/* the fast fill dithers like a triangle */
+	glStencilMask(~0u);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
+void grDitherMode(int mode) { st.dither = mode; }
+/* the LFB writes (the movie, the autograph board) run under GR_DITHER_DISABLE: the original's
+   blocks call grDitherMode(GR_DITHER_DISABLE) before writing, which the port's paths replace */
+static void lfb_write_state(void)
+{
+	st.dither = GR_DITHER_DISABLE;
+	if(!port_hires) { glEnable(GL_STENCIL_TEST); glStencilFunc(GL_ALWAYS, 0, 1); glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); }
 }
 
 static float brightness = 1.0f;
 static const char *dump_path;
+static long	cab_dithered;			/* pixels of the last frame drawn under the 4x4 dither ([dump] trace) */
 static void dump_frame(void)
 {
 	unsigned char *px; FILE *f; int y; char name[1024];
@@ -418,7 +490,7 @@ static void dump_frame(void)
 		if(hal_frame_count / dump_every == last_bucket) return;
 		last_bucket = hal_frame_count / dump_every;
 	}
-	if(getenv("CARNEVIL_TRACE")) fprintf(stderr, "[dump] frame %lu brightness %.2f triangles %lu tex %d\n", hal_frame_count, brightness, port_triangles, (int)st.tex);
+	if(getenv("CARNEVIL_TRACE")) fprintf(stderr, "[dump] frame %lu brightness %.2f triangles %lu tex %d dithered %ld\n", hal_frame_count, brightness, port_triangles, (int)st.tex, port_hires ? -1L : cab_dithered);
 	px = malloc(win_w * win_h * 3);
 	glReadPixels(0, 0, win_w, win_h, GL_RGB, GL_UNSIGNED_BYTE, px);
 	if(dump_every) snprintf(name, sizeof name, "%s.%06lu.ppm", dump_path, hal_frame_count); else snprintf(name, sizeof name, "%s", dump_path);
@@ -530,6 +602,7 @@ void port_movie_blit(const unsigned int *buf, int scroll)
 	glClearColor(0, 0, 0, 1); glDepthMask(GL_TRUE); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_TEXTURE_2D); glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glDisable(GL_DEPTH_TEST); glDepthMask(GL_FALSE); glDisable(GL_BLEND); glDisable(GL_ALPHA_TEST); glDisable(GL_FOG);	/* LFB writes bypass the pixel pipeline */
+	lfb_write_state();
 	glColor4f(1, 1, 1, 1);
 	/* row 0 of the frame is the bottom line; a positive scroll inserts blank lines below it */
 	y0 = (float)scroll;		/* bottom edge */
@@ -579,6 +652,7 @@ void port_lfb_write(const unsigned int *src, int x, int y, int w, int h)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 	glEnable(GL_TEXTURE_2D); glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glDisable(GL_DEPTH_TEST); glDepthMask(GL_FALSE); glDisable(GL_BLEND); glDisable(GL_ALPHA_TEST); glDisable(GL_FOG);	/* LFB writes bypass the pixel pipeline */
+	lfb_write_state();
 	glColor4f(1, 1, 1, 1);
 	glBegin(GL_QUADS);
 	glTexCoord2f(0, 0); glVertex3f((float)x, (float)y, 0);
@@ -596,7 +670,90 @@ void port_lfb_write(const unsigned int *src, int x, int y, int w, int h)
 	free(rgb); free(depth);
 }
 
-void grBufferSwap(int interval) { (void)interval; if(have_display) { apply_brightness(); dump_frame(); video_present(); if(video_closed()) exit(0); } }
+/* Cabinet mode's scan-out: the offscreen 400x256 frame -> RGB565 as the Voodoo writes it ->
+   back to 8 bits per channel -> the gamma RAM -> the window, letterboxed with sharp pixels */
+static const unsigned char dither4x4[16] = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };
+static unsigned char gamma_out(int v)
+{
+	int	i = v >> 3, f = v & 7;
+	int	a = gamma_loaded ? gamma_ram[i] : (i << 3);
+	int	b = gamma_loaded ? gamma_ram[i + 1] : ((i + 1) << 3 > 255 ? 255 : (i + 1) << 3);
+	if(!gamma_loaded) return (unsigned char)v;
+	return (unsigned char)(a + (((b - a) * f) >> 3));
+}
+static void cabinet_present(void)
+{
+	static unsigned char	rgba[400 * 256 * 4], sten[400 * 256], out[400 * 256 * 3];
+	static GLuint		tex;
+	unsigned char		lut[256];
+	int			w = (int)hres, h = (int)vres, x, y, i;
+
+	if(w > 400 || h > 256) return;
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, cab_fbo);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+	glReadPixels(0, 0, w, h, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, sten);
+	for(i = 0; i < 256; i++) lut[i] = gamma_out(i);
+	cab_dithered = 0;
+	for(y = 0; y < h; y++)
+		for(x = 0; x < w; x++)
+		{
+			const unsigned char	*c = rgba + 4 * (y * w + x);
+			unsigned char		*o = out + 3 * (y * w + x);
+			int			r5, g6, b5;
+			if(sten[y * w + x] & 1)
+			{
+				/* MAME's voodoo dither tables (4x4 ordered) */
+				int d = dither4x4[((y & 3) << 2) | (x & 3)];
+				cab_dithered++;
+				r5 = ((c[0] << 1) - (c[0] >> 4) + (c[0] >> 7) + d) >> 4;
+				g6 = ((c[1] << 2) - (c[1] >> 4) + (c[1] >> 6) + d) >> 4;
+				b5 = ((c[2] << 1) - (c[2] >> 4) + (c[2] >> 7) + d) >> 4;
+			}
+			else { r5 = c[0] >> 3; g6 = c[1] >> 2; b5 = c[2] >> 3; }
+			o[0] = lut[(r5 << 3) | (r5 >> 2)];
+			o[1] = lut[(g6 << 2) | (g6 >> 4)];
+			o[2] = lut[(b5 << 3) | (b5 >> 2)];
+		}
+	/* show it: the window, letterboxed, nearest-neighbour */
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	video_size(&win_w, &win_h);
+	{
+		float sx = win_w / hres, sy = win_h / vres, sc = sx < sy ? sx : sy;
+		int vw = (int)(hres * sc), vh = (int)(vres * sc);
+		glViewport(0, 0, win_w, win_h);
+		glClearColor(0, 0, 0, 1); glClear(GL_COLOR_BUFFER_BIT);
+		glViewport((win_w - vw) / 2, (win_h - vh) / 2, vw, vh);
+	}
+	if(!tex) glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, out);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	glMatrixMode(GL_PROJECTION); glLoadIdentity(); glOrtho(0, 1, 0, 1, -1, 1);
+	glMatrixMode(GL_MODELVIEW); glLoadIdentity();
+	glDisable(GL_DEPTH_TEST); glDisable(GL_BLEND); glDisable(GL_ALPHA_TEST); glDisable(GL_FOG); glDisable(GL_STENCIL_TEST);
+	glEnable(GL_TEXTURE_2D); glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glColor4f(1, 1, 1, 1);
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, 0); glVertex2f(0, 0); glTexCoord2f(1, 0); glVertex2f(1, 0);
+	glTexCoord2f(1, 1); glVertex2f(1, 1); glTexCoord2f(0, 1); glVertex2f(0, 1);
+	glEnd();
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glPixelStorei(GL_PACK_ALIGNMENT, 4); glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+}
+void grBufferSwap(int interval)
+{
+	(void)interval;
+	if(!have_display) return;
+	if(port_hires) apply_brightness();
+	else cabinet_present();
+	dump_frame();
+	video_present();
+	if(video_closed()) exit(0);
+}
 void dma_start(void) { grBufferSwap(1); }			/* the DMA kick; the board swaps when it completes */
 
 void guTexSource(GrMipMapId_t h) { st.tex = h; }

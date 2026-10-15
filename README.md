@@ -85,7 +85,8 @@ Options: `--state DIR` where the port keeps the game's CMOS image and the files 
 writes (default `state/`; delete it for a factory-fresh boot), `--wav FILE` to capture the
 soundtrack, `--frames N` to stop after N frames, `--fast` to disable frame pacing,
 `--headless` for no window, `--dump frame.ppm` or `--dump-every PREFIX N` for screenshots,
-`--load-time X` to scale level-load time (default 2.8, a test calibration explained in
+`--hires` to draw at the window's resolution in 24-bit colour instead of the cabinet's 400x256
+16-bit picture (the default, see docs/port.md), `--load-time X` to scale level-load time (default 2.8, a test calibration explained in
 docs/port.md; 1 is the port's instant loading), `--press FRAME:SWITCH,...` to script cabinet switches for tests, `-v` (twice for every
 ioctl) for traces. `CARNEVIL_PARTITION`, `CARNEVIL_RAW` and `CARNEVIL_STATE` are the
 environment equivalents.

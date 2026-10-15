@@ -170,6 +170,23 @@ the raw readings, and the left button or left control is the trigger. Headless r
 the screen centre, or at `CARNEVIL_AIM=x,y` (y from the bottom), and `--press N:trigger`
 pulls the trigger. `CARNEVIL_TRACE=1` prints `[gun]`, `[shot]` and `[krinkle]` lines.
 
+## Cabinet video (the default) and --hires
+The Voodoo drew the game at 400x256 into a 16-bit RGB565 frame buffer and scanned it out
+through the 33-entry gamma RAM. By default the port does the same: every frame is drawn into an
+offscreen 400x256 target; the stencil buffer marks the pixels written while the game's dither
+mode is 4x4; at the swap the CPU reduces the frame to RGB565 as the Voodoo writes it (MAME's 4x4
+ordered dither where marked, truncation elsewhere), widens it back by bit repetition, applies the
+gamma RAM with the hardware's interpolation between entries, and shows it letterboxed with sharp
+pixels. Dithering follows the game's own state: Glide's window open sets 4x4, the movie's LFB
+write sets GR_DITHER_DISABLE and nothing sets it back, so the whole frame dithers during the
+boot screens and nothing dithers from the first movie frame on (the `[dump]` trace prints the
+count). One simplification: a blended pixel is reduced to 16 bits once per frame rather than at
+each write, so stacked translucent effects can be a step off.
+
+`--hires` draws straight to the window at its resolution in 24-bit colour, with the movie
+scaled smoothly and the gamma ramp applied as a multiply and an add: a modern presentation for
+the options menu planned in docs/PLAN.md.
+
 ## Depth
 The Voodoo w-buffers: a vertex carries 1/w and the nearer fragment (the larger 1/w) wins
 under GR_CMP_LESS. The port keeps a GL depth buffer in the window mapping 0 = nearest,

@@ -139,6 +139,7 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--raw") && i + 1 < argc) hal_raw_image = argv[++i];
 		else if(!strcmp(argv[i], "--frames") && i + 1 < argc) hal_frame_limit = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--fast")) hal_fast = 1;
+		else if(!strcmp(argv[i], "--hires")) { extern int port_hires; port_hires = 1; }	/* window-resolution 24-bit drawing instead of the cabinet's 400x256 RGB565 */
 		else if(!strcmp(argv[i], "--load-time") && i + 1 < argc) { hal_load_time = atof(argv[++i]); if(hal_load_time < 1.0) hal_load_time = 1.0; }
 		else if(!strcmp(argv[i], "--headless")) hal_headless = 1;
 		else if(!strcmp(argv[i], "--dump") && i + 1 < argc) render_set_dump(argv[++i], 0);
