@@ -39,3 +39,15 @@ flash    src/game/enemies/flash.c  game2  0x80114df0 0x8011539c  0x80173480 0x80
 freakshow_script src/game/movie/freakshow_script.c game2 0x801153a0 0x801163e8  -          -           -          -
 bat      src/game/enemies/bat.c      game2  0x800f38c8 0x800f4614  0x80171d88 0x80171dec  -          -
 bat_data src/game/enemies/bat_data.c game2  -          -           -          -           0x8018f138 0x8018f658
+hhouse_innocent      src/game/enemies/hhouse_innocent.c      game2  0x80105388 0x80105e38  0x80172be0 0x80172c24  0x801924d0 0x801924dc
+vict                 src/game/enemies/vict.c                 game2  0x80105e38 0x80106928  0x80172c28 0x80172c84  -          -
+vict_data            src/game/enemies/vict_data.c            game2  -          -           -          -           0x801924e0 0x80192800
+spdl                 src/game/enemies/spdl.c                 game2  0x80106928 0x801072e0  0x80172c88 0x80172cd0  -          -
+spdl_data            src/game/enemies/spdl_data.c            game2  -          -           -          -           0x80192800 0x801929c0
+hambone              src/game/enemies/hambone.c              game2  0x80109688 0x8010bf2c  0x80172e28 0x80172f60  -          -
+hand                 src/game/enemies/hand.c                 game2  0x800f70b8 0x800f7984  0x80172258 0x801722bc  -          -
+hand_data            src/game/enemies/hand_data.c            game2  -          -           -          -           0x8018ffa0 0x80190060
+gool                 src/game/enemies/gool.c                 game2  0x800ea8e8 0x800ebb14  0x80170e48 0x80170f04  0x8018e01c 0x8018e038
+gool_data            src/game/enemies/gool_data.c            game2  -          -           -          -           0x8018db98 0x8018e018
+spider               src/game/enemies/spider.c               game2  0x800f4618 0x800f56d0  0x80171df0 0x80171eac  -          -
+spider_data          src/game/enemies/spider_data.c          game2  -          -           -          -           0x8018f658 0x8018ff98

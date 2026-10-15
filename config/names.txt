@@ -2051,3 +2051,6 @@
 0x801203f0 load_junior_texmap
 0x801205cc remove_junior_assets
 0x80122790 remove_finn_assets
+0x801e5b4c gool_verts
+0x8021efe8 gool_faces
+0x801e5808 gool_normals
