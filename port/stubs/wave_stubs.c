@@ -22,8 +22,6 @@ WEAK void load_clown_texmap(void) { STUB(load_clown_texmap); }
 WEAK void load_doctor_klot(void) { STUB(load_doctor_klot); }
 WEAK void load_doctorklot_texmap(void) { STUB(load_doctorklot_texmap); }
 WEAK void load_finn(void) { STUB(load_finn); }
-WEAK void load_flie(void) { STUB(load_flie); }
-WEAK void load_flie_texmap(void) { STUB(load_flie_texmap); }
 WEAK void load_grub(void) { STUB(load_grub); }
 WEAK void load_grub_texmap(void) { STUB(load_grub_texmap); }
 WEAK void load_junior(void) { STUB(load_junior); }
@@ -56,7 +54,6 @@ WEAK void remove_binn_assets(void) { STUB(remove_binn_assets); }
 WEAK void remove_btop_gore_texmaps(void) { STUB(remove_btop_gore_texmaps); }
 WEAK void remove_clown_assets(void) { STUB(remove_clown_assets); }
 WEAK void remove_finn_assts(void) { STUB(remove_finn_assts); }
-WEAK void remove_flie_assets(void) { STUB(remove_flie_assets); }
 WEAK void remove_grub_assets(void) { STUB(remove_grub_assets); }
 WEAK void remove_junior_texmap(void) { STUB(remove_junior_texmap); }
 WEAK void remove_krinkle_assets(void) { STUB(remove_krinkle_assets); }
@@ -101,10 +98,6 @@ WEAK int func_801222d0(void) { STUB(func_801222d0); return 0; }
 WEAK int func_80122818(void) { STUB(func_80122818); return 0; }
 WEAK int func_801229d4(void) { STUB(func_801229d4); return 0; }
 WEAK int func_80122ca8(void) { STUB(func_80122ca8); return 0; }
-WEAK int func_80122e40(void) { STUB(func_80122e40); return 0; }
-WEAK int func_801235ec(void) { STUB(func_801235ec); return 0; }
-WEAK int func_8012387c(void) { STUB(func_8012387c); return 0; }
-WEAK int func_80123cd4(void) { STUB(func_80123cd4); return 0; }
 WEAK int func_80126410(void) { STUB(func_80126410); return 0; }
 WEAK int func_80126d98(void) { STUB(func_80126d98); return 0; }
 WEAK int func_80127c04(void) { STUB(func_80127c04); return 0; }
@@ -155,7 +148,6 @@ WEAK int func_8015f30c(void) { STUB(func_8015f30c); return 0; }
 /* krinkle.c's helpers still in assembly */
 
 /* the per-level collision tests, the part fly-off and the spray effect are still assembly */
-WEAK int func_800cd31c(void) { STUB(func_800cd31c); return 0; }
 WEAK int func_800cd904(void) { STUB(func_800cd904); return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */
 /* enemy.c's steer-at-a-point-by-the-camera (0x800fbaac, 2 on arrival) and its step routine 0x800fc16c are still
