@@ -2061,3 +2061,20 @@
 0x801e6bec D_801e6bec
 0x801e6c10 D_801e6c10
 0x801e6c34 D_801e6c34
+# litl.c (0x80136840-0x8013831c, the Big Top's LITL, type 0x2065) and litl_data.c
+0x80136a3c litl_hit
+0x80136af8 litl_die
+0x80137174 litl_remove
+0x80137dcc litl_go_for_player
+0x80137ff0 litl_next_move
+0x8013825c litl_drop_right_arm
+0x801382bc litl_drop_left_arm
+0x801e5b7c litl_verts
+0x8021f0b8 litl_faces
+0x801e5834 litl_normals
+0x802373d0 litl_path
+0x8019ff48 litl_texmap
+0x801a03a8 submesh_info_litl
+0x801a05f0 litl_sounds
+0x801a0640 litl_hurt_sounds
+0x801a0690 litl_die_sounds
