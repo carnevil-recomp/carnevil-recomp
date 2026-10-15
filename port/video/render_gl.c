@@ -14,7 +14,9 @@
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
+#define GL_GLEXT_PROTOTYPES	1	/* glWindowPos, glFogCoord, the EXT framebuffer calls (GL 1.4 / EXT_framebuffer_object) */
 #include <GL/gl.h>
+#include <GL/glext.h>
 #endif
 #include <glide/glide.h>
 #include "hal.h"

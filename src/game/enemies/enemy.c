@@ -356,6 +356,31 @@ int func_800fbaac(enemy_t *e, float side, float dy, float dz, float step)
 	return((func_800fc16c(e, step) != 0) * 2);
 }
 
+int	step_toward_goal_xz(enemy_t *, float);
+
+/* 0x800fbba0: face the camera, set the goal as set_goal_near_camera does (side, dy, dz) and
+   take a ground step towards it: 2 when the goal is reached or the step was clear, else 0 */
+int func_800fbba0(enemy_t *e, float side, float dy, float dz, float step)
+{
+	float	*goal;
+
+	face_camera(e, 0.2f);
+	goal = e->goal;
+	world_to_view(&camera_x, goal);
+	e->goal[2] = e->goal[2] - dz;
+	e->goal[1] = e->goal[1] - dy;
+	if(e->target == player_stats)
+	{
+		e->goal[0] = e->goal[0] - side;
+	}
+	else
+	{
+		e->goal[0] = e->goal[0] + side;
+	}
+	view_to_world(goal);
+	return((step_toward_goal_xz(e, step) != 0) << 1);
+}
+
 /* 0x800fbc6c: a step of at most `step` on the largest axis towards the goal: 2 when the goal
    is within a step (the enemy snaps to it), else whether the move was clear */
 int step_toward_goal(enemy_t *e, float step)

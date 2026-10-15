@@ -1636,3 +1636,22 @@
 0x8021f0f8 zomb_faces
 0x801e5874 zomb_normals
 0x802373f8 zomb_path
+# bat.c (0x800f38c8-0x800f4614) and spider.c (0x800f4618-0x800f56d0): the Haunted House bat and spider
+0x801e09d4 hhbat_verts
+0x801e6eb8 hhbat_faces
+0x801de950 hhbat_normals
+0x801e70a4 hhbat_path
+0x8018f478 submesh_info_bat
+0x801e5bb4 spider_verts
+0x8022b100 spider_faces
+0x801e5880 spider_normals
+0x8018fb18 submesh_info_spider
+0x80180fb8 spider_path
+0x800f5314 spider_drop_limb1
+0x800f538c spider_drop_limb2
+0x800f5404 spider_drop_limb3
+0x800f547c spider_drop_limb4
+0x800f54f4 spider_drop_limb5
+0x800f5568 spider_drop_limb6
+0x800f55e0 spider_drop_limb7
+0x800f5658 spider_drop_limb8

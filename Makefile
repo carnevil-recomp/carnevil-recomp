@@ -1,5 +1,21 @@
 # Rebuild GAME.EXE (v1.0.3) from asm/ + src/ and check it against the original.
-BIN      := tools/mipsel-elf-binutils/bin
+# One checkout can be built from macOS and from Linux (e.g. a VM sharing the folder): what is
+# host-specific lives in per-OS places. macOS keeps the original paths (build/host/carnevil,
+# build/port, tools/mipsel-elf-binutils); Linux uses build/linux/... and tools/mipsel-elf-binutils-linux.
+UNAME    := $(shell uname -s)
+ifeq ($(UNAME),Darwin)
+BINUTILS ?= tools/mipsel-elf-binutils
+PORT_OUT := build/port
+PORT_BIN := build/host/carnevil
+else
+BINUTILS ?= tools/mipsel-elf-binutils-linux
+PORT_OUT := build/linux/port
+PORT_BIN := build/linux/carnevil
+# lower-case links to the SDK's capitalised headers (tools/build/sdkcase.sh)
+SDKCASE  := build/linux/sdkcase
+SDKCASE_HOST := build/linux/sdkcase-host
+endif
+BIN      := $(BINUTILS)/bin
 AS       := $(BIN)/mipsel-elf-as
 LD       := $(BIN)/mipsel-elf-ld
 OBJCOPY  := $(BIN)/mipsel-elf-objcopy
@@ -7,7 +23,7 @@ ASFLAGS  := -EL -mips4 -mabi=32 -G0 -no-pad-sections
 ORIG     := original/partition/GAME.EXE
 LOAD     := 0x800c4000
 SDK      := original/sdk
-CPPFLAGS := -E -P -Wno-nonportable-include-path -nostdinc -I$(SDK)/include -Iinclude -D__DJGPP__ -DSEATTLE -DRELEASE
+CPPFLAGS := -E -P -Wno-nonportable-include-path -nostdinc -I$(SDK)/include -Iinclude $(if $(SDKCASE),-idirafter $(SDKCASE)) -D__DJGPP__ -DSEATTLE -DRELEASE
 # the game's sources are grouped in subfolders of src/game and include each other's headers
 GAME_DIRS := $(patsubst %/,%,$(sort $(dir $(wildcard src/game/*/*.c))))
 GAME_INC  := $(addprefix -I,$(GAME_DIRS))
@@ -31,11 +47,19 @@ all: prereqs build/GAME.EXE check
 
 # what each build needs (see README "Getting started"): the port needs the SDK checkout for its
 # headers; the byte-exact rebuild also needs your GAME.EXE, the binutils and DOSBox-X
-prereqs-sdk:
+prereqs-sdk: $(if $(SDKCASE),$(SDKCASE)/.stamp $(SDKCASE_HOST)/.stamp)
 	@test -d $(SDK)/include || { echo "*** $(SDK) is missing: ./setup.sh --sdk /path/to/midwayvideo (git clone https://github.com/historicalsource/midwayvideo)"; exit 1; }
+ifneq ($(SDKCASE),)
+$(SDKCASE)/.stamp: tools/build/sdkcase.sh
+	@test -d $(SDK)/include || { echo "*** $(SDK) is missing: ./setup.sh --sdk /path/to/midwayvideo"; exit 1; }
+	tools/build/sdkcase.sh $(SDK)/include $(SDKCASE)
+$(SDKCASE_HOST)/.stamp: tools/build/sdkcase.sh
+	@test -d $(SDK)/include || { echo "*** $(SDK) is missing: ./setup.sh --sdk /path/to/midwayvideo"; exit 1; }
+	tools/build/sdkcase.sh --wrap $(SDK)/include $(SDKCASE_HOST)
+endif
 prereqs: prereqs-sdk
 	@test -f $(ORIG) || { echo "*** $(ORIG) is missing: ./setup.sh --raw IMAGE or --partition DIR (your own dump of CarnEvil v1.0.3)"; exit 1; }
-	@test -x $(AS) || { echo "*** $(AS) is missing: run tools/build/get-binutils.sh once"; exit 1; }
+	@test -x $(AS) || { echo "*** $(AS) is missing: run tools/build/get-binutils.sh $(BINUTILS) once"; exit 1; }
 	@command -v dosbox-x >/dev/null 2>&1 || command -v dosbox >/dev/null 2>&1 || echo "*** warning: DOSBox-X not on the PATH; C modules cannot be compiled (the SDK's compiler is a DOS program)"
 
 asm/files.txt build/link_order.ld build/modules.mk: | prereqs
@@ -47,7 +71,10 @@ build/asm/%.o: asm/%.s
 
 # the GOOSE and sound library sources are generated from the SDK checkout plus our patches
 # (config/sdk_sources.txt, patches/, tools/build/sdksrc.py); they are not committed
-SDK_GEN := $(shell awk '!/^\#/ && NF {print $$1}' config/sdk_sources.txt)
+# a literal '#' for $(shell ...): GNU make 3.81 (macOS) reads a bare # there as a comment, while
+# make 4.x passes a backslash-escaped one through to the command; a variable works with both
+HASH := \#
+SDK_GEN := $(shell awk '!/^$(HASH)/ && NF {print $$1}' config/sdk_sources.txt)
 $(SDK_GEN): tools/build/sdksrc.py config/sdk_sources.txt $(wildcard patches/*/*.patch) | prereqs-sdk
 	@python3 tools/build/sdksrc.py
 sdksrc: $(SDK_GEN)
@@ -85,8 +112,8 @@ build/GAME.EXE: build/game.bin
 
 # ---- native host build (the port) ----
 HOSTCC     := clang
-HOSTCFLAGS := -O2 -g -Wall -Wno-unused-result -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -DPORT_HOST -DSEATTLE -DRELEASE -Iinclude -include port/runtime/compat.h -idirafter $(SDK)/include -Wno-nonportable-include-path
-C_SRCS     := $(filter %.c,$(shell grep -v '^\#' config/modules.txt | awk 'NF {print $$2}'))
+HOSTCFLAGS := -O2 -g -Wall -Wno-unused-result -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -DPORT_HOST -DSEATTLE -DRELEASE -Iinclude -include port/runtime/compat.h $(if $(SDKCASE_HOST),-idirafter $(SDKCASE_HOST)) -idirafter $(SDK)/include -Wno-nonportable-include-path
+C_SRCS     := $(filter %.c,$(shell grep -v '^$(HASH)' config/modules.txt | awk 'NF {print $$2}'))
 
 HOST_LINK_SRCS := src/goose/crc.c src/goose/sincos.c     # modules the self-test links; the rest are compile-checked
 # mthread.c is the MIPS context switcher (register save/restore in inline asm); the port
@@ -109,11 +136,12 @@ host: prereqs-sdk $(HOST_OBJS) build/host/selftest
 # ---- the playable port: GOOSE + game modules with the host layer (port/runtime, video, audio, stubs) ----
 # The game sees pointers as int, so port/runtime/mem.c keeps all its memory below 4 GB. The arm64
 # macOS kernel refuses executables that map that low, so on macOS the port is an x86_64 binary
-# run under Rosetta (as Wine does); elsewhere it is native with -no-pie.
+# run under Rosetta (as Wine does); on Linux it is a native x86_64 build with -no-pie, a window
+# and sound through SDL2 (packages: libsdl2-dev, libgl-dev).
 PORT_SRCS := $(wildcard port/runtime/*.c port/video/*.c port/audio/*.c port/stubs/*.c)
 # game sources that are not byte-exact modules yet still run in the port
 PORT_GAME_SRCS := $(wildcard src/game/*/*.c)
-PORT_OBJS := $(patsubst %.c,build/port/%.o,$(sort $(filter-out $(HOST_SKIP),$(C_SRCS)) $(PORT_GAME_SRCS)))
+PORT_OBJS := $(patsubst %.c,$(PORT_OUT)/%.o,$(sort $(filter-out $(HOST_SKIP),$(C_SRCS)) $(PORT_GAME_SRCS)))
 comma := ,
 PORT_FORTIFY ?= 0     # libc fortification trips on ILP32 idioms; set 2 to debug with it
 ifeq ($(shell uname),Darwin)
@@ -124,28 +152,43 @@ PORT_LDFLAGS += -Wl$(comma)-alias$(comma)_camera_x$(comma)_camera_pos
 PORT_VIDEO   := port/video/video_macos.m
 PORT_AUDIO   := port/audio/audio_macos.m
 PORT_LDFLAGS += -framework AudioToolbox
+PORT_LIBS    := -lc++
 else
 PORT_ARCH    :=
+SDL_CFLAGS   := $(shell pkg-config --cflags sdl2 2>/dev/null)
+SDL_LIBS     := $(shell pkg-config --libs sdl2 2>/dev/null)
 PORT_LDFLAGS := -no-pie -Wl$(comma)--defsym=camera_pos=camera_x
+# globals defined in more than one file (stream_volume, ...) were merged as common symbols by the
+# game's GCC 2.7; modern compilers default to -fno-common
+HOSTCFLAGS   += -fcommon
+ifneq ($(SDL_LIBS),)
+PORT_VIDEO   := port/video/video_sdl.c
+PORT_AUDIO   := port/audio/audio_sdl.c
+PORT_LIBS    := $(SDL_LIBS) -lGL -lstdc++ -ldl -lm -lpthread
+HOSTCFLAGS   += $(SDL_CFLAGS)
+else
+$(warning SDL2 not found (pkg-config sdl2): building a headless port; install libsdl2-dev for a window and sound)
 PORT_VIDEO   := port/video/video_null.c
 PORT_AUDIO   := port/audio/audio_null.c
+PORT_LIBS    := -lstdc++ -ldl -lm -lpthread
 endif
-PORT_SRCS := $(filter-out port/video/video_null.c port/audio/audio_null.c,$(PORT_SRCS)) $(PORT_VIDEO) $(PORT_AUDIO)
+endif
+PORT_SRCS := $(filter-out port/video/video_null.c port/audio/audio_null.c port/video/video_sdl.c port/audio/audio_sdl.c,$(PORT_SRCS)) $(PORT_VIDEO) $(PORT_AUDIO)
 # the virtual DCS sound board is C++ (it drives the vendored DCS decoder)
 PORT_CXX_SRCS := port/audio/dcs_board.cpp port/third_party/dcsdecoder/DCSDecoder.cpp port/third_party/dcsdecoder/DCSDecoderNative.cpp
-PORT_CXX_OBJS := $(patsubst %.cpp,build/port/%.o,$(PORT_CXX_SRCS))
+PORT_CXX_OBJS := $(patsubst %.cpp,$(PORT_OUT)/%.o,$(PORT_CXX_SRCS))
 HOSTCXX ?= clang++
-build/port/%.o: %.cpp port/audio/dcs_board.h
+$(PORT_OUT)/%.o: %.cpp port/audio/dcs_board.h
 	@mkdir -p $(dir $@)
 	$(HOSTCXX) -std=c++17 -O2 $(PORT_ARCH) $(PORT_INC) -Wno-deprecated-declarations -c -o $@ $<
-build/port/%.o: %.c include/types.h port/runtime/compat.h
+$(PORT_OUT)/%.o: %.c include/types.h port/runtime/compat.h
 	@mkdir -p $(dir $@)
 	$(HOSTCC) $(HOSTCFLAGS) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -c -o $@ $<
-build/port/src/game/%.o: HOSTCFLAGS += $(GAME_INC)
-build/host/carnevil: $(PORT_OBJS) $(PORT_CXX_OBJS) $(PORT_SRCS) port/runtime/hal.h port/video/video.h port/runtime/texture.h port/audio/audio.h
+$(PORT_OUT)/src/game/%.o: HOSTCFLAGS += $(GAME_INC)
+$(PORT_BIN): $(PORT_OBJS) $(PORT_CXX_OBJS) $(PORT_SRCS) port/runtime/hal.h port/video/video.h port/runtime/texture.h port/audio/audio.h
 	@mkdir -p $(dir $@)
-	$(HOSTCC) $(HOSTCFLAGS) $(PORT_INC) $(GAME_INC) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -Wno-deprecated-declarations $(PORT_LDFLAGS) -lc++ -o $@ $(PORT_SRCS) $(PORT_OBJS) $(PORT_CXX_OBJS)
-port: prereqs-sdk build/host/carnevil
+	$(HOSTCC) $(HOSTCFLAGS) $(PORT_INC) $(GAME_INC) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -Wno-deprecated-declarations $(PORT_LDFLAGS) -o $@ $(PORT_SRCS) $(PORT_OBJS) $(PORT_CXX_OBJS) $(PORT_LIBS)
+port: prereqs-sdk $(PORT_BIN)
 
 check: build/GAME.EXE
 	@cmp $(ORIG) build/GAME.EXE && echo "OK: build/GAME.EXE is byte-identical to $(ORIG)"
