@@ -162,6 +162,7 @@ static GLenum cmp_func(int f)
 /* push the Glide state into GL before a draw */
 /* the per-draw colour the vertices inherit unless the combine iterates it */
 static unsigned char cur_rgb[3], cur_alpha;
+static int	cur_tex_rgb;		/* the bound texture feeds the colour, not only the alpha */
 static int	have_uv = 1;		/* the vertex layout carries s/w, t/w (a flat-lit layout does not) */
 
 static int iterated_rgb(void)
@@ -182,9 +183,18 @@ static int iterated_alpha(void)
 
 static void apply_state(void)
 {
-	int	textured = st.tex != GR_NULL_MIPMAP_HANDLE && have_uv && st.color_combine != GR_COLORCOMBINE_CCRGB
+	/* The Voodoo's colour and alpha paths are separate: a combine whose colour ignores the
+	   texture (CCRGB, ITRGB, ZERO, ONE) still takes the texture's alpha when the alpha source
+	   asks for it. The smoke columns (draw_smoke: CCRGB in the column's colour, texture alpha
+	   times iterated alpha) get their whole shape from that alpha; without it the acid fumes
+	   were solid yellow-green quads. */
+	int	tex_rgb = st.color_combine != GR_COLORCOMBINE_CCRGB
 			&& st.color_combine != GR_COLORCOMBINE_ZERO && st.color_combine != GR_COLORCOMBINE_ONE
 			&& st.color_combine != GR_COLORCOMBINE_ITRGB && st.color_combine != GR_COLORCOMBINE_ITRGB_DELTA0;
+	int	tex_alpha = st.alpha_source == GR_ALPHASOURCE_TEXTURE_ALPHA || st.alpha_source == GR_ALPHASOURCE_TEXTURE_ALPHA_TIMES_CONSTANT_ALPHA
+			|| st.alpha_source == GR_ALPHASOURCE_TEXTURE_ALPHA_TIMES_ITERATED_ALPHA;
+	int	textured = st.tex != GR_NULL_MIPMAP_HANDLE && have_uv && (tex_rgb || tex_alpha);
+	cur_tex_rgb = tex_rgb;
 	unsigned char r = (st.const_color >> 16) & 255, g = (st.const_color >> 8) & 255, b = st.const_color & 255, a = st.const_color >> 24;
 	static const float white[4] = { 1, 1, 1, 1 };
 	if(textured) bind_texture(); else glDisable(GL_TEXTURE_2D);
@@ -195,7 +205,7 @@ static void apply_state(void)
 	case GR_COLORCOMBINE_TEXTURE_TIMES_ALPHA: r = g = b = 255; break;	/* alpha applied through the alpha channel below */
 	default: break;							/* CCRGB, TEXTURE_TIMES_CCRGB: constant colour; the iterated modes set the colour per vertex */
 	}
-	if(st.cc_invert && !textured) { r = 255 - r; g = 255 - g; b = 255 - b; }
+	if(st.cc_invert && !(textured && tex_rgb)) { r = 255 - r; g = 255 - g; b = 255 - b; }
 	glColor4ub(r, g, b, a);
 	cur_rgb[0] = r; cur_rgb[1] = g; cur_rgb[2] = b; cur_alpha = a;
 	if(textured)
@@ -204,7 +214,13 @@ static void apply_state(void)
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 		glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_TEXTURE); glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
 		glTexEnvi(GL_TEXTURE_ENV, GL_SRC1_RGB, GL_PRIMARY_COLOR); glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
-		if(st.cc_invert)
+		if(!tex_rgb)
+		{
+			/* the colour is the constant or iterated colour alone (cc_invert applied above) */
+			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
+			glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_PRIMARY_COLOR);
+		}
+		else if(st.cc_invert)
 		{
 			/* 1 - tex * col = (1 - col) * tex + 1 * (1 - tex): INTERPOLATE(arg0 = 1 - col, arg1 = white, arg2 = tex) */
 			glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, white);
@@ -265,7 +281,7 @@ static void vertex_rgba(const MidVertex *v, port_texture_t *t, const float *rgb,
 			r = rgb[0] < 0 ? 0 : rgb[0] > 255 ? 255 : (unsigned char)rgb[0];
 			g = rgb[1] < 0 ? 0 : rgb[1] > 255 ? 255 : (unsigned char)rgb[1];
 			b = rgb[2] < 0 ? 0 : rgb[2] > 255 ? 255 : (unsigned char)rgb[2];
-			if(st.cc_invert && !t) { r = 255 - r; g = 255 - g; b = 255 - b; }
+			if(st.cc_invert && !(t && cur_tex_rgb)) { r = 255 - r; g = 255 - g; b = 255 - b; }
 		}
 		if(alpha && iterated_alpha()) a = *alpha < 0 ? 0 : *alpha > 255 ? 255 : (unsigned char)*alpha;
 		glColor4ub(r, g, b, a);
