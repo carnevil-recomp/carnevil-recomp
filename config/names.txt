@@ -422,6 +422,8 @@
 0x801e6ec0 sound_init_pending
 0x801de954 stereo_output
 0x8018e04c cue_priority_rotor
+# game auditfmt.c (0x800ef870-0x800f18e0, -O): the audit pages written into audits.fmt
+0x800ef870 startaudit
 # game audits.c (0x800f18e0-0x800f1d84, -O): audit groups, built from src/game/core/audits.c
 0x800f18e0 clear_audits
 0x800f1948 clear_coin_audits
