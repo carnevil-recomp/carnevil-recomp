@@ -415,7 +415,9 @@ void main_game_proc(void)
 		sleep(2);
 		normal_screen();
 		sleep(5);
-		if(!(levels_cleared & 1))
+		/* a target for each level not cleared yet (end_of_wave: Rickety Town 1, Haunted House 2,
+		   Freak Show 4); 0x710 is the haunted house, 0x711 the freak show, 0x712 the Ferris wheel */
+		if(!(levels_cleared & 2))
 		{
 			add_object1_wrapper(0x710, draw_select_target, init_select_target, select_target_think);
 		}
@@ -423,7 +425,7 @@ void main_game_proc(void)
 		{
 			add_object1_wrapper(0x711, draw_select_target, init_select_target, select_target_think);
 		}
-		if(!(levels_cleared & 2))
+		if(!(levels_cleared & 1))
 		{
 			add_object1_wrapper(0x712, draw_select_target, init_select_target, select_target_think);
 		}
@@ -510,12 +512,11 @@ void main_game_proc(void)
 		{
 			set_level_start_time(&player_stats[1]);
 		}
-		if((player_stats[0].state || player_stats[1].state) && game_phase == 2)
+		/* the level runs until every player is out or the level's end changes the phase (the
+		   test of game_phase is made on every pass, 0x800c5cd0) */
+		while((player_stats[0].state || player_stats[1].state) && game_phase == 2)
 		{
-			do
-			{
-				sleep(1);
-			} while(player_stats[0].state || player_stats[1].state);
+			sleep(1);
 		}
 		won = 0;
 		if(!player_stats[0].state && !player_stats[1].state)
