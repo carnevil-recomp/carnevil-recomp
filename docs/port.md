@@ -274,14 +274,30 @@ mixer (PM 0x3961) plays a full buffer whenever the stream is on, scaled by the s
 and the master gain, with no track involved, which is what `dcs_board.cpp` does.
 
 Tracks: the board has six tracks (= mixer channels). The host's priority word picks the track
-(SOUND.H: 0x8000 forces the track in bits 7-9, otherwise the board allocates a free one,
-0x2000 refuses to interrupt an equal or higher priority, low 7 bits are the priority), and a
+(goose/sound.h: 0x8000 forces the track in bits 7-9 and by default overrides what plays there,
+0x4000 makes it check that track's priority first, 0x2000 keeps an equal priority from
+interrupting, `SND_PRI_SET_NOINT` = 0xE000; otherwise the board allocates a free track; low
+7 bits are the priority), and a
 bank program's channel numbers are relative to that track (950 of the 953 programs in the
 game's banks are written for "channel 1 / stream 0"). The game runs the attract and level
 music on track 0 (0x8000/0x8010) and speech and effects on tracks 3-5 (next_cue_priority), so
 a coin sound no longer replaces the intro music. A program is {u16 wait, op, args}... and the
 op follows its wait: reading another wait after one expires ran the interpreter off the end
 of the coin program into the neighbouring weapon sounds of generic1 (fixed 2026-10-12).
+
+A lower priority value is the more important sound. The header does not say so, but the game
+code does: every enemy sound is `prio_base - n` on the enemy's one forced track with
+`SND_PRI_SET_NOINT`, with n = 0 for walk and taunt calls, 2 for hurt calls and 8 for the death
+or removal call, and a Krinkle starts with a sound that loops forever at `prio_base + 2` that
+only its death or removal call can end. The board first had the comparison the other way
+round, so a Krinkle's loop held its track against its own hurt and death calls (no hurt
+sounds), and the indefinite wait 0xFFFF that ends those programs counted as 65535 frames, so
+the tracks stayed taken after the Krinkles were gone (silence after a few of them). Fixed
+2026-10-14, together with two rules from the vendored decoder's reading of the firmware
+(DCSDecoderNative::ExecTrack): a stream repeat count of 0 loops forever (the board had played
+it once), and opcode 0x00 ends the track and stops the stream on its own channel (the board let
+it run on, which made sounds linger). A hurt program plays its cry, waits the cry's length
+and goes back to the Krinkle's loop.
 
 `src/game/sound/soundio.c` has the game's sound start-up (main_init_sound) and the cue helpers; the
 attract wave's banks (select1, midway, intro4, attract) are loaded by the port's preload_wave

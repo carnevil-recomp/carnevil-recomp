@@ -64,7 +64,7 @@ public:
 		int		channel = 0;		/* the track number the host chose; the program's channels are relative to it */
 		int		priority = 0;		/* low 7 bits of the host priority word */
 		const uint8_t	*pc = 0;
-		int		counter = 0;
+		int		counter = 0;		/* frames left to wait; -1 = the indefinite wait 0xFFFF */
 		bool		op_next = false;	/* a wait was consumed: the next item is the opcode */
 		struct Loop { int count; const uint8_t *pos; };
 		std::vector<Loop> loops;
@@ -262,17 +262,42 @@ public:
 	}
 
 	/* ---- sound calls and track programs ---- */
-	/* The host priority word (SOUND.H): 0x8000 = force the track in bits 7-9, else allocate one;
-	   0x2000 = don't interrupt a track of equal or higher priority; low 7 bits = priority. */
-	int pick_track(unsigned priority)
+	/* The host priority word, as goose/sound.h defines it: 0x8000 (SND_PRI_SET) puts the call on
+	   the track in bits 7-9 and by default overrides whatever plays there; 0x4000 makes it check
+	   that track's priority first; 0x2000 keeps an equal priority from interrupting
+	   (SND_PRI_SET_NOINT = 0xE000 "hard set to trk, check pri of set trk, and = pri no int").
+	   Without 0x8000 the board allocates a track. Low 7 bits = the priority, where a LOWER value
+	   is the MORE important sound: the game derives every enemy sound from prio_base - n with
+	   n = 0 for walk and taunt calls, 2 for hurt calls and 8 for the death or removal call, all on
+	   the enemy's one forced track (play_enemy_sound), and a Krinkle starts with a loop that
+	   repeats forever at prio_base + 2 that only its death or removal call can end. */
+	bool track_busy(int i)
+	{
+		if(tracks[i].active) return true;
+		for(int ch = 0; ch < MAX_CHANNELS; ch++)
+			if(channel[ch].sourceChannel == i && !channel[ch].audioStream.playbackBitPtr.IsNull()) return true;
+		return false;
+	}
+	/* may a call at this priority word take over busy track i? */
+	bool may_interrupt(int i, unsigned priority)
 	{
 		int level = priority & 0x7f;
-		if(priority & 0x8000) return (priority >> 7) & 7;
+		if(!track_busy(i)) return true;
+		return (priority & 0x2000) ? level < tracks[i].priority : level <= tracks[i].priority;
+	}
+	int pick_track(unsigned priority)
+	{
+		if(priority & 0x8000)
+		{
+			int t = (priority >> 7) & 7;
+			if((priority & 0x4000) && !may_interrupt(t, priority)) return -1;
+			return t;
+		}
 		for(int i = 0; i < MAX_CHANNELS; i++)
-			if(!(reserved_mask & (1 << i)) && !tracks[i].active && channel[i].sourceChannel != i) return i;
-		int best = -1;
+			if(!(reserved_mask & (1 << i)) && !track_busy(i)) return i;
+		int best = -1;			/* every track busy: the least important one, if this call outranks it */
 		for(int i = 0; i < MAX_CHANNELS; i++)
-			if(!(reserved_mask & (1 << i)) && tracks[i].priority <= level && (best < 0 || tracks[i].priority < tracks[best].priority)) best = i;
+			if(!(reserved_mask & (1 << i)) && may_interrupt(i, priority) && (best < 0 || tracks[i].priority > tracks[best].priority)) best = i;
 		return best;
 	}
 	int reserved_mask = 0;
@@ -286,7 +311,6 @@ public:
 		if(verbose) fprintf(stderr, "[dcs] sound call %u vol %d pan %d pri %04x -> %08x track %d\n", call, volume, pan, priority, entry, track);
 		if(entry == 0xffffffff || entry + 2 >= dram.size() || track < 0 || track >= MAX_CHANNELS) return;
 		if(verbose > 1) { fprintf(stderr, "[dcs]   program:"); for(unsigned i = 0; i < 40 && entry + i < dram.size(); i++) fprintf(stderr, " %02x", dram[entry + i]); fprintf(stderr, "\n"); }
-		if((priority & 0x2000) && tracks[track].active && tracks[track].priority >= (int)(priority & 0x7f)) return;
 		start_track(track, priority & 0x7f, dram.data() + entry, volume);
 	}
 
@@ -320,13 +344,17 @@ public:
 			if(!t.op_next)
 			{
 				uint16_t wait = rd16(p);
+				/* 0xFFFF waits until the track is stopped or replaced (DCSDecoderNative::ExecTrack) */
+				if(wait == 0xffff) { t.counter = -1; t.op_next = true; return; }
 				if(wait) { t.counter = wait; t.op_next = true; return; }
 			}
 			t.op_next = false;
 			uint8_t op = *p++;
 			switch(op)
 			{
-			case 0x00: t.active = false; return;
+			case 0x00:			/* end: also stops the stream on the track's own channel (ExecTrack) */
+				stop_channel(t.channel);
+				t.active = false; return;
 			case 0x01:
 			{
 				int sch = (t.channel + *p++) % MAX_CHANNELS;
@@ -338,7 +366,7 @@ public:
 				{
 					DCSDecoder::ROMPointer rp(0, stream);
 					channel[sch].trackPtr.Clear();
-					LoadAudioStream(sch, t.channel, repeats == 0 ? 1 : repeats, rp);
+					LoadAudioStream(sch, t.channel, repeats, rp);	/* 0 = repeat forever */
 					if(verbose) fprintf(stderr, "[dcs]   play stream +%06x on channel %d x%d\n", (unsigned)(stream - dram.data()), sch, repeats);
 				}
 				break;
@@ -378,6 +406,7 @@ public:
 		for(auto &t : tracks)
 		{
 			if(!t.active) continue;
+			if(t.counter < 0) continue;			/* indefinite wait */
 			if(t.counter > 0 && --t.counter > 0) continue;
 			run(t);
 		}
