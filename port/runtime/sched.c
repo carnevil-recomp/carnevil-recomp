@@ -92,6 +92,9 @@ static void resume(struct process_node *pn)
 	running = 0;
 }
 
+/* true while a GOOSE process runs, so port code may call sleep() */
+int sched_in_process(void) { return cur_proc && running; }
+
 /* GOOSE sleep(): add ticks to the current process' sleep count and yield to the dispatcher */
 void sleep(int ticks)
 {

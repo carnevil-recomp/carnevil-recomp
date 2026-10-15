@@ -48,6 +48,7 @@ const char	*hal_raw_image = 0;
 int		hal_frame_limit = 0;
 int		hal_fast = 0;
 int		hal_headless = 0;
+double		hal_load_time = 2.4;	/* --load-time: see load_time_word() */
 void render_set_dump(const char *, unsigned long);
 void audio_wav_close(void);
 unsigned long	hal_frame_count = 0;
@@ -110,6 +111,7 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--raw") && i + 1 < argc) hal_raw_image = argv[++i];
 		else if(!strcmp(argv[i], "--frames") && i + 1 < argc) hal_frame_limit = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--fast")) hal_fast = 1;
+		else if(!strcmp(argv[i], "--load-time") && i + 1 < argc) { hal_load_time = atof(argv[++i]); if(hal_load_time < 1.0) hal_load_time = 1.0; }
 		else if(!strcmp(argv[i], "--headless")) hal_headless = 1;
 		else if(!strcmp(argv[i], "--dump") && i + 1 < argc) render_set_dump(argv[++i], 0);
 		else if(!strcmp(argv[i], "--dump-every") && i + 2 < argc) { render_set_dump(argv[i+1], atoi(argv[i+2])); i += 2; }
@@ -286,6 +288,41 @@ static void cmos_save(void)
 	if(f) { fwrite(cmos, 1, sizeof cmos, f); fclose(f); }
 }
 
+/*
+ * load_time_word() - PORT TIMING, NOT GAME CODE, AND NOT A MEASURED VALUE.
+ *
+ * When the game loads a level it sends each sound bank to the sound board one 16-bit word
+ * at a time (snd_download_bank_playing in src/sound/sound.c). Before every word the game polls
+ * the I/O ASIC sound status until the board's "realtime ready" bit is set, and after every
+ * 8192 words it sleeps one frame. The port reproduces those sleeps exactly, but it answers
+ * "ready" at once (dcs_status) and reads the disk image at once. On the cabinet the bit is set
+ * by the DCS2 firmware running on the sound DSP, which empties the mailbox between its own
+ * audio work, and the IDE drive takes real time too. Neither cost is in the game code, and the
+ * port does not emulate the DSP, so the true cost is unknown.
+ *
+ * It matters because the jester's level introduction has no fixed length: it plays, then
+ * loops its last stretch until load_wave_proc finishes. With only the sleeps a Rickety Town
+ * load lasts ~285 frames, but the introduction needs ~690 to play through, which is how it is
+ * remembered on the cabinet. As a TEST we stretch the load by --load-time (default 2.4 =
+ * 690 / 285): each bank word sent during play adds (load_time - 1) / 8192 of a frame, waited
+ * out with sleep() so the rest of the game keeps running. This is a calibration guess to be
+ * replaced by a timing from real hardware or by emulating the DSP firmware. --load-time 1
+ * turns it off.
+ */
+static void load_time_word(void)
+{
+	extern int	sched_in_process(void);
+	static double	owed;
+
+	if(hal_load_time <= 1.0 || !sched_in_process()) return;
+	owed += (hal_load_time - 1.0) / 8192.0;
+	while(owed >= 1.0)
+	{
+		owed -= 1.0;
+		sleep(1);
+	}
+}
+
 int _ioctl(int dev, int req, int arg)
 {
 	int	*p = (int *)(intptr_t)arg;
@@ -305,7 +342,10 @@ int _ioctl(int dev, int req, int arg)
 				if((arg & 0xe) && !(sound_control & 0xe)) dcs_fifo_reset();
 				sound_control = arg; return 0;
 			case FIOC('i', 7): if(p) *p = sound_control; return 0;
-			case FIOC('i', 8): dcs_write(arg); return 0;			/* host -> sound data */
+			case FIOC('i', 8):						/* host -> sound data */
+				if(dcs_loading_while_playing()) { dcs_write(arg); load_time_word(); }
+				else dcs_write(arg);
+				return 0;
 			case FIOC('i', 9): if(p) *p = dcs_status(); return 0;
 			case FIOC('i', 10): if(p) *p = dcs_read(); return 0;
 			case FIOC('i', 14): if(p) *p = fifo_int_pending() ? 9 : 0; return 0;	/* main status: FIFO interrupt */

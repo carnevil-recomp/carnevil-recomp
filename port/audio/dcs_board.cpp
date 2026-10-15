@@ -161,6 +161,8 @@ public:
 		}
 	}
 	void want(int n) { st = ARGS; nargs = 0; wantargs = n; }
+	/* the next word is bank data of a download made while sound plays (SND_CMD_LOAD_PLAY) */
+	bool loading_while_playing() { return st == DATA && cmd == 0x55D1; }
 
 	void begin(uint16_t w)
 	{
@@ -413,6 +415,7 @@ static Board *get(void) { if(!board) board = new Board(); return board; }
 extern "C" {
 void dcs_reset(void) { get()->reset(); }
 void dcs_write(unsigned int w) { get()->write(w & 0xffff); }
+int dcs_loading_while_playing(void) { Board *b = get(); std::lock_guard<std::mutex> g(b->lock); return b->loading_while_playing(); }
 unsigned dcs_status(void)
 {
 	Board *b = get(); std::lock_guard<std::mutex> g(b->lock);

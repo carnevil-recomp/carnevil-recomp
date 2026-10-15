@@ -81,7 +81,7 @@ through the first level:
 
 ```
 ./build/host/carnevil --partition original/partition --raw original/carn.raw \
-    --headless --fast --frames 3000 --press 600:coin,610:coin,650:start1
+    --headless --fast --frames 3600 --press 1100:coin,1110:coin,1150:start1
 ```
 Matching status of the game modules (per function, `tools/match/trymatch.sh`, 2026-10-13):
 
@@ -291,6 +291,25 @@ file sizes, and defines a plain `_fopen` on macOS so the SDK-built objects hit t
 Adjustments come from GOOSE's factory defaults when the CMOS is blank (attract sounds on, volume
 127); the game's own adjustment table and CMOS setup are not decompiled yet.
 
+### Load time (a test calibration, not game code)
+
+The jester's level introduction has no fixed length: it plays, then loops its last stretch
+until `load_wave_proc` finishes loading. Most of that load is the sound library streaming the
+banks to the board (`snd_download_bank_playing`): before each word it polls the board's
+"realtime ready" status bit, and after every 8192 words it sleeps one frame. The port keeps
+those sleeps exactly but answers "ready" at once and reads the disk image at once. On the
+cabinet the DCS2 firmware on the sound DSP sets that bit between its own audio work, and the
+IDE drive takes real time. Neither cost is in the game code and the port does not emulate the
+DSP, so the real figure is unknown. With the sleeps alone a Rickety Town load lasts about 285
+frames while the introduction needs about 690, so it was cut short.
+
+As a test, `port/runtime/hal.c` (`load_time_word`) stretches every load made while sound plays
+by `--load-time X` (default 2.4, which is 690 / 285): each bank word adds (X - 1) / 8192 of a
+frame, waited out with `sleep()` so the game keeps running. The boot load of the attract banks
+goes through the same routine and lengthens too (it ends at frame 829 instead of 391).
+`--load-time 1` restores the instant hardware. The value should be replaced by a timing taken
+from a real cabinet, or by emulating the DSP firmware.
+
 ## Inputs, coins and credits (`src/game/core/credits.c`, `port/runtime/hal.c`)
 
 The cabinet switches reach the game exactly as on the board: GOOSE's `scan_switches` (called
@@ -313,7 +332,7 @@ restart), as on the cabinet: credits you insert are still there on the next run.
 Keyboard (window build): `5` or `c` coin, `1`/`2` start, `9` service credit, `F2` test (stub),
 `-`/`=` volume down/up (hold: the bar and "VOLUME n" appear), space pump, left ctrl or the
 mouse button trigger. Scripted presses for headless tests:
-`--press 350:coin,360:coin,400:start1` (frame:name, each held 6 frames; names in
+`--press 1000:coin,1010:coin,1050:start1` (frame:name, each held 6 frames; names in
 `name_to_bits` in hal.c). The light-gun port (0x16800000, kseg1 0xb6800000, MAME's
 `carnevil_gun_r` layout) is a mapped page the HAL refreshes every frame with the trigger and
 pump bits and a centred position; aiming comes later.

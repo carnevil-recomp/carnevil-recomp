@@ -13,6 +13,7 @@ extern "C" {
 void	 dcs_reset(void);			/* sound control bit 0 pulsed low then high */
 void	 dcs_write(unsigned int word);		/* FIOCSETSOUNDDATA: host -> board */
 unsigned dcs_status(void);			/* FIOCGETSOUNDSTATUS */
+int	 dcs_loading_while_playing(void);	/* the next host word is bank data sent during play */
 unsigned dcs_read(void);			/* FIOCGETSOUNDDATA: board -> host */
 void	 dcs_clear_sth(void);			/* FIOCSETSTHDATA 0: the host took the word */
 void	 dcs_render(short *out, int nsamples);	/* mono 16-bit at 31250 Hz, any thread */
