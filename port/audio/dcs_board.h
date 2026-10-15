@@ -16,7 +16,7 @@ unsigned dcs_status(void);			/* FIOCGETSOUNDSTATUS */
 int	 dcs_loading_while_playing(void);	/* the next host word is bank data sent during play */
 unsigned dcs_read(void);			/* FIOCGETSOUNDDATA: board -> host */
 void	 dcs_clear_sth(void);			/* FIOCSETSTHDATA 0: the host took the word */
-void	 dcs_render(short *out, int nsamples);	/* mono 16-bit at 31250 Hz, any thread */
+void	 dcs_render(short *out, int nframes);	/* nframes interleaved L/R 16-bit pairs at 31250 Hz, any thread */
 void	 dcs_set_verbose(int on);
 #ifdef __cplusplus
 }

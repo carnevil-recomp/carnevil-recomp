@@ -13,9 +13,9 @@ static int		running;
 static void fill(void *user, AudioQueueRef q, AudioQueueBufferRef buf)
 {
 	(void)user;
-	int n = buf->mAudioDataBytesCapacity / 2;
+	int n = buf->mAudioDataBytesCapacity / 4;	/* stereo frames */
 	dcs_render((short *)buf->mAudioData, n);
-	buf->mAudioDataByteSize = n * 2;
+	buf->mAudioDataByteSize = n * 4;
 	AudioQueueEnqueueBuffer(q, buf, 0, NULL);
 }
 
@@ -26,13 +26,13 @@ int audio_start(void)
 	fmt.mSampleRate = AUDIO_RATE;
 	fmt.mFormatID = kAudioFormatLinearPCM;
 	fmt.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
-	fmt.mBitsPerChannel = 16; fmt.mChannelsPerFrame = 1; fmt.mBytesPerFrame = 2;
-	fmt.mFramesPerPacket = 1; fmt.mBytesPerPacket = 2;
+	fmt.mBitsPerChannel = 16; fmt.mChannelsPerFrame = 2; fmt.mBytesPerFrame = 4;
+	fmt.mFramesPerPacket = 1; fmt.mBytesPerPacket = 4;
 	if(AudioQueueNewOutput(&fmt, fill, NULL, NULL, NULL, 0, &queue) != noErr) { fprintf(stderr, "[audio] no output queue\n"); return 0; }
 	for(i = 0; i < NBUF; i++)
 	{
 		AudioQueueBufferRef b;
-		if(AudioQueueAllocateBuffer(queue, BUFSAMPLES * 2, &b) != noErr) return 0;
+		if(AudioQueueAllocateBuffer(queue, BUFSAMPLES * 4, &b) != noErr) return 0;
 		fill(NULL, queue, b);
 	}
 	if(AudioQueueStart(queue, NULL) != noErr) { fprintf(stderr, "[audio] cannot start output\n"); return 0; }

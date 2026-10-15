@@ -320,6 +320,15 @@ file sizes, and defines a plain `_fopen` on macOS so the SDK-built objects hit t
 Adjustments come from GOOSE's factory defaults when the CMOS is blank (attract sounds on, volume
 127); the game's own adjustment table and CMOS setup are not decompiled yet.
 
+### Stereo (2026-10-14)
+The board's output is interleaved stereo (CoreAudio and `--wav` are two-channel). The game asks
+for stereo at boot (`snd_output_stereo`, 0x55B2 + 0xBB44) unless adjustment 0x3c selects mono;
+the default is stereo. The music stream comes in as PCM pairs and keeps both sides in stereo
+mode (the port takes the first word of a pair as left: the game copies the words through, and
+which side the DCS2 firmware plays first is not verified). The sound calls' pan byte is still not
+applied: the firmware's pan law lives in the DSP code the port does not run, so calls play
+centred instead of through an invented curve.
+
 ### Load time (a test calibration, not game code)
 
 The jester's level introduction has no fixed length: it plays, then loops its last stretch

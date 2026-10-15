@@ -245,7 +245,9 @@ public:
 		case 0x55AD:			/* track priority: mask << 8 | priority */
 			for(int t = 0; t < MAX_CHANNELS; t++) if((args[0] >> 8) & (1 << t)) tracks[t].priority = args[0] & 0x7f;
 			return;
-		case 0x55AC: case 0x55B1: case 0x55B2:
+		case 0x55B1: if(args[0] == 0xAA55) { stereo = false; if(verbose) fprintf(stderr, "[dcs] mono output\n"); } return;
+		case 0x55B2: if(args[0] == 0xBB44) { stereo = true; if(verbose) fprintf(stderr, "[dcs] stereo output\n"); } return;
+		case 0x55AC:
 		case 0x55E0: case 0x55E3: case 0x55E4:
 			return;
 		default:
@@ -412,14 +414,22 @@ public:
 		}
 	}
 
+	/* Output: interleaved left/right. The game asks for stereo (snd_output_stereo, 0x55B2 with the
+	   safety word 0xBB44) unless adjustment 0x3c says mono (0x55B1, 0xAA55); the default is stereo.
+	   The music stream arrives as stereo PCM pairs and keeps its two sides in stereo mode; in mono
+	   mode the port folds them to (l + r) / 2. The sound calls' pan byte is not applied: how the DCS2
+	   firmware turns it into left/right levels is in the DSP code, which the port does not run, so
+	   the calls play centred (equal on both sides) rather than through an invented pan law. */
+	bool	stereo = true;
+	static short clip(int v) { return v > 32767 ? 32767 : v < -32768 ? -32768 : v; }
 	void render(short *out, int n)
 	{
 		std::lock_guard<std::mutex> g(lock);
-		if(mode != OS) { memset(out, 0, n * sizeof *out); return; }
+		if(mode != OS) { memset(out, 0, 2 * n * sizeof *out); return; }
 		for(int i = 0; i < n; i++)
 		{
 			if(sample_in_frame == 0) frame_tick();
-			int s = GetNextSample();
+			int s = GetNextSample(), sl = s, sr = s;
 			if(stream_on)
 			{
 				if(fifo_count >= 2)
@@ -428,11 +438,14 @@ public:
 					/* the stream goes through the DSP's output stage like every other sound, so the
 					   master volume scales it with the DCS curve (0.981201 per step below 255,
 					   as the decoder does), not linearly; the stream volume command is linear */
-					s += (int)(((l + r) / 2) * stream_volume / 255 * master_mult);
+					double k = stream_volume / 255.0 * master_mult;
+					if(stereo) { sl += (int)(l * k); sr += (int)(r * k); }
+					else { int m = (int)(((l + r) / 2) * k); sl += m; sr += m; }
 				}
 				else stream_underruns++;
 			}
-			out[i] = s > 32767 ? 32767 : s < -32768 ? -32768 : s;
+			out[2 * i] = clip(sl);
+			out[2 * i + 1] = clip(sr);
 			if(++sample_in_frame == SAMPLES_PER_FRAME) sample_in_frame = 0;
 		}
 	}
