@@ -63,3 +63,6 @@ rodz                 src/game/enemies/rodz.c                 game2  0x8011dd80 0
 rodz_data            src/game/enemies/rodz_data.c            game2  -          -           -          -           0x80196ea0 0x80197844
 freakshow_innocent   src/game/enemies/freakshow_innocent.c   game2  0x801222d0 0x80122e3c  0x80173b38 0x80173b88  0x801994d0 0x801994dc
 freakshow_innocent_data src/game/enemies/freakshow_innocent_data.c game2 -     -           -          -           0x80198fd0 0x801994d0
+pickup_health        src/game/enemies/pickup_health.c        game2  0x80102e58 0x80103568  0x80172a00 0x80172a4c  -          -
+rickity_innocent     src/game/enemies/rickity_innocent.c     game2  0x801293b8 0x80129d54  0x80173f68 0x80173fb0  0x8019b9e8 0x8019b9f4
+rickity_innocent_data src/game/enemies/rickity_innocent_data.c game2 -        -           -          -           0x8019b4e8 0x8019b9e8
