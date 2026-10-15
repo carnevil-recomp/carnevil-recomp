@@ -58,19 +58,23 @@ static void glide_defaults(void)
 static void texel_rgba(int fmt, const unsigned char *p, const GuTexTable *tbl, unsigned char *o)
 {
 	unsigned int v;
+	/* the Voodoo widens a channel by repeating its top bits (MAME's voodoo), not by rounding */
+#define X5(c)	(((c) << 3) | ((c) >> 2))
+#define X6(c)	(((c) << 2) | ((c) >> 4))
+#define X3(c)	(((c) << 5) | ((c) << 2) | ((c) >> 1))
 	switch(fmt)
 	{
 	case GR_TEXFMT_RGB_565: v = p[0] | (p[1] << 8);
-		o[0] = (v >> 11) * 255 / 31; o[1] = ((v >> 5) & 63) * 255 / 63; o[2] = (v & 31) * 255 / 31; o[3] = 255; break;
+		o[0] = X5(v >> 11); o[1] = X6((v >> 5) & 63); o[2] = X5(v & 31); o[3] = 255; break;
 	case GR_TEXFMT_ARGB_1555: v = p[0] | (p[1] << 8);
-		o[0] = ((v >> 10) & 31) * 255 / 31; o[1] = ((v >> 5) & 31) * 255 / 31; o[2] = (v & 31) * 255 / 31; o[3] = (v & 0x8000) ? 255 : 0; break;
+		o[0] = X5((v >> 10) & 31); o[1] = X5((v >> 5) & 31); o[2] = X5(v & 31); o[3] = (v & 0x8000) ? 255 : 0; break;
 	case GR_TEXFMT_ARGB_4444: v = p[0] | (p[1] << 8);
 		o[0] = ((v >> 8) & 15) * 17; o[1] = ((v >> 4) & 15) * 17; o[2] = (v & 15) * 17; o[3] = (v >> 12) * 17; break;
 	case GR_TEXFMT_ALPHA_INTENSITY_88: o[0] = o[1] = o[2] = p[0]; o[3] = p[1]; break;
 	case GR_TEXFMT_ARGB_8332: v = p[0] | (p[1] << 8);
-		o[0] = ((v >> 5) & 7) * 255 / 7; o[1] = ((v >> 2) & 7) * 255 / 7; o[2] = (v & 3) * 85; o[3] = v >> 8; break;
+		o[0] = X3((v >> 5) & 7); o[1] = X3((v >> 2) & 7); o[2] = (v & 3) * 85; o[3] = v >> 8; break;
 	case GR_TEXFMT_RGB_332: v = p[0];
-		o[0] = (v >> 5) * 255 / 7; o[1] = ((v >> 2) & 7) * 255 / 7; o[2] = (v & 3) * 85; o[3] = 255; break;
+		o[0] = X3(v >> 5); o[1] = X3((v >> 2) & 7); o[2] = (v & 3) * 85; o[3] = 255; break;
 	case GR_TEXFMT_ALPHA_8: o[0] = o[1] = o[2] = 255; o[3] = p[0]; break;
 	case GR_TEXFMT_INTENSITY_8: o[0] = o[1] = o[2] = p[0]; o[3] = 255; break;
 	case GR_TEXFMT_ALPHA_INTENSITY_44: o[0] = o[1] = o[2] = (p[0] & 15) * 17; o[3] = (p[0] >> 4) * 17; break;
@@ -78,7 +82,7 @@ static void texel_rgba(int fmt, const unsigned char *p, const GuTexTable *tbl, u
 		o[0] = (v >> 16) & 255; o[1] = (v >> 8) & 255; o[2] = v & 255; o[3] = 255; break;
 	case GR_TEXFMT_AP_88: v = tbl ? tbl->palette.data[p[0]] : 0x808080;
 		o[0] = (v >> 16) & 255; o[1] = (v >> 8) & 255; o[2] = v & 255; o[3] = p[1]; break;
-	default: o[0] = 255; o[1] = 0; o[2] = 255; o[3] = 255; break;	/* YIQ/NCC: not decoded yet */
+	default: o[0] = 255; o[1] = 0; o[2] = 255; o[3] = 255; break;	/* YIQ/NCC: no CarnEvil texture uses them (every .WMS is RGB332, ARGB8332, RGB565, ARGB4444 or AI88) */
 	}
 }
 
