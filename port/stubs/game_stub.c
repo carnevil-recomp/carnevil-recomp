@@ -128,7 +128,6 @@ extern int randrng(int);
 float func_800fe8dc(float range) { return (float)(randrng(10000) - 5000) / (5000.0f / range); }	/* 0x800fe8dc: a random float in +-range */
 void debug_move_camera(void) { STUB(debug_move_camera); }						/* 0x800c93c4: the player 3/4 switches move the camera (debug) */
 void load_backup_file(char *name) { STUB(load_backup_file); }	/* 0x800caf48 */
-void startaudit(FILE *f) { STUB(startaudit); (void)f; }					/* 0x800ef870: the audit names for audits.fmt */
 void game_proc2(void) { STUB(game_proc2); for(;;) sleep(1); }
 void ide_set_partition(int n) { (void)n; }				/* GOOSE IDE: the HAL maps partition 1 itself */
 int gfx_scale_from_refresh(void) { return 54; }				/* 0x80157004: frames per second of the display mode */

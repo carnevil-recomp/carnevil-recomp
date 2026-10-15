@@ -32,3 +32,4 @@ audits   src/game/core/audits.c    game1  0x800f18e0 0x800f1d84  -          -   
 attract  src/game/core/attract.c   game2  0x800caf80 0x800cbb6c  0x8016f600 0x8016f704  0x80179c50 0x80179d40
 script   src/game/movie/script.c    game2  0x80110270 0x80110b04  0x80173318 0x8017345c  -          -
 levelsnd src/game/sound/levelsnd.c game2  0x800ebb18 0x800ec53c  0x80170f08 0x80170f40  0x8018e038 0x8018e050
+auditfmt src/game/core/auditfmt.c  game1  0x800ef870 0x800f18e0  0x80171148 0x80171a5f  -          -
