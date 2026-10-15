@@ -333,6 +333,24 @@ Only after a 1:1 "original" mode exists: internal resolution scaling, texture fi
 toggles, 2-player on one machine with two mice/guns, save/load of CMOS, windowed mode,
 input remapping. All behind flags; default is faithful.
 
+**Port options menu (wanted, 2026-10-14).** An in-game debug / options overlay (Dear ImGui or
+similar, toggled by a key, port-only, never in the game's own code) for people who like to
+tinker, with the faithful values as defaults and a "reset to cabinet" button. Candidates, each a
+place where the port already makes a choice the cabinet did not offer:
+- colour depth: the Voodoo's 16-bit RGB565 with its 4x4 dither versus the port's 24-bit without
+  dither (once the 16-bit + dither path exists, it becomes the faithful default);
+- movie upscaling filter (nearest / bilinear), window scale, aspect;
+- fog on/off (once fog is implemented), gamma;
+- the level-load time factor (`--load-time`, the jester introduction), frame pacing;
+- sound: master and music levels, stereo pan on/off (once pan is wired), the DCS mixing curve;
+- the light-gun mapping and calibration; the trace switches (`CARNEVIL_TRACE`).
+
+**Next port-fidelity work (after the high-score file):** fog tables (grFogMode/grFogTable/
+grFogColorValue are no-ops), the full gamma ramp for fades (only entry 255 is used), the
+Voodoo's 16-bit colour and dither, the YIQ/NCC texture format, the four Glide no-ops; on the
+sound board the stereo pan, the five track opcodes the board skips (0x04, 0x05, 0x06, 0x10,
+0x11) and a count of which banks use them.
+
 ---
 
 ## 3. Known quirks to expect (keep this list growing in `docs/quirks.md`)
