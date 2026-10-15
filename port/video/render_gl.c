@@ -181,6 +181,44 @@ static int iterated_alpha(void)
 	return st.alpha_source == GR_ALPHASOURCE_ITERATED_ALPHA || st.alpha_source == GR_ALPHASOURCE_TEXTURE_ALPHA_TIMES_ITERATED_ALPHA;
 }
 
+/* Fog as the Voodoo's table mode does it: the 64-entry table is indexed by the same 16-bit
+   floating w the depth test uses (fog_word: 1/w in 16.32 fixed point, leading-zero exponent,
+   inverted mantissa), the top 6 bits pick the entry and the next 8 interpolate towards the
+   following one (Glide loads the differences as the fog deltas); the pixel's colour is then
+   blended towards the fog colour by (blend + 1) / 256, before alpha blending (MAME's voodoo).
+   The port evaluates the table at the vertices and lets GL interpolate the factor, which is
+   exact at the vertices and close across the game's small triangles. CarnEvil v1.0.3 never
+   turns fog on: apply_fog (fog.c) sets GR_FOG_WITH_TABLE only when fog_enabled is set, and
+   nothing calls enable_fog; preload_wave clears it. */
+static int		fog_mode;
+static unsigned int	fog_color;
+static unsigned char	fog_table[64];
+void grFogMode(int mode) { fog_mode = mode; }
+void grFogColorValue(unsigned int c) { fog_color = c; }
+void grFogTable(const unsigned char *t) { memcpy(fog_table, t, sizeof fog_table); }
+static unsigned fog_word(float oow)
+{
+	double		iw = (double)oow * 4294967296.0;
+	unsigned	t, w;
+	int		e;
+
+	if(iw >= 4294967296.0) return 0;
+	t = (unsigned)iw;
+	if(!(t & 0xffff0000u)) return 0xffff;
+	e = __builtin_clz(t);
+	w = (e << 12) | ((~t >> (19 - e)) & 0xfff);
+	return w < 0xffff ? w + 1 : w;
+}
+static float fog_factor(float oow)
+{
+	unsigned	w = fog_word(oow), i = w >> 10;
+	int		next = i < 63 ? fog_table[i + 1] : fog_table[i];
+	int		blend = fog_table[i] + (((next - fog_table[i]) * (int)((w >> 2) & 0xff)) >> 8);
+
+	return (blend + 1) / 256.0f;
+}
+static int fog_on(void) { return fog_mode == GR_FOG_WITH_TABLE; }
+
 static void apply_state(void)
 {
 	/* The Voodoo's colour and alpha paths are separate: a combine whose colour ignores the
@@ -248,6 +286,13 @@ static void apply_state(void)
 	if(textured && st.chroma_mode == GR_CHROMAKEY_ENABLE) { glEnable(GL_ALPHA_TEST); glAlphaFunc(GL_GREATER, 0.0f); }
 	else if(st.alpha_test != GR_CMP_ALWAYS) { glEnable(GL_ALPHA_TEST); glAlphaFunc(cmp_func(st.alpha_test), alpha_ref); }
 	else glDisable(GL_ALPHA_TEST);
+	if(fog_on())
+	{
+		GLfloat	c[4] = { ((fog_color >> 16) & 255) / 255.0f, ((fog_color >> 8) & 255) / 255.0f, (fog_color & 255) / 255.0f, 1.0f };
+		glEnable(GL_FOG); glFogi(GL_FOG_MODE, GL_LINEAR); glFogf(GL_FOG_START, 0.0f); glFogf(GL_FOG_END, 1.0f);
+		glFogi(GL_FOG_COORD_SRC, GL_FOG_COORD); glFogfv(GL_FOG_COLOR, c);
+	}
+	else glDisable(GL_FOG);
 	glDisable(GL_CULL_FACE);
 }
 
@@ -297,6 +342,7 @@ static void vertex_rgba(const MidVertex *v, port_texture_t *t, const float *rgb,
 	/* w-buffer: nearer (larger oow) wins under GR_CMP_LESS. frame_setup's glOrtho(.., -1, 1)
 	   negates z on the way to clip space, so 2 * oow - 1 lands in the window as 1 - oow (near
 	   0, far 1), the same mapping the movie's depth plane is written with */
+	if(fog_on()) glFogCoordf(fog_factor(v->oow));
 	glVertex3f(v->x, v->y, 2.0f * (oow > 1.0f ? 1.0f : oow) - 1.0f);
 }
 static void vertex(const MidVertex *v, port_texture_t *t) { vertex_rgba(v, t, 0, 0); }
@@ -479,7 +525,7 @@ void port_movie_blit(const unsigned int *buf, int scroll)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 	glClearColor(0, 0, 0, 1); glDepthMask(GL_TRUE); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_TEXTURE_2D); glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glDisable(GL_DEPTH_TEST); glDepthMask(GL_FALSE); glDisable(GL_BLEND); glDisable(GL_ALPHA_TEST);
+	glDisable(GL_DEPTH_TEST); glDepthMask(GL_FALSE); glDisable(GL_BLEND); glDisable(GL_ALPHA_TEST); glDisable(GL_FOG);	/* LFB writes bypass the pixel pipeline */
 	glColor4f(1, 1, 1, 1);
 	/* row 0 of the frame is the bottom line; a positive scroll inserts blank lines below it */
 	y0 = (float)scroll;		/* bottom edge */
@@ -528,7 +574,7 @@ void port_lfb_write(const unsigned int *src, int x, int y, int w, int h)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 	glEnable(GL_TEXTURE_2D); glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glDisable(GL_DEPTH_TEST); glDepthMask(GL_FALSE); glDisable(GL_BLEND); glDisable(GL_ALPHA_TEST);
+	glDisable(GL_DEPTH_TEST); glDepthMask(GL_FALSE); glDisable(GL_BLEND); glDisable(GL_ALPHA_TEST); glDisable(GL_FOG);	/* LFB writes bypass the pixel pipeline */
 	glColor4f(1, 1, 1, 1);
 	glBegin(GL_QUADS);
 	glTexCoord2f(0, 0); glVertex3f((float)x, (float)y, 0);
@@ -618,10 +664,6 @@ int  func_80157004(void) { return hal_refresh_hz(); }	/* Glide: current vertical
 int  grSstIsBusy(void) { return 0; }
 void render_set_dump(const char *path, unsigned long every) { dump_path = path; dump_every = every; }
 
-/* fog: the level fog table is not applied yet (the draw pass sets it every frame) */
-void grFogMode(int mode) { (void)mode; }
-void grFogColorValue(unsigned int c) { (void)c; }
-void grFogTable(const unsigned char *t) { (void)t; }
 
 /* a window position (backing pixels, origin bottom-left) in game-screen units; 0 when outside the picture */
 int video_to_game(float wx, float wy, float *gx, float *gy)
