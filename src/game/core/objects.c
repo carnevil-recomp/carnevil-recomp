@@ -572,6 +572,53 @@ int step_blocked_rickity(float *np, float *pos, int id)
 	return(0);
 }
 
+/* 0x800cd904: the Big Top's step test for move_cd: the step to np from pos is blocked when it
+   ends inside another live enemy of the Big Top's walking kinds (0x2060-0x2065, 0x2068; not
+   dying) that it was not already inside; the enemy nearest the camera is never blocked */
+int func_800cd904(float *np, float *pos, int id)
+{
+	game_object_t	*o;
+	enemy_t		*e;
+	short		i;
+	float		d, dx, dz;
+
+	if(nearest_enemy == (short)id)
+	{
+		return(0);
+	}
+	i = objects[0].next;
+	while(i != OBJ_NONE)
+	{
+		o = &objects[i];
+		i = o->next;
+		if(o->id == (short)id)
+		{
+			continue;
+		}
+		if(o->type == 0x2065 || o->type == 0x2061 || o->type == 0x2062 || o->type == 0x2063 || o->type == 0x2064 || o->type == 0x2060 || o->type == 0x2068)
+		{
+			e = (enemy_t *)o->data;
+			if(e->ai_state & 0x6000)
+			{
+				continue;
+			}
+			dx = e->x - np[0];
+			dz = e->z - np[2];
+			d = fsqrt(dx * dx + dz * dz);
+			if(d < e->radius)
+			{
+				dx = e->x - pos[0];
+				dz = e->z - pos[2];
+				if(d < fsqrt(dx * dx + dz * dz))
+				{
+					return(1);
+				}
+			}
+		}
+	}
+	return(0);
+}
+
 /* 0x800cd094: the Haunted House's step test for move_cd: the step to np from pos is blocked when
    it ends inside a ghoul (0x1102) or zombie (0x200c) other than the mover, one not in a 0x400
    state, that it was not already inside */
