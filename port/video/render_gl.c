@@ -381,15 +381,47 @@ static void dump_frame(void)
 	free(px);
 }
 
-/* gamma RAM: the fader loads a ramp whose top entry is the screen brightness */
-void port_gamma_entry(int i, int g) { if(i == 255) brightness = g / 255.0f; }
+/* The Voodoo's gamma RAM (the video CLUT): GOOSE's fader (gfader.c, the Seattle build) writes
+   33 entries, entry i being the output for input 8 * i, and the hardware interpolates between
+   neighbours for the 8-bit inputs in between, the same on R, G and B. Every ramp the game loads
+   is a straight line (fade: 0 .. intensity; specific_gamma_load(from, to): from .. to, used by the
+   movie scripts and the gun's flash), so the output is from + (to - from) * input / 256: the port
+   applies it to the finished frame as a multiply and an add. Until 2026-10-14 the port listened
+   for entry 255, which the 33-entry table never writes, so no fade or flash showed. */
+#define GAMMA_TABLE_SIZE	33
+static int	gamma_ram[GAMMA_TABLE_SIZE];
+static int	gamma_loaded;
+void port_gamma_entry(int i, int g)
+{
+	if(i < 0 || i >= GAMMA_TABLE_SIZE) return;
+	gamma_ram[i] = g < 0 ? 0 : g > 255 ? 255 : g;
+	gamma_loaded = 1;
+	brightness = gamma_ram[GAMMA_TABLE_SIZE - 1] / 255.0f;	/* for the [dump] trace */
+}
+static void fullscreen_quad(void)
+{
+	glBegin(GL_QUADS); glVertex3f(0, 0, 0); glVertex3f(hres, 0, 0); glVertex3f(hres, vres, 0); glVertex3f(0, vres, 0); glEnd();
+}
 static void apply_brightness(void)
 {
-	if(brightness >= 1.0f) return;
-	glDisable(GL_TEXTURE_2D); glDisable(GL_DEPTH_TEST); glDisable(GL_ALPHA_TEST);
-	glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glColor4f(0.0f, 0.0f, 0.0f, 1.0f - brightness);
-	glBegin(GL_QUADS); glVertex3f(0, 0, 0); glVertex3f(hres, 0, 0); glVertex3f(hres, vres, 0); glVertex3f(0, vres, 0); glEnd();
+	float	add, mul;
+
+	if(!gamma_loaded) return;
+	add = gamma_ram[0] / 255.0f;
+	mul = (gamma_ram[GAMMA_TABLE_SIZE - 1] - gamma_ram[0]) / 255.0f * (255.0f / 256.0f);
+	if(add == 0.0f && gamma_ram[GAMMA_TABLE_SIZE - 1] == 255) return;	/* the normal ramp: off by under one step */
+	if(mul < 0.0f) mul = 0.0f;
+	glDisable(GL_TEXTURE_2D); glDisable(GL_DEPTH_TEST); glDisable(GL_ALPHA_TEST); glDisable(GL_FOG);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ZERO, GL_SRC_COLOR);			/* frame * mul */
+	glColor4f(mul, mul, mul, 1.0f);
+	fullscreen_quad();
+	if(add > 0.0f)
+	{
+		glBlendFunc(GL_ONE, GL_ONE);			/* + from */
+		glColor4f(add, add, add, 1.0f);
+		fullscreen_quad();
+	}
 }
 
 /* ---- the movie frame: 400x256 LFB words written with grLfbWriteMode(13) = RGB555 + depth;
