@@ -302,7 +302,7 @@ extern void	remove_all_objects(void), preload_wave(int), unload_wave(void), load
 extern void	fade(float, int, int), script_level_end_stats(void), graphical_printf(char *, char *, ...);
 extern void	draw_string_centered(int, char *, float, float, unsigned int);
 extern void	enable_accuracy_tracking(void), disable_accuracy_tracking(void), reset_select_lights(void), set_weapon(player_stats_t *, int);
-extern void	set_level_start_time(player_stats_t *), aim_select_light(player_stats_t *), something_player_score(player_stats_t *);
+extern void	set_level_start_time(player_stats_t *), aim_select_light(player_stats_t *), check_high_score(player_stats_t *);
 extern void	draw_select_target(game_object_t *), select_target_think(game_object_t *);	/* select.c: the level-select targets (objects 0x710-0x713) */
 extern int	init_select_target(game_object_t *);
 extern int	increment_audit(int);
@@ -546,8 +546,8 @@ void main_game_proc(void)
 	fade(0.0f, 15, 0);
 	preload_wave(WAVE_HISCORE_ENTRY);
 	sleep(17);
-	something_player_score(&player_stats[0]);
-	something_player_score(&player_stats[1]);
+	check_high_score(&player_stats[0]);
+	check_high_score(&player_stats[1]);
 	unload_wave();
 	if(won)
 	{

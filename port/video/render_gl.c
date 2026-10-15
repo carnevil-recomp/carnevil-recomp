@@ -469,6 +469,51 @@ void port_movie_blit(const unsigned int *buf, int scroll)
 	glDepthMask(GL_TRUE);
 }
 
+/* A frame-buffer write in GR_LFBWRITEMODE_555_DEPTH with the pixel pipeline bypassed: w x h
+   words (colour in the low half, depth in the high half, row 0 at the bottom with the lower-left
+   origin) stored at x, y. The high-score signing board writes its ink this way
+   (draw_autograph_board, hiscore.c). Pixels are written as they are, unfiltered. */
+void port_lfb_write(const unsigned int *src, int x, int y, int w, int h)
+{
+	static GLuint		lfb_tex;
+	unsigned short		*rgb;
+	float			*depth;
+	int			i;
+
+	if(!have_display || w <= 0 || h <= 0) return;
+	frame_setup();
+	if(!depth_table_built) build_depth_table();
+	rgb = malloc(w * h * sizeof *rgb);
+	depth = malloc(w * h * sizeof *depth);
+	if(!rgb || !depth) { free(rgb); free(depth); return; }
+	for(i = 0; i < w * h; i++) { rgb[i] = (unsigned short)src[i]; depth[i] = depth_of_word[src[i] >> 16]; }
+	if(!lfb_tex) glGenTextures(1, &lfb_tex);
+	glBindTexture(GL_TEXTURE_2D, lfb_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV, rgb);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	glEnable(GL_TEXTURE_2D); glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glDisable(GL_DEPTH_TEST); glDepthMask(GL_FALSE); glDisable(GL_BLEND); glDisable(GL_ALPHA_TEST);
+	glColor4f(1, 1, 1, 1);
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, 0); glVertex3f((float)x, (float)y, 0);
+	glTexCoord2f(1, 0); glVertex3f((float)(x + w), (float)y, 0);
+	glTexCoord2f(1, 1); glVertex3f((float)(x + w), (float)(y + h), 0);
+	glTexCoord2f(0, 1); glVertex3f((float)x, (float)(y + h), 0);
+	glEnd();
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glEnable(GL_DEPTH_TEST); glDepthFunc(GL_ALWAYS); glDepthMask(GL_TRUE);
+	if(origin_lower_left) { glPixelZoom(vp_s, vp_s); glWindowPos2f((float)vp_x + x * vp_s, (float)vp_y + y * vp_s); }
+	else { glPixelZoom(vp_s, -vp_s); glWindowPos2f((float)vp_x + x * vp_s, (float)vp_y + (vres - y) * vp_s); }
+	glDrawPixels(w, h, GL_DEPTH_COMPONENT, GL_FLOAT, depth);
+	glPixelZoom(1.0f, 1.0f);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	free(rgb); free(depth);
+}
+
 void grBufferSwap(int interval) { (void)interval; if(have_display) { apply_brightness(); dump_frame(); video_present(); if(video_closed()) exit(0); } }
 void dma_start(void) { grBufferSwap(1); }			/* the DMA kick; the board swaps when it completes */
 

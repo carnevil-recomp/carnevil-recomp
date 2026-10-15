@@ -1465,3 +1465,19 @@
 0x800e3560 end_of_wave
 0x800e44f4 level_end_stats_wrapper
 0x800e4538 level_end_stats
+# the high-score file (hiscore.c, -O0)
+0x800e5014 load_high_scores
+0x800e521c draw_high_scores
+0x800e5560 check_high_score
+0x800e5788 autograph_entry
+0x800e59b8 autograph_ink_at
+0x800e5d94 draw_autograph_board
+0x801e70a0 high_score_autograph
+0x801e5dbc high_score_scroll
+0x801e09d0 autograph_timer
+0x801e09e0 autograph_done
+0x801f8834 autograph_ink
+0x801facc0 autograph_pixels
+0x801facd0 autograph_player
+0x8022b198 high_scores
+0x8017de08 default_scores

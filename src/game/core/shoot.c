@@ -51,8 +51,8 @@ extern void	func_800e7130(player_stats_t *);
 extern void	shoot_objects(player_stats_t *);	/* objects.c */
 extern int	randrng(int);
 extern void	specific_gamma_load(float, float);
-extern void	func_800e59b8(float, float);		/* the continue screen's crosshair */
-player_stats_t *player_stats_g;		/* the player on the continue screen */
+extern void	autograph_ink_at(float, float);		/* hiscore.c: ink the signing board at the gun */
+player_stats_t *player_stats_g;		/* the player entering a high score (hiscore.c) */
 void	fire_shot(player_stats_t *);
 void	reload_gun(player_stats_t *);
 void	set_weapon(player_stats_t *, int);
@@ -713,7 +713,7 @@ void gun_vblank(void)
 			}
 			if(p->gun->on_screen)
 			{
-				func_800e59b8((float)p->gun->screen_x, (float)p->gun->screen_y);
+				autograph_ink_at((float)p->gun->screen_x, (float)p->gun->screen_y);
 			}
 		}
 		else
