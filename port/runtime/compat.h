@@ -18,4 +18,17 @@ int strncasecmp(const char *, const char *, unsigned long);
 int strcasecmp(const char *, const char *);
 #define strnicmp(a, b, n) strncasecmp((a), (b), (n))
 #define stricmp(a, b) strcasecmp((a), (b))
+/* The game's heap must lie below 4 GB (port/runtime/mem.c). On macOS each library binds to its
+   own malloc, so defining malloc/free in the executable only affects the game's code. On Linux a
+   definition in the executable would interpose on every shared library (Mesa, SDL, libLLVM), and
+   memory they get from libc's other allocators would reach the arena's free; there the arena
+   functions are renamed instead, for the C code that includes this header. */
+#if !defined(__APPLE__) && !defined(__cplusplus)
+#include <stdlib.h>
+void	*port_malloc(size_t), port_free(void *), *port_calloc(size_t, size_t), *port_realloc(void *, size_t);
+#define malloc	port_malloc
+#define free	port_free
+#define calloc	port_calloc
+#define realloc	port_realloc
+#endif
 #endif

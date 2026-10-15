@@ -17,7 +17,7 @@ and the port runs that code on a thin hardware layer. See `docs/PLAN.md` for the
   the level-select gallery, Rickety Town with its movie, script, lights, sound and music,
   Krinkle and the termites, the light gun (the mouse), muzzle flashes and hit effects.
   What the game code still lacks is stubbed, and every stub announces itself (below).
-- macOS (Apple Silicon and Intel) builds today; Linux and Windows are planned.
+- macOS (Apple Silicon and Intel) and Linux (x86_64) build today; Windows is planned.
 
 ## Layout
 - `docs/` plan and notes; `config/` symbols and module ranges; `include/` shared headers;
@@ -57,13 +57,18 @@ The repository contains no game data and no SDK. Three things come from elsewher
 3. **This repository.**
 
 ### Play the port
-Needs python3, clang and make (macOS today; Linux and Windows are planned).
+Needs python3, clang and make. On Linux (x86_64) also SDL2 and OpenGL headers, e.g. on
+Ubuntu `sudo apt install clang make python3 pkg-config libsdl2-dev libgl-dev`.
 ```
 git clone https://github.com/historicalsource/midwayvideo ../midwayvideo
 ./setup.sh --raw /path/to/carnevil.raw --sdk ../midwayvideo
 make port
-build/host/carnevil --partition original/partition --raw original/carn.raw
+build/host/carnevil --partition original/partition --raw original/carn.raw     # macOS
+build/linux/carnevil --partition original/partition --raw original/carn.raw    # Linux
 ```
+macOS and Linux keep separate outputs (`build/host` + `build/port` on macOS, `build/linux` on
+Linux; the MIPS binutils in `tools/mipsel-elf-binutils` and `tools/mipsel-elf-binutils-linux`),
+so one checkout shared with a VM builds on both without one clobbering the other.
 `./setup.sh --partition DIR` works instead of `--raw` if you extracted the files yourself
 (`tools/rom/legacy/` has the stand-alone extractors); add `--raw` as well for the movies.
 
