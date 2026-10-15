@@ -18,8 +18,8 @@
  * 0x80 take a knife, 0x40 drop it, 0x20 and 0x100 kept in flags2 (0x100: lying, 35 units lower).
  *
  * The exported names are the address names the shared files (spawn.c, wave.c) use:
- * func_801163e8 is the draw callback, func_80116e10 the init, func_80117080 the think,
- * func_80117c88 the state set-up.
+ * tops_draw is the draw callback, tops_init the init, tops_think the think,
+ * tops_setup the state set-up.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,16 +99,16 @@ void	*tops_path;			/* 0x80237434 */
 #define TOPS_KNIFE	0x13		/* the held object kinds: the knife it holds ... */
 #define TOPS_KNIVES	0x10		/* ... and the ones it throws at a point */
 
-int	func_801166a0(game_object_t *, player_stats_t *);
-void	func_80117028(game_object_t *);
-void	func_80117c88(enemy_t *, unsigned short);
-void	func_80118104(enemy_t *);
-void	func_80118454(enemy_t *);
-void	func_801185ec(enemy_t *);
-void	func_80118688(enemy_t *);
+int	tops_die(game_object_t *, player_stats_t *);
+void	tops_remove(game_object_t *);
+void	tops_setup(enemy_t *, unsigned short);
+void	tops_go_for_player(enemy_t *);
+void	tops_next_state(enemy_t *);
+void	tops_drop_left_arm(enemy_t *);
+void	tops_drop_right_arm(enemy_t *);
 
 /* 0x801163e8: the draw callback (type 0x2020) */
-void func_801163e8(game_object_t *obj)
+void tops_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -152,7 +152,7 @@ void func_801163e8(game_object_t *obj)
 }
 
 /* 0x801165e4: the hit test: the bounding sphere, then the submesh */
-int func_801165e4(game_object_t *obj, player_stats_t *p)
+int tops_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -169,7 +169,7 @@ int func_801165e4(game_object_t *obj, player_stats_t *p)
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
 			p->hit_group = group;
-			p->die = (void *)func_801166a0;
+			p->die = (void *)tops_die;
 		}
 	}
 	return(0);
@@ -179,7 +179,7 @@ int func_801165e4(game_object_t *obj, player_stats_t *p)
    thrower sets the part alight; at the highest violence parts come off (groups 1-2 and 16/19 in
    two shots, group 7 knocks both arms loose one time in eight); damage, 50 points and a cry, or
    500 points, a death cry and one of four deaths; else a hit reaction by the part */
-int func_801166a0(game_object_t *obj, player_stats_t *p)
+int tops_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -258,8 +258,8 @@ int func_801166a0(game_object_t *obj, player_stats_t *p)
 				{
 					replace_group(e, &e->groups[7], &e->groups[0]);
 					e->groups[10].flags = 0;
-					func_801185ec(e);
-					func_80118688(e);
+					tops_drop_left_arm(e);
+					tops_drop_right_arm(e);
 					e->groups[1].flags |= 0xf0000000;
 				}
 				break;
@@ -375,7 +375,7 @@ void remove_tops_assets(void)
 
 /* 0x80116e10: the init callback (type 0x2020): the record, 21 groups (0, 2 and 19 hidden: the
    damaged versions), 7.5 health, a knife in its hand half the time, the first state */
-int func_80116e10(game_object_t *obj)
+int tops_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -388,9 +388,9 @@ int func_80116e10(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_801165e4;
-	obj->die = func_801166a0;
-	obj->remove = func_80117028;
+	obj->hit = tops_hit;
+	obj->die = tops_die;
+	obj->remove = tops_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -444,12 +444,12 @@ int func_80116e10(game_object_t *obj)
 	{
 		e->flags2 = 0;
 	}
-	func_80117c88(e, 0);
+	tops_setup(e, 0);
 	return(0);
 }
 
 /* 0x80117028: the remove callback */
-void func_80117028(game_object_t *obj)
+void tops_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -464,7 +464,7 @@ void func_80117028(game_object_t *obj)
 }
 
 /* 0x80117080: the think callback */
-void func_80117080(game_object_t *obj)
+void tops_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	float	at[3];
@@ -493,7 +493,7 @@ void func_80117080(game_object_t *obj)
 		}
 		if(++e->counter >= 0x28)
 		{
-			func_80118454(e);
+			tops_next_state(e);
 		}
 		break;
 	case 0x804:
@@ -505,7 +505,7 @@ void func_80117080(game_object_t *obj)
 		}
 		if(++e->frame >= 0x22)
 		{
-			func_80118454(e);
+			tops_next_state(e);
 		}
 		break;
 	case 0x8801:
@@ -516,7 +516,7 @@ void func_80117080(game_object_t *obj)
 		path_place(e, tops_path, e->path, 1.0f);
 		if(++e->path >= e->unk92)
 		{
-			func_80118454(e);
+			tops_next_state(e);
 		}
 		break;
 	case 0x805:
@@ -527,7 +527,7 @@ void func_80117080(game_object_t *obj)
 		path_place(e, tops_path, e->path, 1.0f);
 		if(++e->path >= e->unk92)
 		{
-			func_80118454(e);
+			tops_next_state(e);
 		}
 		break;
 	case 0x803:
@@ -538,7 +538,7 @@ void func_80117080(game_object_t *obj)
 		path_place(e, tops_path, e->path, 1.0f);
 		if(++e->path >= e->unk92)
 		{
-			func_80118454(e);
+			tops_next_state(e);
 		}
 		break;
 	case 0x806:
@@ -585,7 +585,7 @@ void func_80117080(game_object_t *obj)
 		{
 			face_camera(e, 0.2f);
 		}
-		func_80118104(e);
+		tops_go_for_player(e);
 		break;
 	case 0x208:
 		if(!(e->flags2 & 0x100))
@@ -598,7 +598,7 @@ void func_80117080(game_object_t *obj)
 		}
 		if(e->frame >= 0x1cc)
 		{
-			func_80118104(e);
+			tops_go_for_player(e);
 		}
 		break;
 	case 0x209:
@@ -612,7 +612,7 @@ void func_80117080(game_object_t *obj)
 		}
 		if(e->frame >= 0x1d6)
 		{
-			func_80118104(e);
+			tops_go_for_player(e);
 		}
 		break;
 	case 0x20a:
@@ -636,7 +636,7 @@ void func_80117080(game_object_t *obj)
 			}
 			else
 			{
-				func_80118104(e);
+				tops_go_for_player(e);
 			}
 		}
 		break;
@@ -651,7 +651,7 @@ void func_80117080(game_object_t *obj)
 		}
 		if(e->frame >= 0x18b)
 		{
-			func_80118104(e);
+			tops_go_for_player(e);
 		}
 		break;
 	case 0x202:
@@ -665,7 +665,7 @@ void func_80117080(game_object_t *obj)
 		}
 		if(e->frame >= 0x19f)
 		{
-			func_80118104(e);
+			tops_go_for_player(e);
 		}
 		break;
 	case 0x203:
@@ -679,7 +679,7 @@ void func_80117080(game_object_t *obj)
 		}
 		if(e->frame >= 0x1c2)
 		{
-			func_80118104(e);
+			tops_go_for_player(e);
 		}
 		break;
 	case 0x204:
@@ -693,7 +693,7 @@ void func_80117080(game_object_t *obj)
 		}
 		if(e->frame >= 0x1b1)
 		{
-			func_80118104(e);
+			tops_go_for_player(e);
 		}
 		break;
 	case 0x206:
@@ -708,7 +708,7 @@ void func_80117080(game_object_t *obj)
 		}
 		if(e->frame >= 0x44)
 		{
-			func_80118454(e);
+			tops_next_state(e);
 		}
 		break;
 	case 5:
@@ -743,13 +743,13 @@ void func_80117080(game_object_t *obj)
 		}
 		if(e->frame >= 0x146)
 		{
-			func_80118454(e);
+			tops_next_state(e);
 		}
 		break;
 	case 2:
 		if(++e->frame >= 0x177)
 		{
-			func_80118104(e);
+			tops_go_for_player(e);
 		}
 		break;
 	case 3:
@@ -804,7 +804,7 @@ void func_80117080(game_object_t *obj)
 /* 0x80117c88: the state set-up: the bits 0x80 (take a knife), 0x40 (drop it), 0x20 and 0x100
    (kept in flags2; 0x100 turns it over) come off the state, then the state's first frame, its
    next state (unk6) and its path position; the floor its parts fall to */
-void func_80117c88(enemy_t *e, unsigned short state)
+void tops_setup(enemy_t *e, unsigned short state)
 {
 	e->ai_state = state;
 	if(state & 0x80)
@@ -934,7 +934,7 @@ void func_80117c88(enemy_t *e, unsigned short state)
    with a knife), a step; still walking: 7 (walk) or, when its run (2) ends, the run again; there:
    a knife attack (0x201-0x204) or a punch (0x208-0x20a, 0x204), the two-handed 0x204 when
    group 10 is gone */
-void func_80118104(enemy_t *e)
+void tops_go_for_player(enemy_t *e)
 {
 	player_stats_t	*p;
 	int	r;
@@ -1044,32 +1044,32 @@ void func_80118104(enemy_t *e)
 }
 
 /* 0x80118454: the end of a state: its queued next state (unk6), else at the player */
-void func_80118454(enemy_t *e)
+void tops_next_state(enemy_t *e)
 {
 	switch((unsigned short)e->unk6)
 	{
 	case 0x803:
-		func_80117c88(e, 0x803);
+		tops_setup(e, 0x803);
 		e->unk6 = 0;
 		break;
 	case 0x804:
-		func_80117c88(e, 0x804);
+		tops_setup(e, 0x804);
 		e->unk6 = 0x803;
 		break;
 	case 0x206:
-		func_80117c88(e, 0x206);
+		tops_setup(e, 0x206);
 		e->unk6 = 0;
 		break;
 	case 0x8801:
-		func_80117c88(e, 0x8801);
+		tops_setup(e, 0x8801);
 		e->unk6 = 0;
 		break;
 	case 0x207:
-		func_80117c88(e, 0x206);
+		tops_setup(e, 0x206);
 		e->unk6 = 8;
 		break;
 	case 0x20c:
-		func_80117c88(e, 0x206);
+		tops_setup(e, 0x206);
 		e->unk6 = 3;
 		break;
 	case 8:
@@ -1086,13 +1086,13 @@ void func_80118454(enemy_t *e)
 		break;
 	default:
 		e->unk6 = 0;
-		func_80118104(e);
+		tops_go_for_player(e);
 		break;
 	}
 }
 
 /* 0x801185ec: groups 4, 3 and 8 knocked loose, a spray on group 0 */
-void func_801185ec(enemy_t *e)
+void tops_drop_left_arm(enemy_t *e)
 {
 	attach_effect(e, attach_spray(tops_spray4b, tops_spray4a, e->groups));
 	detach_group(&e->groups[4], e->groups[3].pos, e->unk98, e->scale);
@@ -1101,7 +1101,7 @@ void func_801185ec(enemy_t *e)
 }
 
 /* 0x80118688: groups 20, 5 and 6 knocked loose, a spray on group 0 */
-void func_80118688(enemy_t *e)
+void tops_drop_right_arm(enemy_t *e)
 {
 	attach_effect(e, attach_spray(tops_spray3b, tops_spray3a, e->groups));
 	detach_group(&e->groups[20], e->groups[5].pos, e->unk98, e->scale);

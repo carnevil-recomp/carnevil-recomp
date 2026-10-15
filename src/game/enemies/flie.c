@@ -52,7 +52,7 @@ extern void	blend_to_frame(enemy_t *, submesh_t *, int, int, int);
 extern int	randrng(int);
 extern void	set_goal_near_camera(enemy_t *, float *, float *, float, float, float);
 extern int	step_toward_goal(enemy_t *, float);
-extern int	func_800fc8cc(enemy_t *, float);		/* enemy.c: turn towards the camera on all three axes */
+extern int	turn_toward_camera(enemy_t *, float);		/* enemy.c: turn towards the camera on all three axes */
 extern void	load_texmap(texmap_t *, int, char *);
 extern void	remove_surface(texmap_t *, int);
 extern void	remove_animation(submesh_t *, int, int, char *), remove_model(void **, int, void **, int, void **, int, char *), remove_path(void **, int, char *);
@@ -92,14 +92,14 @@ void	*flie_path;			/* 0x8022b178 */
 #define FLIE_DEAD	0x4000
 #define FLIE_FALL	0x8103		/* loops frames 94-103 */
 
-int	func_801230f8(game_object_t *, player_stats_t *);
-void	func_80123824(game_object_t *);
-void	func_80123cd4(enemy_t *, unsigned short);
-void	func_80123d68(enemy_t *);
+int	flie_die(game_object_t *, player_stats_t *);
+void	flie_remove(game_object_t *);
+void	flie_setup(enemy_t *, unsigned short);
+void	flie_approach(enemy_t *);
 void	func_80123f24(enemy_t *);
 
-/* 0x80122e40: the draw callback (flie_draw) */
-void func_80122e40(game_object_t *obj)
+/* 0x80122e40: the draw callback */
+void flie_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -142,8 +142,8 @@ void func_80122e40(game_object_t *obj)
 	}
 }
 
-/* 0x8012303c: the hit test: the bounding sphere, then the submesh (flie_hit) */
-int func_8012303c(game_object_t *obj, player_stats_t *p)
+/* 0x8012303c: the hit test: the bounding sphere, then the submesh */
+int flie_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -157,7 +157,7 @@ int func_8012303c(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_801230f8;
+			p->die = (void *)flie_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -169,8 +169,8 @@ int func_8012303c(game_object_t *obj, player_stats_t *p)
 /* 0x801230f8: the shot lands: blood and a chunk; the flame thrower sets the part alight; at
    violence 3 the part hit is swapped for a damaged one (the wings 7, 19 and 20, the head 9;
    anything else turns gory, a second time swaps the body 8 for 17); then damage (dead at 0:
-   500 points and its death cry, else 50 and a hurt cry) and the hit reaction (flie_die) */
-int func_801230f8(game_object_t *obj, player_stats_t *p)
+   500 points and its death cry, else 50 and a hurt cry) and the hit reaction */
+int flie_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -293,8 +293,8 @@ void remove_flie_assets(void)
 }
 
 /* 0x801235ec: the init callback: the record, health 1.5, the 23 groups (the wings 2 and 11
-   translucent, the damaged parts hidden, the hat 10 nine times in ten) (flie_init) */
-int func_801235ec(game_object_t *obj)
+   translucent, the damaged parts hidden, the hat 10 nine times in ten) */
+int flie_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	void	*data;
@@ -307,9 +307,9 @@ int func_801235ec(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_8012303c;
-	obj->die = func_801230f8;
-	obj->remove = func_80123824;
+	obj->hit = flie_hit;
+	obj->die = flie_die;
+	obj->remove = flie_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -364,13 +364,13 @@ int func_801235ec(game_object_t *obj)
 	e->unke4 = 0;
 	e->prio_base = 0x40;
 	e->prio_flags = next_cue_priority();
-	func_80123cd4(e, 0);
+	flie_setup(e, 0);
 	play_enemy_sound(e, 1, "fly", -2);
 	return(0);
 }
 
-/* 0x80123824: the remove callback (flie_remove) */
-void func_80123824(game_object_t *obj)
+/* 0x80123824: the remove callback */
+void flie_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -384,8 +384,8 @@ void func_80123824(game_object_t *obj)
 	free(e);
 }
 
-/* 0x8012387c: the think callback: the effects, loose parts, then the state (flie_think) */
-void func_8012387c(game_object_t *obj)
+/* 0x8012387c: the think callback: the effects, loose parts, then the state */
+void flie_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -412,7 +412,7 @@ void func_8012387c(game_object_t *obj)
 			path_place(e, flie_path, e->path, 1.0f);
 			break;
 		}
-		func_80123d68(e);
+		flie_approach(e);
 		break;
 	case FLIE_CIRCLE:
 		if(++e->frame >= FLIE_FLY_FRAMES)
@@ -448,11 +448,11 @@ void func_8012387c(game_object_t *obj)
 		{
 			e->frame = 0;
 		}
-		func_800fc8cc(e, 0.6f);
-		func_80123d68(e);
+		turn_toward_camera(e, 0.6f);
+		flie_approach(e);
 		break;
 	case FLIE_ATTACK:
-		func_800fc8cc(e, 0.6f);
+		turn_toward_camera(e, 0.6f);
 		if(++e->frame == 0x6e && group_near_camera(&e->groups[21], 15.0f))
 		{
 			hurt_player(e->target, FLIE_SWAT, 1, 0.0f);
@@ -463,15 +463,15 @@ void func_8012387c(game_object_t *obj)
 		}
 		if(e->frame >= 0x7f)
 		{
-			func_80123d68(e);
+			flie_approach(e);
 		}
 		break;
 	case FLIE_STOP:
 		e->frame++;
-		func_800fc8cc(e, 0.6f);
+		turn_toward_camera(e, 0.6f);
 		if(e->frame >= FLIE_FLY_FRAMES)
 		{
-			func_80123d68(e);
+			flie_approach(e);
 		}
 		break;
 	case FLIE_IDLE:
@@ -506,8 +506,8 @@ void func_8012387c(game_object_t *obj)
 }
 
 /* 0x80123cd4: the spawn table's state; the path states start where the entry says, 0x8103
-   lies at frame 94 turned a quarter (flie_setup) */
-void func_80123cd4(enemy_t *e, unsigned short state)
+   lies at frame 94 turned a quarter */
+void flie_setup(enemy_t *e, unsigned short state)
 {
 	e->ai_state = state;
 	switch(state)
@@ -534,7 +534,7 @@ void func_80123cd4(enemy_t *e, unsigned short state)
 /* 0x80123d68: come for the camera: the target becomes a playing player if it was not, the goal
    a point 1 to the side, 2 up and 11 in front of the camera; the step towards it picks the state:
    still flying (0x100), arrived (0x102) or within reach (0x201, the swats) */
-void func_80123d68(enemy_t *e)
+void flie_approach(enemy_t *e)
 {
 	player_stats_t	*p;
 
@@ -602,5 +602,5 @@ void func_80123f24(enemy_t *e)
 		e->unk6 = 0;
 		return;
 	}
-	func_80123d68(e);
+	flie_approach(e);
 }

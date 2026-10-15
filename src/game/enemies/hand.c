@@ -23,7 +23,7 @@ extern void	set_enemy_scale(enemy_t *, float);
 extern void	set_enemy_health(enemy_t *, float);
 extern player_stats_t *get_target_player(void);
 extern void	clear_enemy_fields(enemy_t *);
-extern void	func_8011464c(enemy_t *, submesh_t *, int);	/* model.c: pose the groups at the current frame */
+extern void	pose_groups(enemy_t *, submesh_t *, int);	/* model.c: pose the groups at the current frame */
 extern int	shot_hits_sphere(float *, float, player_stats_t *);
 extern void	burst_blood(float *, float, int);
 extern void	add_world_sprite(float *, int, int);
@@ -44,10 +44,10 @@ float	*hand_normals;			/* 0x801e0f30 */
 int	hand_spare;			/* 0x80190060: in the file's data, never used */
 int	hand_loaded;			/* 0x80190064: set while the model is loaded */
 
-int	func_800f7420(game_object_t *, player_stats_t *);
+int	hand_die(game_object_t *, player_stats_t *);
 
 /* 0x800f70b8: the draw callback (keying off, the model, the debug overlays) */
-void func_800f70b8(game_object_t *obj)
+void hand_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -98,7 +98,7 @@ void func_800f70b8(game_object_t *obj)
 }
 
 /* 0x800f72cc: the hit callback: any shot inside the sphere lands on group 0 */
-int func_800f72cc(game_object_t *obj, player_stats_t *p)
+int hand_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 
@@ -108,7 +108,7 @@ int func_800f72cc(game_object_t *obj, player_stats_t *p)
 		p->hit = 1;
 		p->hit_id = obj->id;
 		p->hit_group = 0;
-		p->die = (void *)func_800f7420;
+		p->die = (void *)hand_die;
 		p->hit_point[0] = p->aim[0];
 		p->hit_point[1] = p->aim[1];
 		p->hit_point[2] = p->aim[2];
@@ -118,7 +118,7 @@ int func_800f72cc(game_object_t *obj, player_stats_t *p)
 
 /* 0x800f735c: damage with a fade-out death (state 0x101, both groups alpha-blended from 255)
    and 500 points, else 50 points. Nothing in the game calls it: the hand dies at once
-   (func_800f7420) */
+   */
 void func_800f735c(int unused, player_stats_t *p, float damage, enemy_t *e)
 {
 	int	i;
@@ -148,7 +148,7 @@ void func_800f735c(int unused, player_stats_t *p, float damage, enemy_t *e)
 
 /* 0x800f7420: the die callback: the hit group goes, three bursts of blood at the hit point
    (10 below the hand for their floor), a hit mark, and the hand is gone */
-int func_800f7420(game_object_t *obj, player_stats_t *p)
+int hand_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -182,7 +182,7 @@ void load_hand(void)
 	hand_loaded = 1;
 }
 
-void func_800f75f8(void)
+void remove_hand_assets(void)
 {
 	hand_loaded = 0;
 	remove_surface(hand_texmap, 4);
@@ -190,10 +190,10 @@ void func_800f75f8(void)
 	remove_model((void **)&hand_verts, 0x166, (void **)&hand_faces, 0x240, (void **)&hand_normals, 0x160, "HAND.ZM");
 }
 
-void	func_800f77d4(game_object_t *);
+void	hand_remove(game_object_t *);
 
 /* 0x800f7680: the init callback */
-int func_800f7680(game_object_t *obj)
+int hand_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	short	*p;
@@ -205,9 +205,9 @@ int func_800f7680(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_800f72cc;
-	obj->die = func_800f7420;
-	obj->remove = func_800f77d4;
+	obj->hit = hand_hit;
+	obj->die = hand_die;
+	obj->remove = hand_remove;
 	e = (enemy_t *)p;
 	e->counter = 0;
 	e->frame = 0;
@@ -237,7 +237,7 @@ int func_800f7680(game_object_t *obj)
 	{
 		e->groups[i].flags = 0xa000;
 	}
-	func_8011464c(e, submesh_info_hand, 2);
+	pose_groups(e, submesh_info_hand, 2);
 	e->hit_group = &e->groups[0];
 	e->hit_group->floor = 0.0f;
 	clear_enemy_fields(e);
@@ -245,7 +245,7 @@ int func_800f7680(game_object_t *obj)
 }
 
 /* 0x800f77d4: the remove callback */
-void func_800f77d4(game_object_t *obj)
+void hand_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -260,7 +260,7 @@ void func_800f77d4(game_object_t *obj)
 
 /* 0x800f7824: the think callback: the animation loops frames 59..170; spawn entries 0x7f-0x87
    each hurt the player (10) when the movie shows their frame */
-void func_800f7824(game_object_t *obj)
+void hand_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -326,7 +326,7 @@ void func_800f7824(game_object_t *obj)
 }
 
 /* 0x800f7960: the state set-up: state 0x3c starts the hand at frame 5 */
-void func_800f7960(enemy_t *e, int state)
+void hand_setup(enemy_t *e, int state)
 {
 	e->ai_state = state;
 	if(state == 0x3c)

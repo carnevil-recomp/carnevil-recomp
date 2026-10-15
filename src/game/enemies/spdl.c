@@ -67,12 +67,12 @@ void	*spdl_path;			/* 0x802373c0 */
 #define SPDL_DONE	0x400		/* waits out the counter, then goes */
 #define SPDL_DONE_WAIT	5
 
-int	func_80106c08(game_object_t *, player_stats_t *);
-void	func_80106fe4(game_object_t *);
-void	func_8010725c(enemy_t *, int);
+int	spdl_die(game_object_t *, player_stats_t *);
+void	spdl_remove(game_object_t *);
+void	spdl_setup(enemy_t *, int);
 
 /* 0x80106928: the draw callback */
-void func_80106928(game_object_t *obj)
+void spdl_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -104,7 +104,7 @@ void func_80106928(game_object_t *obj)
 }
 
 /* 0x80106abc: the hit test: the bounding sphere, then the submesh */
-int func_80106abc(game_object_t *obj, player_stats_t *p)
+int spdl_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -122,7 +122,7 @@ int func_80106abc(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_80106c08;
+			p->die = (void *)spdl_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -132,7 +132,7 @@ int func_80106abc(game_object_t *obj, player_stats_t *p)
 }
 
 /* 0x80106b8c: the damage half of the die callback on its own (nothing calls it) */
-void func_80106b8c(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
+void spdl_damage(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
 {
 	e->health -= damage;
 	if(e->health <= 0.0f)
@@ -147,7 +147,7 @@ void func_80106b8c(game_object_t *obj, player_stats_t *p, float damage, enemy_t 
 }
 
 /* 0x80106c08: the shot lands: the part hit turns gory, blood, the damage; dead, it goes at once */
-int func_80106c08(game_object_t *obj, player_stats_t *p)
+int spdl_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -185,7 +185,7 @@ void load_spdl(void)
 }
 
 /* 0x80106de0: the assets go when the level is unloaded */
-void func_80106de0(void)
+void remove_spdl_assets(void)
 {
 	remove_path(&spdl_path, SPDL_PATH_LEN, "spdl.pth");
 	remove_animation(submesh_info_spdl, SPDL_GROUPS, SPDL_FRAMES, "spdl.za");
@@ -194,7 +194,7 @@ void func_80106de0(void)
 }
 
 /* 0x80106e78: the init callback: the record, scale and health 0.75, the six groups */
-int func_80106e78(game_object_t *obj)
+int spdl_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	void	*data;
@@ -207,9 +207,9 @@ int func_80106e78(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_80106abc;
-	obj->die = func_80106c08;
-	obj->remove = func_80106fe4;
+	obj->hit = spdl_hit;
+	obj->die = spdl_die;
+	obj->remove = spdl_remove;
 	e = (enemy_t *)data;
 	e->counter = 0;
 	e->frame = 0;
@@ -243,12 +243,12 @@ int func_80106e78(game_object_t *obj)
 	g = e->groups;
 	e->hit_group = &g[SPDL_BODY];
 	g[SPDL_BODY].floor = 0.0f;
-	func_8010725c(e, 0);
+	spdl_setup(e, 0);
 	return(0);
 }
 
 /* 0x80106fe4: the remove callback */
-void func_80106fe4(game_object_t *obj)
+void spdl_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -258,7 +258,7 @@ void func_80106fe4(game_object_t *obj)
 }
 
 /* 0x8010701c: the think callback: the animation, the run along the path and the bite */
-void func_8010701c(game_object_t *obj)
+void spdl_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -321,7 +321,7 @@ void func_8010701c(game_object_t *obj)
 }
 
 /* 0x8010725c: the spawn table's state; the path states start where the entry says */
-void func_8010725c(enemy_t *e, int state)
+void spdl_setup(enemy_t *e, int state)
 {
 	e->ai_state = state;
 	switch(state)

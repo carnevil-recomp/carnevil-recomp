@@ -4,7 +4,7 @@
  * replays a stretch of the movie while a section's enemies are alive, calling one of the
  * functions below each replay: most clear the section's timer once every spawn table slot they
  * name is done (wave_slot_done) and otherwise count it down, some only count down or only
- * clear, a few cut the remaining replays short; func_800fa720 gives every section its budget.
+ * clear, a few cut the remaining replays short; hhouse_script_init gives every section its budget.
  * The boss sections call the callbacks in the Mari file (0x800eef68-0x800ef870), not these.
  * The exported names are still the ones movie_scripts.c uses (generated from names.txt).
  */
@@ -56,7 +56,7 @@ int	D_80212d8c;
 int	D_802372e4;
 
 /* 0x800fa720: script entry: each section's replay budget */
-void func_800fa720(void)
+void hhouse_script_init(void)
 {
 	D_801e6d60 = 30;
 	D_801e6d74 = 30;
@@ -541,7 +541,7 @@ void sub_800fb3c8(void)
 
 /* 0x800fb424: the level's last stretch, once per replay: at the 10th the stream and the
    music fade, the guns go off and the screen fades over 80 frames; the 18th ends the script */
-void sub_800fb424(void)
+void hhouse_script_ending(void)
 {
 	if(++D_802372e4 == 10)
 	{

@@ -334,8 +334,8 @@ void set_goal_near_camera(enemy_t *e, float *from, float *goal, float side, floa
 /* 0x800fbaac: come at the camera: turn towards it (0.2 rad at most), set the goal side to the
    left (player 1) or right of the view point, dy below it and dz beyond it, and take a free
    step of at most `step` towards it: 2 when the goal was within the step (reached), else 0 */
-int func_800fc16c(enemy_t *e, float step);
-int func_800fbaac(enemy_t *e, float side, float dy, float dz, float step)
+int step_toward_goal_free(enemy_t *e, float step);
+int charge_camera(enemy_t *e, float side, float dy, float dz, float step)
 {
 	float	*goal;
 
@@ -353,7 +353,7 @@ int func_800fbaac(enemy_t *e, float side, float dy, float dz, float step)
 		goal[0] = goal[0] + side;
 	}
 	view_to_world(goal);
-	return((func_800fc16c(e, step) != 0) * 2);
+	return((step_toward_goal_free(e, step) != 0) * 2);
 }
 
 int	step_toward_goal_xz(enemy_t *, float);
@@ -529,9 +529,9 @@ int move_cd(enemy_t *e, float dx, float dy, float dz)
 }
 
 /* 0x800fc16c: step_toward_goal measured from the enemy's own position and moved without the
-   collision test (func_800cde74): 1 when the goal was within a step (it moves there), else 0 */
-extern int	func_800cde74(enemy_t *, float, float, float);
-int func_800fc16c(enemy_t *e, float step)
+   collision test: 1 when the goal was within a step (it moves there), else 0 */
+extern int	move_free(enemy_t *, float, float, float);
+int step_toward_goal_free(enemy_t *e, float step)
 {
 	float	dx, dy, dz;
 	float	ax, ay, az;
@@ -545,7 +545,7 @@ int func_800fc16c(enemy_t *e, float step)
 	az = ffabs(dz);
 	if(ax < step && ay < step && az < step)
 	{
-		func_800cde74(e, dx, dy, dz);
+		move_free(e, dx, dy, dz);
 		return(1);
 	}
 	if(ay < ax && az < ax)
@@ -587,7 +587,7 @@ int func_800fc16c(enemy_t *e, float step)
 	{
 		dz = -mz;
 	}
-	func_800cde74(e, dx, dy, dz);
+	move_free(e, dx, dy, dz);
 	return(0);
 }
 
@@ -920,7 +920,7 @@ float distance_between(float *a, float *b)
 /* 0x800fc8cc: turn the enemy towards the camera on all three axes (the angles angles_to gives
    from the camera to it), at most rate radians per axis per call; a turn of under 0.1 left is
    not taken and a smaller remainder is taken whole. The number of axes not already on target */
-int func_800fc8cc(enemy_t *e, float rate)
+int turn_toward_camera(enemy_t *e, float rate)
 {
 	float	v[3];
 	float	diff, step;
@@ -1137,7 +1137,7 @@ int func_800fc8cc(enemy_t *e, float rate)
 
 /* 0x800fcd70: face_camera towards any point: turn the enemy towards to by at most rate radians;
    1 when it turned, 0 when it already faces it (within the rate) */
-int func_800fcd70(enemy_t *e, float *to, float rate)
+int face_point(enemy_t *e, float *to, float rate)
 {
 	float	v[3];
 	float	d[3];
@@ -1232,7 +1232,7 @@ int func_800fcd70(enemy_t *e, float *to, float rate)
 /* 0x800fd0a8: step straight at the goal on x and z, at most step on each axis (the larger
    one scaled to step, the other in proportion), without the collision test: 0 when the goal
    was within a step on both axes (it moves there), else 1 */
-int func_800fd0a8(enemy_t *e, float step)
+int step_straight_to_goal(enemy_t *e, float step)
 {
 	float	dx, dz;
 	float	ax, az;
@@ -1243,7 +1243,7 @@ int func_800fd0a8(enemy_t *e, float step)
 	az = ffabs(dz);
 	if(ax < step && az < step)
 	{
-		func_800cde74(e, dx, 0.0f, dz);
+		move_free(e, dx, 0.0f, dz);
 		return(0);
 	}
 	if(az < ax)
@@ -1272,6 +1272,6 @@ int func_800fd0a8(enemy_t *e, float step)
 	{
 		dz = -az;
 	}
-	func_800cde74(e, dx, 0.0f, dz);
+	move_free(e, dx, 0.0f, dz);
 	return(1);
 }

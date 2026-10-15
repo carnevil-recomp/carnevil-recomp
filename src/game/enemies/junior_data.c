@@ -229,5 +229,5 @@ int	*junior_mouth[30] =
 	&junior_mouth_runs[633],	/* call 29 */
 };
 
-/* 0x80198f8c: his voice lines, the "baby" calls func_80121d2c picks from */
+/* 0x80198f8c: his voice lines, the "baby" calls junior_speak picks from */
 int	junior_voices[14] = { 0xb, 0xe, 0xf, 0x10, 0x11, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b };

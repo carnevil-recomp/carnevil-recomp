@@ -5,7 +5,7 @@
  * (taur_data.c). The model has 748 vertices, 795 normals and 1282 faces in 26 submeshes, the
  * animation 483 frames. 300 health (set_enemy_health2), a life bar and a name plate.
  *
- * Seven small parts (groups 0-6) glow on and off (func_80119d58) and take the animations of the
+ * Seven small parts (groups 0-6) glow on and off and take the animations of the
  * groups they sit on (24, 25, 13, 7 and 23); at any violence a shot on one hides it, leaves a
  * spray and does ten times the damage. Halfway down its health it reels (0x1005).
  *
@@ -16,8 +16,8 @@
  * instead of attacking; a shot resets the count.
  *
  * The exported names are the address names the shared files (spawn.c, wave.c) use:
- * func_80118728 is the draw callback, func_8011905c the init, func_80119280 the think,
- * func_80119894 the state set-up.
+ * taur_draw is the draw callback, taur_init the init, taur_think the think,
+ * taur_setup the state set-up.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -95,29 +95,29 @@ float	taur_spot[3];			/* 0x802374a0: where its walk (state 2) leads */
 #define TAUR_NNORMALS	0x31b
 #define TAUR_FRAMES	0x1e3
 
-int	func_80118a44(game_object_t *, player_stats_t *);
-void	func_80119228(game_object_t *);
-void	func_80119894(enemy_t *, unsigned short);
-void	func_80119944(enemy_t *);
-void	func_80119a5c(enemy_t *);
-void	func_80119b18(enemy_t *);
-void	func_80119b88(enemy_t *);
-void	func_80119d58(enemy_t *);
-void	func_80119f10(float, float);
-void	func_8011a020(enemy_t *);
+int	taur_die(game_object_t *, player_stats_t *);
+void	taur_remove(game_object_t *);
+void	taur_setup(enemy_t *, unsigned short);
+void	taur_next_move(enemy_t *);
+void	taur_pick_attack(enemy_t *);
+void	taur_attack_done(enemy_t *);
+void	taur_approach(enemy_t *);
+void	taur_glow_parts(enemy_t *);
+void	taur_draw_name(float, float);
+void	taur_footsteps(enemy_t *);
 
 /* 0x80118728: the draw callback (type 0x2027): the glow, the model, its life bar and name */
-void func_80118728(game_object_t *obj)
+void taur_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
 	e = (enemy_t *)obj->data;
-	func_80119d58(e);
+	taur_glow_parts(e);
 	draw_model(e, taur_submesh_info, TAUR_GROUPS, taur_verts, TAUR_NVERTS, taur_faces, TAUR_NFACES, taur_normals, TAUR_NNORMALS);
 	draw_effects(e);
 	if(!(e->ai_state & 0x6000))
 	{
-		func_80119f10(200.0f, 233.0f);
+		taur_draw_name(200.0f, 233.0f);
 		draw_life_bar(e->health, taur_full_health, 150.0f, 250.0f, 248.0f, 0x908000);
 	}
 	if(debug_mode & 0x400)
@@ -157,7 +157,7 @@ void func_80118728(game_object_t *obj)
 }
 
 /* 0x80118988: the hit test: the bounding sphere, then the submesh */
-int func_80118988(game_object_t *obj, player_stats_t *p)
+int taur_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -174,7 +174,7 @@ int func_80118988(game_object_t *obj, player_stats_t *p)
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
 			p->hit_group = group;
-			p->die = (void *)func_80118a44;
+			p->die = (void *)taur_die;
 		}
 	}
 	return(0);
@@ -184,7 +184,7 @@ int func_80118988(game_object_t *obj, player_stats_t *p)
    (a spray, the part hidden) and takes ten times the damage; 2000 points, a cry and the death
    (audit 0x3d), else 50 points; then the reel when it falls below half its health, else a cry
    and a flinch for a small part (which also resets taur_hits) */
-int func_80118a44(game_object_t *obj, player_stats_t *p)
+int taur_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -363,7 +363,7 @@ void remove_taur_assets(void)
 
 /* 0x8011905c: the init callback (type 0x2027): the record, 26 groups, 300 health (the life
    bar's full), the first state; the debug points cleared */
-int func_8011905c(game_object_t *obj)
+int taur_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -376,9 +376,9 @@ int func_8011905c(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_80118988;
-	obj->die = func_80118a44;
-	obj->remove = func_80119228;
+	obj->hit = taur_hit;
+	obj->die = taur_die;
+	obj->remove = taur_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -420,14 +420,14 @@ int func_8011905c(game_object_t *obj)
 	e->unke4 = 0;
 	e->prio_base = 0x40;
 	e->prio_flags = next_cue_priority();
-	func_80119894(e, 0);
+	taur_setup(e, 0);
 	taur_hits = 0;
 	debug_p1x = debug_p1y = debug_p1z = debug_p2x = debug_p2y = debug_p2z = 0;
 	return(0);
 }
 
 /* 0x80119228: the remove callback */
-void func_80119228(game_object_t *obj)
+void taur_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -442,7 +442,7 @@ void func_80119228(game_object_t *obj)
 }
 
 /* 0x80119280: the think callback */
-void func_80119280(game_object_t *obj)
+void taur_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -457,7 +457,7 @@ void func_80119280(game_object_t *obj)
 	{
 		return;
 	}
-	func_8011a020(e);
+	taur_footsteps(e);
 	switch(e->ai_state)
 	{
 	case 2:
@@ -471,7 +471,7 @@ void func_80119280(game_object_t *obj)
 		e->goal[2] = taur_spot[2];
 		if(step_toward_goal_xz(e, 0.6f) == 2)
 		{
-			func_80119944(e);
+			taur_next_move(e);
 		}
 		break;
 	case 0x1001:
@@ -496,13 +496,13 @@ void func_80119280(game_object_t *obj)
 			e->frame = 0;
 		}
 		face_camera(e, 0.2f);
-		func_80119b88(e);
+		taur_approach(e);
 		break;
 	case 4:
 		if(++e->frame >= 0x174)
 		{
 			face_camera(e, 0.2f);
-			func_80119a5c(e);
+			taur_pick_attack(e);
 		}
 		break;
 	case 0x201:
@@ -514,7 +514,7 @@ void func_80119280(game_object_t *obj)
 		}
 		if(e->frame >= 0xab)
 		{
-			func_80119b18(e);
+			taur_attack_done(e);
 		}
 		break;
 	case 0x202:
@@ -526,7 +526,7 @@ void func_80119280(game_object_t *obj)
 		}
 		if(e->frame >= 0x1b9)
 		{
-			func_80119b18(e);
+			taur_attack_done(e);
 		}
 		break;
 	case 0x203:
@@ -538,7 +538,7 @@ void func_80119280(game_object_t *obj)
 		}
 		if(e->frame >= 0xea)
 		{
-			func_80119b18(e);
+			taur_attack_done(e);
 		}
 		break;
 	case 0x204:
@@ -550,7 +550,7 @@ void func_80119280(game_object_t *obj)
 		}
 		if(e->frame >= 0x112)
 		{
-			func_80119b18(e);
+			taur_attack_done(e);
 		}
 		break;
 	case 0x205:
@@ -579,7 +579,7 @@ void func_80119280(game_object_t *obj)
 		}
 		if(e->frame >= 0x138)
 		{
-			func_80119b18(e);
+			taur_attack_done(e);
 		}
 		break;
 	case 0x2001:
@@ -598,7 +598,7 @@ void func_80119280(game_object_t *obj)
 	case 6:
 		if(++e->frame >= 0x1cc)
 		{
-			func_80119a5c(e);
+			taur_pick_attack(e);
 		}
 		break;
 	}
@@ -606,7 +606,7 @@ void func_80119280(game_object_t *obj)
 
 /* 0x80119894: the state set-up: the entrance (4) counts in the audits, roars and sets the spot
    its walk leads to */
-void func_80119894(enemy_t *e, unsigned short state)
+void taur_setup(enemy_t *e, unsigned short state)
 {
 	e->ai_state = state;
 	switch(state)
@@ -631,7 +631,7 @@ void func_80119894(enemy_t *e, unsigned short state)
 
 /* 0x80119944: at the end of a walk or a taunt: attack, or after three hits on the player in a
    row a taunt (the five in turn) */
-void func_80119944(enemy_t *e)
+void taur_next_move(enemy_t *e)
 {
 	if(e->frame > 0)
 	{
@@ -639,7 +639,7 @@ void func_80119944(enemy_t *e)
 	}
 	if(taur_hits < 3)
 	{
-		func_80119a5c(e);
+		taur_pick_attack(e);
 		return;
 	}
 	switch(taur_taunt)
@@ -669,7 +669,7 @@ void func_80119944(enemy_t *e)
 }
 
 /* 0x80119a5c: pick one of the five attacks (a fifth each) and the distance it is made from */
-void func_80119a5c(enemy_t *e)
+void taur_pick_attack(enemy_t *e)
 {
 	int	r;
 
@@ -699,11 +699,11 @@ void func_80119a5c(enemy_t *e)
 		e->unka8 = 0x205;
 		e->unk9c = -16.0f;
 	}
-	func_80119b88(e);
+	taur_approach(e);
 }
 
 /* 0x80119b18: an attack over: back to its walk (2), facing the player */
-void func_80119b18(enemy_t *e)
+void taur_attack_done(enemy_t *e)
 {
 	if(e->frame > 0)
 	{
@@ -715,7 +715,7 @@ void func_80119b18(enemy_t *e)
 }
 
 /* 0x80119b88: walk to the chosen attack's distance from the camera (1), then make it */
-void func_80119b88(enemy_t *e)
+void taur_approach(enemy_t *e)
 {
 	set_goal_near_camera(e, &camera_x, e->goal, 2.0f, 0.0f, e->unk9c);
 	switch(step_toward_goal_xz(e, 0.7f))
@@ -769,7 +769,7 @@ void func_80119b88(enemy_t *e)
 /* 0x80119d58: the glow of the seven small parts, a step a frame: dark, then now and again (5%
    after 21 frames) lighting up (texture variants 1, 2, then 4), lit for 6 frames, fading (2,
    1) and dark again; the variant is the group's texture key high bits */
-void func_80119d58(enemy_t *e)
+void taur_glow_parts(enemy_t *e)
 {
 	taur_glow_t	*t;
 	int	i;
@@ -835,7 +835,7 @@ void func_80119d58(enemy_t *e)
 }
 
 /* 0x80119f10: the name beside its life bar (texture 0x7083), 128 by 32 around x, y */
-void func_80119f10(float x, float y)
+void taur_draw_name(float x, float y)
 {
 	struct { float x, y, oow, sow, tow, pad; } v[4];
 
@@ -868,7 +868,7 @@ void func_80119f10(float x, float y)
 }
 
 /* 0x8011a020: its footsteps, on the frames its feet land */
-void func_8011a020(enemy_t *e)
+void taur_footsteps(enemy_t *e)
 {
 	switch(e->frame)
 	{

@@ -126,31 +126,31 @@ int	D_801e5da4;			/* shots do half damage while it is set and he is below 20% */
 int	D_801e6eb4, D_80237298, D_802372c8, D_8022b120, D_802371ec, D_8022b180, D_80237270;
 int	D_8021f0c4, D_8022b110, D_801e0964, D_8022b118;
 
-int	func_8011ffa0(game_object_t *, player_stats_t *);
-void	func_8012098c(game_object_t *);
-void	func_80121318(enemy_t *, unsigned short);
+int	junior_die(game_object_t *, player_stats_t *);
+void	junior_remove(game_object_t *);
+void	junior_setup(enemy_t *, unsigned short);
 void	junior_next_move(enemy_t *);
-void	func_801216b4(enemy_t *);
-void	func_801218a8(enemy_t *);
-void	func_8012199c(enemy_t *);
-void	func_80121a88(enemy_t *);
-int	func_80121b14(enemy_t *);
-void	func_80121b70(float, float);
-void	func_80121c80(int);
-void	func_80121cac(void);
-void	func_80121d2c(enemy_t *);
-void	func_80121de0(enemy_t *);
-void	func_8011f634(game_object_t *);
-int	func_8011f6c0(game_object_t *, player_stats_t *);
-int	func_8011f74c(game_object_t *, player_stats_t *);
-int	func_8011f7a8(game_object_t *);
-void	func_8011f948(game_object_t *);
-void	func_8011f980(game_object_t *);
+void	junior_swipe(enemy_t *);
+void	junior_after_swipe(enemy_t *);
+void	junior_flinch_done(enemy_t *);
+void	junior_stagger(enemy_t *);
+int	junior_at_post(enemy_t *);
+void	junior_name_plate(float, float);
+void	junior_lipsync(int);
+void	junior_mouth_step(void);
+void	junior_speak(enemy_t *);
+void	junior_thud_step(enemy_t *);
+void	puke_draw(game_object_t *);
+int	puke_hit(game_object_t *, player_stats_t *);
+int	puke_die(game_object_t *, player_stats_t *);
+int	puke_init(game_object_t *);
+void	puke_remove(game_object_t *);
+void	puke_think(game_object_t *);
 
 /* ---- the puke ---- */
 
 /* 0x8011f4e0: six blobs from his mouth, each on its way with a little spread */
-void func_8011f4e0(enemy_t *e)
+void junior_puke(enemy_t *e)
 {
 	enemy_t	*p;
 	short	id;
@@ -160,7 +160,7 @@ void func_8011f4e0(enemy_t *e)
 	n = 0;
 	do
 	{
-		id = add_object1_wrapper(0x202a, func_8011f634, func_8011f7a8, func_8011f980);
+		id = add_object1_wrapper(0x202a, puke_draw, puke_init, puke_think);
 		if(!id)
 		{
 			return;
@@ -181,7 +181,7 @@ void func_8011f4e0(enemy_t *e)
 }
 
 /* 0x8011f634: a blob's draw callback */
-void func_8011f634(game_object_t *obj)
+void puke_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -194,7 +194,7 @@ void func_8011f634(game_object_t *obj)
 }
 
 /* 0x8011f6c0: a blob's hit test: its sphere */
-int func_8011f6c0(game_object_t *obj, player_stats_t *p)
+int puke_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 
@@ -204,7 +204,7 @@ int func_8011f6c0(game_object_t *obj, player_stats_t *p)
 		p->hit = 1;
 		p->hit_id = obj->id;
 		p->hit_group = 0;
-		p->die = (void *)func_8011f74c;
+		p->die = (void *)puke_die;
 		p->hit_point[0] = p->aim[0];
 		p->hit_point[1] = p->aim[1];
 		p->hit_point[2] = p->aim[2];
@@ -213,7 +213,7 @@ int func_8011f6c0(game_object_t *obj, player_stats_t *p)
 }
 
 /* 0x8011f74c: a blob shot down: 500 points */
-int func_8011f74c(game_object_t *obj, player_stats_t *p)
+int puke_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 
@@ -227,7 +227,7 @@ int func_8011f74c(game_object_t *obj, player_stats_t *p)
 }
 
 /* 0x8011f7a8: a blob's init callback: tumbling at random, one of three colours */
-int func_8011f7a8(game_object_t *obj)
+int puke_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -240,9 +240,9 @@ int func_8011f7a8(game_object_t *obj)
 	{
 		return 1;
 	}
-	obj->hit = func_8011f6c0;
-	obj->die = func_8011f74c;
-	obj->remove = func_8011f948;
+	obj->hit = puke_hit;
+	obj->die = puke_die;
+	obj->remove = puke_remove;
 	e = (enemy_t *)obj->data;
 	e->counter = 0x78;
 	e->unk4 = 0x14;
@@ -284,7 +284,7 @@ int func_8011f7a8(game_object_t *obj)
 }
 
 /* 0x8011f948: a blob's remove callback */
-void func_8011f948(game_object_t *obj)
+void puke_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -295,7 +295,7 @@ void func_8011f948(game_object_t *obj)
 
 /* 0x8011f980: a blob's think callback: it tumbles and falls; at the player it hurts him (30),
    otherwise it is gone after 50 frames */
-void func_8011f980(game_object_t *obj)
+void puke_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -319,9 +319,9 @@ void func_8011f980(game_object_t *obj)
 
 /* ---- Junior ---- */
 
-/* 0x8011fa7c: the draw callback (junior_draw): his burst in smoke; the mouth shape on his face;
+/* 0x8011fa7c: the draw callback: his burst in smoke; the mouth shape on his face;
    his model; his life bar and name plate while he lives */
-void func_8011fa7c(game_object_t *obj)
+void junior_draw(game_object_t *obj)
 {
 	enemy_t		*e;
 	group_t		*g;
@@ -364,7 +364,7 @@ void func_8011fa7c(game_object_t *obj)
 	{
 		g = e->groups;
 		face = g[JUNIOR_MOUTH].flags & 0xf000ffff;
-		func_80121cac();
+		junior_mouth_step();
 		switch(junior_mouth_shape)
 		{
 		case 0:
@@ -397,7 +397,7 @@ void func_8011fa7c(game_object_t *obj)
 		{
 			draw_life_bar(e->health, junior_full_health, 100.0f, 300.0f, 248.0f, 0xcc9240);
 		}
-		func_80121b70(200.0f, 233.0f);
+		junior_name_plate(200.0f, 233.0f);
 	}
 	if(debug_mode & 0x400)
 	{
@@ -435,8 +435,8 @@ void func_8011fa7c(game_object_t *obj)
 	}
 }
 
-/* 0x8011fee4: the hit test (junior_hit): the bounding sphere, then the submesh */
-int func_8011fee4(game_object_t *obj, player_stats_t *p)
+/* 0x8011fee4: the hit test: the bounding sphere, then the submesh */
+int junior_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -449,7 +449,7 @@ int func_8011fee4(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_8011ffa0;
+			p->die = (void *)junior_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -458,10 +458,10 @@ int func_8011fee4(game_object_t *obj, player_stats_t *p)
 	return 0;
 }
 
-/* 0x8011ffa0: a shot lands (junior_die): a hit mark; every sixteenth shot on a part makes him
+/* 0x8011ffa0: a shot lands: a hit mark; every sixteenth shot on a part makes him
    flinch from it (gory at the highest violence; his face also twitches back); the damage (half
    while D_801e5da4 holds and he is below a fifth), 50 points a shot, 2000 for the last */
-int func_8011ffa0(game_object_t *obj, player_stats_t *p)
+int junior_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -635,13 +635,13 @@ int func_8011ffa0(game_object_t *obj, player_stats_t *p)
 	if(reaction)
 	{
 		start_hit_reaction(e, frame, reaction, junior_submesh, 7);
-		func_80121d2c(e);
+		junior_speak(e);
 	}
 	return 0;
 }
 
 /* 0x801203f0: his texmaps (the baby's or the bear's) and the puke's (sic: the game's name) */
-void load_junoir_texmap(void)
+void load_junior_texmap(void)
 {
 	if(D_801e6ed0)
 	{
@@ -674,7 +674,7 @@ void load_junior(void)
 }
 
 /* 0x801205cc: all his assets go when the level is unloaded */
-void remove_junior_texmap(void)
+void remove_junior_assets(void)
 {
 	if(D_801e6ed0)
 	{
@@ -698,10 +698,10 @@ void remove_junior_texmap(void)
 	remove_model((void **)&puke_verts, PUKE_NVERTS, (void **)&puke_faces, PUKE_NFACES, (void **)&puke_normals, PUKE_NNORMALS, "PUKE.ZM");
 }
 
-/* 0x80120714: the init callback (junior_init): the record (facing the player, twice the size,
+/* 0x80120714: the init callback: the record (facing the player, twice the size,
    400 health by difficulty), fifteen groups (his face turnable), the flinch counters cleared,
    then lying in his first state 0x2002 */
-int func_80120714(game_object_t *obj)
+int junior_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -712,9 +712,9 @@ int func_80120714(game_object_t *obj)
 	{
 		return 1;
 	}
-	obj->hit = func_8011fee4;
-	obj->die = func_8011ffa0;
-	obj->remove = func_8012098c;
+	obj->hit = junior_hit;
+	obj->die = junior_die;
+	obj->remove = junior_remove;
 	e = (enemy_t *)obj->data;
 	e->unk4 = 0x14;
 	junior = e;
@@ -780,12 +780,12 @@ int func_80120714(game_object_t *obj)
 	e->prio_flags = cue_priority(3);
 	D_801e15a8 = 0x40;
 	junior_thud_prio = cue_priority(4);
-	func_80121318(e, 0x2002);
+	junior_setup(e, 0x2002);
 	return 0;
 }
 
-/* 0x8012098c: the remove callback (junior_remove) */
-void func_8012098c(game_object_t *obj)
+/* 0x8012098c: the remove callback */
+void junior_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -800,10 +800,10 @@ void func_8012098c(game_object_t *obj)
 	free(e);
 }
 
-/* 0x801209ec: the think callback (junior_think): his face settles back; the states run their
-   frames; the flinches end in func_8012199c, the swipes in func_801218a8, the walks and the
+/* 0x801209ec: the think callback: his face settles back; the states run their
+   frames; the flinches end in junior_flinch_done, the swipes in junior_after_swipe, the walks and the
    throw in junior_next_move */
-void func_801209ec(game_object_t *obj)
+void junior_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	int	i;
@@ -832,47 +832,47 @@ void func_801209ec(game_object_t *obj)
 		if(++e->frame >= 0x188)
 		{
 			e->frame--;
-			func_8012199c(e);
+			junior_flinch_done(e);
 		}
 		break;
 	case 0x1001:
 		if(++e->frame >= 0x1e7)
 		{
 			e->frame--;
-			func_8012199c(e);
+			junior_flinch_done(e);
 		}
 		break;
 	case 0x1003:
 		if(++e->frame >= 0x1ad)
 		{
 			e->frame--;
-			func_8012199c(e);
+			junior_flinch_done(e);
 		}
 		break;
 	case 0x1005:
 		if(++e->frame >= 0x1cd)
 		{
 			e->frame--;
-			func_8012199c(e);
+			junior_flinch_done(e);
 		}
 		break;
 	case 0x1004:
 		if(++e->frame >= 0x216)
 		{
 			e->frame--;
-			func_8012199c(e);
+			junior_flinch_done(e);
 		}
 		break;
 	case 0x1006:
 		if(++e->frame >= 0x200)
 		{
 			e->frame--;
-			func_8012199c(e);
+			junior_flinch_done(e);
 		}
 		break;
 	case 0x100:
 		e->frame++;
-		func_80121de0(e);
+		junior_thud_step(e);
 		if(e->frame >= 0x16)
 		{
 			e->frame = 0;
@@ -881,12 +881,12 @@ void func_801209ec(game_object_t *obj)
 		set_goal_near_camera(e, &camera_x, e->goal, 0.0f, 0.0f, -75.0f);
 		if(step_toward_goal_xz(e, 4.0f) == 2)
 		{
-			func_801216b4(e);
+			junior_swipe(e);
 		}
 		break;
 	case 0x8101:
 		e->frame++;
-		func_80121de0(e);
+		junior_thud_step(e);
 		if(e->frame >= 0x16c)
 		{
 			e->frame = 0x15a;
@@ -904,15 +904,15 @@ void func_801209ec(game_object_t *obj)
 		if(++e->frame == 0x49)
 		{
 			play_enemy_sound(e, 0x12, "baby", 4);
-			func_80121c80(0x12);
+			junior_lipsync(0x12);
 		}
 		if((unsigned short)e->frame >= 0x5b && (unsigned short)e->frame <= 0x63)
 		{
-			func_8011f4e0(e);
+			junior_puke(e);
 		}
 		if(e->frame >= 0x8d)
 		{
-			func_80121a88(e);
+			junior_stagger(e);
 		}
 		break;
 	case 0x201:
@@ -922,7 +922,7 @@ void func_801209ec(game_object_t *obj)
 		}
 		if(e->frame >= 0x13b)
 		{
-			func_801218a8(e);
+			junior_after_swipe(e);
 		}
 		break;
 	case 0x202:
@@ -932,7 +932,7 @@ void func_801209ec(game_object_t *obj)
 		}
 		if(e->frame >= 0x15a)
 		{
-			func_801218a8(e);
+			junior_after_swipe(e);
 		}
 		break;
 	case 0x205:
@@ -942,7 +942,7 @@ void func_801209ec(game_object_t *obj)
 		}
 		if(e->frame >= 0x229)
 		{
-			func_801218a8(e);
+			junior_after_swipe(e);
 		}
 		break;
 	case 0x206:
@@ -952,21 +952,21 @@ void func_801209ec(game_object_t *obj)
 		}
 		if(e->frame >= 0x23b)
 		{
-			func_801218a8(e);
+			junior_after_swipe(e);
 		}
 		break;
 	case 0x104:
-		func_80121de0(e);
+		junior_thud_step(e);
 		if(++e->frame >= 0xe1)
 		{
-			func_80121d2c(e);
+			junior_speak(e);
 			e->frame = 0x16;
 			e->ai_state = 0x102;
 		}
 		break;
 	case 0x8802:
 		e->frame++;
-		func_80121de0(e);
+		junior_thud_step(e);
 		if(e->frame >= 0x16)
 		{
 			e->frame = 0;
@@ -1045,7 +1045,7 @@ void func_801209ec(game_object_t *obj)
 		{
 			e->unkac = randrng(3) + 0x13;
 			attach_effect(e, attach_held_object(&e->groups[6], e->unkac, 0.349999994f, -0.200000003f, 0.0f, 1.57079601f, 0.0f, 3.14159274f, e->scale));
-			func_80121d2c(e);
+			junior_speak(e);
 		}
 		if(e->frame == 0x29d)
 		{
@@ -1066,9 +1066,9 @@ void func_801209ec(game_object_t *obj)
 	}
 }
 
-/* 0x80121318: put him in a state (junior_setup): 0x8801 walks on with the rattle in his hand
+/* 0x80121318: put him in a state: 0x8801 walks on with the rattle in his hand
    and a line of speech (the audit BABY START) */
-void func_80121318(enemy_t *e, unsigned short state)
+void junior_setup(enemy_t *e, unsigned short state)
 {
 	e->ai_state = state;
 	switch(state)
@@ -1080,7 +1080,7 @@ void func_80121318(enemy_t *e, unsigned short state)
 		increment_audit(0x3e);
 		attach_effect(e, attach_held_object(&e->groups[JUNIOR_HAND], 0x15, 0.349999994f, 0.200000003f, 0.0f, 1.57079601f, 0.0f, 3.14159274f, e->scale));
 		play_enemy_sound(e, 0x1c, "baby", 4);
-		func_80121c80(0x1c);
+		junior_lipsync(0x1c);
 		e->frame = 0x216;
 		path_place(e, junior_path, e->path, 1.0f);
 		break;
@@ -1102,7 +1102,7 @@ void junior_next_move(enemy_t *e)
 	if(D_801e6c18)
 	{
 		D_801e6c18 = 0;
-		func_80121d2c(e);
+		junior_speak(e);
 		if(e->frame > 0)
 		{
 			e->frame--;
@@ -1125,7 +1125,7 @@ void junior_next_move(enemy_t *e)
 		}
 		else
 		{
-			func_80121d2c(e);
+			junior_speak(e);
 			e->target = get_target_player();
 			if(e->frame > 0)
 			{
@@ -1139,7 +1139,7 @@ void junior_next_move(enemy_t *e)
 	}
 	else if(randrng(100) < 0x55)
 	{
-		func_80121d2c(e);
+		junior_speak(e);
 		e->target = get_target_player();
 		if(e->frame > 0)
 		{
@@ -1152,7 +1152,7 @@ void junior_next_move(enemy_t *e)
 	}
 	else
 	{
-		func_80121d2c(e);
+		junior_speak(e);
 		if(e->frame > 0)
 		{
 			e->frame--;
@@ -1163,14 +1163,14 @@ void junior_next_move(enemy_t *e)
 }
 
 /* 0x801216b4: at the player he swipes, one of four at random */
-void func_801216b4(enemy_t *e)
+void junior_swipe(enemy_t *e)
 {
 	int	r, state;
 
 	r = randrng(100);
 	if(r < 25)
 	{
-		func_80121d2c(e);
+		junior_speak(e);
 		if(e->frame > 0)
 		{
 			e->frame--;
@@ -1180,7 +1180,7 @@ void func_801216b4(enemy_t *e)
 	}
 	else if(r < 50)
 	{
-		func_80121d2c(e);
+		junior_speak(e);
 		if(e->frame > 0)
 		{
 			e->frame--;
@@ -1190,7 +1190,7 @@ void func_801216b4(enemy_t *e)
 	}
 	else if(r < 75)
 	{
-		func_80121d2c(e);
+		junior_speak(e);
 		if(e->frame > 0)
 		{
 			e->frame--;
@@ -1200,7 +1200,7 @@ void func_801216b4(enemy_t *e)
 	}
 	else
 	{
-		func_80121d2c(e);
+		junior_speak(e);
 		if(e->frame > 0)
 		{
 			e->frame--;
@@ -1213,26 +1213,26 @@ void func_801216b4(enemy_t *e)
 	face_camera(e, 0.200000003f);
 }
 
-INLINE void func_80121908(enemy_t *);
+INLINE void junior_walk_back(enemy_t *);
 
 /* 0x801218a8: after a swipe: back to his post (35%, or when the script wants a stagger), else
    another swipe */
-void func_801218a8(enemy_t *e)
+void junior_after_swipe(enemy_t *e)
 {
 	if(randrng(100) < 0x23 || D_801e6c18)
 	{
-		func_80121908(e);
+		junior_walk_back(e);
 	}
 	else
 	{
-		func_801216b4(e);
+		junior_swipe(e);
 	}
 }
 
 /* 0x80121908: walk back to his post */
-INLINE void func_80121908(enemy_t *e)
+INLINE void junior_walk_back(enemy_t *e)
 {
-	func_80121d2c(e);
+	junior_speak(e);
 	if(e->frame > 0)
 	{
 		e->frame--;
@@ -1243,24 +1243,24 @@ INLINE void func_80121908(enemy_t *e)
 }
 
 /* 0x8012199c: a flinch is over: at his post he takes up what he was doing, else he walks back */
-void func_8012199c(enemy_t *e)
+void junior_flinch_done(enemy_t *e)
 {
-	if(func_80121b14(e))
+	if(junior_at_post(e))
 	{
 		JUNIOR_BLEND(e, e->resume_frame);
 		e->ai_state = e->resume_state;
 	}
 	else
 	{
-		func_80121908(e);
+		junior_walk_back(e);
 	}
 }
 
 /* 0x80121a88: after the puke, a stagger */
-void func_80121a88(enemy_t *e)
+void junior_stagger(enemy_t *e)
 {
 	D_801e6c18 = 0;
-	func_80121d2c(e);
+	junior_speak(e);
 	if(e->frame > 0)
 	{
 		e->frame--;
@@ -1270,14 +1270,14 @@ void func_80121a88(enemy_t *e)
 }
 
 /* 0x80121b14: whether he stands at his post */
-int func_80121b14(enemy_t *e)
+int junior_at_post(enemy_t *e)
 {
 	return junior_post[0] == e->x && junior_post[1] == e->y && junior_post[2] == e->z;
 }
 
 /* 0x80121b70: his name plate beside the life bar (texture 0x7084, JUNIOR.WMS), 128 by 32
    around x, y */
-void func_80121b70(float x, float y)
+void junior_name_plate(float x, float y)
 {
 	struct { float x, y, oow, sow, tow, pad; } v[4];
 
@@ -1310,14 +1310,14 @@ void func_80121b70(float x, float y)
 }
 
 /* 0x80121c80: start the mouth run of "baby" call n */
-INLINE void func_80121c80(int call)
+INLINE void junior_lipsync(int call)
 {
 	junior_speaking = 1;
 	junior_mouth_at = junior_mouth[call];
 }
 
 /* 0x80121cac: a frame of the mouth run (from his draw): its shape, until the -1 */
-void func_80121cac(void)
+void junior_mouth_step(void)
 {
 	int	shape;
 
@@ -1336,14 +1336,14 @@ void func_80121cac(void)
 }
 
 /* 0x80121d00: whether he still has health (nothing calls it) */
-int func_80121d00(void)
+int junior_alive(void)
 {
 	return junior->health > 0.0f;
 }
 
 /* 0x80121d2c: a line of speech: a voice line other than the last one at random (after a line
    the next call is 0, a silent one), lip-synced */
-void func_80121d2c(enemy_t *e)
+void junior_speak(enemy_t *e)
 {
 	int	call;
 
@@ -1357,11 +1357,11 @@ void func_80121d2c(enemy_t *e)
 	}
 	junior_last_voice = call;
 	play_enemy_sound(e, call, "baby", 0);
-	func_80121c80(call);
+	junior_lipsync(call);
 }
 
 /* 0x80121de0: his footfalls on the walk and swipe frames: a thud (three in turn) and a shake */
-void func_80121de0(enemy_t *e)
+void junior_thud_step(enemy_t *e)
 {
 	switch(e->frame)
 	{
@@ -1429,7 +1429,7 @@ void sub_80121fbc(void)
 void sub_80121fe8(void)
 {
 	play_enemy_sound(junior, 0xd, "baby", 4);
-	func_80121c80(0xd);
+	junior_lipsync(0xd);
 	junior->ai_state = 0x8803;
 	junior->unk90 = 0x96;
 	junior->unk92 = 0xd8;
@@ -1543,5 +1543,5 @@ void sub_8012225c(void)
 	junior->frame = 0x8d;
 	junior->flags &= ~2;
 	play_enemy_sound(junior, 9, "baby", 8);
-	func_80121c80(9);
+	junior_lipsync(9);
 }

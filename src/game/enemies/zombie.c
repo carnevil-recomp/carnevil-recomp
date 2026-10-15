@@ -40,9 +40,9 @@ extern void	detach_group(group_t *, float *, float, float *);
 extern void	hide_group(enemy_t *, group_t *);
 extern void	replace_group(enemy_t *, group_t *, group_t *);
 extern void	animate_loose_groups(enemy_t *, int);
-extern void	func_8011464c(enemy_t *, submesh_t *, int);	/* model.c: pose the groups at the current frame */
-extern void	func_80114814(enemy_t *, submesh_t *, int);	/* model.c: pose one group */
-extern void	func_800e059c(group_t *, float *, float *, float, float *);	/* model.c: knock a group loose with a fling */
+extern void	pose_groups(enemy_t *, submesh_t *, int);	/* model.c: pose the groups at the current frame */
+extern void	pose_group(enemy_t *, submesh_t *, int);	/* model.c: pose one group */
+extern void	fling_group(group_t *, float *, float *, float, float *);	/* model.c: knock a group loose with a fling */
 extern void	set_enemy_scale(enemy_t *, float);
 extern void	set_enemy_health(enemy_t *, float);
 extern player_stats_t *get_target_player(void);
@@ -50,8 +50,8 @@ extern void	clear_enemy_fields(enemy_t *);
 extern void	unlink_enemy(enemy_t *);
 extern int	randrng(int);
 extern int	face_camera(enemy_t *, float);
-extern int	func_800fcd70(enemy_t *, float *, float);	/* enemy.c: turn towards a point */
-extern int	func_800fd0a8(enemy_t *, float);		/* enemy.c: step straight at the goal */
+extern int	face_point(enemy_t *, float *, float);	/* enemy.c: turn towards a point */
+extern int	step_straight_to_goal(enemy_t *, float);		/* enemy.c: step straight at the goal */
 extern int	group_near_camera(group_t *, float);
 extern void	hurt_player(player_stats_t *, int, int, float);
 extern void	blend_to_frame(enemy_t *, submesh_t *, int, int, int);
@@ -76,11 +76,11 @@ extern int	violence_level;
 extern enemy_t	*debug_enemy;
 extern int	D_801e5cd4;			/* wave.c sets it for one level's load: the zombies carry things */
 /* the Haunted House innocent's objects (0x2011 and 0x2012) and their state set-ups */
-extern void	func_80105388(game_object_t *), func_80105a78(game_object_t *);
-extern int	func_801058bc(game_object_t *);
-extern void	func_80105e38(game_object_t *), func_8010674c(game_object_t *);
-extern int	func_80106584(game_object_t *);
-extern void	func_80105cb4(enemy_t *, int), func_801068c8(enemy_t *, int);
+extern void	inng_draw(game_object_t *), inng_think(game_object_t *);
+extern int	inng_init(game_object_t *);
+extern void	vict_draw(game_object_t *), vict_think(game_object_t *);
+extern int	vict_init(game_object_t *);
+extern void	inng_setup(enemy_t *, int), vict_setup(enemy_t *, int);
 
 extern texmap_t	zombie_texmap[45];		/* zombie_data.c */
 extern submesh_t submesh_info_zomb[21];
@@ -96,14 +96,14 @@ void	*zomb_path;			/* 0x802373f8 */
 /* the victim a zombie carries in (enemy_t.unkdc) */
 #define HELD(e)		((enemy_t *)(e)->unkdc)
 
-int	func_800f7f00(game_object_t *, player_stats_t *);
-void	func_800f7c5c(game_object_t *, player_stats_t *, float, enemy_t *);
-void	func_800f9e8c(enemy_t *), func_800f9f40(enemy_t *), func_800fa004(enemy_t *), func_800fa1c4(enemy_t *);
-void	func_800fa490(enemy_t *), func_800fa5b4(enemy_t *), func_800fa6a4(enemy_t *);
-void	func_800f96a8(enemy_t *, unsigned short);
+int	zombie_die(game_object_t *, player_stats_t *);
+void	zombie_damage(game_object_t *, player_stats_t *, float, enemy_t *);
+void	func_800f9e8c(enemy_t *), func_800f9f40(enemy_t *), zombie_next_action(enemy_t *), zombie_walk(enemy_t *);
+void	zombie_pick_held_object(enemy_t *), func_800fa5b4(enemy_t *), zombie_release_victim(enemy_t *);
+void	zombie_setup(enemy_t *, unsigned short);
 
 /* 0x800f7988: the draw callback */
-void func_800f7988(game_object_t *obj)
+void zombie_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -113,7 +113,7 @@ void func_800f7988(game_object_t *obj)
 }
 
 /* 0x800f7a00: the hit callback: the shot against the body's sphere, then the submeshes */
-int func_800f7a00(game_object_t *obj, player_stats_t *p)
+int zombie_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -127,7 +127,7 @@ int func_800f7a00(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_800f7f00;
+			p->die = (void *)zombie_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -137,12 +137,12 @@ int func_800f7a00(game_object_t *obj, player_stats_t *p)
 }
 
 /* 0x800f7abc: killed, falling (state 0x402 from frame 852): it drops its victim, 500 points,
-   its death cry, the die list. Inlined into func_800f7f00; this copy has no caller */
+   its death cry, the die list. Inlined into zombie_die; this copy has no caller */
 INLINE void func_800f7abc(game_object_t *obj, player_stats_t *p, enemy_t *e)
 {
 	if(!(e->ai_state & 0x400))
 	{
-		func_800fa6a4(e);
+		zombie_release_victim(e);
 		e->health = 0.0f;
 		award_points(p->index, 500);
 		play_enemy_sound(e, 0x11, "zombie", 8);
@@ -159,12 +159,12 @@ INLINE void func_800f7abc(game_object_t *obj, player_stats_t *p, enemy_t *e)
 
 /* 0x800f7b74: killed by the shotgun's head shot (state 0x404 from frame 600): the same, and at
    violence 3 the head goes (group 19 takes group 2's place, func_800f9e8c). Inlined into
-   func_800f7f00; this copy has no caller */
+   zombie_die; this copy has no caller */
 INLINE void func_800f7b74(game_object_t *obj, player_stats_t *p, enemy_t *e)
 {
 	if(!(e->ai_state & 0x400))
 	{
-		func_800fa6a4(e);
+		zombie_release_victim(e);
 		e->health = 0.0f;
 		award_points(p->index, 500);
 		play_enemy_sound(e, 0x11, "zombie", 8);
@@ -189,7 +189,7 @@ INLINE void func_800f7b74(game_object_t *obj, player_stats_t *p, enemy_t *e)
    the body groups go, chunks and a spray from the neck), falling backwards (0x404, also when
    shot while kneeling, state 0x10e) or falling (0x402, also from state 0x103); 50 points
    otherwise */
-void func_800f7c5c(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
+void zombie_damage(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
 {
 	int	kind;
 
@@ -198,7 +198,7 @@ void func_800f7c5c(game_object_t *obj, player_stats_t *p, float damage, enemy_t 
 		e->health = e->health - damage;
 		if(e->health <= 0.0f)
 		{
-			func_800fa6a4(e);
+			zombie_release_victim(e);
 			award_points(p->index, 500);
 			play_enemy_sound(e, 0x11, "zombie", 8);
 			e->killer = p;
@@ -246,7 +246,7 @@ void func_800f7c5c(game_object_t *obj, player_stats_t *p, float damage, enemy_t 
 				hide_group(e, &e->groups[19]);
 				replace_group(e, &e->groups[20], &e->groups[3]);
 				add_chunks_n(e->groups[19].pos, e->y, 10);
-				func_80114814(e, submesh_info_zomb, 3);
+				pose_group(e, submesh_info_zomb, 3);
 				attach_effect(e, attach_spray(zomb_spray_body, zomb_spray_body_dir, &e->groups[3]));
 				break;
 			case 3:
@@ -270,9 +270,9 @@ void func_800f7c5c(game_object_t *obj, player_stats_t *p, float damage, enemy_t 
 
 /* 0x800f7f00: the die callback: blood, a hit mark and chunks; a zombie carrying its victim
    (state 0x2000) lets go; at violence 3 the shot takes off the part it hit (an arm, the head
-   in up to three shots, the hands), the damage (func_800f7c5c), then unless it is dying a hurt
+   in up to three shots, the hands), the damage, then unless it is dying a hurt
    cry and a hit reaction chosen by the part */
-int func_800f7f00(game_object_t *obj, player_stats_t *p)
+int zombie_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	enemy_t	*held;
@@ -300,7 +300,7 @@ int func_800f7f00(game_object_t *obj, player_stats_t *p)
 		held = HELD(e);
 		if(held)
 		{
-			func_80105cb4(held, 0x400);
+			inng_setup(held, 0x400);
 			e->unkdc = 0;
 			held->unkd8 = 0;
 			e->ai_state = 0x101;
@@ -380,7 +380,7 @@ int func_800f7f00(game_object_t *obj, player_stats_t *p)
 				{
 					detach_group(&e->groups[17], e->groups[17].pos, e->y, e->scale);
 				}
-				func_80114814(e, submesh_info_zomb, 18);
+				pose_group(e, submesh_info_zomb, 18);
 				attach_effect(e, attach_spray(zomb_spray_neck, zomb_spray_neck_dir, &e->groups[18]));
 				func_800f7abc(obj, p, e);
 				break;
@@ -428,7 +428,7 @@ int func_800f7f00(game_object_t *obj, player_stats_t *p)
 	}
 	if(!(e->ai_state & 0x400))
 	{
-		func_800f7c5c(obj, p, shot_damage_of(p), e);
+		zombie_damage(obj, p, shot_damage_of(p), e);
 	}
 react:
 	cur = e->ai_state;
@@ -553,7 +553,7 @@ void load_zomb(void)
 	submesh_info_zomb[2].anim = submesh_info_zomb[19].anim;
 }
 
-void func_800f8798(void)
+void remove_zombie_assets(void)
 {
 	submesh_info_zomb[5].anim = 0;
 	submesh_info_zomb[4].anim = 0;
@@ -566,12 +566,12 @@ void func_800f8798(void)
 	remove_model((void **)&zomb_verts, 0x29c, (void **)&zomb_faces, 0x478, (void **)&zomb_normals, 0x2eb, "ZOMB.ZM");
 }
 
-void	func_800f8c24(game_object_t *);
+void	zombie_remove(game_object_t *);
 
 /* 0x800f8860: the init callback: a random start frame, its goal 10 in front of the player, the
    stumps hidden, half the zombies without group 16's 0x1000000 bit, the body as the hit
    group, its first state; with D_801e5cd4 set one of five held objects on group 16 */
-int func_800f8860(game_object_t *obj)
+int zombie_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	short	*p;
@@ -584,9 +584,9 @@ int func_800f8860(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_800f7a00;
-	obj->die = func_800f7f00;
-	obj->remove = func_800f8c24;
+	obj->hit = zombie_hit;
+	obj->die = zombie_die;
+	obj->remove = zombie_remove;
 	e = (enemy_t *)p;
 	e->counter = 0;
 	e->unk4 = 0x14;
@@ -631,7 +631,7 @@ int func_800f8860(game_object_t *obj)
 	clear_enemy_fields(e);
 	e->prio_base = 0x40;
 	e->prio_flags = next_cue_priority();
-	func_800f96a8(e, 0);
+	zombie_setup(e, 0);
 	if(D_801e5cd4)
 	{
 		g = &e->groups[16];
@@ -658,7 +658,7 @@ int func_800f8860(game_object_t *obj)
 }
 
 /* 0x800f8c24: the remove callback */
-void func_800f8c24(game_object_t *obj)
+void zombie_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -678,7 +678,7 @@ void func_800f8c24(game_object_t *obj)
    the frame of the blow), the throw (state 0x110 throws the object in group 12 at frame
    1141), carrying the victim (0x1000, 0x2000), the hit reactions blending back, the deaths, and
    the body coming apart (0x403, gone after 30 frames) */
-void func_800f8c84(game_object_t *obj)
+void zombie_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	enemy_t	*held;
@@ -700,7 +700,7 @@ void func_800f8c84(game_object_t *obj)
 	case 0x10d:
 		if(++e->frame >= 0x511)
 		{
-			func_800fa004(e);
+			zombie_next_action(e);
 		}
 		break;
 	case 0x10c:
@@ -710,8 +710,8 @@ void func_800f8c84(game_object_t *obj)
 		}
 		break;
 	case 0x140:
-		func_800fcd70(e, e->goal, 0.2f);
-		func_800fd0a8(e, 0.4f);
+		face_point(e, e->goal, 0.2f);
+		step_straight_to_goal(e, 0.4f);
 		if(++e->frame >= 0x7a)
 		{
 			e->frame = 0;
@@ -731,7 +731,7 @@ void func_800f8c84(game_object_t *obj)
 		}
 		if(e->frame >= 0x497)
 		{
-			func_800fa004(e);
+			zombie_next_action(e);
 		}
 		break;
 	case 0x1001:
@@ -746,7 +746,7 @@ void func_800f8c84(game_object_t *obj)
 	case 0x108:
 		if(++e->frame >= 0x2f9)
 		{
-			func_800fa1c4(e);
+			zombie_walk(e);
 		}
 		break;
 	case 0x1000:
@@ -759,7 +759,7 @@ void func_800f8c84(game_object_t *obj)
 			}
 			else if(e->frame == 0x30e)
 			{
-				func_801068c8(held, 0x100);
+				vict_setup(held, 0x100);
 				held->x = held->hit_group->pos[0];
 				held->y = held->hit_group->pos[1];
 				held->z = held->hit_group->pos[2];
@@ -769,7 +769,7 @@ void func_800f8c84(game_object_t *obj)
 		}
 		if(e->frame >= 0x329)
 		{
-			func_800fa004(e);
+			zombie_next_action(e);
 		}
 		break;
 	case 0x2000:
@@ -804,11 +804,11 @@ void func_800f8c84(game_object_t *obj)
 		{
 			if(e->unk6)
 			{
-				func_800fa004(e);
+				zombie_next_action(e);
 			}
 			else
 			{
-				func_800fa1c4(e);
+				zombie_walk(e);
 			}
 		}
 		break;
@@ -831,19 +831,19 @@ void func_800f8c84(game_object_t *obj)
 		}
 		if(++e->frame >= 0x1bf)
 		{
-			func_800fa1c4(e);
+			zombie_walk(e);
 		}
 		break;
 	case 0x103:
 		if(++e->frame >= 0x124)
 		{
-			func_800fa1c4(e);
+			zombie_walk(e);
 		}
 		break;
 	case 0x107:
 		if(++e->frame >= 0x124)
 		{
-			func_800fa004(e);
+			zombie_next_action(e);
 		}
 		break;
 	case 0x104:
@@ -851,7 +851,7 @@ void func_800f8c84(game_object_t *obj)
 		func_800fa5b4(e);
 		if(++e->frame >= 0x5c5)
 		{
-			func_800fa1c4(e);
+			zombie_walk(e);
 		}
 		break;
 	case 0x800:
@@ -872,7 +872,7 @@ void func_800f8c84(game_object_t *obj)
 		}
 		if(++e->frame >= 0x96)
 		{
-			func_800fa1c4(e);
+			zombie_walk(e);
 		}
 		break;
 	case 0x801:
@@ -883,7 +883,7 @@ void func_800f8c84(game_object_t *obj)
 		}
 		if(++e->frame >= 0xaf)
 		{
-			func_800fa1c4(e);
+			zombie_walk(e);
 		}
 		break;
 	case 0x109:
@@ -891,7 +891,7 @@ void func_800f8c84(game_object_t *obj)
 		{
 			if(e->unk6)
 			{
-				func_800fa004(e);
+				zombie_next_action(e);
 			}
 			else
 			{
@@ -902,13 +902,13 @@ void func_800f8c84(game_object_t *obj)
 	case 0x10a:
 		if(++e->frame >= 0x1a1)
 		{
-			func_800fa1c4(e);
+			zombie_walk(e);
 		}
 		break;
 	case 0x111:
 		if(++e->frame >= 0x2a7)
 		{
-			func_800fa1c4(e);
+			zombie_walk(e);
 		}
 		break;
 	case 0x101:
@@ -917,7 +917,7 @@ void func_800f8c84(game_object_t *obj)
 			e->frame = 0;
 		}
 		face_camera(e, 0.2f);
-		func_800fa1c4(e);
+		zombie_walk(e);
 		break;
 	case 0x201:
 		if((e->frame += 2) >= 0x14e)
@@ -1012,7 +1012,7 @@ void func_800f8c84(game_object_t *obj)
    groups (0x107); the path (0x180, 0x181); the body coming apart (0x403: blood, chunks, every
    group flung loose, 30 frames to go); walking in with a victim (0x1000 the hanging
    innocent 0x2012, 0x2000 the carried one 0x2011, placed at the zombie) */
-void func_800f96a8(enemy_t *e, unsigned short state)
+void zombie_setup(enemy_t *e, unsigned short state)
 {
 	game_object_t *o;
 	short	id;
@@ -1042,7 +1042,7 @@ void func_800f96a8(enemy_t *e, unsigned short state)
 		break;
 	case 0x101:
 		e->frame = randrng(0x78);
-		func_800fa490(e);
+		zombie_pick_held_object(e);
 		break;
 	case 0x105:
 		e->frame = randrng(0x57) + 0x27b;
@@ -1061,30 +1061,30 @@ void func_800f96a8(enemy_t *e, unsigned short state)
 		break;
 	case 0x102:
 		e->frame = 0x1a1;
-		func_800fa490(e);
+		zombie_pick_held_object(e);
 		break;
 	case 0x103:
 		e->frame = 0xaf;
 		break;
 	case 0x2000:
 		e->frame = 0x329;
-		id = add_object1_wrapper(0x2011, func_80105388, func_801058bc, func_80105a78);
+		id = add_object1_wrapper(0x2011, inng_draw, inng_init, inng_think);
 		if(id)
 		{
 			add_die_like(id, e->id);
 			e->unkdc = (int)get_object_data(id);
-			func_80105cb4(HELD(e), 0x2000);
+			inng_setup(HELD(e), 0x2000);
 			goto place;
 		}
 		break;
 	case 0x1000:
 		e->frame = 0x2f9;
-		id = add_object1_wrapper(0x2012, func_80105e38, func_80106584, func_8010674c);
+		id = add_object1_wrapper(0x2012, vict_draw, vict_init, vict_think);
 		if(id)
 		{
 			add_die_like(id, e->id);
 			e->unkdc = (int)get_object_data(id);
-			func_801068c8(HELD(e), 1);
+			vict_setup(HELD(e), 1);
 		place:
 			HELD(e)->x = e->x;
 			HELD(e)->y = e->y;
@@ -1118,7 +1118,7 @@ void func_800f96a8(enemy_t *e, unsigned short state)
 		add_chunks_n(e->groups[19].pos, e->y, 10);
 		for(i = 0; i < 0x15; i++)
 		{
-			func_800e059c(&e->groups[i], submesh_info_zomb[i].pivot, e->groups[i].pos, e->y, e->scale);
+			fling_group(&e->groups[i], submesh_info_zomb[i].pivot, e->groups[i].pos, e->y, e->scale);
 		}
 		e->counter = 0x1e;
 		mark_die(e->id, e->killer);
@@ -1158,7 +1158,7 @@ void func_800f9e8c(enemy_t *e)
 	if(!(e->groups[4].flags & GROUP_VISIBLE))
 	{
 		replace_group(e, &e->groups[1], &e->groups[4]);
-		func_80114814(e, submesh_info_zomb, 4);
+		pose_group(e, submesh_info_zomb, 4);
 		attach_effect(e, attach_spray(zomb_spray_arm4, zomb_spray_arm4_dir, &e->groups[4]));
 		detach_group(&e->groups[12], e->groups[0].pos, e->y, e->scale);
 		detach_group(&e->groups[0], e->groups[0].pos, e->y, e->scale);
@@ -1171,7 +1171,7 @@ void func_800f9f40(enemy_t *e)
 	if(!(e->groups[5].flags & GROUP_VISIBLE))
 	{
 		replace_group(e, &e->groups[15], &e->groups[5]);
-		func_80114814(e, submesh_info_zomb, 5);
+		pose_group(e, submesh_info_zomb, 5);
 		attach_effect(e, attach_spray(zomb_spray_arm5, zomb_spray_arm5_dir, &e->groups[5]));
 		detach_group(&e->groups[13], e->groups[14].pivot, e->y, e->scale);
 		detach_group(&e->groups[14], e->groups[14].pivot, e->y, e->scale);
@@ -1187,7 +1187,7 @@ void func_800f9ff8(int unused, enemy_t *e)
 /* 0x800fa004: at the end of a walk or an action the spawn entry's next state (enemy_t.unk6):
    walk again, kneel (0x10e), throw (0x110), turn and walk 500 away (0x140, the goal behind it),
    follow the path (0x180); anything else stands up into the idle (0x109) */
-void func_800fa004(enemy_t *e)
+void zombie_next_action(enemy_t *e)
 {
 	float	v[3];
 	float	m[9];
@@ -1206,15 +1206,15 @@ void func_800fa004(enemy_t *e)
 		e->ai_state = 0x101;
 		break;
 	case 0x110:
-		func_800f96a8(e, 0x110);
+		zombie_setup(e, 0x110);
 		e->unk6 = 0;
 		return;
 	case 0x180:
-		func_800f96a8(e, 0x180);
+		zombie_setup(e, 0x180);
 		e->unk6 = 0;
 		return;
 	case 0x140:
-		func_800f96a8(e, 0x140);
+		zombie_setup(e, 0x140);
 		e->frame = 0;
 		v[0] = 0.0f;
 		v[1] = 0.0f;
@@ -1242,7 +1242,7 @@ void func_800fa004(enemy_t *e)
    of the view; standing there it idles (0x101); still walking (0x10a); within reach a claw
    (0x800, or a bite 0x801 one time in ten or when both arms are gone), or after one of those the
    recovery (0x111) */
-void func_800fa1c4(enemy_t *e)
+void zombie_walk(enemy_t *e)
 {
 	player_stats_t *p;
 	int	r;
@@ -1332,7 +1332,7 @@ void func_800fa1c4(enemy_t *e)
 }
 
 /* 0x800fa490: the walk's held object: one time in ten each, group 12 or 13 gets kind 0 or 1 */
-void func_800fa490(enemy_t *e)
+void zombie_pick_held_object(enemy_t *e)
 {
 	int	r;
 
@@ -1386,14 +1386,14 @@ void func_800fa5b4(enemy_t *e)
 
 /* 0x800fa6a4: let go of the victim (the hanging innocent, 0x2012): it falls from where its
    hit group is */
-void func_800fa6a4(enemy_t *e)
+void zombie_release_victim(enemy_t *e)
 {
 	enemy_t	*held;
 
 	held = HELD(e);
 	if(held && (unsigned short)held->unk1a == 0x2012)
 	{
-		func_801068c8(held, 0x100);
+		vict_setup(held, 0x100);
 		held->x = held->hit_group->pos[0];
 		held->y = held->hit_group->pos[1];
 		held->z = held->hit_group->pos[2];

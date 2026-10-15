@@ -42,7 +42,7 @@ extern int	shot_hits_sphere(float *, float, player_stats_t *);
 extern int	find_submesh_hit(enemy_t *, submesh_t *, int, player_stats_t *);
 extern void	hurt_player(player_stats_t *, int, int, float);
 extern void	show_pickup_message(player_stats_t *, int);			/* player.c's file: a penalty notice */
-extern void	func_800fa1c4(enemy_t *);				/* zombie.c: the holder lets go */
+extern void	zombie_walk(enemy_t *);				/* zombie.c: the holder lets go */
 extern void	add_world_sprite(float *, int, int);
 extern int	randrng(int);
 extern int	remove_die();						/* spawn.c */
@@ -84,14 +84,14 @@ int	finn_cries[3] = { 4, 5, 6 };	/* 0x801994d0: "girl" bank calls */
 #define ALPHA_STEP(e)	(*(float *)&(e)->unk44)	/* 0x44: the fade's step per frame */
 #define HOLDER(e)	((enemy_t *)(e)->unkd8)	/* 0xd8: the enemy holding her */
 
-int	func_801224e8(game_object_t *, player_stats_t *);
-int	func_801225ac(game_object_t *, player_stats_t *);
-void	func_80122974(game_object_t *);
-void	func_80122ca8(enemy_t *, unsigned short);
+int	finn_hit(game_object_t *, player_stats_t *);
+int	finn_die(game_object_t *, player_stats_t *);
+void	finn_remove(game_object_t *);
+void	finn_setup(enemy_t *, unsigned short);
 
-/* 0x801222d0: the draw callback (finn_draw); in debug mode 2 she also takes the debug aim's
+/* 0x801222d0: the draw callback; in debug mode 2 she also takes the debug aim's
    shots. The debug label is red for the debug enemy, else white */
-void func_801222d0(game_object_t *obj)
+void finn_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -114,7 +114,7 @@ void func_801222d0(game_object_t *obj)
 	{
 		screen_to_ray(player_stats[0].aim_dir, D_801faca4, D_801facb4);
 		player_stats[0].aim_dir[2] = 1.0f / player_stats[0].aim_dir[2];
-		func_801224e8(obj, &player_stats[0]);
+		finn_hit(obj, &player_stats[0]);
 	}
 	if(debug_mode & 0x100)
 	{
@@ -135,8 +135,8 @@ void func_801222d0(game_object_t *obj)
 	}
 }
 
-/* 0x801224e8: the hit test (finn_hit): the bounding sphere, then the submesh */
-int func_801224e8(game_object_t *obj, player_stats_t *p)
+/* 0x801224e8: the hit test: the bounding sphere, then the submesh */
+int finn_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -149,7 +149,7 @@ int func_801224e8(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_801225ac;
+			p->die = (void *)finn_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -163,10 +163,10 @@ void func_801225a4(void)
 {
 }
 
-/* 0x801225ac: she was shot (finn_die): the player loses 350 health and gets the penalty
+/* 0x801225ac: she was shot: the player loses 350 health and gets the penalty
    notice, a hit mark appears on her if she is on screen, she fades out, whoever held her lets
    go and she cries out. In the character debug mode the shot only selects her */
-int func_801225ac(game_object_t *obj, player_stats_t *p)
+int finn_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e, *holder;
 	float	scr[4];
@@ -185,13 +185,13 @@ int func_801225ac(game_object_t *obj, player_stats_t *p)
 		{
 			add_world_sprite(e->groups[2].pivot, 7, 0);
 		}
-		func_80122ca8(e, FINN_SHOT);
+		finn_setup(e, FINN_SHOT);
 		holder = HOLDER(e);
 		if(holder)
 		{
 			holder->unkdc = 0;
 			e->unkd8 = 0;
-			func_800fa1c4(holder);
+			zombie_walk(holder);
 		}
 		play_enemy_sound(e, finn_cries[randrng(3)], "girl", 2);
 	}
@@ -199,7 +199,7 @@ int func_801225ac(game_object_t *obj, player_stats_t *p)
 }
 
 /* 0x801226b8: her texmaps (nothing calls it) */
-void func_801226b8(void)
+void load_finn_texmap(void)
 {
 	load_texmap(finn_texmap, 0x17, "finn");
 }
@@ -213,16 +213,16 @@ void load_finn(void)
 }
 
 /* 0x80122790: the assets go when the level is unloaded (sic: the game's name) */
-void remove_finn_assts(void)
+void remove_finn_assets(void)
 {
 	remove_path((void **)&finn_path, FINN_PATH_LEN, "finn.pth");
 	remove_animation(finn_submesh, FINN_GROUPS, FINN_FRAMES, "finn.za");
 	remove_model((void **)&finn_verts, FINN_NVERTS, (void **)&finn_faces, FINN_NFACES, (void **)&finn_normals, FINN_NNORMALS, "FINN.ZM");
 }
 
-/* 0x80122818: the init callback (finn_init): the record (scale 1, hit radius as scaled,
+/* 0x80122818: the init callback: the record (scale 1, hit radius as scaled,
    0.75 health), seventeen groups, the hit group the chest */
-int func_80122818(game_object_t *obj)
+int finn_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -235,9 +235,9 @@ int func_80122818(game_object_t *obj)
 	{
 		return 1;
 	}
-	obj->hit = func_801224e8;
-	obj->die = func_801225ac;
-	obj->remove = func_80122974;
+	obj->hit = finn_hit;
+	obj->die = finn_die;
+	obj->remove = finn_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -271,12 +271,12 @@ int func_80122818(game_object_t *obj)
 	clear_enemy_fields(e);
 	e->prio_base = 0x38;
 	e->prio_flags = next_cue_priority();
-	func_80122ca8(e, FINN_IDLE);
+	finn_setup(e, FINN_IDLE);
 	return 0;
 }
 
-/* 0x80122974: the remove callback (finn_remove) */
-void func_80122974(game_object_t *obj)
+/* 0x80122974: the remove callback */
+void finn_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -291,9 +291,9 @@ void func_80122974(game_object_t *obj)
 	free(e);
 }
 
-/* 0x801229d4: the think callback (finn_think): step the animation for her state; the path
+/* 0x801229d4: the think callback: step the animation for her state; the path
    states move her one point a frame; the fade ends with her removal once transparent */
-void func_801229d4(game_object_t *obj)
+void finn_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	int	i;
@@ -377,10 +377,10 @@ void func_801229d4(game_object_t *obj)
 	remove_die(obj->id, 0);
 }
 
-/* 0x80122ca8: put her in a state (finn_setup): the voiced states call out; the path states put
+/* 0x80122ca8: put her in a state: the voiced states call out; the path states put
    her on her first point; the fade starts opaque and loses 10 a frame with every group alpha
    blended */
-void func_80122ca8(enemy_t *e, unsigned short state)
+void finn_setup(enemy_t *e, unsigned short state)
 {
 	int	i;
 

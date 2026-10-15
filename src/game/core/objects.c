@@ -1081,7 +1081,7 @@ player_stats_t *attack_target(enemy_t *e)
 
 /* 0x800cde74: move the enemy by (dx, dy, dz) with no collision test; always 1 (the free
    counterpart of move_cd, used by the steps toward a goal near the camera) */
-int func_800cde74(enemy_t *e, float dx, float dy, float dz)
+int move_free(enemy_t *e, float dx, float dy, float dz)
 {
 	e->x = e->x + dx;
 	e->y = e->y + dy;

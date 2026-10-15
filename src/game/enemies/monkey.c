@@ -7,7 +7,7 @@
  *
  * It runs its path (0x801, 0x802, 0x904; 0xa03 runs it once and swipes at the end), stands and
  * plays (0, 6, 7, 5: 5 counts 21 loops before the path's end is handled), or hunts the player
- * on foot (1 walk, 3 crouch, 0x201 swipe; steered by func_8011b124): the swipes hurt the player
+ * on foot (1 walk, 3 crouch, 0x201 swipe; steered by monkey_steer): the swipes hurt the player
  * for 130 when the hand (part 1) or body (part 9) is within 15 units on the frame they land.
  * One shot at 1.5 health kills it (300 points, a cry; 30 for a hit that does not).
  */
@@ -77,14 +77,14 @@ void	*monk_path;			/* 0x802373dc */
 #define MONK_SWIPE	130		/* the damage of a swipe */
 #define MONK_REACH	15.0f
 
-int	func_8011a428(game_object_t *, player_stats_t *);
-void	func_8011a878(game_object_t *);
-void	func_8011af54(enemy_t *, unsigned short);
-void	func_8011b124(enemy_t *);
-void	func_8011b2dc(enemy_t *);
+int	monkey_die(game_object_t *, player_stats_t *);
+void	monkey_remove(game_object_t *);
+void	monkey_setup(enemy_t *, unsigned short);
+void	monkey_steer(enemy_t *);
+void	monkey_end_path(enemy_t *);
 
 /* 0x8011a170: the draw callback */
-void func_8011a170(game_object_t *obj)
+void monkey_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -128,7 +128,7 @@ void func_8011a170(game_object_t *obj)
 }
 
 /* 0x8011a36c: the hit test: the bounding sphere, then the submesh */
-int func_8011a36c(game_object_t *obj, player_stats_t *p)
+int monkey_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -142,7 +142,7 @@ int func_8011a36c(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_8011a428;
+			p->die = (void *)monkey_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -153,7 +153,7 @@ int func_8011a36c(game_object_t *obj, player_stats_t *p)
 
 /* 0x8011a428: the shot lands: blood and chunks; it dies at once (300 points and a cry, a
    crouching monkey drops 13 to the floor), else 30 points */
-int func_8011a428(game_object_t *obj, player_stats_t *p)
+int monkey_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 
@@ -215,7 +215,7 @@ void remove_monk_asets(void)
 }
 
 /* 0x8011a6f8: the init callback: the record, scale 0.5, health 1.5, the 32 groups */
-int func_8011a6f8(game_object_t *obj)
+int monkey_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	void	*data;
@@ -228,9 +228,9 @@ int func_8011a6f8(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_8011a36c;
-	obj->die = func_8011a428;
-	obj->remove = func_8011a878;
+	obj->hit = monkey_hit;
+	obj->die = monkey_die;
+	obj->remove = monkey_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -270,12 +270,12 @@ int func_8011a6f8(game_object_t *obj)
 	e->unke4 = 0;
 	e->prio_base = 0x40;
 	e->prio_flags = next_cue_priority();
-	func_8011af54(e, 0);
+	monkey_setup(e, 0);
 	return(0);
 }
 
 /* 0x8011a878: the remove callback */
-void func_8011a878(game_object_t *obj)
+void monkey_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -291,7 +291,7 @@ void func_8011a878(game_object_t *obj)
 
 /* 0x8011a8d0: the think callback: the animation of each state; the runs follow the path, the
    swipes land on their frame when the hand or body is within reach */
-void func_8011a8d0(game_object_t *obj)
+void monkey_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -320,12 +320,12 @@ void func_8011a8d0(game_object_t *obj)
 			e->frame = 0;
 		}
 		face_camera(e, 0.2f);
-		func_8011b124(e);
+		monkey_steer(e);
 		break;
 	case 3:
 		if(++e->frame >= 0x44)
 		{
-			func_8011b124(e);
+			monkey_steer(e);
 		}
 		break;
 	case 4:
@@ -345,7 +345,7 @@ void func_8011a8d0(game_object_t *obj)
 		}
 		if(++e->counter >= 0x15)
 		{
-			func_8011b2dc(e);
+			monkey_end_path(e);
 		}
 		break;
 	case 6:
@@ -368,7 +368,7 @@ void func_8011a8d0(game_object_t *obj)
 		path_place(e, monk_path, e->path, 1.0f);
 		if(++e->path >= e->unk92)
 		{
-			func_8011b2dc(e);
+			monkey_end_path(e);
 		}
 		break;
 	case 0x802:
@@ -379,7 +379,7 @@ void func_8011a8d0(game_object_t *obj)
 		path_place(e, monk_path, e->path, 1.0f);
 		if(++e->path >= e->unk92)
 		{
-			func_8011b2dc(e);
+			monkey_end_path(e);
 		}
 		break;
 	case 0xa03:
@@ -405,7 +405,7 @@ void func_8011a8d0(game_object_t *obj)
 		path_place(e, monk_path, e->path, 1.0f);
 		if(++e->path >= e->unk92)
 		{
-			func_8011b2dc(e);
+			monkey_end_path(e);
 		}
 		break;
 	case 0x201:
@@ -419,7 +419,7 @@ void func_8011a8d0(game_object_t *obj)
 		}
 		if(e->frame >= 0x23)
 		{
-			func_8011b124(e);
+			monkey_steer(e);
 		}
 		break;
 	case 0x206:
@@ -501,7 +501,7 @@ void func_8011a8d0(game_object_t *obj)
 
 /* 0x8011af54: the spawn table's state and its first frame; the path states start where the
    entry says */
-void func_8011af54(enemy_t *e, unsigned short state)
+void monkey_setup(enemy_t *e, unsigned short state)
 {
 	e->ai_state = state;
 	switch(state)
@@ -562,7 +562,7 @@ void func_8011af54(enemy_t *e, unsigned short state)
 
 /* 0x8011b124: hunting on foot: steer at a point beside the player; at it, crouch (3); in reach,
    swipe (0x201); else walk (1) */
-void func_8011b124(enemy_t *e)
+void monkey_steer(enemy_t *e)
 {
 	player_stats_t	*p;
 	int	r;
@@ -622,7 +622,7 @@ void func_8011b124(enemy_t *e)
 
 /* 0x8011b2dc: the path ran out: the spawn entry (unk6) says what follows: a stand (4, 7, 0x302,
    0x206), another run (0x801, 0xa03), removal (8); anything else hunts */
-void func_8011b2dc(enemy_t *e)
+void monkey_end_path(enemy_t *e)
 {
 	switch((unsigned short)e->unk6)
 	{
@@ -667,7 +667,7 @@ void func_8011b2dc(enemy_t *e)
 		break;
 	default:
 		e->unk6 = 0;
-		func_8011b124(e);
+		monkey_steer(e);
 		break;
 	}
 }

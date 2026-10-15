@@ -97,7 +97,7 @@ void draw_part_model(part_t *p, submesh_t *sub, float *verts, int nverts, face_t
    sideways each way and spins, opaque, for 25 steps of life, until it falls to floor; drawn
    alpha-blended (0x80). The zombie's body comes apart with it (state 0x403). The last argument
    is not used */
-void func_800e059c(group_t *g, float *from, float *to, float floor, float *unused)
+void fling_group(group_t *g, float *from, float *to, float floor, float *unused)
 {
 	if(!(g->flags & 0x4000))
 	{
@@ -281,7 +281,7 @@ void animate_loose_groups(enemy_t *e, int n)
    enemy's position plus its frame offset, its pivot carried along; any other group is reset to
    the origin with an unrotated matrix. The Haunted House's hand, bat, ghoul and Mari call it from
    their inits so their first hit test sees the pose */
-void func_8011464c(enemy_t *e, submesh_t *sub, int nsub)
+void pose_groups(enemy_t *e, submesh_t *sub, int nsub)
 {
 	float	m[9];
 	float	r[9];
@@ -320,7 +320,7 @@ void func_8011464c(enemy_t *e, submesh_t *sub, int nsub)
 }
 
 /* 0x80114814: the same for one group n (a part put back at its frame pose) */
-void func_80114814(enemy_t *e, submesh_t *sub, int n)
+void pose_group(enemy_t *e, submesh_t *sub, int n)
 {
 	float	m[9];
 	float	r[9];

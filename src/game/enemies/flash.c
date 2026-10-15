@@ -1,7 +1,7 @@
 /*
  * flash.c - the flash Mari throws in the Haunted House (0x80114df0-0x8011539c; the word at
  * 0x8011539c is padding before the next file). While her throw animation runs her draw
- * (something_mari_anim) calls func_80114df0, which glows a FLASH sprite between her hands
+ * calls mari_throw_flash, which glows a FLASH sprite between her hands
  * (groups 7 and 13) and at frame 0x139 plays her "chastity" sound 0x1b and launches the
  * flash: an object (type 0x905) that flies at the camera and hurts every playing player when
  * it arrives, or, shot, drops, bounces and fades. Also the FLASH texmap loaders.
@@ -19,7 +19,7 @@ extern player_stats_t *get_target_player(void);			/* objects.c */
 extern int	shot_hits_sphere(float *, float, player_stats_t *);	/* objects.c */
 extern void	hurt_player(player_stats_t *, int, int, float);		/* player.c */
 extern void	draw_point_sprite_over(int key, float *pos, float size, float alpha, unsigned int color);	/* draw2d.c */
-extern int	func_800fbaac(enemy_t *, float, float, float, float);	/* enemy.c: steer at a point by the camera, 2 on arrival */
+extern int	charge_camera(enemy_t *, float, float, float, float);	/* enemy.c: steer at a point by the camera, 2 on arrival */
 
 #define FLASH_TEX	0x2e00		/* FLASH01-04.WMS (flash_texmap) */
 #define FLASH_OBJECT	0x905		/* its game object type */
@@ -44,11 +44,11 @@ texmap_t	flash_texmap[4] =		/* 0x80194658 */
 	{ 0x2e03, 1, 0xffffff, 0, "FLASH04.WMS" },
 };
 
-void	func_80114f1c(float *pos, int frame);
+void	launch_flash(float *pos, int frame);
 
 /* 0x80114df0: Mari's throw, from her draw: the flash grows between her hands with the counter
    (the sprite frame is counter * 4 % 4, so always the first) and leaves them at frame 0x139 */
-void func_80114df0(enemy_t *e)
+void mari_throw_flash(enemy_t *e)
 {
 	group_t	*g;
 	float	pos[3];
@@ -67,7 +67,7 @@ void func_80114df0(enemy_t *e)
 		if(e->frame == 0x139)
 		{
 			play_enemy_sound(e, 0x1b, "chastity", 4);
-			func_80114f1c(pos, frame);
+			launch_flash(pos, frame);
 		}
 		else
 		{
@@ -81,7 +81,7 @@ void func_80114df0(enemy_t *e)
 }
 
 /* 0x80114f1c: launch a flash from pos at the target player, for 120 frames */
-void func_80114f1c(float *pos, int frame)
+void launch_flash(float *pos, int frame)
 {
 	enemy_t	*e;
 	short	id;
@@ -197,7 +197,7 @@ static void flash_think(game_object_t *o)
 		{
 			e->frame = 0;
 		}
-		if(func_800fbaac(e, 0.0f, 2.5f, 0.0f, 3.0f) == 2)
+		if(charge_camera(e, 0.0f, 2.5f, 0.0f, 3.0f) == 2)
 		{
 			remove_game_object(o->id);
 			if(player_stats[0].state == PLAYER_PLAYING)
@@ -236,7 +236,7 @@ void load_flash_texmap(void)
 }
 
 /* 0x8011536c: nothing to load */
-void func_8011536c(void)
+void load_flash(void)
 {
 }
 

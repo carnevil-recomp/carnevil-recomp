@@ -113,14 +113,14 @@ void	*rodz_path;			/* 0x80237410 */
 #define RODZ_DIE	0x2001		/* falls, 0xde-0xf7 */
 #define RODZ_GONE	0x4000
 
-int	func_8011e048(game_object_t *, player_stats_t *);
-void	func_8011e838(game_object_t *);
-void	func_8011f070(enemy_t *, int);
-void	func_8011f1dc(enemy_t *);
-void	func_8011f410(enemy_t *);
+int	rodz_die(game_object_t *, player_stats_t *);
+void	rodz_remove(game_object_t *);
+void	rodz_setup(enemy_t *, int);
+void	rodz_approach(enemy_t *);
+void	rodz_end_run(enemy_t *);
 
 /* 0x8011dd80: the draw callback */
-void func_8011dd80(game_object_t *obj)
+void rodz_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -166,7 +166,7 @@ void func_8011dd80(game_object_t *obj)
 }
 
 /* 0x8011df8c: the hit test: the bounding sphere, then the submesh */
-int func_8011df8c(game_object_t *obj, player_stats_t *p)
+int rodz_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -180,7 +180,7 @@ int func_8011df8c(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_8011e048;
+			p->die = (void *)rodz_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -193,7 +193,7 @@ int func_8011df8c(game_object_t *obj, player_stats_t *p)
    violence parts 3, 4, 15, 16, 18 and 19 are swapped for their damaged versions and the rest
    turn gory; then a hurt cue and the damage (death 500 points, else 50) and a hit reaction by
    part */
-int func_8011e048(game_object_t *obj, player_stats_t *p)
+int rodz_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -370,7 +370,7 @@ void remove_rodz_assets(void)
 
 /* 0x8011e674: the init callback: 7.5 health at 0.9 scale, 23 units to the left, the six spare
    parts (0, 7, 10, 14, 20, 21) hidden */
-int func_8011e674(game_object_t *obj)
+int rodz_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -383,9 +383,9 @@ int func_8011e674(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_8011df8c;
-	obj->die = func_8011e048;
-	obj->remove = func_8011e838;
+	obj->hit = rodz_hit;
+	obj->die = rodz_die;
+	obj->remove = rodz_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -432,12 +432,12 @@ int func_8011e674(game_object_t *obj)
 	e->unke4 = 0;
 	e->prio_base = 0x40;
 	e->prio_flags = next_cue_priority();
-	func_8011f070(e, 0);
+	rodz_setup(e, 0);
 	return(0);
 }
 
 /* 0x8011e838: the remove callback */
-void func_8011e838(game_object_t *obj)
+void rodz_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -465,7 +465,7 @@ void func_8011e838(game_object_t *obj)
 	break;
 
 /* 0x8011e890: the think callback */
-void func_8011e890(game_object_t *obj)
+void rodz_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	short	frame;
@@ -503,7 +503,7 @@ void func_8011e890(game_object_t *obj)
 			e->frame = 0x32;
 		}
 		face_camera(e, 0.2f);
-		func_8011f1dc(e);
+		rodz_approach(e);
 		break;
 	case RODZ_SWIPE:
 		face_camera(e, 0.2f);
@@ -515,7 +515,7 @@ void func_8011e890(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011f1dc(e);
+		rodz_approach(e);
 		break;
 	case RODZ_COMBO:
 		face_camera(e, 0.2f);
@@ -539,7 +539,7 @@ void func_8011e890(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011f1dc(e);
+		rodz_approach(e);
 		break;
 	case RODZ_COMBO2:
 		face_camera(e, 0.2f);
@@ -555,7 +555,7 @@ void func_8011e890(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011f1dc(e);
+		rodz_approach(e);
 		break;
 	case RODZ_STRIKE:
 		face_camera(e, 0.2f);
@@ -570,7 +570,7 @@ void func_8011e890(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011f1dc(e);
+		rodz_approach(e);
 		break;
 	case RODZ_STAB:
 		face_camera(e, 0.2f);
@@ -582,7 +582,7 @@ void func_8011e890(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011f410(e);
+		rodz_end_run(e);
 		break;
 	case RODZ_APPROACH:
 		if(++e->frame >= 0x32)
@@ -590,7 +590,7 @@ void func_8011e890(game_object_t *obj)
 			e->frame = 0x19;
 		}
 		face_camera(e, 0.2f);
-		func_8011f1dc(e);
+		rodz_approach(e);
 		break;
 	case RODZ_THROW:
 		face_camera(e, 0.2f);
@@ -603,7 +603,7 @@ void func_8011e890(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011f410(e);
+		rodz_end_run(e);
 		break;
 	case RODZ_PATH:
 		if(++e->frame >= 0x82)
@@ -615,7 +615,7 @@ void func_8011e890(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011f410(e);
+		rodz_end_run(e);
 		break;
 	case RODZ_DIE:
 		frame = e->frame;
@@ -651,7 +651,7 @@ void func_8011e890(game_object_t *obj)
 
 /* 0x8011f070: the set-up: the state bit 0x100 (a sword in the right hand) goes into flags2,
    then the state's first frame */
-void func_8011f070(enemy_t *e, int state)
+void rodz_setup(enemy_t *e, int state)
 {
 	e->ai_state = state;
 	if(state & 0x100)
@@ -692,7 +692,7 @@ void func_8011f070(enemy_t *e, int state)
 /* 0x8011f1dc: go for the player: keep a playing target, steer to a point in front of the
    camera and pick the state by how close it got (0 still far: run, 1 there: approach on the
    spot, 2 in reach: a swipe, combo, two-handed combo or strike) */
-void func_8011f1dc(enemy_t *e)
+void rodz_approach(enemy_t *e)
 {
 	player_stats_t	*p;
 	int	r;
@@ -766,7 +766,7 @@ void func_8011f1dc(enemy_t *e)
 
 /* 0x8011f410: at the end of a run, a stab or a throw: the spawn entry's 2 makes it stand,
    0x10 makes it throw its sword first (then stand), else it goes for the player again */
-void func_8011f410(enemy_t *e)
+void rodz_end_run(enemy_t *e)
 {
 	switch((unsigned short)e->unk6)
 	{
@@ -790,7 +790,7 @@ void func_8011f410(enemy_t *e)
 		break;
 	default:
 		e->unk6 = 0;
-		func_8011f1dc(e);
+		rodz_approach(e);
 		break;
 	}
 }

@@ -81,9 +81,9 @@ float	*spider_normals;		/* 0x801e5880 */
 #define SPIDER_DEAD	0x403
 #define SPIDER_DROP	0x2001		/* drops from the ceiling */
 
-int	func_800f4944(game_object_t *, player_stats_t *);
-void	func_800f4dec(game_object_t *);
-void	func_800f5278(enemy_t *, short);
+int	spider_die(game_object_t *, player_stats_t *);
+void	spider_remove(game_object_t *);
+void	spider_setup(enemy_t *, short);
 void	spider_drop_limb1(enemy_t *);
 void	spider_drop_limb2(enemy_t *);
 void	spider_drop_limb4(enemy_t *);
@@ -92,7 +92,7 @@ void	spider_drop_limb7(enemy_t *);
 void	spider_drop_limb8(enemy_t *);
 
 /* 0x800f4618: the draw callback (type 0x2007) */
-void func_800f4618(game_object_t *obj)
+void spider_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -127,7 +127,7 @@ void func_800f4618(game_object_t *obj)
 }
 
 /* 0x800f47b0: the hit test: the bounding sphere, then the submesh */
-int func_800f47b0(game_object_t *obj, player_stats_t *p)
+int spider_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -148,7 +148,7 @@ int func_800f47b0(game_object_t *obj, player_stats_t *p)
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
 			p->hit_group = group;
-			p->die = (void *)func_800f4944;
+			p->die = (void *)spider_die;
 		}
 	}
 	return(0);
@@ -156,7 +156,7 @@ int func_800f47b0(game_object_t *obj, player_stats_t *p)
 
 /* 0x800f4880: a given damage (nothing in the image calls it): once the health runs out, a
    cry, 1000 points and one of the two deaths, else 50 points */
-void func_800f4880(void *unused, player_stats_t *p, float damage, enemy_t *e)
+void spider_damage(void *unused, player_stats_t *p, float damage, enemy_t *e)
 {
 	if(!(e->ai_state & 0x400))
 	{
@@ -187,7 +187,7 @@ void func_800f4880(void *unused, player_stats_t *p, float damage, enemy_t *e)
 /* 0x800f4944: the die callback: at the top violence level the limb hit comes off (or a
    part it cannot lose is marked); the damage as above; blood, 50 points, a splat and chunks
    whatever happens */
-int func_800f4944(game_object_t *obj, player_stats_t *p)
+int spider_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -282,7 +282,7 @@ void remove_spider_assets(void)
 
 /* 0x800f4c50: the init callback (type 0x2007): the record, 36 groups, 15.6 health (24 with
    two players in), a hiss, a first step */
-int func_800f4c50(game_object_t *obj)
+int spider_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -295,9 +295,9 @@ int func_800f4c50(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_800f47b0;
-	obj->die = func_800f4944;
-	obj->remove = func_800f4dec;
+	obj->hit = spider_hit;
+	obj->die = spider_die;
+	obj->remove = spider_remove;
 	e = (enemy_t *)data;
 	e->counter = 0;
 	e->num = 0;
@@ -338,13 +338,13 @@ int func_800f4c50(game_object_t *obj)
 	g[34].floor = 0.0f;
 	e->prio_base = 0x40;
 	e->prio_flags = next_cue_priority();
-	func_800f5278(e, SPIDER_WALK);
+	spider_setup(e, SPIDER_WALK);
 	play_enemy_sound(e, 0x63, "hhouse1", 8);
 	return(0);
 }
 
 /* 0x800f4dec: the remove callback */
-void func_800f4dec(game_object_t *obj)
+void spider_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -354,7 +354,7 @@ void func_800f4dec(game_object_t *obj)
 }
 
 /* 0x800f4e24: the think callback */
-void func_800f4e24(game_object_t *obj)
+void spider_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -496,7 +496,7 @@ void func_800f5244(enemy_t *e, int state)
 }
 
 /* 0x800f5278: the set-up the spawn table asks for (type 0x2007) */
-void func_800f5278(enemy_t *e, short state)
+void spider_setup(enemy_t *e, short state)
 {
 	e->ai_state = state;
 	switch(state)

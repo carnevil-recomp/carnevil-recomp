@@ -52,19 +52,19 @@ extern void	remove_hhouse_jester_anim(void), remove_rickity_jester_anim(void), r
 extern void	jester_cue_hhouse(void), jester_cue_freakshow(void), jester_cue_rickity(void), jester_cue_bigtop(void);
 extern void	load_ehstd_texmap(void), remove_ehstd_texmap(void), load_hstd_texmap(void), remove_hstd_texmap(void);
 extern void	load_attract_texmap(void), remove_attract_texmap(void), load_gallery_objects(void), remove_gallery_objects(void);
-extern void	remove_flash_texmap(void), remove_hhouse_enemy_weaps(void), remove_bat_assets(void), remove_gool(void), func_80106504(void);
-extern void	func_80106de0(void), func_8010584c(void), func_800f75f8(void), remove_spider_assets(void), func_800f8798(void);
+extern void	remove_flash_texmap(void), remove_hhouse_enemy_weaps(void), remove_bat_assets(void), remove_gool(void), remove_vict_assets(void);
+extern void	remove_spdl_assets(void), remove_inng_assets(void), remove_hand_assets(void), remove_spider_assets(void), remove_zombie_assets(void);
 extern void	remove_mari(void), remove_mike_assets(void), remove_hhouse_texmap(void), load_hhouse_texmap(void);
 extern void	load_mike_texmap(void), load_mari_texmap(void), load_zombie_texmap(void), load_spider_texmap(void), load_hand_texmap(void);
 extern void	load_spdl_texmap(void), load_vict_texmap(void), load_bat_texmap(void), load_hhouse_enemy_weap_texmaps(void);
 extern void	load_gool_texmap(void), load_flash_texmap(void), load_zomb(void), load_mari(void), load_mike(void), load_gool(void);
 extern void	load_spider(void), load_hand(void), load_inng(void), load_spdl(void), load_vict(void), load_bat(void);
-extern void	load_hhouse_enemy_weap_models(void), func_8011536c(void);
+extern void	load_hhouse_enemy_weap_models(void), load_flash(void);
 extern void	remove_freakshow_weaps(void), remove_taur_assets(void), remove_rodz_assets(void), remove_tort_assets(void);
-extern void	remove_junior_texmap(void), remove_grub_assets(void), remove_monk_asets(void), remove_flie_assets(void);
-extern void	remove_tops_assets(void), remove_finn_assts(void), remove_freakshow_texmap(void);
+extern void	remove_junior_assets(void), remove_grub_assets(void), remove_monk_asets(void), remove_flie_assets(void);
+extern void	remove_tops_assets(void), remove_finn_assets(void), remove_freakshow_texmap(void);
 extern void	load_freakshow_texmap(void), load_tops_texmap(void), load_flie_texmap(void), load_monk_texmap(void), load_grub_texmap(void);
-extern void	load_junoir_texmap(void), load_tort_texmap(void), load_rodz_texmap(void), load_taur_texmap(void);
+extern void	load_junior_texmap(void), load_tort_texmap(void), load_rodz_texmap(void), load_taur_texmap(void);
 extern void	load_freakshow_enemy_weap_texmaps(void), load_tops(void), load_tort(void), load_monk(void), load_flie(void);
 extern void	load_junior(void), load_taur(void), load_grub(void), load_finn(void), load_rodz(void), load_freakshow_enemy_weap_models(void);
 extern void	remove_btop_weaps(void), func_8013c2a4(void), remove_litl_assets(void), remove_clown_assets(void), remove_batb_texmap(void);
@@ -367,12 +367,12 @@ void remove_hhouse_assets(void)
 	remove_hhouse_enemy_weaps();
 	remove_bat_assets();
 	remove_gool();
-	func_80106504();
-	func_80106de0();
-	func_8010584c();
-	func_800f75f8();
+	remove_vict_assets();
+	remove_spdl_assets();
+	remove_inng_assets();
+	remove_hand_assets();
 	remove_spider_assets();
-	func_800f8798();
+	remove_zombie_assets();
 	remove_mari();
 	remove_mike_assets();
 	remove_hhouse_texmap();
@@ -404,7 +404,7 @@ void load_hhouse_assets(void)
 	load_vict();
 	load_bat();
 	load_hhouse_enemy_weap_models();
-	func_8011536c();
+	load_flash();
 }
 
 /* 0x800f624c: the wave's sound banks (the levels also get the jester's bank first, above) */
@@ -555,12 +555,12 @@ void remove_freakshow_assets(void)
 	remove_taur_assets();
 	remove_rodz_assets();
 	remove_tort_assets();
-	remove_junior_texmap();
+	remove_junior_assets();
 	remove_grub_assets();
 	remove_monk_asets();
 	remove_flie_assets();
 	remove_tops_assets();
-	remove_finn_assts();
+	remove_finn_assets();
 	remove_freakshow_texmap();
 }
 
@@ -572,7 +572,7 @@ void load_freakshow_assets(void)
 	load_flie_texmap();
 	load_monk_texmap();
 	load_grub_texmap();
-	load_junoir_texmap();
+	load_junior_texmap();
 	load_tort_texmap();
 	load_rodz_texmap();
 	load_taur_texmap();

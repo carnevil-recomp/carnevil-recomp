@@ -10,7 +10,7 @@
  * hook or blade (init: 45%), which it can throw (0x203). Spawned with 0x100 or 0x80 it slides
  * along a fixed heading each frame, the 0x80 one bleeding and calling out ("freakshow" cue
  * 0x2d) on the 0x5e'th. Shot, it plays a hurt cue, takes the damage and reacts by the part hit;
- * at the highest violence its arms come off (func_8011dbf4, func_8011dcb8) and the parts in the
+ * at the highest violence its arms come off (tort_lose_right_arm, tort_lose_left_arm) and the parts in the
  * damage table turn gory. Dead it falls (0x2001, or 0x2002 when spawned with 0x100), 500 points.
  */
 #include <stdio.h>
@@ -42,7 +42,7 @@ extern void	*attach_held_object(group_t *, int, float, float, float, float, floa
 extern void	throw_at_camera(float *, int, float *);
 extern void	detach_group(group_t *, float *, float, float *);
 extern void	replace_group(enemy_t *, group_t *, group_t *);
-extern void	func_80114814(enemy_t *, submesh_t *, int);	/* model.c: put a part back at its frame pose */
+extern void	pose_group(enemy_t *, submesh_t *, int);	/* model.c: put a part back at its frame pose */
 extern void	animate_loose_groups(enemy_t *, int);
 extern void	graphical_printf(char *, char *, ...);
 extern void	draw_string_at_color(int, char *, float *, unsigned int);
@@ -121,16 +121,16 @@ extern int	tort_hits;			/* tort_data.c: shots taken by every tort, its parity pi
 #define TORT_LOOP8401	0x8401		/* loops 0x115-0x125 */
 #define TORT_LOOP8402	0x8402		/* loops 0x18a-0x1a2 */
 
-int	func_8011c200(game_object_t *, player_stats_t *);
-void	func_8011ccc0(game_object_t *);
-void	func_8011d704(enemy_t *, int);
-void	func_8011d910(enemy_t *);
-void	func_8011db74(enemy_t *);
-void	func_8011dbf4(enemy_t *);
-void	func_8011dcb8(enemy_t *);
+int	tort_die(game_object_t *, player_stats_t *);
+void	tort_remove(game_object_t *);
+void	tort_setup(enemy_t *, int);
+void	tort_approach(enemy_t *);
+void	tort_end_run(enemy_t *);
+void	tort_lose_right_arm(enemy_t *);
+void	tort_lose_left_arm(enemy_t *);
 
 /* 0x8011bf38: the draw callback */
-void func_8011bf38(game_object_t *obj)
+void tort_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -176,7 +176,7 @@ void func_8011bf38(game_object_t *obj)
 }
 
 /* 0x8011c144: the hit test: the bounding sphere, then the submesh */
-int func_8011c144(game_object_t *obj, player_stats_t *p)
+int tort_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -190,7 +190,7 @@ int func_8011c144(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_8011c200;
+			p->die = (void *)tort_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -203,7 +203,7 @@ int func_8011c144(game_object_t *obj, player_stats_t *p)
    violence the arms come off (shoulders 1-3 the right arm, 0/11/12 the left), the neck (14, 19)
    turns gory then is swapped, part 8 is swapped for 20 on its second shot, and the rest turn
    gory; then a hurt cue and the damage (death 500 points, else 50) and a hit reaction by part */
-int func_8011c200(game_object_t *obj, player_stats_t *p)
+int tort_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -240,12 +240,12 @@ int func_8011c200(game_object_t *obj, player_stats_t *p)
 		case 1:
 		case 2:
 		case 3:
-			func_8011dbf4(e);
+			tort_lose_right_arm(e);
 			break;
 		case 0:
 		case 11:
 		case 12:
-			func_8011dcb8(e);
+			tort_lose_left_arm(e);
 			break;
 		case 14:
 		case 19:
@@ -415,7 +415,7 @@ void remove_tort_assets(void)
 /* 0x8011c8d4: the init callback: 7.5 health at 0.9 scale, the four spare parts (17-20)
    hidden, and by chance a weapon in a hand: a hook (10% right, 5% left), a blade (10% right,
    5% left) or a sword (10% right, 5% left) */
-int func_8011c8d4(game_object_t *obj)
+int tort_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -429,9 +429,9 @@ int func_8011c8d4(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_8011c144;
-	obj->die = func_8011c200;
-	obj->remove = func_8011ccc0;
+	obj->hit = tort_hit;
+	obj->die = tort_die;
+	obj->remove = tort_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -507,12 +507,12 @@ int func_8011c8d4(game_object_t *obj)
 	{
 		attach_effect(e, attach_held_object(&e->groups[TORT_LHAND], WEAPON_SWORD, 0.1f, 0.0f, -0.03f, -1.8f, 2.9f, 0.0f, e->scale));
 	}
-	func_8011d704(e, 0);
+	tort_setup(e, 0);
 	return(0);
 }
 
 /* 0x8011ccc0: the remove callback */
-void func_8011ccc0(game_object_t *obj)
+void tort_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -552,7 +552,7 @@ void func_8011ccc0(game_object_t *obj)
 	break;
 
 /* 0x8011cd18: the think callback */
-void func_8011cd18(game_object_t *obj)
+void tort_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	short	frame;
@@ -618,7 +618,7 @@ void func_8011cd18(game_object_t *obj)
 			e->frame = 0x32;
 		}
 		face_camera(e, 0.2f);
-		func_8011d910(e);
+		tort_approach(e);
 		break;
 	case TORT_SWIPE:
 		face_camera(e, 0.2f);
@@ -630,7 +630,7 @@ void func_8011cd18(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011d910(e);
+		tort_approach(e);
 		break;
 	case TORT_COMBO:
 		face_camera(e, 0.2f);
@@ -654,7 +654,7 @@ void func_8011cd18(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011d910(e);
+		tort_approach(e);
 		break;
 	case TORT_COMBO2:
 		face_camera(e, 0.2f);
@@ -670,7 +670,7 @@ void func_8011cd18(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011d910(e);
+		tort_approach(e);
 		break;
 	case TORT_STRIKE:
 		face_camera(e, 0.2f);
@@ -685,7 +685,7 @@ void func_8011cd18(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011d910(e);
+		tort_approach(e);
 		break;
 	case TORT_APPROACH:
 		if(++e->frame >= 0x32)
@@ -693,7 +693,7 @@ void func_8011cd18(game_object_t *obj)
 			e->frame = 0x19;
 		}
 		face_camera(e, 0.2f);
-		func_8011d910(e);
+		tort_approach(e);
 		break;
 	case TORT_THROW:
 		face_camera(e, 0.2f);
@@ -706,7 +706,7 @@ void func_8011cd18(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011db74(e);
+		tort_end_run(e);
 		break;
 	case TORT_STAB:
 		face_camera(e, 0.2f);
@@ -718,7 +718,7 @@ void func_8011cd18(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011db74(e);
+		tort_end_run(e);
 		break;
 	case TORT_PATH:
 		if(++e->frame >= 0x82)
@@ -730,7 +730,7 @@ void func_8011cd18(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011db74(e);
+		tort_end_run(e);
 		break;
 	case TORT_WAIT:
 		if(++e->frame >= 0x32)
@@ -742,7 +742,7 @@ void func_8011cd18(game_object_t *obj)
 		{
 			break;
 		}
-		func_8011db74(e);
+		tort_end_run(e);
 		break;
 	case TORT_STAND:
 		if(++e->frame >= 0x32)
@@ -783,7 +783,7 @@ void func_8011cd18(game_object_t *obj)
 
 /* 0x8011d704: the set-up: the state bits 0x100 (slide one way), 0x80 (slide the other, bleeding)
    and 0x40 (a sword in the right hand) go into flags2, then the state's first frame */
-void func_8011d704(enemy_t *e, int state)
+void tort_setup(enemy_t *e, int state)
 {
 	e->ai_state = state;
 	if(state & 0x100)
@@ -846,7 +846,7 @@ void func_8011d704(enemy_t *e, int state)
 /* 0x8011d910: go for the player: keep a playing target, steer to a point in front of the
    camera and pick the state by how close it got (0 still far: run, 1 there: approach on the
    spot, 2 in reach: a strike, or with a weapon in hand a swipe, combo or two-handed combo) */
-void func_8011d910(enemy_t *e)
+void tort_approach(enemy_t *e)
 {
 	player_stats_t	*p;
 	int	r;
@@ -926,7 +926,7 @@ void func_8011d910(enemy_t *e)
 
 /* 0x8011db74: at the end of a run or a throw: the spawn entry's 1 makes it stand, else it goes
    for the player again */
-void func_8011db74(enemy_t *e)
+void tort_end_run(enemy_t *e)
 {
 	if((unsigned short)e->unk6 == 1)
 	{
@@ -940,19 +940,19 @@ void func_8011db74(enemy_t *e)
 		return;
 	}
 	e->unk6 = 0;
-	func_8011d910(e);
+	tort_approach(e);
 }
 
 /* 0x8011dbf4: the right arm comes off (once): the upper arm (1) is swapped for its stump (18),
    which is put at its frame pose and sprays blood; the hand (3) and forearm (2) fall */
-void func_8011dbf4(enemy_t *e)
+void tort_lose_right_arm(enemy_t *e)
 {
 	if(e->groups[18].flags & GROUP_VISIBLE)
 	{
 		return;
 	}
 	replace_group(e, &e->groups[1], &e->groups[18]);
-	func_80114814(e, submesh_info_tort, 18);
+	pose_group(e, submesh_info_tort, 18);
 	if(!e->unkac)
 	{
 		attach_effect(e, attach_spray(tort_rarm_spray_base, tort_rarm_spray_dir, &e->groups[18]));
@@ -963,14 +963,14 @@ void func_8011dbf4(enemy_t *e)
 
 /* 0x8011dcb8: the left arm comes off (once): the upper arm (0) is swapped for its stump (17),
    the hand (12) and forearm (11) fall */
-void func_8011dcb8(enemy_t *e)
+void tort_lose_left_arm(enemy_t *e)
 {
 	if(e->groups[17].flags & GROUP_VISIBLE)
 	{
 		return;
 	}
 	replace_group(e, &e->groups[0], &e->groups[17]);
-	func_80114814(e, submesh_info_tort, 18);
+	pose_group(e, submesh_info_tort, 18);
 	if(!e->unkac)
 	{
 		attach_effect(e, attach_spray(tort_larm_spray_base, tort_larm_spray_dir, &e->groups[17]));

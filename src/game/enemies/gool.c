@@ -13,8 +13,8 @@
  * reactions (blending back to the state they interrupted), 0x401 dying: it fades out.
  *
  * The exported names are the address names the shared files (spawn.c, wave.c) use:
- * something_gool_anim is the draw callback, func_800eb150 the init, func_800eb3e0 the think,
- * func_800eb7d4 the state set-up.
+ * gool_draw is the draw callback, gool_init the init, gool_think the think,
+ * gool_setup the state set-up.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +34,7 @@ extern void	func_800d14a4(float, float);
 extern void	func_800c99e4(enemy_t *, int);
 extern void	draw_marker(float *, float, unsigned int);
 extern void	func_800ceaf0(float *, enemy_t *, submesh_t *, int, float *);	/* objects.c: a point in a submesh, in the world */
-extern void	func_8011464c(enemy_t *, submesh_t *, int);	/* model.c: the groups placed at the current frame */
+extern void	pose_groups(enemy_t *, submesh_t *, int);	/* model.c: the groups placed at the current frame */
 extern void	set_enemy_scale(enemy_t *, float);
 extern void	set_enemy_health(enemy_t *, float);
 extern player_stats_t *get_target_player(void);
@@ -77,14 +77,14 @@ float	D_8018e01c[3] = { -0.04f, 0.07f, 0.0f };	/* the two eyes in the head's sub
 float	D_8018e028[3] = { 0.038f, 0.07f, 0.0f };
 float	D_8018e034 = 0.0f;		/* 0 for the first ghoul, then 1, then 2: where the next one starts */
 
-int	func_800eaea8(game_object_t *, player_stats_t *);
-void	func_800eb36c(game_object_t *);
-void	func_800eb7d4(enemy_t *, unsigned short);
-void	func_800eb828(enemy_t *);
-void	func_800eb94c(enemy_t *);
+int	gool_die(game_object_t *, player_stats_t *);
+void	gool_remove(game_object_t *);
+void	gool_setup(enemy_t *, unsigned short);
+void	gool_claw(enemy_t *);
+void	gool_approach(enemy_t *);
 
 /* 0x800ea8e8: the draw callback: the eyes (unless it is dying), then the model */
-void something_gool_anim(game_object_t *obj)
+void gool_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 	float	pt[3];
@@ -136,7 +136,7 @@ void something_gool_anim(game_object_t *obj)
 }
 
 /* 0x800eab58: the hit test */
-int func_800eab58(game_object_t *obj, player_stats_t *p)
+int gool_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -154,7 +154,7 @@ int func_800eab58(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_800eaea8;
+			p->die = (void *)gool_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -165,7 +165,7 @@ int func_800eab58(game_object_t *obj, player_stats_t *p)
 
 /* 0x800eac28: the damage: dying (sparks at violence 1 and up, the last cry, 500 points, a fade)
    or a cry, 50 points and a hit reaction chosen by the part */
-void func_800eac28(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
+void gool_damage(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
 {
 	int	group;
 	int	i;
@@ -236,7 +236,7 @@ void func_800eac28(game_object_t *obj, player_stats_t *p, float damage, enemy_t 
 
 /* 0x800eaea8: the die callback (the shot lands): the part is marked shot, the damage; at the
    highest violence an arm comes off with its hand (6 and 10, or 7 and 9) */
-int func_800eaea8(game_object_t *obj, player_stats_t *p)
+int gool_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -252,7 +252,7 @@ int func_800eaea8(game_object_t *obj, player_stats_t *p)
 	group = p->hit_group;
 	g = &e->groups[group];
 	g->flags |= 0xf0000000;
-	func_800eac28(obj, p, shot_damage_of(p), e);
+	gool_damage(obj, p, shot_damage_of(p), e);
 	floor = e->y - 20.0f;
 	if(violence_level >= 3)
 	{
@@ -297,7 +297,7 @@ void remove_gool(void)
 
 /* 0x800eb150: the init callback: the record (the ghouls take turns between two starting
    places), the first state, the groups (the head's flagged 0x40) placed at the first frame */
-int func_800eb150(game_object_t *obj)
+int gool_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -310,9 +310,9 @@ int func_800eb150(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_800eab58;
-	obj->die = func_800eaea8;
-	obj->remove = func_800eb36c;
+	obj->hit = gool_hit;
+	obj->die = gool_die;
+	obj->remove = gool_remove;
 	e = (enemy_t *)data;
 	e->counter = 0;
 	e->frame = 0;
@@ -340,7 +340,7 @@ int func_800eb150(game_object_t *obj)
 	set_enemy_scale(e, 1.0f);
 	e->prio_base = 0x40;
 	e->prio_flags = next_cue_priority();
-	func_800eb7d4(e, 0x180);
+	gool_setup(e, 0x180);
 	if(D_8018e034 == 2.0f)
 	{
 		e->frame += 0xc;
@@ -360,7 +360,7 @@ int func_800eb150(game_object_t *obj)
 		e->groups[i].flags = 0xa000;
 	}
 	e->groups[5].flags |= 0x40;
-	func_8011464c(e, gool_anim_blob, 0xb);
+	pose_groups(e, gool_anim_blob, 0xb);
 	g = e->groups;
 	e->hit_group = &g[8];
 	g[8].floor = -20.0f;
@@ -374,7 +374,7 @@ int func_800eb150(game_object_t *obj)
 }
 
 /* 0x800eb36c: the remove callback */
-void func_800eb36c(game_object_t *obj)
+void gool_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -397,7 +397,7 @@ void func_800eb36c(game_object_t *obj)
 }
 
 /* 0x800eb3e0: the think callback */
-void func_800eb3e0(game_object_t *obj)
+void gool_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	int	i;
@@ -408,7 +408,7 @@ void func_800eb3e0(game_object_t *obj)
 	{
 		return;
 	}
-	func_800eb828(e);
+	gool_claw(e);
 	switch(e->ai_state)
 	{
 	case 0x180:
@@ -419,7 +419,7 @@ void func_800eb3e0(game_object_t *obj)
 		path_place(e, D_8017dfe8[0], e->path, 1.0f);
 		if(++e->path > e->unk92)
 		{
-			func_800eb94c(e);
+			gool_approach(e);
 		}
 		break;
 	case 0x181:
@@ -446,19 +446,19 @@ void func_800eb3e0(game_object_t *obj)
 			e->frame = 0xaa;
 		}
 		face_camera(e, 0.2f);
-		func_800eb94c(e);
+		gool_approach(e);
 		break;
 	case 0x110:
 		face_camera(e, 0.2f);
 		if(++e->frame >= 0x60)
 		{
-			func_800eb94c(e);
+			gool_approach(e);
 		}
 		break;
 	case 0x100:
 		if(++e->frame >= 0xdf)
 		{
-			func_800eb94c(e);
+			gool_approach(e);
 		}
 		break;
 	case 0x401:
@@ -519,7 +519,7 @@ void func_800eb7a0(enemy_t *e, int state)
 }
 
 /* 0x800eb7d4: the state set-up: the walks and the hover start on the hover loop's first frame */
-void func_800eb7d4(enemy_t *e, unsigned short state)
+void gool_setup(enemy_t *e, unsigned short state)
 {
 	e->ai_state = state;
 	switch(state)
@@ -541,7 +541,7 @@ void func_800eb820(void)
 }
 
 /* 0x800eb828: the claw attack lands on fixed frames while the claw's group is still on */
-void func_800eb828(enemy_t *e)
+void gool_claw(enemy_t *e)
 {
 	if(e->ai_state != 0x110)
 	{
@@ -581,7 +581,7 @@ void func_800eb828(enemy_t *e)
 /* 0x800eb94c: go for the player: keep a playing target, steer to a point in front of the
    camera and pick the state by how close it got (0 still far: hover, 1 there: pause, 2 in
    reach: claw) */
-void func_800eb94c(enemy_t *e)
+void gool_approach(enemy_t *e)
 {
 	player_stats_t	*p;
 	int	r;

@@ -381,33 +381,33 @@ extern void	level_end_stats_wrapper(game_object_t *);
 #define NO_THINK	((void (*)(game_object_t *))0)
 /* every enemy's draw, init and think callbacks, and its spawn-time set-up (its own file each) */
 #define ENEMY(d, i, t)	extern void d(game_object_t *); extern int i(game_object_t *); extern void t(game_object_t *);
-ENEMY(func_8011bf38, func_8011c8d4, func_8011cd18)
+ENEMY(tort_draw, tort_init, tort_think)
 ENEMY(draw_jester, init_jester, jester_think)
-ENEMY(func_800f4618, func_800f4c50, func_800f4e24)
-ENEMY(something_gool_anim, func_800eb150, func_800eb3e0)
-ENEMY(something_mari_anim, func_800edff0, func_800ee228)
-ENEMY(func_800f38c8, func_800f3f1c, func_800f40c8)
-ENEMY(func_80105388, func_801058bc, func_80105a78)
-ENEMY(func_800f70b8, func_800f7680, func_800f7824)
-ENEMY(func_800f7988, func_800f8860, func_800f8c84)
-ENEMY(func_80105e38, func_80106584, func_8010674c)
-ENEMY(func_80106928, func_80106e78, func_8010701c)
+ENEMY(spider_draw, spider_init, spider_think)
+ENEMY(gool_draw, gool_init, gool_think)
+ENEMY(mari_draw, mari_init, mari_think)
+ENEMY(bat_draw, bat_init, bat_think)
+ENEMY(inng_draw, inng_init, inng_think)
+ENEMY(hand_draw, hand_init, hand_think)
+ENEMY(zombie_draw, zombie_init, zombie_think)
+ENEMY(vict_draw, vict_init, vict_think)
+ENEMY(spdl_draw, spdl_init, spdl_think)
 ENEMY(draw_acid_pickup, init_acid_pickup, acid_pickup_think)
 ENEMY(draw_health_pickup, init_health_pickup, health_pickup_think)
-ENEMY(func_80109cf4, func_8010aa68, func_8010acac)
+ENEMY(hambone_draw, hambone_init, hambone_think)
 ENEMY(draw_shotgun_pickup, init_shotgun_pickup, shotgun_pickup_think)
 ENEMY(draw_ammo_pickup, init_ammo_pickup, ammo_pickup_think)
-ENEMY(func_801163e8, func_80116e10, func_80117080)
+ENEMY(tops_draw, tops_init, tops_think)
 ENEMY(draw_machinegun_pickup, init_machinegun_pickup, machinegun_pickup_think)
 ENEMY(draw_flamethrower_pickup, init_flamethrower_pickup, flamethrower_pickup_think)
-ENEMY(func_8011a170, func_8011a6f8, func_8011a8d0)
-ENEMY(func_8011b510, func_8011ba5c, func_8011bc34)
-ENEMY(func_8011fa7c, func_80120714, func_801209ec)
+ENEMY(monkey_draw, monkey_init, monkey_think)
+ENEMY(grub_draw, grub_init, grub_think)
+ENEMY(junior_draw, junior_init, junior_think)
 ENEMY(teen_draw, teen_init, teen_think)
-ENEMY(func_80122e40, func_801235ec, func_8012387c)
-ENEMY(func_8011dd80, func_8011e674, func_8011e890)
-ENEMY(func_80118728, func_8011905c, func_80119280)
-ENEMY(func_801222d0, func_80122818, func_801229d4)
+ENEMY(flie_draw, flie_init, flie_think)
+ENEMY(rodz_draw, rodz_init, rodz_think)
+ENEMY(taur_draw, taur_init, taur_think)
+ENEMY(finn_draw, finn_init, finn_think)
 ENEMY(term_draw, term_init, term_think)
 ENEMY(dino_draw, dino_init, dino_think)
 ENEMY(krinkle_draw, krinkle_init, krinkle_think)
@@ -424,14 +424,14 @@ ENEMY(func_80136840, func_80136fdc, func_801371cc)
 ENEMY(func_8013ea08, func_8013ef18, func_8013f0dc)
 ENEMY(func_8013cfb0, func_8013d794, func_8013d990)
 #define SETUP(f)	extern void f(enemy_t *, unsigned short);
-SETUP(func_80119894) SETUP(func_8010725c) SETUP(func_800eeeec) SETUP(func_800eb7d4) SETUP(func_800f96a8)
-SETUP(func_800f7960) SETUP(func_80105cb4) SETUP(func_801068c8) SETUP(func_8011af54) SETUP(func_8010b384)
-SETUP(set_jester_state) SETUP(func_80117c88) SETUP(func_8011d704) SETUP(func_80121318) SETUP(func_8011f070)
-SETUP(krampus_setup) SETUP(krinkle_setup) SETUP(func_80123cd4) SETUP(dino_setup) SETUP(rinn_setup)
+SETUP(taur_setup) SETUP(spdl_setup) SETUP(mari_setup) SETUP(gool_setup) SETUP(zombie_setup)
+SETUP(hand_setup) SETUP(inng_setup) SETUP(vict_setup) SETUP(monkey_setup) SETUP(hambone_setup)
+SETUP(set_jester_state) SETUP(tops_setup) SETUP(tort_setup) SETUP(junior_setup) SETUP(rodz_setup)
+SETUP(krampus_setup) SETUP(krinkle_setup) SETUP(flie_setup) SETUP(dino_setup) SETUP(rinn_setup)
 SETUP(smilingbob_setup) SETUP(teen_setup) SETUP(func_80131a9c) SETUP(func_80134420) SETUP(func_8013cad4)
 SETUP(func_80133118) SETUP(func_80135f98) SETUP(func_8013aa34) SETUP(func_8013f324) SETUP(func_8013e518)
-SETUP(func_80137ae8) SETUP(term_setup) SETUP(func_80122ca8) SETUP(func_8011be94)
-extern void	something_bat_state(enemy_t *, short), func_800f5278(enemy_t *, short);
+SETUP(func_80137ae8) SETUP(term_setup) SETUP(finn_setup) SETUP(grub_setup)
+extern void	bat_setup(enemy_t *, short), spider_setup(enemy_t *, short);
 
 /* the spawn table entry becomes a game object of its type (its draw/init/think callbacks),
    gets its position, path and first state from the entry, a die-list entry, two level-specific
@@ -565,105 +565,105 @@ int construct_and_spawn_object(spawn_t *s, int index)
 		break;
 	case 0x2028:
 		type = (short)s->type;
-		draw = func_801222d0;
-		init = func_80122818;
-		think = func_801229d4;
+		draw = finn_draw;
+		init = finn_init;
+		think = finn_think;
 		break;
 	case 0x2020:
 		type = (short)s->type;
-		draw = func_801163e8;
-		init = func_80116e10;
-		think = func_80117080;
+		draw = tops_draw;
+		init = tops_init;
+		think = tops_think;
 		break;
 	case 0x2029:
 		type = (short)s->type;
-		draw = func_80122e40;
-		init = func_801235ec;
-		think = func_8012387c;
+		draw = flie_draw;
+		init = flie_init;
+		think = flie_think;
 		break;
 	case 0x2022:
 		type = (short)s->type;
-		draw = func_8011a170;
-		init = func_8011a6f8;
-		think = func_8011a8d0;
+		draw = monkey_draw;
+		init = monkey_init;
+		think = monkey_think;
 		break;
 	case 0x2023:
 		type = (short)s->type;
-		draw = func_8011b510;
-		init = func_8011ba5c;
-		think = func_8011bc34;
+		draw = grub_draw;
+		init = grub_init;
+		think = grub_think;
 		break;
 	case 0x2024:
 		type = (short)s->type;
-		draw = func_8011bf38;
-		init = func_8011c8d4;
-		think = func_8011cd18;
+		draw = tort_draw;
+		init = tort_init;
+		think = tort_think;
 		break;
 	case 0x2027:
 		type = (short)s->type;
-		draw = func_80118728;
-		init = func_8011905c;
-		think = func_80119280;
+		draw = taur_draw;
+		init = taur_init;
+		think = taur_think;
 		break;
 	case 0x2026:
 		type = (short)s->type;
-		draw = func_8011dd80;
-		init = func_8011e674;
-		think = func_8011e890;
+		draw = rodz_draw;
+		init = rodz_init;
+		think = rodz_think;
 		break;
 	case 0x2025:
 		type = (short)s->type;
-		draw = func_8011fa7c;
-		init = func_80120714;
-		think = func_801209ec;
+		draw = junior_draw;
+		init = junior_init;
+		think = junior_think;
 		break;
 	case 0x200c:
 		type = (short)s->type;
-		draw = func_800f7988;
-		init = func_800f8860;
-		think = func_800f8c84;
+		draw = zombie_draw;
+		init = zombie_init;
+		think = zombie_think;
 		break;
 	case 0x2011:
 		type = (short)s->type;
-		draw = func_80105388;
-		init = func_801058bc;
-		think = func_80105a78;
+		draw = inng_draw;
+		init = inng_init;
+		think = inng_think;
 		break;
 	case 0x2012:
 		type = (short)s->type;
-		draw = func_80105e38;
-		init = func_80106584;
-		think = func_8010674c;
+		draw = vict_draw;
+		init = vict_init;
+		think = vict_think;
 		break;
 	case 0x2005:
 		type = (short)s->type;
-		draw = func_800f38c8;
-		init = func_800f3f1c;
-		think = func_800f40c8;
+		draw = bat_draw;
+		init = bat_init;
+		think = bat_think;
 		break;
 	case 0x1102:
 		type = 0x1102;
-		draw = something_gool_anim;
-		init = func_800eb150;
-		think = func_800eb3e0;
+		draw = gool_draw;
+		init = gool_init;
+		think = gool_think;
 		break;
 	case 0x2007:
 		type = 0x2007;
-		draw = func_800f4618;
-		init = func_800f4c50;
-		think = func_800f4e24;
+		draw = spider_draw;
+		init = spider_init;
+		think = spider_think;
 		break;
 	case 0x2013:
 		type = 0x2013;
-		draw = func_80106928;
-		init = func_80106e78;
-		think = func_8010701c;
+		draw = spdl_draw;
+		init = spdl_init;
+		think = spdl_think;
 		break;
 	case 0x2016:
 		type = 0x2016;
-		draw = func_80109cf4;
-		init = func_8010aa68;
-		think = func_8010acac;
+		draw = hambone_draw;
+		init = hambone_init;
+		think = hambone_think;
 		break;
 	case 0x2014:
 		type = 0x2014;
@@ -673,15 +673,15 @@ int construct_and_spawn_object(spawn_t *s, int index)
 		break;
 	case 0x2008:
 		type = 0x2008;
-		draw = func_800f70b8;
-		init = func_800f7680;
-		think = func_800f7824;
+		draw = hand_draw;
+		init = hand_init;
+		think = hand_think;
 		break;
 	case 0x1104:
 		type = 0x1104;
-		draw = something_mari_anim;
-		init = func_800edff0;
-		think = func_800ee228;
+		draw = mari_draw;
+		init = mari_init;
+		think = mari_think;
 		break;
 	case 0x2018:
 		type = 0x2018;
@@ -794,26 +794,26 @@ int construct_and_spawn_object(spawn_t *s, int index)
 	case 0x2040: dino_setup(e, e->ai_state); break;
 	case 0x2042: term_setup(e, e->ai_state); break;
 	case 0x2044: smilingbob_setup(e, e->ai_state); break;
-	case 0x2028: func_80122ca8(e, e->ai_state); break;
-	case 0x2020: func_80117c88(e, e->ai_state); break;
-	case 0x2029: func_80123cd4(e, e->ai_state); break;
-	case 0x2022: func_8011af54(e, e->ai_state); break;
-	case 0x2023: func_8011be94(e, e->ai_state); break;
-	case 0x2024: func_8011d704(e, e->ai_state); break;
-	case 0x2027: func_80119894(e, e->ai_state); break;
-	case 0x2026: func_8011f070(e, e->ai_state); break;
-	case 0x2025: func_80121318(e, e->ai_state); break;
-	case 0x200c: func_800f96a8(e, e->ai_state); break;
-	case 0x2011: func_80105cb4(e, e->ai_state); break;
-	case 0x2012: func_801068c8(e, e->ai_state); break;
-	case 0x2005: something_bat_state(e, e->ai_state); break;
-	case 0x1102: func_800eb7d4(e, e->ai_state); break;
-	case 0x2013: func_8010725c(e, e->ai_state); break;
-	case 0x2007: func_800f5278(e, e->ai_state); break;
-	case 0x2016: func_8010b384(e, e->ai_state); break;
-	case 0x2008: func_800f7960(e, e->ai_state); break;
+	case 0x2028: finn_setup(e, e->ai_state); break;
+	case 0x2020: tops_setup(e, e->ai_state); break;
+	case 0x2029: flie_setup(e, e->ai_state); break;
+	case 0x2022: monkey_setup(e, e->ai_state); break;
+	case 0x2023: grub_setup(e, e->ai_state); break;
+	case 0x2024: tort_setup(e, e->ai_state); break;
+	case 0x2027: taur_setup(e, e->ai_state); break;
+	case 0x2026: rodz_setup(e, e->ai_state); break;
+	case 0x2025: junior_setup(e, e->ai_state); break;
+	case 0x200c: zombie_setup(e, e->ai_state); break;
+	case 0x2011: inng_setup(e, e->ai_state); break;
+	case 0x2012: vict_setup(e, e->ai_state); break;
+	case 0x2005: bat_setup(e, e->ai_state); break;
+	case 0x1102: gool_setup(e, e->ai_state); break;
+	case 0x2013: spdl_setup(e, e->ai_state); break;
+	case 0x2007: spider_setup(e, e->ai_state); break;
+	case 0x2016: hambone_setup(e, e->ai_state); break;
+	case 0x2008: hand_setup(e, e->ai_state); break;
 	case 0x2014: set_jester_state(e, e->ai_state); break;
-	case 0x1104: func_800eeeec(e, e->ai_state); break;
+	case 0x1104: mari_setup(e, e->ai_state); break;
 	}
 	return(1);
 }

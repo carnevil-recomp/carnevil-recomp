@@ -40,7 +40,7 @@ extern int	shot_hits_sphere(float *, float, player_stats_t *);
 extern int	find_submesh_hit(enemy_t *, submesh_t *, int, player_stats_t *);
 extern void	hurt_player(player_stats_t *, int, int, float);
 extern void	show_pickup_message(player_stats_t *, int);			/* player.c's file: a penalty notice */
-extern void	func_800fa1c4(enemy_t *);				/* the holder lets go */
+extern void	zombie_walk(enemy_t *);				/* the holder lets go */
 extern void	add_world_sprite(float *, int, int);
 extern int	randrng(int);
 extern int	remove_die();						/* spawn.c */
@@ -74,14 +74,14 @@ int	inng_cries[3] = { 4, 5, 6 };	/* 0x801924d0: "girl" bank calls */
 #define ALPHA_STEP(e)	(*(float *)&(e)->unk44)	/* 0x44: the fade's step per frame */
 #define HOLDER(e)	((enemy_t *)(e)->unkd8)	/* 0xd8: the enemy holding her */
 
-int	func_801055c4(game_object_t *, player_stats_t *);
-int	func_80105688(game_object_t *, player_stats_t *);
-void	func_80105a18(game_object_t *);
-void	func_80105cb4(enemy_t *, unsigned short);
+int	inng_hit(game_object_t *, player_stats_t *);
+int	inng_die(game_object_t *, player_stats_t *);
+void	inng_remove(game_object_t *);
+void	inng_setup(enemy_t *, unsigned short);
 
-/* 0x80105388: the draw callback (inng_draw); in debug mode 2 she also takes the debug aim's
+/* 0x80105388: the draw callback; in debug mode 2 she also takes the debug aim's
    shots. The debug label is red for the debug enemy, magenta while she walks, else white */
-void func_80105388(game_object_t *obj)
+void inng_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -108,7 +108,7 @@ void func_80105388(game_object_t *obj)
 	{
 		screen_to_ray(player_stats[0].aim_dir, D_801faca4, D_801facb4);
 		player_stats[0].aim_dir[2] = 1.0f / player_stats[0].aim_dir[2];
-		func_801055c4(obj, &player_stats[0]);
+		inng_hit(obj, &player_stats[0]);
 	}
 	if(debug_mode & 0x100)
 	{
@@ -129,8 +129,8 @@ void func_80105388(game_object_t *obj)
 	}
 }
 
-/* 0x801055c4: the hit test (inng_hit): the bounding sphere, then the submesh */
-int func_801055c4(game_object_t *obj, player_stats_t *p)
+/* 0x801055c4: the hit test: the bounding sphere, then the submesh */
+int inng_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -143,7 +143,7 @@ int func_801055c4(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_80105688;
+			p->die = (void *)inng_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -157,10 +157,10 @@ void func_80105680(void)
 {
 }
 
-/* 0x80105688: she was shot (inng_die): the player loses 350 health and gets the penalty
+/* 0x80105688: she was shot: the player loses 350 health and gets the penalty
    notice, a hit mark appears on her if she is on screen, she fades out, whoever held her lets
    go and she cries out. In the character debug mode the shot only selects her */
-int func_80105688(game_object_t *obj, player_stats_t *p)
+int inng_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e, *holder;
 	float	scr[4];
@@ -179,13 +179,13 @@ int func_80105688(game_object_t *obj, player_stats_t *p)
 		{
 			add_world_sprite(e->groups[2].pivot, 7, 0);
 		}
-		func_80105cb4(e, INNOCENT_SHOT);
+		inng_setup(e, INNOCENT_SHOT);
 		holder = HOLDER(e);
 		if(holder)
 		{
 			holder->unkdc = 0;
 			e->unkd8 = 0;
-			func_800fa1c4(holder);
+			zombie_walk(holder);
 		}
 		play_enemy_sound(e, inng_cries[randrng(3)], "girl", 8);
 	}
@@ -206,15 +206,15 @@ void load_inng(void)
 }
 
 /* 0x8010584c: remove_inng_assets */
-void func_8010584c(void)
+void remove_inng_assets(void)
 {
 	remove_animation(inng_submesh, 0x11, 0xf3, "inng.za");
 	remove_model((void **)&inng_verts, 0x227, (void **)&inng_faces, 0x3b9, (void **)&inng_normals, 0x265, "INNG.ZM");
 }
 
-/* 0x801058bc: the init callback (inng_init): the record (scale 1, hit radius as scaled,
+/* 0x801058bc: the init callback: the record (scale 1, hit radius as scaled,
    0.75 health), seventeen groups, the hit group the chest */
-int func_801058bc(game_object_t *obj)
+int inng_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -227,9 +227,9 @@ int func_801058bc(game_object_t *obj)
 	{
 		return 1;
 	}
-	obj->hit = func_801055c4;
-	obj->die = func_80105688;
-	obj->remove = func_80105a18;
+	obj->hit = inng_hit;
+	obj->die = inng_die;
+	obj->remove = inng_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -263,12 +263,12 @@ int func_801058bc(game_object_t *obj)
 	clear_enemy_fields(e);
 	e->prio_base = 0x38;
 	e->prio_flags = next_cue_priority();
-	func_80105cb4(e, INNOCENT_IDLE);
+	inng_setup(e, INNOCENT_IDLE);
 	return 0;
 }
 
-/* 0x80105a18: the remove callback (inng_remove) */
-void func_80105a18(game_object_t *obj)
+/* 0x80105a18: the remove callback */
+void inng_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -283,10 +283,10 @@ void func_80105a18(game_object_t *obj)
 	free(e);
 }
 
-/* 0x80105a78: the think callback (inng_think): step the animation for her state; the walk
+/* 0x80105a78: the think callback: step the animation for her state; the walk
    moves her one path point a frame and plays the idle animation's step as well; the leave
    ends with her removal, the fade with her gone once transparent */
-void func_80105a78(game_object_t *obj)
+void inng_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	int	i;
@@ -364,10 +364,10 @@ void func_80105a78(game_object_t *obj)
 	remove_die(obj->id, 0);
 }
 
-/* 0x80105cb4: put her in a state (inng_setup): the voiced states call out; the walk puts her
+/* 0x80105cb4: put her in a state: the voiced states call out; the walk puts her
    on her first path point; the fade starts opaque and loses 10 a frame with every group alpha
    blended */
-void func_80105cb4(enemy_t *e, unsigned short state)
+void inng_setup(enemy_t *e, unsigned short state)
 {
 	int	i;
 

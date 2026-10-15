@@ -44,7 +44,7 @@ extern void	set_enemy_health2(enemy_t *, float);			/* health by difficulty */
 extern player_stats_t *get_target_player(void);
 extern void	path_place(enemy_t *, void *, short, float);
 extern void	set_goal_near_camera(enemy_t *, float *, float *, float, float, float);
-extern int	func_800fc16c(enemy_t *, float);			/* enemy.c's file: a step towards the goal */
+extern int	step_toward_goal_free(enemy_t *, float);			/* enemy.c's file: a step towards the goal */
 extern void	angles_to(float *, float *, float *);
 extern int	near_camera(enemy_t *, float);
 extern void	hurt_player(player_stats_t *, int, int, float);
@@ -151,24 +151,24 @@ unsigned short	hambone_cue_prio;	/* 0x801e7500: the priority of his gun's cue */
 #define GENERIC_HAMBONE_GUN	0x3d
 #define GENERIC_HAMBONE_HIT	0x95
 
-int	func_80109a54(game_object_t *, player_stats_t *);
-void	func_80109c0c(game_object_t *);
-int	func_8010a064(game_object_t *, player_stats_t *);
-int	func_8010a280(game_object_t *, player_stats_t *);
-void	func_8010ac6c(game_object_t *);
-void	func_8010b384(enemy_t *, unsigned short);
-void	func_8010b658(enemy_t *);
-void	func_8010b71c(enemy_t *);
-void	func_8010b7a8(enemy_t *);
-void	func_8010bd0c(float, float);
-void	func_8010be1c(float, float);
-void	func_801097f8(game_object_t *);
-int	func_80109ad4(game_object_t *);
-void	func_80109c44(game_object_t *);
+int	mblt_die(game_object_t *, player_stats_t *);
+void	mblt_remove(game_object_t *);
+int	hambone_hit(game_object_t *, player_stats_t *);
+int	hambone_die(game_object_t *, player_stats_t *);
+void	hambone_remove(game_object_t *);
+void	hambone_setup(enemy_t *, unsigned short);
+void	hambone_stop_and_fire(enemy_t *);
+void	hambone_walk_on(enemy_t *);
+void	hambone_drop_parts(enemy_t *);
+void	hambone_name_plate1(float, float);
+void	hambone_name_plate2(float, float);
+void	mblt_draw(game_object_t *);
+int	mblt_init(game_object_t *);
+void	mblt_think(game_object_t *);
 
 /* 0x80109688: a volley of bullets from his gun (group 0) at points near the player, six when
    both players are in, else three */
-void func_80109688(enemy_t *e)
+void hambone_fire_volley(enemy_t *e)
 {
 	enemy_t	*b;
 	short	id;
@@ -183,7 +183,7 @@ void func_80109688(enemy_t *e)
 	}
 	for(i = 0; i < n; i++)
 	{
-		id = add_object1_wrapper(MBLT_TYPE, func_801097f8, func_80109ad4, func_80109c44);
+		id = add_object1_wrapper(MBLT_TYPE, mblt_draw, mblt_init, mblt_think);
 		if(!id)
 		{
 			return;
@@ -208,7 +208,7 @@ void func_80109688(enemy_t *e)
 /* 0x801097f8: a bullet's draw callback: drawn spinning about its own axis (unk9c, turning by
    unka0 a frame) at its position plus its velocity, which falls by 0.1 a frame; the drawn
    position is kept for the hit test (unkb4) */
-void func_801097f8(game_object_t *obj)
+void mblt_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 	float	at[3];
@@ -246,14 +246,14 @@ void func_801097f8(game_object_t *obj)
 }
 
 /* 0x80109988: the points for a bullet on their own (nothing calls it) */
-void func_80109988(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
+void mblt_damage(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
 {
 	award_points(p->index, 500);
 	e->killer = p;
 }
 
 /* 0x801099c8: a bullet's hit test: its sphere where it was drawn */
-int func_801099c8(game_object_t *obj, player_stats_t *p)
+int mblt_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 
@@ -263,7 +263,7 @@ int func_801099c8(game_object_t *obj, player_stats_t *p)
 		p->hit = 1;
 		p->hit_id = obj->id;
 		p->hit_group = 0;
-		p->die = (void *)func_80109a54;
+		p->die = (void *)mblt_die;
 		p->hit_point[0] = p->aim[0];
 		p->hit_point[1] = p->aim[1];
 		p->hit_point[2] = p->aim[2];
@@ -272,7 +272,7 @@ int func_801099c8(game_object_t *obj, player_stats_t *p)
 }
 
 /* 0x80109a54: a bullet shot down: 500 points, an explosion */
-int func_80109a54(game_object_t *obj, player_stats_t *p)
+int mblt_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 
@@ -288,7 +288,7 @@ int func_80109a54(game_object_t *obj, player_stats_t *p)
 }
 
 /* 0x80109ad4: a bullet's init callback */
-int func_80109ad4(game_object_t *obj)
+int mblt_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	void	*data;
@@ -301,9 +301,9 @@ int func_80109ad4(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_801099c8;
-	obj->die = func_80109a54;
-	obj->remove = func_80109c0c;
+	obj->hit = mblt_hit;
+	obj->die = mblt_die;
+	obj->remove = mblt_remove;
 	e = (enemy_t *)obj->data;
 	e->counter = MBLT_LIFE;
 	e->unk4 = 0x14;
@@ -339,7 +339,7 @@ int func_80109ad4(game_object_t *obj)
 }
 
 /* 0x80109c0c: a bullet's remove callback */
-void func_80109c0c(game_object_t *obj)
+void mblt_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -350,12 +350,12 @@ void func_80109c0c(game_object_t *obj)
 
 /* 0x80109c44: a bullet's think callback: on towards its goal, turned to face away from the
    camera; within 6 of the camera it hurts the player and goes, else it goes when its time is up */
-void func_80109c44(game_object_t *obj)
+void mblt_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
 	e = (enemy_t *)obj->data;
-	func_800fc16c(e, MBLT_SPEED(e));
+	step_toward_goal_free(e, MBLT_SPEED(e));
 	angles_to(&camera_x, &e->x, &e->rx);
 	if(near_camera(e, 6.0f))
 	{
@@ -370,7 +370,7 @@ void func_80109c44(game_object_t *obj)
 
 /* 0x80109cf4: Hambone's draw callback: a muzzle light while he fires (frames 0x8d-0xbe on odd
    counts, frame 0x1fa), the model, his effects, the name plate and life bar while he lives */
-void func_80109cf4(game_object_t *obj)
+void hambone_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 	float	pos[3];
@@ -411,12 +411,12 @@ void func_80109cf4(game_object_t *obj)
 	{
 		if(hambone_fight == 1)
 		{
-			func_8010bd0c(200.0f, 233.0f);
+			hambone_name_plate1(200.0f, 233.0f);
 		}
 		else
 		{
-			func_8010bd0c(164.0f, 233.0f);
-			func_8010be1c(236.0f, 233.0f);
+			hambone_name_plate1(164.0f, 233.0f);
+			hambone_name_plate2(236.0f, 233.0f);
 		}
 		draw_life_bar(e->health, hambone_max_health, 150.0f, 250.0f, 248.0f, 0x904000);
 	}
@@ -429,7 +429,7 @@ void func_80109cf4(game_object_t *obj)
 	{
 		screen_to_ray(player_stats[0].aim_dir, D_801faca4, D_801facb4);
 		player_stats[0].aim_dir[2] = 1.0f / player_stats[0].aim_dir[2];
-		func_8010a064(obj, &player_stats[0]);
+		hambone_hit(obj, &player_stats[0]);
 	}
 	if(debug_mode & 0x100)
 	{
@@ -451,7 +451,7 @@ void func_80109cf4(game_object_t *obj)
 }
 
 /* 0x8010a064: the hit test: the bounding sphere, then the submesh */
-int func_8010a064(game_object_t *obj, player_stats_t *p)
+int hambone_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -465,7 +465,7 @@ int func_8010a064(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_8010a280;
+			p->die = (void *)hambone_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -475,7 +475,7 @@ int func_8010a064(game_object_t *obj, player_stats_t *p)
 }
 
 /* 0x8010a120: the damage half of the die callback on its own (nothing calls it) */
-void func_8010a120(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
+void hambone_damage(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
 {
 	float	old;
 
@@ -516,7 +516,7 @@ void func_8010a120(game_object_t *obj, player_stats_t *p, float damage, enemy_t 
 	}
 }
 
-/* the damage, as func_8010a120 has it */
+/* the damage, as hambone_damage has it */
 #define HAMBONE_DAMAGE(damage, half)							\
 	{										\
 		float	dmg, old;							\
@@ -562,7 +562,7 @@ void func_8010a120(game_object_t *obj, player_stats_t *p, float damage, enemy_t 
 /* 0x8010a280: the shot lands: a spark on his gun (group 0), else flesh and blood; on the body
    (dead) a twitch; else the damage (double on groups 10 and 14, none on the gun); then a shotgun
    blast knocks him back, or the hit counts towards the part (a part comes off at 5) */
-int func_8010a280(game_object_t *obj, player_stats_t *p)
+int hambone_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	float	damage;
@@ -636,35 +636,35 @@ int func_8010a280(game_object_t *obj, player_stats_t *p)
 		{
 			hambone_hits_10_14_15++;
 		}
-		func_8010b7a8(e);
+		hambone_drop_parts(e);
 		break;
 	case 1:
 	case 13:
 		hambone_hits_1_13++;
-		func_8010b7a8(e);
+		hambone_drop_parts(e);
 		break;
 	case 2:
 	case 4:
 		hambone_hits_2_4++;
-		func_8010b7a8(e);
+		hambone_drop_parts(e);
 		break;
 	case 3:
 	case 12:
 		hambone_hits_3_12++;
-		func_8010b7a8(e);
+		hambone_drop_parts(e);
 		break;
 	case 5:
 	case 6:
 		hambone_hits_5_6++;
-		func_8010b7a8(e);
+		hambone_drop_parts(e);
 		break;
 	case 19:
 		hambone_hits_19++;
-		func_8010b7a8(e);
+		hambone_drop_parts(e);
 		break;
 	case 18:
 		hambone_hits_18++;
-		func_8010b7a8(e);
+		hambone_drop_parts(e);
 		break;
 	case 0:
 		if(!(++hambone_hits_0 & 1))
@@ -727,7 +727,7 @@ void remove_mike_assets(void)
 
 /* 0x8010aa68: the init callback: the record (scale 1.2, 220 health by difficulty), the groups
    (the six spare parts hidden), his voice's priorities and his greeting */
-int func_8010aa68(game_object_t *obj)
+int hambone_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	void	*data;
@@ -741,9 +741,9 @@ int func_8010aa68(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_8010a064;
-	obj->die = func_8010a280;
-	obj->remove = func_8010ac6c;
+	obj->hit = hambone_hit;
+	obj->die = hambone_die;
+	obj->remove = hambone_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -796,12 +796,12 @@ int func_8010aa68(game_object_t *obj)
 	e->prio_flags = next_cue_priority();
 	hambone_cue_prio = next_cue_priority();
 	play_enemy_sound(e, 6, "hambone", 0);
-	func_8010b384(e, 0);
+	hambone_setup(e, 0);
 	return(0);
 }
 
 /* 0x8010ac6c: the remove callback */
-void func_8010ac6c(game_object_t *obj)
+void hambone_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -812,7 +812,7 @@ void func_8010ac6c(game_object_t *obj)
 }
 
 /* 0x8010acac: the think callback */
-void func_8010acac(game_object_t *obj)
+void hambone_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	float	p[3];
@@ -840,52 +840,52 @@ void func_8010acac(game_object_t *obj)
 			group_point(e->groups, p);
 			add_world_sprite(p, 4, 0);
 			play_rotating_cue(GENERIC_EXPLODE, "generic1");
-			func_80109688(e);
+			hambone_fire_volley(e);
 		}
 		if(e->frame >= 0x202)
 		{
-			func_8010b71c(e);
+			hambone_walk_on(e);
 		}
 		break;
 	case HAMBONE_LOSE_13:
 		if(++e->frame >= 0x19f)
 		{
-			func_8010b71c(e);
+			hambone_walk_on(e);
 		}
 		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_LOSE_3:
 		if(++e->frame >= 0x17c)
 		{
-			func_8010b71c(e);
+			hambone_walk_on(e);
 		}
 		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_LOSE_LEG:
 		if(++e->frame >= 0x76)
 		{
-			func_8010b71c(e);
+			hambone_walk_on(e);
 		}
 		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_HIT_BODY:
 		if(++e->frame >= 0x1cf)
 		{
-			func_8010b71c(e);
+			hambone_walk_on(e);
 		}
 		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_LOSE_18:
 		if(++e->frame >= 0x1f1)
 		{
-			func_8010b71c(e);
+			hambone_walk_on(e);
 		}
 		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_KNOCKED:
 		if(++e->frame >= HAMBONE_FRAMES)
 		{
-			func_8010b71c(e);
+			hambone_walk_on(e);
 		}
 		path_place(e, hambone_path, e->path, 1.0f);
 		break;
@@ -928,14 +928,14 @@ void func_8010acac(game_object_t *obj)
 	case HAMBONE_STAGGER:
 		if(++e->frame >= 0x1c0)
 		{
-			func_8010b658(e);
+			hambone_stop_and_fire(e);
 		}
 		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_ENTER:
 		if(++e->frame >= 0x8d)
 		{
-			func_8010b658(e);
+			hambone_stop_and_fire(e);
 		}
 		path_place(e, hambone_path, e->path, 1.0f);
 		if(++e->path > e->unk92)
@@ -962,7 +962,7 @@ void func_8010acac(game_object_t *obj)
 		}
 		if(++e->frame >= 0xbf)
 		{
-			func_8010b71c(e);
+			hambone_walk_on(e);
 		}
 		break;
 	case HAMBONE_FORWARD:
@@ -983,7 +983,7 @@ void func_8010acac(game_object_t *obj)
 		}
 		if(e->frame >= 0x103)
 		{
-			func_8010b658(e);
+			hambone_stop_and_fire(e);
 		}
 		break;
 	case HAMBONE_BACK:
@@ -1000,7 +1000,7 @@ void func_8010acac(game_object_t *obj)
 		}
 		if(++e->frame >= 0xe6)
 		{
-			func_8010b658(e);
+			hambone_stop_and_fire(e);
 		}
 		break;
 	}
@@ -1009,7 +1009,7 @@ void func_8010acac(game_object_t *obj)
 /* 0x8010b384: the spawn table's state: the start of the first fight (fires on his body, the hit
    counts cleared) or of the second (the counts carried over and capped at 5, the parts already
    lost taken off again, the gun's group flagged) */
-void func_8010b384(enemy_t *e, unsigned short state)
+void hambone_setup(enemy_t *e, unsigned short state)
 {
 	e->ai_state = state;
 	switch(state)
@@ -1062,7 +1062,7 @@ void func_8010b384(enemy_t *e, unsigned short state)
 		{
 			hambone_hits_19 = 5;
 		}
-		func_8010b7a8(e);
+		hambone_drop_parts(e);
 		e->frame = 0x76;
 		path_place(e, hambone_path, e->path, 1.0f);
 		e->ai_state = HAMBONE_ENTER;
@@ -1072,7 +1072,7 @@ void func_8010b384(enemy_t *e, unsigned short state)
 }
 
 /* 0x8010b658: stop and fire: a burst in the first fight, a volley in the second */
-void func_8010b658(enemy_t *e)
+void hambone_stop_and_fire(enemy_t *e)
 {
 	if(hambone_fight == 1)
 	{
@@ -1095,7 +1095,7 @@ void func_8010b658(enemy_t *e)
 }
 
 /* 0x8010b71c: walk on, the way he was going */
-void func_8010b71c(enemy_t *e)
+void hambone_walk_on(enemy_t *e)
 {
 	e->frame--;
 	if(hambone_walk_dir == 1)
@@ -1112,7 +1112,7 @@ void func_8010b71c(enemy_t *e)
 
 /* 0x8010b7a8: the parts whose hit counts have just reached their mark come off (at the top
    violence level the stump bleeds), each with a cry and most with a reaction */
-void func_8010b7a8(enemy_t *e)
+void hambone_drop_parts(enemy_t *e)
 {
 	if(hambone_hits_10_14_15 == 10)
 	{
@@ -1208,7 +1208,7 @@ void func_8010b7a8(enemy_t *e)
 }
 
 /* 0x8010bd0c: his name plate for the first fight: texture 0x7080, 64 by 32 at (x, y) */
-void func_8010bd0c(float x, float y)
+void hambone_name_plate1(float x, float y)
 {
 	MidVertex	a, b, c, d;
 
@@ -1241,7 +1241,7 @@ void func_8010bd0c(float x, float y)
 }
 
 /* 0x8010be1c: the second plate of the second fight: texture 0x7081 */
-void func_8010be1c(float x, float y)
+void hambone_name_plate2(float x, float y)
 {
 	MidVertex	a, b, c, d;
 

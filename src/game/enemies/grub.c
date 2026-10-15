@@ -69,12 +69,12 @@ void	*grub_path;			/* 0x802372d4 */
 #define GRUB_HIT_GROUP	1		/* the submesh it is hit through */
 #define GRUB_BITE	50		/* the damage of its bite */
 
-int	func_8011b7c8(game_object_t *, player_stats_t *);
-void	func_8011bbdc(game_object_t *);
-void	func_8011be94(enemy_t *, unsigned short);
+int	grub_die(game_object_t *, player_stats_t *);
+void	grub_remove(game_object_t *);
+void	grub_setup(enemy_t *, unsigned short);
 
 /* 0x8011b510: the draw callback */
-void func_8011b510(game_object_t *obj)
+void grub_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -118,7 +118,7 @@ void func_8011b510(game_object_t *obj)
 }
 
 /* 0x8011b70c: the hit test: the bounding sphere, then the submesh */
-int func_8011b70c(game_object_t *obj, player_stats_t *p)
+int grub_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -132,7 +132,7 @@ int func_8011b70c(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_8011b7c8;
+			p->die = (void *)grub_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -143,7 +143,7 @@ int func_8011b70c(game_object_t *obj, player_stats_t *p)
 
 /* 0x8011b7c8: the shot lands: blood and chunks, a squeal; dead, it plays its death (120 points),
    else 10 points */
-int func_8011b7c8(game_object_t *obj, player_stats_t *p)
+int grub_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 
@@ -200,7 +200,7 @@ void remove_grub_assets(void)
 }
 
 /* 0x8011ba5c: the init callback: the record, health 0.75, the five groups */
-int func_8011ba5c(game_object_t *obj)
+int grub_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	void	*data;
@@ -213,9 +213,9 @@ int func_8011ba5c(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_8011b70c;
-	obj->die = func_8011b7c8;
-	obj->remove = func_8011bbdc;
+	obj->hit = grub_hit;
+	obj->die = grub_die;
+	obj->remove = grub_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -255,12 +255,12 @@ int func_8011ba5c(game_object_t *obj)
 	e->unkdc = 0;
 	e->unke0 = 0;
 	e->unke4 = 0;
-	func_8011be94(e, 0);
+	grub_setup(e, 0);
 	return(0);
 }
 
 /* 0x8011bbdc: the remove callback */
-void func_8011bbdc(game_object_t *obj)
+void grub_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -275,7 +275,7 @@ void func_8011bbdc(game_object_t *obj)
 }
 
 /* 0x8011bc34: the think callback */
-void func_8011bc34(game_object_t *obj)
+void grub_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -344,7 +344,7 @@ void func_8011bc34(game_object_t *obj)
 }
 
 /* 0x8011be94: the spawn table's state; 0x802 sets off with a call */
-void func_8011be94(enemy_t *e, unsigned short state)
+void grub_setup(enemy_t *e, unsigned short state)
 {
 	e->ai_state = state;
 	switch(state)

@@ -4,7 +4,7 @@
  * replays a stretch of the movie while a section's enemies are alive, calling one of the
  * functions below each replay: most clear the section's timer once every spawn table slot they
  * name is done (wave_slot_done) and otherwise count it down, a few only count down or only
- * clear; func_801153a0 gives every section its budget, sub_80116350 is the ending. The boss
+ * clear; freakshow_script_init gives every section its budget, freakshow_script_ending is the ending. The boss
  * callbacks (sub_80121ed4-sub_8012225c) are in junior's file. func_80115500, the four timers
  * func_801162e0-func_80116334 and func_801163cc have no caller in the image.
  * The exported names are still the ones movie_scripts.c uses (generated from names.txt).
@@ -58,7 +58,7 @@ int	D_802371f0;
 
 /* 0x801153a0: script entry: each section's replay budget (32 for most, 200, 30, 34, 12, 8, 4),
    the ending's count cleared */
-void func_801153a0(void)
+void freakshow_script_init(void)
 {
 	D_801e6b78 = 32;
 	D_801e6b8c = 32;
@@ -551,7 +551,7 @@ void func_80116334(void)
 
 /* 0x80116350: the ending: on the 10th replay the stream and music fade out, the guns go off
    and the screen fades over 80 frames; on the 18th the script ends */
-void sub_80116350(void)
+void freakshow_script_ending(void)
 {
 	if(++D_801e6c8c == 10)
 	{
@@ -566,7 +566,7 @@ void sub_80116350(void)
 	}
 }
 
-/* 0x801163cc: the counter func_801153a0 sets to 1, one less; nothing calls it */
+/* 0x801163cc: the counter freakshow_script_init sets to 1, one less; nothing calls it */
 void func_801163cc(void)
 {
 	D_802371f0--;

@@ -5,8 +5,8 @@
 #define WEAK __attribute__((weak))
 WEAK void disable_spawning(void) { fprintf(stderr, "[script] disable_spawning not implemented\n"); }
 WEAK void fade_out_level_stream(void) { fprintf(stderr, "[script] fade_out_level_stream not implemented\n"); }
-WEAK void func_800fa720(void) { fprintf(stderr, "[script] func_800fa720 not implemented\n"); }
-WEAK void func_801153a0(void) { fprintf(stderr, "[script] func_801153a0 not implemented\n"); }
+WEAK void hhouse_script_init(void) { fprintf(stderr, "[script] hhouse_script_init not implemented\n"); }
+WEAK void freakshow_script_init(void) { fprintf(stderr, "[script] freakshow_script_init not implemented\n"); }
 WEAK void movie_load_ending(void) { fprintf(stderr, "[script] movie_load_ending not implemented\n"); }
 WEAK void reset_stream_volume(void) { fprintf(stderr, "[script] reset_stream_volume not implemented\n"); }
 WEAK void rickity_gate1(void) { fprintf(stderr, "[script] rickity_gate1 not implemented\n"); }
@@ -103,7 +103,7 @@ WEAK void sub_800fb2b4(void) { fprintf(stderr, "[script] sub_800fb2b4 not implem
 WEAK void sub_800fb310(void) { fprintf(stderr, "[script] sub_800fb310 not implemented\n"); }
 WEAK void sub_800fb36c(void) { fprintf(stderr, "[script] sub_800fb36c not implemented\n"); }
 WEAK void sub_800fb3c8(void) { fprintf(stderr, "[script] sub_800fb3c8 not implemented\n"); }
-WEAK void sub_800fb424(void) { fprintf(stderr, "[script] sub_800fb424 not implemented\n"); }
+WEAK void hhouse_script_ending(void) { fprintf(stderr, "[script] hhouse_script_ending not implemented\n"); }
 WEAK void sub_80115530(void) { fprintf(stderr, "[script] sub_80115530 not implemented\n"); }
 WEAK void sub_8011559c(void) { fprintf(stderr, "[script] sub_8011559c not implemented\n"); }
 WEAK void sub_801155f8(void) { fprintf(stderr, "[script] sub_801155f8 not implemented\n"); }
@@ -137,7 +137,7 @@ WEAK void sub_80116120(void) { fprintf(stderr, "[script] sub_80116120 not implem
 WEAK void sub_8011617c(void) { fprintf(stderr, "[script] sub_8011617c not implemented\n"); }
 WEAK void sub_801161e8(void) { fprintf(stderr, "[script] sub_801161e8 not implemented\n"); }
 WEAK void sub_80116274(void) { fprintf(stderr, "[script] sub_80116274 not implemented\n"); }
-WEAK void sub_80116350(void) { fprintf(stderr, "[script] sub_80116350 not implemented\n"); }
+WEAK void freakshow_script_ending(void) { fprintf(stderr, "[script] freakshow_script_ending not implemented\n"); }
 WEAK void sub_80121ed4(void) { fprintf(stderr, "[script] sub_80121ed4 not implemented\n"); }
 WEAK int sub_80121f68(void) { fprintf(stderr, "[script] sub_80121f68 not implemented\n"); return 0; }
 WEAK void sub_80121fbc(void) { fprintf(stderr, "[script] sub_80121fbc not implemented\n"); }

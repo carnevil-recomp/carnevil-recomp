@@ -5,7 +5,7 @@
  * vertices, 420 normals and 480 faces in 15 submeshes, the animation 25 frames (0-8 the wing
  * beat, 9-24 the fall), the path 1949 points.
  *
- * A bat is placed by its groups' animation every frame (func_8011464c, model.c) rather than
+ * A bat is placed by its groups' animation every frame (pose_groups, model.c) rather than
  * by init_groups. It flies its path (0x180 then attacks, 0x181 then leaves, 0x182 round and
  * round), turns to the camera (0x2000), swoops at the player (0x100: it steers for a point by
  * the camera and, once there, bites: 0x102), and dies by falling (0x400) when one shot of
@@ -34,7 +34,7 @@ extern void	draw_string_at_color(int, char *, float *, unsigned int);	/* text at
 extern void	func_800c8938(float *, float, unsigned int);			/* a debug sphere */
 extern void	func_800d14a4(float, float);					/* a debug map dot */
 extern void	func_800c99e4(enemy_t *, int);
-extern void	func_8011464c(enemy_t *, submesh_t *, int);			/* model.c: place the animated groups */
+extern void	pose_groups(enemy_t *, submesh_t *, int);			/* model.c: place the animated groups */
 extern void	set_enemy_scale(enemy_t *, float);
 extern void	set_enemy_health(enemy_t *, float);
 extern player_stats_t *get_target_player(void);
@@ -43,7 +43,7 @@ extern void	path_place(enemy_t *, void *, short, float);
 extern int	face_camera(enemy_t *, float);
 extern void	hurt_player(player_stats_t *, int, int, float);
 extern void	point_toward_camera(float *, float, float *);			/* objects.c */
-extern void	func_800fcd70(enemy_t *, float *, float);
+extern void	face_point(enemy_t *, float *, float);
 extern void	func_800cec74(enemy_t *, float *, float, float *);
 extern int	func_800ce428(enemy_t *, int, float *, float);
 extern void	func_800ce680(enemy_t *);					/* moves from vel towards goal by counter / blend_len */
@@ -84,18 +84,18 @@ void	*hhbat_path;			/* 0x801e70a4 */
 #define BAT_HOVER	0x600
 #define BAT_TURN	0x2000		/* turns to the camera, then swoops */
 
-int	func_800f3c98(game_object_t *, player_stats_t *);
-void	func_800f4084(game_object_t *);
-void	something_bat_state(enemy_t *, short);
+int	bat_die(game_object_t *, player_stats_t *);
+void	bat_remove(game_object_t *);
+void	bat_setup(enemy_t *, short);
 
 /* 0x800f38c8: the draw callback (type 0x2005): the groups are placed from the animation
    first */
-void func_800f38c8(game_object_t *obj)
+void bat_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
 	e = (enemy_t *)obj->data;
-	func_8011464c(e, submesh_info_bat, BAT_GROUPS);
+	pose_groups(e, submesh_info_bat, BAT_GROUPS);
 	draw_model(e, submesh_info_bat, BAT_GROUPS, hhbat_verts, BAT_NVERTS, hhbat_faces, BAT_NFACES, hhbat_normals, BAT_NNORMALS);
 	if(debug_mode & 0x400)
 	{
@@ -124,7 +124,7 @@ void func_800f38c8(game_object_t *obj)
 
 /* 0x800f3a84: the hit test: the bounding sphere, then the submesh; a hit marks the group and
    takes 2 health at once */
-int func_800f3a84(game_object_t *obj, player_stats_t *p)
+int bat_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -149,7 +149,7 @@ int func_800f3a84(game_object_t *obj, player_stats_t *p)
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
 			p->hit_group = group;
-			p->die = (void *)func_800f3c98;
+			p->die = (void *)bat_die;
 		}
 	}
 	return(0);
@@ -158,7 +158,7 @@ int func_800f3a84(game_object_t *obj, player_stats_t *p)
 /* 0x800f3b90: the shot landing with a given damage (nothing in the image calls it; the die
    callback below works out the damage itself): a squeak; when the health runs out, blood and
    a splat, 250 points and the fall, else 50 points */
-void func_800f3b90(void *unused, player_stats_t *p, float damage, enemy_t *e)
+void bat_damage(void *unused, player_stats_t *p, float damage, enemy_t *e)
 {
 	float	y;
 
@@ -188,7 +188,7 @@ void func_800f3b90(void *unused, player_stats_t *p, float damage, enemy_t *e)
 }
 
 /* 0x800f3c98: the die callback: as above with the shot's own damage */
-int func_800f3c98(game_object_t *obj, player_stats_t *p)
+int bat_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	float	damage;
@@ -247,7 +247,7 @@ void remove_bat_assets(void)
 
 /* 0x800f3f1c: the init callback (type 0x2005): the record, 15 groups, 0.75 health by
    difficulty, three times the model's size, on its path */
-int func_800f3f1c(game_object_t *obj)
+int bat_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -258,9 +258,9 @@ int func_800f3f1c(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_800f3a84;
-	obj->die = func_800f3c98;
-	obj->remove = func_800f4084;
+	obj->hit = bat_hit;
+	obj->die = bat_die;
+	obj->remove = bat_remove;
 	e = (enemy_t *)obj->data;
 	e->counter = 0;
 	e->num = 0;
@@ -293,13 +293,13 @@ int func_800f3f1c(game_object_t *obj)
 	e->unke0 = 0;
 	e->prio_base = 0x40;
 	e->prio_flags = next_cue_priority();
-	something_bat_state(e, BAT_PATH);
-	func_8011464c(e, submesh_info_bat, BAT_GROUPS);
+	bat_setup(e, BAT_PATH);
+	pose_groups(e, submesh_info_bat, BAT_GROUPS);
 	return(0);
 }
 
 /* 0x800f4084: the remove callback: whatever held the bat (its unke0) lets go */
-void func_800f4084(game_object_t *obj)
+void bat_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -313,7 +313,7 @@ void func_800f4084(game_object_t *obj)
 }
 
 /* 0x800f40c8: the think callback */
-void func_800f40c8(game_object_t *obj)
+void bat_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -403,7 +403,7 @@ void func_800f40c8(game_object_t *obj)
 		{
 			e->frame = 0;
 		}
-		func_800fcd70(e, e->goal, 0.2f);
+		face_point(e, e->goal, 0.2f);
 		func_800cec74(e, &camera_x, -3.5f, e->goal);
 		if(func_800ce428(e, 4, e->goal, 4.0f))
 		{
@@ -425,7 +425,7 @@ void func_800f40c8(game_object_t *obj)
 }
 
 /* 0x800f44d8: the set-up the spawn table asks for (type 0x2005) */
-void something_bat_state(enemy_t *e, short state)
+void bat_setup(enemy_t *e, short state)
 {
 	float	off[3];
 	float	m[9];

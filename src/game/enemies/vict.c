@@ -40,7 +40,7 @@ extern int	shot_hits_sphere(float *, float, player_stats_t *);
 extern int	find_submesh_hit(enemy_t *, submesh_t *, int, player_stats_t *);
 extern void	hurt_player(player_stats_t *, int, int, float);
 extern void	show_pickup_message(player_stats_t *, int);			/* player.c's file: a penalty notice */
-extern void	func_800fa1c4(enemy_t *);				/* the holder lets go */
+extern void	zombie_walk(enemy_t *);				/* the holder lets go */
 extern void	add_world_sprite(float *, int, int);
 extern int	randrng(int);
 extern int	remove_die();						/* spawn.c */
@@ -54,7 +54,7 @@ extern void	burst_blood(float *, float, int);
 extern void	add_chunks(float *, float);
 extern void	award_points(int, int);
 extern void	detach_group(group_t *, float *, float, float *);	/* model.c: a part flies off */
-extern int	func_800fbaac(enemy_t *, float, float, float, float);	/* enemy.c's file: turn to the camera and step
+extern int	charge_camera(enemy_t *, float, float, float, float);	/* enemy.c's file: turn to the camera and step
 									   towards a point near it, 2 on arrival */
 extern int	violence_level;
 extern void	remove_surface(texmap_t *, int);
@@ -76,14 +76,14 @@ float	*vict_normals;			/* 0x801e585c */
 #define FLOOR(e)	((e)->unk98)		/* 0x98: where its loose parts land */
 #define HOLDER(e)	((enemy_t *)(e)->unkd8)
 
-int	func_80106098(game_object_t *, player_stats_t *);
-int	func_80106168(game_object_t *, player_stats_t *);
-void	func_801066f4(game_object_t *);
-void	func_801068c8(enemy_t *, unsigned short);
+int	vict_hit(game_object_t *, player_stats_t *);
+int	vict_die(game_object_t *, player_stats_t *);
+void	vict_remove(game_object_t *);
+void	vict_setup(enemy_t *, unsigned short);
 
-/* 0x80105e38: the draw callback (vict_draw); the debug label is drawn twice, white, then red
+/* 0x80105e38: the draw callback; the debug label is drawn twice, white, then red
    for the debug enemy */
-void func_80105e38(game_object_t *obj)
+void vict_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -99,7 +99,7 @@ void func_80105e38(game_object_t *obj)
 	{
 		screen_to_ray(player_stats[0].aim_dir, D_801faca4, D_801facb4);
 		player_stats[0].aim_dir[2] = 1.0f / player_stats[0].aim_dir[2];
-		func_80106098(obj, &player_stats[0]);
+		vict_hit(obj, &player_stats[0]);
 	}
 	if(debug_mode & 0x100)
 	{
@@ -132,8 +132,8 @@ void func_80105e38(game_object_t *obj)
 	}
 }
 
-/* 0x80106098: the hit test (vict_hit): the bounding sphere, then the submesh; none once dead */
-int func_80106098(game_object_t *obj, player_stats_t *p)
+/* 0x80106098: the hit test: the bounding sphere, then the submesh; none once dead */
+int vict_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -148,7 +148,7 @@ int func_80106098(game_object_t *obj, player_stats_t *p)
 				p->hit = 1;
 				p->hit_id = obj->id;
 				p->hit_group = group;
-				p->die = (void *)func_80106168;
+				p->die = (void *)vict_die;
 				p->hit_point[0] = p->aim[0];
 				p->hit_point[1] = p->aim[1];
 				p->hit_point[2] = p->aim[2];
@@ -163,11 +163,11 @@ void func_80106160(void)
 {
 }
 
-/* 0x80106168: the shot lands (vict_die): blood, chunks and a hit mark; whoever it held lets
+/* 0x80106168: the shot lands: blood, chunks and a hit mark; whoever it held lets
    go. Waiting, it flinches; otherwise it dies: 500 points and every part flies off (at the
    highest violence from three points, the body and each arm's upper part, else all from the
    first). In the character debug mode the shot only selects it */
-int func_80106168(game_object_t *obj, player_stats_t *p)
+int vict_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e, *holder;
 
@@ -240,16 +240,16 @@ void load_vict(void)
 }
 
 /* 0x80106504: remove_vict_assets: the texmaps, the animation and the model */
-void func_80106504(void)
+void remove_vict_assets(void)
 {
 	remove_surface(vict_texmap, 0xf);
 	remove_animation(submesh_info_vict, 0xa, 0x4e, "vict.za");
 	remove_model((void **)&vict_verts, 0x127, (void **)&vict_faces, 0x210, (void **)&vict_normals, 0x164, "VICT.ZM");
 }
 
-/* 0x80106584: the init callback (vict_init): the record (scale 1, hit radius 0.42, 0.75
+/* 0x80106584: the init callback: the record (scale 1, hit radius 0.42, 0.75
    health, turned half round), ten groups, the hit group the body; it starts waiting */
-int func_80106584(game_object_t *obj)
+int vict_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -262,9 +262,9 @@ int func_80106584(game_object_t *obj)
 	{
 		return 1;
 	}
-	obj->hit = func_80106098;
-	obj->die = func_80106168;
-	obj->remove = func_801066f4;
+	obj->hit = vict_hit;
+	obj->die = vict_die;
+	obj->remove = vict_remove;
 	e = (enemy_t *)data;
 	e->unk4 = 0x14;
 	e->counter = 0;
@@ -303,12 +303,12 @@ int func_80106584(game_object_t *obj)
 	e->unkdc = 0;
 	e->unke0 = 0;
 	e->unke4 = 0;
-	func_801068c8(e, VICT_WAIT);
+	vict_setup(e, VICT_WAIT);
 	return 0;
 }
 
-/* 0x801066f4: the remove callback (vict_remove) */
-void func_801066f4(game_object_t *obj)
+/* 0x801066f4: the remove callback */
+void vict_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -322,11 +322,11 @@ void func_801066f4(game_object_t *obj)
 	free(e);
 }
 
-/* 0x8010674c: the think callback (vict_think): the flinch plays out back to waiting; the
+/* 0x8010674c: the think callback: the flinch plays out back to waiting; the
    charge steps it towards a point near the camera (2 a step, 10.5 below and 3 in front of the
    view), and on arrival the player loses 100 health and it is gone; its parts' floor follows
    it 40 below */
-void func_8010674c(game_object_t *obj)
+void vict_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -361,7 +361,7 @@ void func_8010674c(game_object_t *obj)
 		{
 			e->frame = 0x30;
 		}
-		if(func_800fbaac(e, 2.0f, 0.0f, -10.5f, 3.0f) == 2)
+		if(charge_camera(e, 2.0f, 0.0f, -10.5f, 3.0f) == 2)
 		{
 			hurt_player(e->target, 100, 3, 0.0f);
 			remove_game_object(obj->id);
@@ -374,8 +374,8 @@ void func_8010674c(game_object_t *obj)
 	}
 }
 
-/* 0x801068c8: put it in a state (vict_setup) and its first frame */
-void func_801068c8(enemy_t *e, unsigned short state)
+/* 0x801068c8: put it in a state and its first frame */
+void vict_setup(enemy_t *e, unsigned short state)
 {
 	e->ai_state = state;
 	switch(state)

@@ -18,8 +18,8 @@
  * 0x4000 dead.
  *
  * The exported names are the address names the shared files (spawn.c, wave.c, the movie
- * scripts) use: something_mari_anim is the draw callback, func_800edff0 the init,
- * func_800ee228 the think, func_800eeeec the state set-up, sub_800eef68..sub_800ef7b0 the
+ * scripts) use: mari_draw is the draw callback, mari_init the init,
+ * mari_think the think, mari_setup the state set-up, sub_800eef68..sub_800ef7b0 the
  * script's callbacks.
  */
 #include <stdio.h>
@@ -36,8 +36,8 @@
 extern void	func_800c8938(float *, float, unsigned int);
 extern void	func_800d14a4(float, float);
 extern void	func_800c99e4(enemy_t *, int);
-extern void	func_8011464c(enemy_t *, submesh_t *, int);	/* model.c: the groups placed at the current frame */
-extern void	func_80114df0(enemy_t *);			/* the flash file: Mari's glow while she waits */
+extern void	pose_groups(enemy_t *, submesh_t *, int);	/* model.c: the groups placed at the current frame */
+extern void	mari_throw_flash(enemy_t *);			/* the flash file: Mari's glow while she waits */
 extern void	func_800fc550(float *, float *, float *);	/* enemy.c: the heading towards a point */
 extern void	func_800d326c(void *, void *, void *);		/* a screen triangle */
 extern void	init_groups(enemy_t *, submesh_t *, int);
@@ -90,8 +90,8 @@ float	*mari_normals;			/* 0x801e4394 */
 float	*axe_verts;			/* 0x801e09ec */
 face_t	*axe_faces;			/* 0x801e6ecc */
 float	*axe_normals;			/* 0x801e0968 */
-enemy_t	*D_801e0ea4;			/* Mari's record, for the script's callbacks */
-float	D_801e0f38;			/* her full health */
+enemy_t	*mari_enemy;			/* Mari's record, for the script's callbacks */
+float	mari_full_health;			/* her full health */
 int	D_801e0f08;
 int	D_802373c8;			/* shots taken: every tenth during an attack makes her flinch */
 int	D_8018e9f8[5] = { 14, 15, 16, 17, 18 };	/* her flinch cries */
@@ -101,29 +101,29 @@ float	D_8018ea0c[7][3] =		/* the flash a shot lights on her, frame by frame */
 	{ 0.0f, 0.0f, 80.0f }, { 0.0f, 0.0f, 40.0f }, { 0.0f, 0.0f, 0.0f },
 };
 
-void	func_800ed358(game_object_t *);
-int	func_800ed4c0(game_object_t *);
-void	func_800ed654(game_object_t *);
-int	func_800ed454(game_object_t *, player_stats_t *);
-void	func_800ed61c(game_object_t *);
-int	func_800edd30(game_object_t *, player_stats_t *);
-void	func_800ee1d8(game_object_t *);
-void	func_800eeeec(enemy_t *, unsigned short);
-void	func_800ef110(float, float);
-void	func_800ef220(enemy_t *);
+void	axe_draw(game_object_t *);
+int	axe_init(game_object_t *);
+void	axe_think(game_object_t *);
+int	axe_die(game_object_t *, player_stats_t *);
+void	axe_remove(game_object_t *);
+int	mari_die(game_object_t *, player_stats_t *);
+void	mari_remove(game_object_t *);
+void	mari_setup(enemy_t *, unsigned short);
+void	mari_draw_name(float, float);
+void	mari_pick_swing(enemy_t *);
 
 /* ---- the axe (object 0x2010) ---- */
 
 /* 0x800ed1e0: Mari throws the axe: from her hand (group 7) at the camera, spinning, with the
    time it takes to arrive */
-void func_800ed1e0(enemy_t *m)
+void mari_throw_axe(enemy_t *m)
 {
 	short	id;
 	enemy_t	*e;
 	float	speed, d, t, spin;
 	float	*cam;
 
-	id = add_object1_wrapper(0x2010, func_800ed358, func_800ed4c0, func_800ed654);
+	id = add_object1_wrapper(0x2010, axe_draw, axe_init, axe_think);
 	if(id)
 	{
 		e = get_object_data(id);
@@ -150,7 +150,7 @@ void func_800ed1e0(enemy_t *m)
 }
 
 /* 0x800ed358: the axe's draw callback */
-void func_800ed358(game_object_t *obj)
+void axe_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -166,7 +166,7 @@ void func_800ed3bc(game_object_t *obj, player_stats_t *p, float damage, enemy_t 
 }
 
 /* 0x800ed3c8: the axe's hit test: it can be shot out of the air */
-int func_800ed3c8(game_object_t *obj, player_stats_t *p)
+int axe_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 
@@ -176,7 +176,7 @@ int func_800ed3c8(game_object_t *obj, player_stats_t *p)
 		p->hit = 1;
 		p->hit_id = obj->id;
 		p->hit_group = 0;
-		p->die = (void *)func_800ed454;
+		p->die = (void *)axe_die;
 		p->hit_point[0] = p->aim[0];
 		p->hit_point[1] = p->aim[1];
 		p->hit_point[2] = p->aim[2];
@@ -185,7 +185,7 @@ int func_800ed3c8(game_object_t *obj, player_stats_t *p)
 }
 
 /* 0x800ed454: the axe shot: 500 points, a clang, a spark, gone */
-int func_800ed454(game_object_t *obj, player_stats_t *p)
+int axe_die(game_object_t *obj, player_stats_t *p)
 {
 	award_points(p->index, 500);
 	play_rotating_cue(0x95, "generic1");
@@ -195,7 +195,7 @@ int func_800ed454(game_object_t *obj, player_stats_t *p)
 }
 
 /* 0x800ed4c0: the axe's init callback */
-int func_800ed4c0(game_object_t *obj)
+int axe_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -206,9 +206,9 @@ int func_800ed4c0(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_800ed3c8;
-	obj->die = func_800ed454;
-	obj->remove = func_800ed61c;
+	obj->hit = axe_hit;
+	obj->die = axe_die;
+	obj->remove = axe_remove;
 	e = (enemy_t *)obj->data;
 	e->counter = 0x1e;
 	e->unk4 = 0x14;
@@ -244,7 +244,7 @@ int func_800ed4c0(game_object_t *obj)
 }
 
 /* 0x800ed61c: the axe's remove callback */
-void func_800ed61c(game_object_t *obj)
+void axe_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -256,7 +256,7 @@ void func_800ed61c(game_object_t *obj)
 /* 0x800ed654: the axe's think callback: in flight it spins and flies until it reaches the
    camera (the player is hit) or its time runs out; state 2 (knocked away) falls, bounces off
    the floor and fades */
-void func_800ed654(game_object_t *obj)
+void axe_think(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -301,7 +301,7 @@ void func_800ed654(game_object_t *obj)
 
 /* 0x800ed7e8: the draw callback: the shot flash, the glow while she waits, the model, her
    life bar while she is alive */
-void something_mari_anim(game_object_t *obj)
+void mari_draw(game_object_t *obj)
 {
 	enemy_t	*e;
 	float	pt[3];
@@ -322,7 +322,7 @@ void something_mari_anim(game_object_t *obj)
 	}
 	if(e->ai_state == 0x80b)
 	{
-		func_80114df0(e);
+		mari_throw_flash(e);
 	}
 	draw_model(e, mari_anim_blob, 0x1f, mari_verts, 0x604, mari_faces, 0xa72, mari_normals, 0x625);
 	if(lit == 1)
@@ -331,8 +331,8 @@ void something_mari_anim(game_object_t *obj)
 	}
 	if(!(e->ai_state & 0x6000))
 	{
-		draw_life_bar(e->health, D_801e0f38, 100.0f, 300.0f, 248.0f, 0xff90ff);
-		func_800ef110(193.0f, 233.0f);
+		draw_life_bar(e->health, mari_full_health, 100.0f, 300.0f, 248.0f, 0xff90ff);
+		mari_draw_name(193.0f, 233.0f);
 	}
 	if(debug_mode & 0x100)
 	{
@@ -356,7 +356,7 @@ void something_mari_anim(game_object_t *obj)
 /* 0x800eda1c: the damage: below 65% her part 18 goes, she cries and starts to fade (0x8101);
    below 50% part 19 goes and three parts are marked; below 25% two parts are shot off at the
    highest violence; at 0 she dies (2000 points), else 50 points */
-void func_800eda1c(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
+void mari_damage(game_object_t *obj, player_stats_t *p, float damage, enemy_t *e)
 {
 	float	health;
 
@@ -366,28 +366,28 @@ void func_800eda1c(game_object_t *obj, player_stats_t *p, float damage, enemy_t 
 	}
 	health = e->health;
 	e->health = health - damage;
-	if(D_801e0f38 * 0.65f < health && e->health < D_801e0f38 * 0.65f)
+	if(mari_full_health * 0.65f < health && e->health < mari_full_health * 0.65f)
 	{
-		D_801e0ea4->groups[18].flags = 0;
+		mari_enemy->groups[18].flags = 0;
 		play_enemy_sound(e, 8, "chastity", 4);
-		blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0x3f, 2);
+		blend_to_frame(mari_enemy, mari_anim_blob, 9, 0x3f, 2);
 		e->ai_state = 0x8101;
 		FADE(e) = -10.0f;
 	}
-	if(D_801e0f38 * 0.5f < health && e->health < D_801e0f38 * 0.5f)
+	if(mari_full_health * 0.5f < health && e->health < mari_full_health * 0.5f)
 	{
-		D_801e0ea4->groups[19].flags = 0;
-		D_801e0ea4->groups[11].flags |= 0x1000000;
-		D_801e0ea4->groups[3].flags |= 0x1000000;
-		D_801e0ea4->groups[29].flags |= 0x1000000;
+		mari_enemy->groups[19].flags = 0;
+		mari_enemy->groups[11].flags |= 0x1000000;
+		mari_enemy->groups[3].flags |= 0x1000000;
+		mari_enemy->groups[29].flags |= 0x1000000;
 		play_enemy_sound(e, 7, "chastity", 4);
 	}
-	if(D_801e0f38 * 0.25f < health && e->health < D_801e0f38 * 0.25f)
+	if(mari_full_health * 0.25f < health && e->health < mari_full_health * 0.25f)
 	{
 		if(violence_level >= 3)
 		{
-			D_801e0ea4->groups[30].flags |= 0xf0000000;
-			D_801e0ea4->groups[16].flags |= 0xf0000000;
+			mari_enemy->groups[30].flags |= 0xf0000000;
+			mari_enemy->groups[16].flags |= 0xf0000000;
 		}
 		play_enemy_sound(e, 6, "chastity", 4);
 	}
@@ -406,7 +406,7 @@ void func_800eda1c(game_object_t *obj, player_stats_t *p, float damage, enemy_t 
 }
 
 /* 0x800edc68: the hit test (not once she has faded away) */
-int func_800edc68(game_object_t *obj, player_stats_t *p)
+int mari_hit(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 	int	group;
@@ -424,7 +424,7 @@ int func_800edc68(game_object_t *obj, player_stats_t *p)
 			p->hit = 1;
 			p->hit_id = obj->id;
 			p->hit_group = group;
-			p->die = (void *)func_800edd30;
+			p->die = (void *)mari_die;
 			p->hit_point[0] = p->aim[0];
 			p->hit_point[1] = p->aim[1];
 			p->hit_point[2] = p->aim[2];
@@ -436,7 +436,7 @@ int func_800edc68(game_object_t *obj, player_stats_t *p)
 /* 0x800edd30: the die callback (the shot lands): the damage, then a spark (and blood once she
    is below a quarter of her health) or the flash; every tenth shot during an attack makes her
    flinch with a cry */
-int func_800edd30(game_object_t *obj, player_stats_t *p)
+int mari_die(game_object_t *obj, player_stats_t *p)
 {
 	enemy_t	*e;
 
@@ -446,8 +446,8 @@ int func_800edd30(game_object_t *obj, player_stats_t *p)
 		debug_enemy = e;
 		return(0);
 	}
-	func_800eda1c(obj, p, shot_damage_shared(p), e);
-	if(D_801e0f38 * 0.25f < e->health || !violence_level)
+	mari_damage(obj, p, shot_damage_shared(p), e);
+	if(mari_full_health * 0.25f < e->health || !violence_level)
 	{
 		e->unk4 = 0;
 		if(!violence_level)
@@ -493,9 +493,9 @@ void load_mari(void)
 	load_anim(mari_anim_blob, 0x1f, 0x148, "mari.za", 0x0c975878);
 }
 
-/* 0x800edff0: the init callback: her record (kept in D_801e0ea4 for the script), full alpha,
+/* 0x800edff0: the init callback: her record (kept in mari_enemy for the script), full alpha,
    the groups (three of them flagged 8), 300 health scaled by difficulty, the waiting state */
-int func_800edff0(game_object_t *obj)
+int mari_init(game_object_t *obj)
 {
 	enemy_t	*e;
 	group_t	*g;
@@ -506,16 +506,16 @@ int func_800edff0(game_object_t *obj)
 	{
 		return(1);
 	}
-	obj->hit = func_800edc68;
-	obj->die = func_800edd30;
-	obj->remove = func_800ee1d8;
+	obj->hit = mari_hit;
+	obj->die = mari_die;
+	obj->remove = mari_remove;
 	e = (enemy_t *)obj->data;
 	e->target = get_target_player();
 	D_801e0f08 = 0;
 	e->unk98 = 90.0199966f;
 	e->counter = 0x1e;
 	e->unk4 = 0x14;
-	D_801e0ea4 = e;
+	mari_enemy = e;
 	e->frame = 0;
 	e->ai_state = 0;
 	e->num = 0;
@@ -544,21 +544,21 @@ int func_800edff0(game_object_t *obj)
 	e->groups[19].flags |= 8;
 	e->groups[18].flags |= 8;
 	e->groups[17].flags |= 8;
-	func_8011464c(e, mari_anim_blob, 0x1f);
+	pose_groups(e, mari_anim_blob, 0x1f);
 	g = e->groups;
 	e->hit_group = &g[9];
 	g[9].floor = 0;
 	set_enemy_health2(e, 300.0f);
 	e->prio_base = 0xf;
-	D_801e0f38 = e->health;
+	mari_full_health = e->health;
 	e->prio_flags = next_cue_priority();
-	func_800eeeec(e, 0x80b);
+	mari_setup(e, 0x80b);
 	e->frame = 0x11b;
 	return(0);
 }
 
 /* 0x800ee1d8: the remove callback */
-void func_800ee1d8(game_object_t *obj)
+void mari_remove(game_object_t *obj)
 {
 	enemy_t	*e;
 
@@ -572,7 +572,7 @@ void func_800ee1d8(game_object_t *obj)
 }
 
 /* 0x800ee228: the think callback */
-void func_800ee228(game_object_t *obj)
+void mari_think(game_object_t *obj)
 {
 	enemy_t	*e;
 	int	i;
@@ -599,7 +599,7 @@ void func_800ee228(game_object_t *obj)
 		e->ry += 3.1415927f;
 		if(++e->path > e->unk92)
 		{
-			func_800ef220(e);
+			mari_pick_swing(e);
 			e->unk6 = 0x802;
 		}
 		break;
@@ -628,7 +628,7 @@ void func_800ee228(game_object_t *obj)
 		e->ry += 3.1415927f;
 		if(++e->path > e->unk92)
 		{
-			func_800ef220(e);
+			mari_pick_swing(e);
 		}
 		break;
 	case 0x805:
@@ -640,7 +640,7 @@ void func_800ee228(game_object_t *obj)
 		e->ry += 3.1415927f;
 		if(++e->path > e->unk92)
 		{
-			blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0x13, 2);
+			blend_to_frame(mari_enemy, mari_anim_blob, 9, 0x13, 2);
 			e->ai_state = 0x80d;
 			e->path = 0x1bf;
 			e->unk90 = 0x1bf;
@@ -656,7 +656,7 @@ void func_800ee228(game_object_t *obj)
 		e->ry += 3.1415927f;
 		if(++e->path > e->unk92)
 		{
-			blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0x7b, 2);
+			blend_to_frame(mari_enemy, mari_anim_blob, 9, 0x7b, 2);
 			e->ai_state = 0x80e;
 			e->path = 0x1e7;
 			e->unk90 = 0x1e7;
@@ -672,7 +672,7 @@ void func_800ee228(game_object_t *obj)
 		e->ry += 3.1415927f;
 		if(++e->path > e->unk92)
 		{
-			func_800ef220(e);
+			mari_pick_swing(e);
 		}
 		break;
 	case 0x808:
@@ -687,7 +687,7 @@ void func_800ee228(game_object_t *obj)
 		if(++e->path > e->unk92)
 		{
 			play_enemy_sound(e, 0x15, "chastity", 4);
-			blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0x11b, 2);
+			blend_to_frame(mari_enemy, mari_anim_blob, 9, 0x11b, 2);
 			e->ai_state = 0x80b;
 			e->counter = 0;
 			e->path = 0x1bc;
@@ -718,7 +718,7 @@ void func_800ee228(game_object_t *obj)
 		}
 		if(e->frame == 0x17)
 		{
-			func_800ed1e0(e);
+			mari_throw_axe(e);
 		}
 		goto walk_loop;
 	case 0x81d:
@@ -730,13 +730,13 @@ void func_800ee228(game_object_t *obj)
 		e->ry += 3.1415927f;
 		if(++e->path > e->unk92)
 		{
-			blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0xc4, 2);
-			D_801e0ea4->path = 0x134;
-			D_801e0ea4->ai_state = 0x806;
-			D_801e0ea4->unk90 = 0x134;
-			D_801e0ea4->unk92 = 0x15b;
-			path_place(D_801e0ea4, D_80183148[0], D_801e0ea4->path, 1.0f);
-			D_801e0ea4->ry += 3.1415927f;
+			blend_to_frame(mari_enemy, mari_anim_blob, 9, 0xc4, 2);
+			mari_enemy->path = 0x134;
+			mari_enemy->ai_state = 0x806;
+			mari_enemy->unk90 = 0x134;
+			mari_enemy->unk92 = 0x15b;
+			path_place(mari_enemy, D_80183148[0], mari_enemy->path, 1.0f);
+			mari_enemy->ry += 3.1415927f;
 		}
 		break;
 	case 0x80e:
@@ -761,13 +761,13 @@ void func_800ee228(game_object_t *obj)
 		e->ry += 3.1415927f;
 		if(++e->path > e->unk92)
 		{
-			blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0xc4, 2);
-			D_801e0ea4->path = 0x15c;
-			D_801e0ea4->ai_state = 0x807;
-			D_801e0ea4->unk90 = 0x15c;
-			D_801e0ea4->unk92 = 0x175;
-			path_place(D_801e0ea4, D_80183148[0], D_801e0ea4->path, 1.0f);
-			D_801e0ea4->ry += 3.1415927f;
+			blend_to_frame(mari_enemy, mari_anim_blob, 9, 0xc4, 2);
+			mari_enemy->path = 0x15c;
+			mari_enemy->ai_state = 0x807;
+			mari_enemy->unk90 = 0x15c;
+			mari_enemy->unk92 = 0x175;
+			path_place(mari_enemy, D_80183148[0], mari_enemy->path, 1.0f);
+			mari_enemy->ry += 3.1415927f;
 		}
 		break;
 	case 0:
@@ -822,7 +822,7 @@ void func_800ee228(game_object_t *obj)
 		}
 		if(e->frame >= 0x7b)
 		{
-			func_800ef220(e);
+			mari_pick_swing(e);
 		}
 		break;
 	case 0x202:
@@ -833,7 +833,7 @@ void func_800ee228(game_object_t *obj)
 		}
 		if(e->frame >= 0x97)
 		{
-			func_800ef220(e);
+			mari_pick_swing(e);
 		}
 		break;
 	case 0x203:
@@ -844,7 +844,7 @@ void func_800ee228(game_object_t *obj)
 		}
 		if(e->frame >= 0xb0)
 		{
-			func_800ef220(e);
+			mari_pick_swing(e);
 		}
 		break;
 	case 0x204:
@@ -855,7 +855,7 @@ void func_800ee228(game_object_t *obj)
 		}
 		if(e->frame >= 0xc4)
 		{
-			func_800ef220(e);
+			mari_pick_swing(e);
 		}
 		break;
 	case 0x4000:
@@ -875,7 +875,7 @@ void remove_mari(void)
 
 /* 0x800eeeec: the state set-up: 0x801 (the script's first walk) counts in the audits and
    starts her at the head of her path, turned round */
-void func_800eeeec(enemy_t *e, unsigned short state)
+void mari_setup(enemy_t *e, unsigned short state)
 {
 	e->ai_state = state;
 	if(state == 0x801)
@@ -894,7 +894,7 @@ void func_800eeeec(enemy_t *e, unsigned short state)
 /* 0x800eef68: 1 while she has health left */
 int sub_800eef68(void)
 {
-	if(D_801e0ea4->health > 0.0f)
+	if(mari_enemy->health > 0.0f)
 	{
 		return(1);
 	}
@@ -910,39 +910,39 @@ int sub_800eef94(void)
 /* 0x800eefa4: the script's death: her last cry, on her death walk at its fixed place */
 void sub_800eefa4(void)
 {
-	D_801e0ea4->ai_state = 0x2001;
-	D_801e0ea4->frame = 0xd4;
-	play_enemy_sound(D_801e0ea4, 9, "chastity", 8);
-	D_801e0ea4->path = 0x1bd;
-	D_801e0ea4->unk90 = 0x1bd;
-	D_801e0ea4->unk92 = 0x1be;
-	path_place(D_801e0ea4, D_80183148[0], D_801e0ea4->path, 1.0f);
-	D_801e0ea4->ry += 3.1415927f;
-	D_801e0ea4->x = -1020.83398f;
-	D_801e0ea4->z = 196.945999f;
+	mari_enemy->ai_state = 0x2001;
+	mari_enemy->frame = 0xd4;
+	play_enemy_sound(mari_enemy, 9, "chastity", 8);
+	mari_enemy->path = 0x1bd;
+	mari_enemy->unk90 = 0x1bd;
+	mari_enemy->unk92 = 0x1be;
+	path_place(mari_enemy, D_80183148[0], mari_enemy->path, 1.0f);
+	mari_enemy->ry += 3.1415927f;
+	mari_enemy->x = -1020.83398f;
+	mari_enemy->z = 196.945999f;
 }
 
 /* 0x800ef048, 0x800ef07c: the death pose at two other places */
 void sub_800ef048(void)
 {
-	D_801e0ea4->ai_state = 0x2001;
-	D_801e0ea4->frame = 0xf2;
-	D_801e0ea4->x = -1019.73401f;
-	D_801e0ea4->z = 199.845993f;
+	mari_enemy->ai_state = 0x2001;
+	mari_enemy->frame = 0xf2;
+	mari_enemy->x = -1019.73401f;
+	mari_enemy->z = 199.845993f;
 }
 
 void sub_800ef07c(void)
 {
-	D_801e0ea4->ai_state = 0x2001;
-	D_801e0ea4->frame = 0xf2;
-	D_801e0ea4->x = -1018.83398f;
-	D_801e0ea4->z = 197.345993f;
+	mari_enemy->ai_state = 0x2001;
+	mari_enemy->frame = 0xf2;
+	mari_enemy->x = -1018.83398f;
+	mari_enemy->z = 197.345993f;
 }
 
 /* 0x800ef0b0: 1 while the death plays */
 int func_800ef0b0(void)
 {
-	return(D_801e0ea4->ai_state == 0x2001);
+	return(mari_enemy->ai_state == 0x2001);
 }
 
 /* 0x800ef0c8: back to full alpha */
@@ -950,15 +950,15 @@ void sub_800ef0c8(void)
 {
 	int	i;
 
-	D_801e0ea4->alpha = 255.0f;
+	mari_enemy->alpha = 255.0f;
 	for(i = 0; i < 0x1f; i++)
 	{
-		D_801e0ea4->groups[i].alpha = D_801e0ea4->alpha;
+		mari_enemy->groups[i].alpha = mari_enemy->alpha;
 	}
 }
 
 /* 0x800ef110: the picture beside her life bar (texture 0x7082), 128 by 16 around x, y */
-void func_800ef110(float x, float y)
+void mari_draw_name(float x, float y)
 {
 	struct { float x, y, oow, sow, tow, pad; } v[4];
 
@@ -991,7 +991,7 @@ void func_800ef110(float x, float y)
 }
 
 /* 0x800ef220: pick one of the four swings at random (a quarter each) and go for the player */
-void func_800ef220(enemy_t *e)
+void mari_pick_swing(enemy_t *e)
 {
 	int	r;
 	int	state;
@@ -1035,23 +1035,23 @@ void sub_800ef2e8(void)
 
 void sub_800ef2fc(void)
 {
-	if(D_801e0ea4->health < D_801e0f38 * 0.75f)
+	if(mari_enemy->health < mari_full_health * 0.75f)
 	{
 		D_80212db0 = 0;
-		D_801e0ea4->groups[17].flags = 0;
+		mari_enemy->groups[17].flags = 0;
 	}
 }
 
 /* 0x800ef344: the walk 0x802 (path points 0x1a-0x47) */
 void sub_800ef344(void)
 {
-	blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0x110, 2);
-	D_801e0ea4->path = 0x1a;
-	D_801e0ea4->ai_state = 0x802;
-	D_801e0ea4->unk90 = 0x1a;
-	D_801e0ea4->unk92 = 0x47;
-	path_place(D_801e0ea4, D_80183148[0], D_801e0ea4->path, 1.0f);
-	D_801e0ea4->ry += 3.1415927f;
+	blend_to_frame(mari_enemy, mari_anim_blob, 9, 0x110, 2);
+	mari_enemy->path = 0x1a;
+	mari_enemy->ai_state = 0x802;
+	mari_enemy->unk90 = 0x1a;
+	mari_enemy->unk92 = 0x47;
+	path_place(mari_enemy, D_80183148[0], mari_enemy->path, 1.0f);
+	mari_enemy->ry += 3.1415927f;
 }
 
 /* 0x800ef3d0, 0x800ef3e4: a script timer that stops when she has faded or died */
@@ -1062,11 +1062,11 @@ void sub_800ef3d0(void)
 
 void sub_800ef3e4(void)
 {
-	if(D_801e0ea4->ai_state == 0x8102)
+	if(mari_enemy->ai_state == 0x8102)
 	{
 		D_80212dbc = 0;
 	}
-	if(D_801e0ea4->ai_state == 0x2002)
+	if(mari_enemy->ai_state == 0x2002)
 	{
 		D_80212dbc = 0;
 	}
@@ -1075,12 +1075,12 @@ void sub_800ef3e4(void)
 /* 0x800ef420: the walk 0x804 (path points 0x85-0x10d) */
 void sub_800ef420(void)
 {
-	D_801e0ea4->ai_state = 0x804;
-	D_801e0ea4->path = 0x85;
-	D_801e0ea4->unk90 = 0x85;
-	D_801e0ea4->unk92 = 0x10d;
-	D_801e0ea4->frame = 0xc4;
-	D_801e0ea4->flags &= 0xfffd;
+	mari_enemy->ai_state = 0x804;
+	mari_enemy->path = 0x85;
+	mari_enemy->unk90 = 0x85;
+	mari_enemy->unk92 = 0x10d;
+	mari_enemy->frame = 0xc4;
+	mari_enemy->flags &= 0xfffd;
 }
 
 /* 0x800ef45c, 0x800ef470: a script counter */
@@ -1097,28 +1097,28 @@ void sub_800ef470(void)
 /* 0x800ef48c: the throwing walk 0x805 (path points 0x10e-0x133) */
 void sub_800ef48c(void)
 {
-	blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0, 2);
-	D_801e0ea4->path = 0x10e;
-	D_801e0ea4->ai_state = 0x805;
-	D_801e0ea4->unk90 = 0x10e;
-	D_801e0ea4->unk92 = 0x133;
-	path_place(D_801e0ea4, D_80183148[0], D_801e0ea4->path, 1.0f);
-	D_801e0ea4->ry += 3.1415927f;
+	blend_to_frame(mari_enemy, mari_anim_blob, 9, 0, 2);
+	mari_enemy->path = 0x10e;
+	mari_enemy->ai_state = 0x805;
+	mari_enemy->unk90 = 0x10e;
+	mari_enemy->unk92 = 0x133;
+	path_place(mari_enemy, D_80183148[0], mari_enemy->path, 1.0f);
+	mari_enemy->ry += 3.1415927f;
 }
 
 /* 0x800ef518: below 13% of her health: the walk 0x808 (path points 0x176-0x18e); 1 when it
    started */
 int sub_800ef518(void)
 {
-	if(D_801e0ea4->health < D_801e0f38 * 0.13f)
+	if(mari_enemy->health < mari_full_health * 0.13f)
 	{
-		blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0x110, 2);
-		D_801e0ea4->path = 0x176;
-		D_801e0ea4->ai_state = 0x808;
-		D_801e0ea4->unk90 = 0x176;
-		D_801e0ea4->unk92 = 0x18e;
-		path_place(D_801e0ea4, D_80183148[0], D_801e0ea4->path, 1.0f);
-		D_801e0ea4->ry += 3.1415927f;
+		blend_to_frame(mari_enemy, mari_anim_blob, 9, 0x110, 2);
+		mari_enemy->path = 0x176;
+		mari_enemy->ai_state = 0x808;
+		mari_enemy->unk90 = 0x176;
+		mari_enemy->unk92 = 0x18e;
+		path_place(mari_enemy, D_80183148[0], mari_enemy->path, 1.0f);
+		mari_enemy->ry += 3.1415927f;
 		return(1);
 	}
 	return(0);
@@ -1132,10 +1132,10 @@ void sub_800ef5d8(void)
 
 void sub_800ef5ec(void)
 {
-	if(--D_80212dd0 < 2 && D_801e0ea4->ai_state == 0x80d)
+	if(--D_80212dd0 < 2 && mari_enemy->ai_state == 0x80d)
 	{
-		D_801e0ea4->ai_state = 0x81d;
-		blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0, 2);
+		mari_enemy->ai_state = 0x81d;
+		blend_to_frame(mari_enemy, mari_anim_blob, 9, 0, 2);
 	}
 }
 
@@ -1147,15 +1147,15 @@ void sub_800ef658(void)
 /* 0x800ef660: as 0x800ef518 with the walk 0x809 (path points 0x18f-0x1a7) */
 int sub_800ef660(void)
 {
-	if(D_801e0ea4->health < D_801e0f38 * 0.13f)
+	if(mari_enemy->health < mari_full_health * 0.13f)
 	{
-		blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0x110, 2);
-		D_801e0ea4->path = 0x18f;
-		D_801e0ea4->ai_state = 0x809;
-		D_801e0ea4->unk90 = 0x18f;
-		D_801e0ea4->unk92 = 0x1a7;
-		path_place(D_801e0ea4, D_80183148[0], D_801e0ea4->path, 1.0f);
-		D_801e0ea4->ry += 3.1415927f;
+		blend_to_frame(mari_enemy, mari_anim_blob, 9, 0x110, 2);
+		mari_enemy->path = 0x18f;
+		mari_enemy->ai_state = 0x809;
+		mari_enemy->unk90 = 0x18f;
+		mari_enemy->unk92 = 0x1a7;
+		path_place(mari_enemy, D_80183148[0], mari_enemy->path, 1.0f);
+		mari_enemy->ry += 3.1415927f;
 		return(1);
 	}
 	return(0);
@@ -1169,10 +1169,10 @@ void sub_800ef720(void)
 
 void sub_800ef734(void)
 {
-	if(--D_80212dd4 < 2 && D_801e0ea4->ai_state == 0x80e)
+	if(--D_80212dd4 < 2 && mari_enemy->ai_state == 0x80e)
 	{
-		blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0, 2);
-		D_801e0ea4->ai_state = 0x81e;
+		blend_to_frame(mari_enemy, mari_anim_blob, 9, 0, 2);
+		mari_enemy->ai_state = 0x81e;
 	}
 }
 
@@ -1184,15 +1184,15 @@ void sub_800ef7a8(void)
 /* 0x800ef7b0: as 0x800ef518 with the walk 0x80a (path points 0x1a8-0x1bb) */
 int sub_800ef7b0(void)
 {
-	if(D_801e0ea4->health < D_801e0f38 * 0.13f)
+	if(mari_enemy->health < mari_full_health * 0.13f)
 	{
-		blend_to_frame(D_801e0ea4, mari_anim_blob, 9, 0x110, 2);
-		D_801e0ea4->path = 0x1a8;
-		D_801e0ea4->ai_state = 0x80a;
-		D_801e0ea4->unk90 = 0x1a8;
-		D_801e0ea4->unk92 = 0x1bb;
-		path_place(D_801e0ea4, D_80183148[0], D_801e0ea4->path, 1.0f);
-		D_801e0ea4->ry += 3.1415927f;
+		blend_to_frame(mari_enemy, mari_anim_blob, 9, 0x110, 2);
+		mari_enemy->path = 0x1a8;
+		mari_enemy->ai_state = 0x80a;
+		mari_enemy->unk90 = 0x1a8;
+		mari_enemy->unk92 = 0x1bb;
+		path_place(mari_enemy, D_80183148[0], mari_enemy->path, 1.0f);
+		mari_enemy->ry += 3.1415927f;
 		return(1);
 	}
 	return(0);

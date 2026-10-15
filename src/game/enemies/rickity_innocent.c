@@ -37,7 +37,7 @@ extern int	shot_hits_sphere(float *, float, player_stats_t *);
 extern int	find_submesh_hit(enemy_t *, submesh_t *, int, player_stats_t *);
 extern void	hurt_player(player_stats_t *, int, int, float);
 extern void	show_pickup_message(player_stats_t *, int);			/* player.c's file: a penalty notice */
-extern void	func_800fa1c4(enemy_t *);				/* the holder lets go */
+extern void	zombie_walk(enemy_t *);				/* the holder lets go */
 extern void	add_world_sprite(float *, int, int);
 extern int	randrng(int);
 extern int	remove_die();						/* spawn.c */
@@ -171,7 +171,7 @@ int rinn_die(game_object_t *obj, player_stats_t *p)
 		{
 			holder->unkdc = 0;
 			e->unkd8 = 0;
-			func_800fa1c4(holder);
+			zombie_walk(holder);
 		}
 		play_enemy_sound(e, rinn_cries[randrng(3)], "girl", 8);
 	}

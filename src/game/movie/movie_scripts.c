@@ -9,9 +9,11 @@
 extern void	disable_spawning();
 extern void	end_of_wave();
 extern void	fade_out_level_stream();
-extern void	func_800fa720();
-extern void	func_801153a0();
+extern void	freakshow_script_ending();
+extern void	freakshow_script_init();
 extern void	func_8012d43c();
+extern void	hhouse_script_ending();
+extern void	hhouse_script_init();
 extern void	krampus_section0();
 extern void	krampus_section0_wait();
 extern int	krampus_section0_waiting();
@@ -124,7 +126,6 @@ extern void	sub_800fb2b4();
 extern void	sub_800fb310();
 extern void	sub_800fb36c();
 extern void	sub_800fb3c8();
-extern void	sub_800fb424();
 extern void	sub_80115530();
 extern void	sub_8011559c();
 extern void	sub_801155f8();
@@ -158,7 +159,6 @@ extern void	sub_80116120();
 extern void	sub_8011617c();
 extern void	sub_801161e8();
 extern void	sub_80116274();
-extern void	sub_80116350();
 extern void	sub_80121ed4();
 extern int	sub_80121f68();
 extern void	sub_80121fbc();
@@ -391,7 +391,7 @@ script_word_t	hhouse_script[] =
 {
 	/* hhouse_script (0x80110b04) */
 	5,
-	SCRIPT_FN(func_800fa720),
+	SCRIPT_FN(hhouse_script_init),
 	7,
 	SCRIPT_VAR(&wave_lock),
 	1,
@@ -1285,7 +1285,7 @@ script_word_t	hhouse_script[] =
 	1,
 	3253,
 	5,
-	SCRIPT_FN(sub_800fb424),
+	SCRIPT_FN(hhouse_script_ending),
 	8,
 	SCRIPT_VAR(&wave_lock),
 	2,
@@ -1301,7 +1301,7 @@ script_word_t	freakshow_script[] =
 {
 	/* freakshow_script (0x80111928) */
 	5,
-	SCRIPT_FN(func_801153a0),
+	SCRIPT_FN(freakshow_script_init),
 	7,
 	SCRIPT_VAR(&wave_lock),
 	7,
@@ -2194,7 +2194,7 @@ script_word_t	freakshow_script[] =
 	1,
 	3830,
 	5,
-	SCRIPT_FN(sub_80116350),
+	SCRIPT_FN(freakshow_script_ending),
 	8,
 	SCRIPT_VAR(&wave_lock),
 	2,
