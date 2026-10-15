@@ -4,7 +4,7 @@
  * and the bullets he fires (object type 0x201a, MBLT.ZM, texmap mikebult.WMS). One original file,
  * 0x80109688-0x8010bf2c, its tables at 0x80192ff0-0x80193ad0 (hambone_data.c). His model has
  * 925 vertices, 1386 faces and 917 normals in 21 submeshes, the animation 586 frames; he walks a
- * path built into the image (D_80181888) rather than loaded from a file.
+ * path built into the image (hambone_path) rather than loaded from a file.
  *
  * He is fought twice: the spawn table starts the first fight in state 0x80 (the audit HAMBONE 1
  * START, five fires on his body, every part's hit count cleared) and the second in 0x81 (HAMBONE 2
@@ -85,7 +85,6 @@ extern int	violence_level;
 extern char	text_buffer[];
 extern movie_t	movie;
 extern float	camera_x;						/* camera_pos[0] (camera.c) */
-extern float	D_80181888[];						/* Hambone's path, in the image */
 
 /* hambone_data.c */
 extern texmap_t	hambone_texmap[57];
@@ -93,6 +92,7 @@ extern submesh_t submesh_info_hambone[21];
 extern texmap_t	mblt_texmap[1];
 extern submesh_t submesh_info_mblt[1];
 extern int	hambone_taunts[5], hambone_pains[5];
+extern float	hambone_path[178 * 6];				/* 0x80181888 */
 extern float	hambone_flash_colour[3];
 extern float	hambone_spray6_dir[3], hambone_spray6_base[3], hambone_spray3_dir[3], hambone_spray3_base[3];
 extern float	hambone_spray4_base[3], hambone_spray4_dir[3], hambone_spray13_base[3], hambone_spray13_dir[3];
@@ -852,42 +852,42 @@ void func_8010acac(game_object_t *obj)
 		{
 			func_8010b71c(e);
 		}
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_LOSE_3:
 		if(++e->frame >= 0x17c)
 		{
 			func_8010b71c(e);
 		}
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_LOSE_LEG:
 		if(++e->frame >= 0x76)
 		{
 			func_8010b71c(e);
 		}
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_HIT_BODY:
 		if(++e->frame >= 0x1cf)
 		{
 			func_8010b71c(e);
 		}
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_LOSE_18:
 		if(++e->frame >= 0x1f1)
 		{
 			func_8010b71c(e);
 		}
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_KNOCKED:
 		if(++e->frame >= HAMBONE_FRAMES)
 		{
 			func_8010b71c(e);
 		}
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_DIE1:
 		if(++e->frame >= 0x240)
@@ -930,14 +930,14 @@ void func_8010acac(game_object_t *obj)
 		{
 			func_8010b658(e);
 		}
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_ENTER:
 		if(++e->frame >= 0x8d)
 		{
 			func_8010b658(e);
 		}
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		if(++e->path > e->unk92)
 		{
 			e->path = e->unk92;
@@ -966,7 +966,7 @@ void func_8010acac(game_object_t *obj)
 		}
 		break;
 	case HAMBONE_FORWARD:
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		if(++e->counter >= 4)
 		{
 			e->counter = 0;
@@ -987,7 +987,7 @@ void func_8010acac(game_object_t *obj)
 		}
 		break;
 	case HAMBONE_BACK:
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		if(++e->counter >= 4)
 		{
 			e->counter = 0;
@@ -1032,7 +1032,7 @@ void func_8010b384(enemy_t *e, unsigned short state)
 		attach_effect(e, attach_flame(0.0f, (submesh_info_hambone[2].radius + submesh_info_hambone[2].radius) * e->scale[0], &e->groups[2]));
 		attach_effect(e, attach_flame(0.0f, (submesh_info_hambone[5].radius + submesh_info_hambone[5].radius) * e->scale[0], &e->groups[5]));
 		attach_effect(e, attach_flame(0.0f, (submesh_info_hambone[15].radius + submesh_info_hambone[15].radius) * e->scale[0], &e->groups[15]));
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		break;
 	case HAMBONE_FIGHT2:
 		increment_audit(0x36);
@@ -1064,7 +1064,7 @@ void func_8010b384(enemy_t *e, unsigned short state)
 		}
 		func_8010b7a8(e);
 		e->frame = 0x76;
-		path_place(e, D_80181888, e->path, 1.0f);
+		path_place(e, hambone_path, e->path, 1.0f);
 		e->ai_state = HAMBONE_ENTER;
 		e->groups[0].flags |= 0x1000000;
 		break;

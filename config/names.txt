@@ -1549,6 +1549,7 @@
 0x80193ac4 hambone_hits_19
 0x80193ac8 hambone_hits_0
 0x80193acc hambone_hits_18
+0x80181888 hambone_path
 0x801e588c hambone_verts
 0x80212e00 hambone_faces
 0x801e1768 hambone_normals
