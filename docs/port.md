@@ -92,7 +92,7 @@ Matching status of the game modules (per function, `tools/match/trymatch.sh`, 20
 | auditfmt.c | game1 (-O) | 1 of 1 (startaudit, 2076 instructions: the audit pages written into audits.fmt), registered (text 0x800ef870-0x800f18e0, rodata 0x80171148-0x80171a5f) |
 | audits.c | game1 (-O) | 16 of 16, registered in modules.txt (text 0x800f18e0-0x800f1d84, data 0x8018ea60-0x8018ed48) |
 | adjust.c | game2 | 2 of 3; game_setup_cmos 98% |
-| hiscore.c | game0 (-O0, `register`) | 19 of 19 (0x800e4c70-0x800e7184: the place pictures, the attract table, the table drawer, check_high_score, the autograph and initials entries, create_hstd_tex); not registered yet (its data/bss layout is unchecked) |
+| hiscore.c | game0 (-O0, `register`) | 19 of 19 (0x800e4c70-0x800e7184: the place pictures, the attract table, the table drawer, check_high_score, the autograph and initials entries, create_hstd_tex), registered (text 0x800e4c70-0x800e7184, rodata 0x801708a0-0x80170a84, data 0x8017de08-0x8017dfd8; the word at 0x800e7184 is data and stays in asm) |
 | soundio.c | game2 | 2 of 2 (main_init_sound, check_sound_os; the cue helpers moved to levelsnd.c) |
 | levelsnd.c | game2 | 36 of 36, registered in modules.txt (text 0x800ebb18-0x800ec53c, rodata 0x80170f08-0x80170f40, data 0x8018e038-0x8018e050) |
 | stream.c | game2 | 19 of 23; stream_select_wave 86%, stream_debug_display 96%, stream_jump 60%, stream_fill 52% |
