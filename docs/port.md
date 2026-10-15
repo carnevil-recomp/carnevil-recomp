@@ -304,9 +304,9 @@ DSP, so the real figure is unknown. With the sleeps alone a Rickety Town load la
 frames while the introduction needs about 690, so it was cut short.
 
 As a test, `port/runtime/hal.c` (`load_time_word`) stretches every load made while sound plays
-by `--load-time X` (default 2.4, which is 690 / 285): each bank word adds (X - 1) / 8192 of a
+by `--load-time X` (default 2.6, a trial value; 690 / 285 = 2.4 is the bare minimum for the introduction): each bank word adds (X - 1) / 8192 of a
 frame, waited out with `sleep()` so the game keeps running. The boot load of the attract banks
-goes through the same routine and lengthens too (it ends at frame 829 instead of 391).
+goes through the same routine and lengthens too (it ends at frame 892 instead of 391).
 `--load-time 1` restores the instant hardware. The value should be replaced by a timing taken
 from a real cabinet, or by emulating the DSP firmware.
 
