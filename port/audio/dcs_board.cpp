@@ -375,9 +375,9 @@ public:
 			}
 			case 0x02: stop_channel((t.channel + *p++) % MAX_CHANNELS); break;
 			case 0x03: { uint16_t call = rd16(p); sound_call(call, host_level[t.channel], 0x7f, 0); break; }
-			case 0x04: p += 3; break;			/* host event timer */
-			case 0x05: p += 1; break;			/* start deferred track */
-			case 0x06: p += 2; break;			/* set variable */
+			case 0x04: if(verbose) fprintf(stderr, "[dcs] skipped op 04 (host event timer) on track %d\n", t.channel); p += 3; break;
+			case 0x05: if(verbose) fprintf(stderr, "[dcs] skipped op 05 (deferred track) on track %d\n", t.channel); p += 1; break;
+			case 0x06: if(verbose) fprintf(stderr, "[dcs] skipped op 06 (set variable) on track %d\n", t.channel); p += 2; break;
 			case 0x07: { int ch = (t.channel + *p++) % MAX_CHANNELS; int lvl = (int8_t)*p++; set_level(ch, t.channel, lvl); break; }
 			case 0x08: { int ch = (t.channel + *p++) % MAX_CHANNELS; int d = (int8_t)*p++; if(ch < MAX_CHANNELS) set_level(ch, t.channel, (channel[ch].mixer[t.channel].curLevel >> 6) + d); break; }
 			case 0x09: { int ch = (t.channel + *p++) % MAX_CHANNELS; int d = (int8_t)*p++; if(ch < MAX_CHANNELS) set_level(ch, t.channel, (channel[ch].mixer[t.channel].curLevel >> 6) - d); break; }
@@ -394,8 +394,8 @@ public:
 					else t.loops.pop_back();
 				}
 				break;
-			case 0x10: p += 2; break;
-			case 0x11: p += 4; break;
+			case 0x10: if(verbose) fprintf(stderr, "[dcs] skipped op 10 on track %d\n", t.channel); p += 2; break;
+			case 0x11: if(verbose) fprintf(stderr, "[dcs] skipped op 11 on track %d\n", t.channel); p += 4; break;
 			default:
 				if(verbose) fprintf(stderr, "[dcs] unknown track opcode %02x\n", op);
 				t.active = false; return;

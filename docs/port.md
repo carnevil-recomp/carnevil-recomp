@@ -329,6 +329,10 @@ which side the DCS2 firmware plays first is not verified). The sound calls' pan 
 applied: the firmware's pan law lives in the DSP code the port does not run, so calls play
 centred instead of through an invented curve.
 
+The five track opcodes the board does not act on (0x04 host event timer, 0x05 deferred track,
+0x06 set variable, 0x10, 0x11) are logged under `-v` as `[dcs] skipped op`; none ran in a full
+Rickety Town game or a 14,000-frame attract run (2026-10-14). Check again as levels are added.
+
 ### Load time (a test calibration, not game code)
 
 The jester's level introduction has no fixed length: it plays, then loops its last stretch
