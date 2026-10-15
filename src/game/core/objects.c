@@ -477,6 +477,54 @@ void think_pass(void *data)
 	}
 }
 
+/* 0x800cd31c: the Freak Show's step test for move_cd: the step to np from pos is blocked when it
+   ends inside another live enemy of the level's five kinds (the fly man 0x2029 and 0x2024,
+   0x2020, 0x2022, 0x2026, not dying) that it was not already inside; the enemy nearest the camera
+   is never blocked */
+int func_800cd31c(float *np, float *pos, int id)
+{
+	game_object_t	*o;
+	enemy_t		*e;
+	short		i;
+	float		d, dx, dz;
+
+	if(nearest_enemy == (short)id)
+	{
+		return(0);
+	}
+	i = objects[0].next;
+	while(i != OBJ_NONE)
+	{
+		o = &objects[i];
+		i = o->next;
+		if(o->id == (short)id)
+		{
+			continue;
+		}
+		if(o->type == 0x2029 || o->type == 0x2024 || o->type == 0x2020 || o->type == 0x2022 || o->type == 0x2026)
+		{
+			e = (enemy_t *)o->data;
+			if(e->ai_state & 0x6000)
+			{
+				continue;
+			}
+			dx = e->x - np[0];
+			dz = e->z - np[2];
+			d = fsqrt(dx * dx + dz * dz);
+			if(d < e->radius)
+			{
+				dx = e->x - pos[0];
+				dz = e->z - pos[2];
+				if(d < fsqrt(dx * dx + dz * dz))
+				{
+					return(1);
+				}
+			}
+		}
+	}
+	return(0);
+}
+
 /* 0x800cd610: Rickety Town's step test for move_cd: the step to np from pos is blocked when
    it ends inside another live enemy (the five Rickety Town types, not dying) that it was not
    already inside; the enemy nearest the camera is never blocked */

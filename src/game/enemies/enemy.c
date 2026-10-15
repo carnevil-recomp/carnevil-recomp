@@ -917,6 +917,224 @@ float distance_between(float *a, float *b)
 	return fsqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
 }
 
+/* 0x800fc8cc: turn the enemy towards the camera on all three axes (the angles angles_to gives
+   from the camera to it), at most rate radians per axis per call; a turn of under 0.1 left is
+   not taken and a smaller remainder is taken whole. The number of axes not already on target */
+int func_800fc8cc(enemy_t *e, float rate)
+{
+	float	v[3];
+	float	diff, step;
+	int	n, done;
+
+	n = 3;
+	angles_to(&camera_x, &e->x, v);
+	diff = v[1] - e->ry;
+	done = 0;
+	step = rate;
+	if(diff < -3.1415927f)
+	{
+		diff += 6.2831855f;
+		while(diff < -3.1415927f)
+		{
+			diff += 6.2831855f;
+		}
+	}
+	if(3.1415927f < diff)
+	{
+		diff -= 6.2831855f;
+		while(3.1415927f < diff)
+		{
+			diff -= 6.2831855f;
+		}
+	}
+	if(diff == 0.0f)
+	{
+		n--;
+		done = 1;
+	}
+	else if(0.0f < diff)
+	{
+		if(diff < step)
+		{
+			if(diff < 0.1f)
+			{
+				done = 1;
+			}
+			else
+			{
+				step = diff;
+			}
+		}
+	}
+	else if(step < diff)
+	{
+		if(diff < -0.1f)
+		{
+			done = 1;
+		}
+		else
+		{
+			step = -diff;
+		}
+	}
+	if(!done)
+	{
+		if(diff < -3.1415927f)
+		{
+			e->ry = e->ry + step;
+		}
+		else if(diff < 0.0f)
+		{
+			e->ry = e->ry - step;
+		}
+		else if(diff < 3.1415927f)
+		{
+			e->ry = e->ry + step;
+		}
+		else
+		{
+			e->ry = e->ry - step;
+		}
+	}
+	diff = v[0] - e->rx;
+	done = 0;
+	step = rate;
+	if(diff < -3.1415927f)
+	{
+		diff += 6.2831855f;
+		while(diff < -3.1415927f)
+		{
+			diff += 6.2831855f;
+		}
+	}
+	if(3.1415927f < diff)
+	{
+		diff -= 6.2831855f;
+		while(3.1415927f < diff)
+		{
+			diff -= 6.2831855f;
+		}
+	}
+	if(diff == 0.0f)
+	{
+		n--;
+		done = 1;
+	}
+	else if(0.0f < diff)
+	{
+		if(diff < step)
+		{
+			if(diff < 0.1f)
+			{
+				done = 1;
+			}
+			else
+			{
+				step = diff;
+			}
+		}
+	}
+	else if(step < diff)
+	{
+		if(diff < -0.1f)
+		{
+			done = 1;
+		}
+		else
+		{
+			step = -diff;
+		}
+	}
+	if(!done)
+	{
+		if(diff < -3.1415927f)
+		{
+			e->rx = e->rx + step;
+		}
+		else if(diff < 0.0f)
+		{
+			e->rx = e->rx - step;
+		}
+		else if(diff < 3.1415927f)
+		{
+			e->rx = e->rx + step;
+		}
+		else
+		{
+			e->rx = e->rx - step;
+		}
+	}
+	diff = v[2] - e->rz;
+	done = 0;
+	step = rate;
+	if(diff < -3.1415927f)
+	{
+		diff += 6.2831855f;
+		while(diff < -3.1415927f)
+		{
+			diff += 6.2831855f;
+		}
+	}
+	if(3.1415927f < diff)
+	{
+		diff -= 6.2831855f;
+		while(3.1415927f < diff)
+		{
+			diff -= 6.2831855f;
+		}
+	}
+	if(diff == 0.0f)
+	{
+		n--;
+		done = 1;
+	}
+	else if(0.0f < diff)
+	{
+		if(diff < step)
+		{
+			if(diff < 0.1f)
+			{
+				done = 1;
+			}
+			else
+			{
+				step = diff;
+			}
+		}
+	}
+	else if(step < diff)
+	{
+		if(diff < -0.1f)
+		{
+			done = 1;
+		}
+		else
+		{
+			step = -diff;
+		}
+	}
+	if(!done)
+	{
+		if(diff < -3.1415927f)
+		{
+			e->rz = e->rz + step;
+		}
+		else if(diff < 0.0f)
+		{
+			e->rz = e->rz - step;
+		}
+		else if(diff < 3.1415927f)
+		{
+			e->rz = e->rz + step;
+		}
+		else
+		{
+			e->rz = e->rz - step;
+		}
+	}
+	return(n);
+}
+
 /* 0x800fcd70: face_camera towards any point: turn the enemy towards to by at most rate radians;
    1 when it turned, 0 when it already faces it (within the rate) */
 int func_800fcd70(enemy_t *e, float *to, float rate)
