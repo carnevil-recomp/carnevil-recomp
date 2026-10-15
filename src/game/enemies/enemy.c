@@ -160,6 +160,56 @@ extern float	fatan(float);
 extern float	ffabs(float);
 int	move_cd(enemy_t *, float, float, float);
 
+/* 0x800fc550: angles_to on the turn alone: rot gets the heading from from to to, no pitch or
+   roll (Mari's thrown axe) */
+void func_800fc550(float *from, float *to, float *rot)
+{
+	float	d[3], a;
+
+	d[0] = to[0] - from[0];
+	d[1] = to[1] - from[1];
+	d[2] = to[2] - from[2];
+	if(d[2] == 0.0f)
+	{
+		if(d[0] > 0.0f)
+		{
+			rot[1] = 1.570796f;
+		}
+		else
+		{
+			rot[1] = 4.712388f;
+		}
+	}
+	else
+	{
+		a = fatan(ffabs(d[0] / d[2]));
+		if(d[0] > 0.0f)
+		{
+			if(d[2] > 0.0f)
+			{
+				rot[1] = 3.1415927f - a;
+			}
+			else
+			{
+				rot[1] = a;
+			}
+		}
+		else
+		{
+			if(d[2] > 0.0f)
+			{
+				rot[1] = a + 3.1415927f;
+			}
+			else
+			{
+				rot[1] = 6.2831855f - a;
+			}
+		}
+	}
+	rot[0] = 0;
+	rot[2] = 0;
+}
+
 /* 0x800fc66c: turn the enemy towards the view point by at most rate radians: 1 when it turned,
    0 when it already faces it (within the rate) */
 int face_camera(enemy_t *e, float rate)

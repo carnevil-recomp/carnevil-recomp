@@ -243,6 +243,46 @@ void animate_loose_groups(enemy_t *e, int n)
 	}
 }
 
+/* 0x8011464c: every group posed at the enemy's current frame (the Haunted House enemies' init
+   uses it where the others use init_groups): an animated group (0x2000) gets its world
+   rotation, position and pivot; the others are reset to the origin with an unrotated matrix */
+extern void	rot_matrix_yxz(float *, float *);
+void func_8011464c(enemy_t *e, submesh_t *sub, int nsub)
+{
+	float	m[9], gm[9], pos[3];
+	group_t	*g;
+	int	i;
+
+	rot_matrix_zyx(m, &e->rx);
+	mat_scale(m, e->scale);
+	for(i = 0; i < nsub; i++)
+	{
+		g = &e->groups[i];
+		if(g->flags & 0x2000)
+		{
+			rot_matrix_zyx(gm, sub[i].anim[e->frame].rot);
+			pos[0] = sub[i].anim[e->frame].pos[0];
+			pos[1] = sub[i].anim[e->frame].pos[1];
+			pos[2] = sub[i].anim[e->frame].pos[2];
+			mat_mul(m, gm, g->mat);
+			mat_vec_mul(pos, m, pos);
+			vec_add(pos, &e->x, g->pos);
+			mat_vec_mul(sub[i].pivot, g->mat, g->pivot);
+			vec_add(g->pivot, pos, g->pivot);
+		}
+		else
+		{
+			g->pos[0] = 0;
+			g->pos[1] = 0;
+			g->pos[2] = 0;
+			g->pivot[0] = 0;
+			g->pivot[1] = 0;
+			g->pivot[2] = 0;
+			rot_matrix_yxz(g->mat, g->pos);
+		}
+	}
+}
+
 /* 0x801149b4: every group starts at the enemy's position */
 void init_groups(enemy_t *e, submesh_t *sub, int nsub)
 {
