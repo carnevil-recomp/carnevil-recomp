@@ -2054,3 +2054,10 @@
 0x801e5b4c gool_verts
 0x8021efe8 gool_faces
 0x801e5808 gool_normals
+0x801e6ec0 sound_state
+0x80179be8 sound_retry_audit
+0x801e6bac D_801e6bac
+0x801e6bcc D_801e6bcc
+0x801e6bec D_801e6bec
+0x801e6c10 D_801e6c10
+0x801e6c34 D_801e6c34

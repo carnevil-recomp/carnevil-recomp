@@ -66,3 +66,6 @@ freakshow_innocent_data src/game/enemies/freakshow_innocent_data.c game2 -     -
 pickup_health        src/game/enemies/pickup_health.c        game2  0x80102e58 0x80103568  0x80172a00 0x80172a4c  -          -
 rickity_innocent     src/game/enemies/rickity_innocent.c     game2  0x801293b8 0x80129d54  0x80173f68 0x80173fb0  0x8019b9e8 0x8019b9f4
 rickity_innocent_data src/game/enemies/rickity_innocent_data.c game2 -        -           -          -           0x8019b4e8 0x8019b9e8
+fog                  src/game/render/fog.c                   game2  0x800d6e60 0x800d6eec  -          -           0x80179da8 0x80179de8
+soundio              src/game/sound/soundio.c                game2  0x800c5e50 0x800c6030  0x8016e0fc 0x8016e209  -          -
+rickity_script       src/game/movie/rickity_script.c         game2  0x80123f88 0x80124c68  -          -           -          -
