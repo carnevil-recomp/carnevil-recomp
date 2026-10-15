@@ -226,7 +226,6 @@ WEAK int something_gool_anim(void) { STUB(something_gool_anim); return 0; }
 WEAK int something_mari_anim(void) { STUB(something_mari_anim); return 0; }
 WEAK int func_800c8938(void) { STUB(func_800c8938); return 0; }
 WEAK int func_800c99e4(void) { STUB(func_800c99e4); return 0; }
-WEAK int func_800d14a4(void) { STUB(func_800d14a4); return 0; }
 WEAK int func_8015f30c(void) { STUB(func_8015f30c); return 0; }
 /* term.c's helpers (hit tests, effects, steering, damage) still in assembly */
 /* krinkle.c's helpers still in assembly */
@@ -237,7 +236,6 @@ WEAK int func_800cd31c(void) { STUB(func_800cd31c); return 0; }
 WEAK int func_800cd904(void) { STUB(func_800cd904); return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */
 WEAK void func_800e7130(void) { STUB(func_800e7130); }
-WEAK int func_80162570(void) { STUB(func_80162570); return 0; }
 WEAK void func_800e59b8(void) { STUB(func_800e59b8); }
 /* the Haunted House zombie's walk to the player (0x800fa1c4, the zombie file is not in C yet); the Rickety Town girl calls it on her holder when she dies */
 WEAK void func_800fa1c4(void) { STUB(func_800fa1c4); }

@@ -682,7 +682,7 @@ void gun_pump(player_stats_t *p, int down)
 }
 
 extern float	D_80212df4;			/* the gamma the level plays at */
-extern int	func_80162570(void);		/* a fade is running */
+extern int	grSstIsBusy(void);		/* Glide: the 3dfx chip is still drawing */
 int	D_80179d60 = 0;				/* 0x80179d60 (.data): the screen is held bright for a gun to see */
 
 /* 0x800d57b0: every vblank: both guns' trigger and pump bits, then the screen brightness:
@@ -734,7 +734,7 @@ void gun_vblank(void)
 	}
 	else if(player_stats[0].shot_pending || player_stats[1].shot_pending)
 	{
-		if(!func_80162570())
+		if(!grSstIsBusy())
 		{
 			specific_gamma_load(D_80212df4, 1.0f);
 			D_80179d60 = 1;
@@ -748,7 +748,7 @@ void gun_vblank(void)
 			}
 		}
 	}
-	else if(!func_80162570() && D_80179d60 == 1)
+	else if(!grSstIsBusy() && D_80179d60 == 1)
 	{
 		D_80179d60 = 0;
 		specific_gamma_load(0.0f, 1.0f);
