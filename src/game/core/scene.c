@@ -64,6 +64,8 @@ extern void	func_800d14a4(float, float);		/* vecmat.c: a dot on the debug map */
 void		func_800c918c(void);
 float		marker_rim_alpha = 10.0f;		/* 0x80179c34: the markers' rim alpha, pulsing between 1 and 20 */
 float		marker_rim_step = 0.1f;			/* 0x80179c38: its change per marker drawn */
+float		ring_centre_alpha = 10.0f;		/* 0x80179c3c: the rings' centre alpha (plus 10), pulsing between 1 and 20 */
+float		ring_centre_step = 0.1f;		/* 0x80179c40: its change per ring drawn */
 
 /* 0x800c8a44: a disc of radius r round (x, y) at depth q in the colour: twelve triangles from
    the centre (alpha 255) to the rim (the pulsing alpha), every corner snapped to a quarter
@@ -92,6 +94,56 @@ void func_800c8a44(float x, float y, float q, float r, unsigned int color)
 	{
 		marker_rim_alpha -= marker_rim_step;
 		marker_rim_step = -marker_rim_step;
+	}
+	angle = 0.0f;
+	v[0].x = x;
+	v[0].y = y;
+	do
+	{
+		v[1].x = v[0].x + r * fsin(angle);
+		v[1].y = v[0].y + r * fcos(angle);
+		next = angle + 0.5235987f;
+		v[2].x = v[0].x + r * fsin(next);
+		v[2].y = v[0].y + r * fcos(next);
+		v[0].x = (v[0].x + 2097152.0f) - 2097152.0f;
+		v[0].y = (v[0].y + 2097152.0f) - 2097152.0f;
+		v[1].x = (v[1].x + 2097152.0f) - 2097152.0f;
+		v[1].y = (v[1].y + 2097152.0f) - 2097152.0f;
+		v[2].x = (v[2].x + 2097152.0f) - 2097152.0f;
+		v[2].y = (v[2].y + 2097152.0f) - 2097152.0f;
+		func_800d2ff0(&v[0], &v[1], &v[2]);
+		angle = next;
+	} while(angle < 6.1086516f);
+	grAlphaBlendFunction(GR_BLEND_ONE, GR_BLEND_ZERO, GR_BLEND_ONE, GR_BLEND_ZERO);
+}
+
+/* 0x800c8c98: a ring: the same twelve triangles as func_800c8a44 but the rim is solid (alpha
+   125) and the centre faint (its own pulsing alpha plus 10); the gun's crosshair on the
+   high-score initials board */
+void draw_ring(float x, float y, float q, float r, unsigned int color)
+{
+	qavert_t	v[3];
+	float		angle, next;
+
+	guAlphaSource(GR_ALPHASOURCE_ITERATED_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA);
+	guColorCombineFunction(GR_COLORCOMBINE_CCRGB);
+	grConstantColorValue(color);
+	v[2].q = q;
+	v[1].q = q;
+	v[0].q = q;
+	v[0].a = ring_centre_alpha + 10.0f;
+	v[1].a = v[2].a = 125.0f;
+	ring_centre_alpha += ring_centre_step;
+	if(ring_centre_alpha > 20.0f)
+	{
+		ring_centre_alpha -= ring_centre_step;
+		ring_centre_step = -ring_centre_step;
+	}
+	if(ring_centre_alpha < 1.0f)
+	{
+		ring_centre_alpha -= ring_centre_step;
+		ring_centre_step = -ring_centre_step;
 	}
 	angle = 0.0f;
 	v[0].x = x;

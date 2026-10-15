@@ -40,6 +40,34 @@ static void		parse_presses(const char *spec);
 static void		gun_update(void);
 static float	mouse_gx = 200.0f, mouse_gy = 128.0f;	/* CARNEVIL_AIM=x,y fixes the aim (tests) */
 static int	aim_fixed;
+/* tests: CARNEVIL_AIM is "x,y" (a fixed aim) or a schedule "FRAME:x,y;FRAME:x,y;..." (the aim
+   moves to each point at its frame) */
+#define MAX_AIMS	32
+static struct { unsigned long frame; float x, y; } aims[MAX_AIMS];
+static int	num_aims;
+static void aim_parse(const char *s)
+{
+	unsigned long	f;
+	float		x, y;
+
+	aim_fixed = 1;
+	if(!strchr(s, ':')) { sscanf(s, "%f,%f", &mouse_gx, &mouse_gy); return; }
+	while(*s && num_aims < MAX_AIMS && sscanf(s, "%lu:%f,%f", &f, &x, &y) == 3)
+	{
+		aims[num_aims].frame = f; aims[num_aims].x = x; aims[num_aims].y = y; num_aims++;
+		s = strchr(s, ';');
+		if(!s) break;
+		s++;
+	}
+}
+static void aim_update(void)
+{
+	int	i;
+	extern unsigned long hal_frame_count;
+
+	for(i = 0; i < num_aims; i++)
+		if(hal_frame_count >= aims[i].frame) { mouse_gx = aims[i].x; mouse_gy = aims[i].y; }
+}
 static unsigned int	sound_control = 1, main_control;
 unsigned		dcs_fifo_space(void);
 void			dcs_fifo_reset(void);
@@ -100,7 +128,7 @@ void hal_init(int argc, char **argv)
 	if(getenv("CARNEVIL_RAW")) hal_raw_image = getenv("CARNEVIL_RAW");
 	if(getenv("CARNEVIL_STATE")) hal_state_root = getenv("CARNEVIL_STATE");
 	if(getenv("CARNEVIL_TRACE")) port_trace = 1;
-	if(getenv("CARNEVIL_AIM")) { sscanf(getenv("CARNEVIL_AIM"), "%f,%f", &mouse_gx, &mouse_gy); aim_fixed = 1; }
+	if(getenv("CARNEVIL_AIM")) aim_parse(getenv("CARNEVIL_AIM"));
 	/* fd 3 is the BIOS CMOS device: park /dev/null there so no real file ever gets it */
 	resolve();
 	nul = real_open("/dev/null", O_RDONLY, 0);
@@ -233,6 +261,7 @@ void hal_wait_frame(int frames)
 		}
 		hal_frame_count++;
 		presses_update();
+		aim_update();
 		audio_wav_frame();
 		/* the I/O ASIC FIFO interrupt (handler 3): the game pushes 512 words per interrupt */
 		for(int guard = 0; guard < 32 && int_handler[3] && fifo_int_pending(); guard++)
@@ -464,6 +493,44 @@ FILE *fopen(const char *path, const char *mode)
 	else if(map_path(path, full, sizeof full)) path = full;
 	if(verbose) fprintf(stderr, "[hal] fopen(%s, %s)\n", path, mode);
 	return real_fopen(path, mode);
+}
+/* the game's remove() and rename() (DJGPP libc on the BIOS file system; the high-score file
+   moves its photos down a place and deletes before rewriting): they act on the state directory,
+   the writable layer over the partition. remove deletes the state copy; rename moves a state
+   file, or copies a file that exists only in the partition into the state directory under the
+   new name (the extracted partition is never modified). Host paths ("/...") pass through. */
+static int (*real_remove)(const char *);
+static int (*real_rename)(const char *, const char *);
+int remove(const char *path)
+{
+	char	full[1024];
+
+	if(!real_remove) real_remove = dlsym(RTLD_NEXT, "remove");
+	if(path[0] == '/') return real_remove(path);
+	state_path(path, full, sizeof full);
+	if(verbose) fprintf(stderr, "[hal] remove(%s)\n", full);
+	return real_remove(full);
+}
+int rename(const char *from, const char *to)
+{
+	char	src[1024], dst[1024], buf[4096];
+	FILE	*in, *out;
+	size_t	n;
+
+	if(!real_rename) real_rename = dlsym(RTLD_NEXT, "rename");
+	if(from[0] == '/' || to[0] == '/') return real_rename(from, to);
+	resolve();
+	state_path(to, dst, sizeof dst);
+	if(!map_path(from, src, sizeof src)) return -1;
+	if(verbose) fprintf(stderr, "[hal] rename(%s, %s)\n", src, dst);
+	if(!strncmp(src, hal_state_root, strlen(hal_state_root)) && src[strlen(hal_state_root)] == '/') return real_rename(src, dst);
+	in = real_fopen(src, "rb");
+	if(!in) return -1;
+	out = real_fopen(dst, "wb");
+	if(!out) { fclose(in); return -1; }
+	while((n = fread(buf, 1, sizeof buf, in)) > 0) fwrite(buf, 1, n, out);
+	fclose(in); fclose(out);
+	return 0;
 }
 #ifdef __APPLE__
 /* this file sees macOS's stdio.h, which renames fopen to fopen$DARWIN_EXTSN; the game and

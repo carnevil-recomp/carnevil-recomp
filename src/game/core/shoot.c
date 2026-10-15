@@ -46,7 +46,7 @@ extern int	D_80212da4, D_80212da8;		/* pumps during the load screen */
 extern int	loaded_wave;
 extern int	increment_audit(int);
 extern unsigned int read_coin_direct(void);
-extern void	func_800e7130(player_stats_t *);
+extern void	initials_trigger(player_stats_t *);	/* hiscore.c: a trigger pull on the initials board */
 #include "sprites.h"			/* the muzzle flashes and the dust of a miss */
 extern void	shoot_objects(player_stats_t *);	/* objects.c */
 extern int	randrng(int);
@@ -246,7 +246,7 @@ void gun_trigger(int player, int down)
 		{
 			if(p->gun->on_screen)
 			{
-				func_800e7130(p);
+				initials_trigger(p);
 			}
 			else
 			{

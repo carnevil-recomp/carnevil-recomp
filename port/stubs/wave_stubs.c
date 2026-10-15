@@ -231,6 +231,5 @@ WEAK int func_800cd094(void) { STUB(func_800cd094); return 0; }
 WEAK int func_800cd31c(void) { STUB(func_800cd31c); return 0; }
 WEAK int func_800cd904(void) { STUB(func_800cd904); return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */
-WEAK void func_800e7130(void) { STUB(func_800e7130); }
 /* the Haunted House zombie's walk to the player (0x800fa1c4, the zombie file is not in C yet); the Rickety Town girl calls it on her holder when she dies */
 WEAK void func_800fa1c4(void) { STUB(func_800fa1c4); }

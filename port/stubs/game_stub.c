@@ -8,6 +8,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 #include <goose/process.h>
 #include <goose/object.h>
 #include <glide/glide.h>
@@ -59,7 +60,36 @@ void game_dma0_handler(void) { }
 void func_800e74f0(void) { movie_start(); }	/* movie play start */
 void func_800e7568(void) { movie_stop(); }	/* movie play stop */
 /* script callees and level data the attract movies touch */
-void graphical_printf(char *buf, char *fmt, ...) { va_list ap; va_start(ap, fmt); vsprintf(buf, fmt, ap); va_end(ap); }
+/* 0x80141708 is DJGPP libc's sprintf (a string FILE handed to _doprnt). The target is ILP32:
+   "long" is 32 bits, so the game's "%ld" (the high-score table) passes a 32-bit int. The host is
+   LP64, where vsprintf would read a 64-bit long for it; so a single 'l' length modifier is
+   dropped before the host formats the string, which reads exactly what _doprnt read. "ll"
+   (64-bit on both) is kept. */
+static void ilp32_format(char *out, const char *fmt, int size)
+{
+	int	n = 0;
+
+	while(*fmt && n < size - 1)
+	{
+		if(*fmt != '%') { out[n++] = *fmt++; continue; }
+		out[n++] = *fmt++;
+		if(*fmt == '%') { if(n < size - 1) out[n++] = *fmt++; continue; }
+		while(*fmt && strchr("-+ #0123456789.*", *fmt) && n < size - 1) out[n++] = *fmt++;
+		if(fmt[0] == 'l' && fmt[1] == 'l') { if(n < size - 2) { out[n++] = *fmt++; out[n++] = *fmt++; } continue; }
+		if(fmt[0] == 'l') fmt++;
+	}
+	out[n] = 0;
+}
+void graphical_printf(char *buf, char *fmt, ...)
+{
+	char	f[256];
+	va_list	ap;
+
+	ilp32_format(f, fmt, sizeof f);
+	va_start(ap, fmt);
+	vsprintf(buf, f, ap);
+	va_end(ap);
+}
 char attract_text1[136], attract_text2[136], attract_text3[136];	/* 0x8021eed0.. filled by something_todo_with_credits */
 int attract_text_state;
 /* the game proper: not decompiled yet */
@@ -139,8 +169,6 @@ int  D_80212e10, D_801e0e24, D_801e70a8, D_801a25c8, D_80212da4, D_801e5cd4, D_8
 int  hhouse_texmap_set;
 void func_80162a10(int *size, int *avail, int *used, int *frag) { *size = *avail = *used = *frag = 0; }	/* texture memory statistics */
 void func_80163eec(int n) { (void)n; }
-void create_hstd_tex(unsigned short *ink, int place) { STUB(create_hstd_tex); (void)ink; (void)place; }	/* 0x800e6358: the signature into the place's picture and the table */
-void func_800e6670(int place) { STUB(func_800e6670); (void)place; }	/* 0x800e6670: the initials entry (HIGH SCORE AUTOGRAPH off) */
 
 /* the mouse's game-screen position as the raw gun reading the game's read_guns turns back
    into that position through the player's calibration (camera.c guns[]) */

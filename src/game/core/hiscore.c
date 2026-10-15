@@ -5,8 +5,7 @@
  * who makes the table signs it with the gun on a 256x128 board and the signature becomes that
  * place's picture (HSTD01-10.WMS); with it off the place is entered as initials.
  *
- * Still assembly in this file: create_hstd_tex 0x800e6358, the initials entry 0x800e6670,
- * make_highscore_screen 0x800e69b8, 0x800e70b0, 0x800e7130, 0x800e7184.
+ * The word at 0x800e7184, the file's last, is data (0x00ffc8c2), not code.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +13,7 @@
 #include "objects.h"
 #include "credits.h"
 #include "texmap.h"
+#include "camera.h"
 
 extern int	remove(const char *);
 
@@ -30,8 +30,10 @@ extern void	set_frame_factor(int);
 extern void	stream_stop(void);
 extern void	set_bgnd_color(unsigned int);
 extern void	specific_gamma_load(float, float);
-extern void	create_hstd_tex(unsigned short *, int);
-extern void	func_800e6670(int);				/* the initials entry */
+extern void	draw_string_scaled_centered(int font, char *str, float x, float y, unsigned int color, float scale);
+extern void	play_generic_sound(player_stats_t *, int);
+extern void	draw_ring(float x, float y, float q, float r, unsigned int color);	/* scene.c */
+extern int	rename(const char *, const char *);
 
 extern char	text_buffer[];
 extern int	high_score_autograph;			/* adjust.c: adjustment 0x36 */
@@ -42,6 +44,21 @@ void	write_scores(void);
 void	file_copy(char *, char *);
 void	autograph_entry(int);
 void	draw_autograph_board(game_object_t *);
+void	create_hstd_tex(unsigned short *, int);
+void	initials_entry(int);
+void	draw_initials_board(game_object_t *);
+void	draw_entry_crosshair(player_stats_t *);
+
+/* a .WMS file's 40-byte header: goose/texture.h's wms_header_t, which that header declares only
+   for Vegas builds */
+typedef struct wms_header
+{
+	int			version;
+	float			bias;
+	GrMipMapMode_t		filter_mode;
+	FxBool			tri_mode;
+	Gu3dfHeader		header;
+} wms_header_t;
 
 typedef struct high_score
 {
@@ -52,15 +69,18 @@ typedef struct high_score
 high_score_t	high_scores[10];			/* 0x8022b198 */
 unsigned int	score;					/* 0x801e0988: the score being entered */
 int		high_score_scroll;			/* 0x801e5dbc: the attract table's offset */
-int		autograph_timer;			/* 0x801e09d0: frames left to sign */
-int		autograph_done;				/* 0x801e09e0 */
+int		entry_timer;				/* 0x801e09d0: frames left to sign or pick */
+int		entry_done;				/* 0x801e09e0 */
 unsigned short	*autograph_ink;				/* 0x801f8834: ink per pixel, 256 x 128 */
 unsigned int	*autograph_pixels;			/* 0x801facc0: the board as LFB words */
 
 /* the board's pixel x, y (rows of 256) in the ink and the frame-buffer words */
 #define INK(x, y)	(*(autograph_ink + (y) * 256 + (x)))
 #define PIXEL(x, y)	(*(autograph_pixels + (y) * 256 + (x)))
-char		autograph_player[12];			/* 0x801facd0: "PLAYER 1" or "PLAYER 2" */
+char		entry_player[12];			/* 0x801facd0: "PLAYER 1" or "PLAYER 2" */
+char		entered_initials[4];			/* 0x801de8d4 */
+int		initials_count;				/* 0x801e43a8: letters picked so far */
+int		initials_fired;				/* 0x802372a8: the entering player pulled the trigger */
 
 static high_score_t default_scores[10] =	/* 0x8017de08 */
 {
@@ -258,11 +278,11 @@ void check_high_score(player_stats_t *p)
 	increment_audit(0x23);
 	if(p == &player_stats[0])
 	{
-		graphical_printf(autograph_player, "PLAYER 1");
+		graphical_printf(entry_player, "PLAYER 1");
 	}
 	else
 	{
-		graphical_printf(autograph_player, "PLAYER 2");
+		graphical_printf(entry_player, "PLAYER 2");
 	}
 	if(!(p->score < high_scores[0].score))
 	{
@@ -274,7 +294,7 @@ void check_high_score(player_stats_t *p)
 		}
 		else
 		{
-			func_800e6670(0);
+			initials_entry(0);
 			write_scores();
 		}
 	}
@@ -295,7 +315,7 @@ void check_high_score(player_stats_t *p)
 		}
 		else
 		{
-			func_800e6670(place);
+			initials_entry(place);
 			write_scores();
 		}
 	}
@@ -310,8 +330,8 @@ void autograph_entry(int place)
 	int	y;
 	int	phase;
 
-	autograph_done = 0;
-	autograph_timer = 1200;
+	entry_done = 0;
+	entry_timer = 1200;
 	autograph_ink = malloc(0x10000);
 	autograph_pixels = malloc(0x20000);
 	for(y = 0; y < 128; y++)
@@ -328,13 +348,13 @@ void autograph_entry(int place)
 	stream_stop();
 	set_bgnd_color(0xff808080);
 	obj = add_object1_wrapper(0x5000, draw_autograph_board, 0, 0);
-	while(!autograph_done)
+	while(!entry_done)
 	{
 		sleep(1);
-		autograph_timer--;
-		if(autograph_timer < 0)
+		entry_timer--;
+		if(entry_timer < 0)
 		{
-			autograph_done = 1;
+			entry_done = 1;
 		}
 	}
 	create_hstd_tex(autograph_ink, place);
@@ -452,11 +472,11 @@ void draw_autograph_board(game_object_t *obj)
 	grLfbEnd();
 #endif
 	grDepthBufferMode(GR_DEPTHBUFFER_WBUFFER);
-	if(autograph_timer / 60 >= 18)
+	if(entry_timer / 60 >= 18)
 	{
-		draw_string_centered(1, autograph_player, 200.0f, 128.0f, 0xff0000);
+		draw_string_centered(1, entry_player, 200.0f, 128.0f, 0xff0000);
 	}
-	graphical_printf(text_buffer, "%d", autograph_timer / 60);
+	graphical_printf(text_buffer, "%d", entry_timer / 60);
 	draw_string_centered(1, text_buffer, 188.0f, 10.0f, 0);
 }
 
@@ -492,4 +512,276 @@ void file_copy(char *readfile, char *writefile)
 		printf("Could not open writefile %s in file_copy\n", writefile);
 	}
 	free(texels);
+}
+
+/* 0x800e6358: the signature becomes place's picture: the places below move down one (their
+   scores and their HSTDnn.WMS files), the score goes in, and the ink is written as a 256x128
+   RGB565 .WMS whose red is the ink */
+void create_hstd_tex(unsigned short *ink, int place)
+{
+	wms_header_t	header;
+	FILE	*f;
+	unsigned short	*texels;
+	unsigned short	*src;
+	unsigned short	*dst;
+	int	y;
+	int	x;
+	int	i;
+	unsigned short	texel;
+	char	from[16];
+	char	to[16];
+
+	for(i = 9; i > place; i--)
+	{
+		high_scores[i].score = high_scores[i - 1].score;
+		graphical_printf(from, "HSTD%02d.WMS", i);
+		graphical_printf(to, "HSTD%02d.WMS", i + 1);
+		remove(to);
+		rename(from, to);
+	}
+	high_scores[place].score = score;
+	header.version = 0x8005;
+	header.bias = 0.0f;
+	header.filter_mode = GR_MIPMAP_NEAREST;
+	header.tri_mode = FXFALSE;
+	header.header.width = 256;
+	header.header.height = 128;
+	header.header.small_lod = GR_LOD_256;
+	header.header.large_lod = GR_LOD_256;
+	header.header.aspect_ratio = GR_ASPECT_2x1;
+	header.header.format = GR_TEXFMT_RGB_565;
+	texels = malloc(0x10000);
+	if(texels == NULL)
+	{
+		printf("Could not malloc hstd pix data!\n");
+		return;
+	}
+	dst = texels;
+	for(y = 127; y >= 0; y--)
+	{
+		src = ink + y * 256;
+		for(x = 0; x < 256; x++)
+		{
+			texel = *src++;
+			texel <<= 8;
+			texel &= 0xf800;
+			*dst++ = texel;
+		}
+	}
+	graphical_printf(to, "HSTD%02d.WMS", place + 1);
+	remove(to);
+	f = fopen(to, "wb");
+	if(f)
+	{
+		fwrite(&header, 0x28, 1, f);
+		fwrite(texels, 2, 0x8000, f);
+		fclose(f);
+	}
+	else
+	{
+		printf("Some file error in create_hstd_tex!\n");
+	}
+	free(texels);
+}
+
+/* 0x800e6670: ten seconds to pick three initials with the gun (game phase 0x4000: a trigger
+   pull is initials_trigger), then the places below move down and the new one goes in */
+void initials_entry(int place)
+{
+	short	obj;
+	int	phase;
+	int	i;
+
+	entry_done = 0;
+	entry_timer = 600;
+	entered_initials[0] = 0;
+	entered_initials[1] = 0;
+	entered_initials[2] = 0;
+	entered_initials[3] = 0;
+	initials_count = 0;
+	initials_fired = 0;
+	phase = game_phase;
+	game_phase = 0x4000;
+	func_800e7568();
+	stream_stop();
+	set_bgnd_color(0xff808080);
+	obj = add_object1_wrapper(0x5000, draw_initials_board, 0, 0);
+	specific_gamma_load(0.0f, 1.0f);
+	while(!entry_done)
+	{
+		sleep(1);
+		entry_timer--;
+		if(entry_timer < 0)
+		{
+			entry_done = 1;
+		}
+	}
+	specific_gamma_load(0.0f, 1.0f);
+	set_bgnd_color(0xff000000);
+	remove_game_object(obj);
+	for(i = 9; i > place; i--)
+	{
+		high_scores[i].score = high_scores[i - 1].score;
+		high_scores[i].name[0] = high_scores[i - 1].name[0];
+		high_scores[i].name[1] = high_scores[i - 1].name[1];
+		high_scores[i].name[2] = high_scores[i - 1].name[2];
+		high_scores[i].name[3] = high_scores[i - 1].name[3];
+	}
+	high_scores[place].score = score;
+	high_scores[place].name[0] = entered_initials[0];
+	high_scores[place].name[1] = entered_initials[1];
+	high_scores[place].name[2] = entered_initials[2];
+	high_scores[place].name[3] = 0;
+	game_phase = phase;
+}
+
+/* 0x800e69b8: the initials board's draw callback: the letters A-Z, RUB and GOODBYE on a grid
+   of 8 columns 30 apart from 90, 120; the gun picks the nearest cell (the last row's cells
+   26-28 are RUB, 29-31 GOODBYE), a trigger pull adds the letter (up to three), rubs one out,
+   or ends the entry; the picked cell is drawn in the player's colour */
+void draw_initials_board(game_object_t *obj)
+{
+	char	c;
+	float	x;
+	float	y;
+	float	gx;
+	float	gy;
+	int	i;
+	int	cell;
+
+	guTexSource(find_surface(0x7110)->handle);
+	guColorCombineFunction(GR_COLORCOMBINE_DECAL_TEXTURE);
+	draw_quad(200.0f, 128.0f, 400.0f, 256.0f, 255.0f, 255.0f);
+	if(player_stats_g->gun->on_screen)
+	{
+		gx = (float)player_stats_g->gun->screen_x;
+		gy = (float)player_stats_g->gun->screen_y;
+		gx = gx - 90.0f;
+		gy = 120.0f - gy;
+		gx = gx / 30.0f;
+		gy = gy / 30.0f;
+		if(gx > 7.0f)
+		{
+			gx = 7.0f;
+		}
+		if(gx < 0.0f)
+		{
+			gx = 0.0f;
+		}
+		cell = (int)(gx + 0.5) + (int)(gy + 0.5) * 8;
+		if(!(cell < 26) && cell < 29)
+		{
+			cell = 26;
+		}
+		if(!(cell < 29) && cell < 32)
+		{
+			cell = 27;
+		}
+	}
+	else
+	{
+		cell = -1;
+	}
+	if(initials_fired && !(cell < 0))
+	{
+		initials_fired = 0;
+		switch(cell)
+		{
+		case 27:
+			entry_done = 1;
+			break;
+		case 26:
+			switch(initials_count)
+			{
+			case 0:
+				entered_initials[initials_count] = 0;
+				break;
+			case 1:
+				entered_initials[initials_count] = 0;
+				initials_count--;
+				entered_initials[initials_count] = 0;
+				break;
+			case 2:
+				entered_initials[initials_count] = 0;
+				initials_count--;
+				entered_initials[initials_count] = 0;
+				break;
+			case 3:
+				entered_initials[initials_count] = 0;
+				initials_count--;
+				entered_initials[initials_count] = 0;
+				break;
+			}
+			break;
+		default:
+			if(initials_count < 3)
+			{
+				entered_initials[initials_count] = cell + 'A';
+				initials_count++;
+			}
+			break;
+		}
+	}
+	i = 0;
+	while(i < 28)
+	{
+		x = (float)(i % 8) * 30.0f + 90.0f;
+		y = 120.0f - (float)(i / 8) * 30.0f;
+		c = i + 'A';
+		if(i < 26)
+		{
+			graphical_printf(text_buffer, "%c", c);
+		}
+		else if(i == 26)
+		{
+			x = x + 30.0f;
+			graphical_printf(text_buffer, "RUB");
+		}
+		else
+		{
+			x = x + 90.0f;
+			graphical_printf(text_buffer, "GOODBYE");
+		}
+		if(cell == i)
+		{
+			draw_string_centered(1, text_buffer, x, y, player_stats_g->colour);
+		}
+		else
+		{
+			draw_string_centered(1, text_buffer, x, y, 0xffff0000);
+		}
+		i++;
+	}
+	draw_string_scaled_centered(1, entered_initials, 200.0f, 156.0f, player_stats_g->colour, 1.5f);
+	if(entry_timer / 60 >= 18)
+	{
+		draw_string_centered(1, entry_player, 200.0f, 10.0f, 0xff0000);
+	}
+	else
+	{
+		graphical_printf(text_buffer, "%d", entry_timer / 20);
+		draw_string_centered(1, text_buffer, 200.0f, 10.0f, 0);
+	}
+	draw_entry_crosshair(player_stats_g);
+}
+
+/* 0x800e70b0: the entering player's crosshair at the gun when it sees the screen */
+void draw_entry_crosshair(player_stats_t *p)
+{
+	if(!p->gun->on_screen)
+	{
+		return;
+	}
+	draw_ring((float)p->gun->screen_x, (float)p->gun->screen_y, 1.1f, 25.0f, p->colour);
+}
+
+/* 0x800e7130: a trigger pull on the initials board (gun_trigger, game phase 0x4000) */
+void initials_trigger(player_stats_t *p)
+{
+	if(p != player_stats_g)
+	{
+		return;
+	}
+	play_generic_sound(p, 0x3d);
+	initials_fired = 1;
 }
