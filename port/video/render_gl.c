@@ -535,6 +535,10 @@ int  grSstOpen(int res, int refresh, int fmt, int origin, int smooth, int nbuf)
 	return 1;
 }
 int  func_80157004(void) { return hal_refresh_hz(); }	/* Glide: current vertical refresh */
+/* Glide grSstIsBusy (0x80162570): bit 9 of the SST-1 status register. The port draws each
+   triangle as the game issues it and keeps no command FIFO, so the chip is never still busy
+   when the game asks (the light gun's flash waits for an idle chip, shoot.c) */
+int  grSstIsBusy(void) { return 0; }
 void render_set_dump(const char *path, unsigned long every) { dump_path = path; dump_every = every; }
 
 /* fog: the level fog table is not applied yet (the draw pass sets it every frame) */

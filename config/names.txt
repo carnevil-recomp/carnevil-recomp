@@ -139,6 +139,9 @@
 0x801506e8 restore_factory_adjustments
 0x801a3358 goose_adjust_c_version
 0x8015eeac grBufferSwap
+# Glide gsst.c: (status & 0x200) != 0, bit 9 of the SST-1 status register (busy); its neighbours read
+# the same register for the vertical retrace (bit 6, 0x80162520) and the raw value (0x801624d4)
+0x80162570 grSstIsBusy
 0x800c4778 do_dma_timeout_reboot
 0x8014bd78 delobj
 0x8014ccf4 change_img
@@ -533,6 +536,8 @@
 0x8018e044 stream_fade
 0x8018e048 level_sound_unk048
 0x8013fb84 stream_stop
+0x8013f6d8 stream_reset
+0x8013fbcc stream_ring_reset
 # the player records start 4 bytes before the Binary Ninja player_stats symbol (0x800cbbb4 passes 0x801e0f60/0x801e1080)
 0x801e0f60 player_stats
 0x801e0f64 player1_state

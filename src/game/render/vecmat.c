@@ -534,3 +534,34 @@ void screen_to_point(float *out, float x, float y, float depth)
 	out[1] = depth * (y - (float)half_height) / proj_y;
 	out[0] = depth * (x - 200.0f) / proj_x;
 }
+
+/* a vertex of the constant-colour triangles with an alpha and a depth (func_800d2ff0) */
+typedef struct qavert
+{
+	float	x, y;
+	float	q;			/* 1/w */
+	float	a;			/* 0..255 */
+} qavert_t;
+extern void	func_800d2ff0(qavert_t *, qavert_t *, qavert_t *);
+
+/* 0x800d14a4: a dot two pixels square on the debug map at (x, y), snapped to a quarter pixel,
+   in the constant colour at alpha 96 (two triangles) */
+void func_800d14a4(float x, float y)
+{
+	qavert_t	a, b, c, d;
+
+	x = (x + 2097152.0f) - 2097152.0f;
+	y = (y + 2097152.0f) - 2097152.0f;
+	d.a = c.a = b.a = a.a = 96.0f;
+	d.q = c.q = b.q = a.q = 1.1f;
+	a.x = x - 1.0f;
+	b.x = x + 1.0f;
+	c.x = x - 1.0f;
+	d.x = x + 1.0f;
+	a.y = y - 1.0f;
+	b.y = y - 1.0f;
+	c.y = y + 1.0f;
+	d.y = y + 1.0f;
+	func_800d2ff0(&a, &b, &c);
+	func_800d2ff0(&d, &b, &c);
+}

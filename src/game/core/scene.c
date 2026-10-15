@@ -4,12 +4,14 @@
  * object set-up). Decompiled as the draw pass needs them; the rest is still assembly.
  */
 #include <stdio.h>
+#include <glide/glide.h>
 #include <goose/object.h>
 #include "objects.h"
 #include "enemy.h"
 #include "credits.h"			/* debug_mode */
 #include "movie.h"
 #include "waves.h"
+#include "lights.h"			/* light_root */
 
 extern int	read_player12_direct(void), read_player34_direct(void);
 extern int	get_free_mem_left(void);				/* 0x80143e90 */
@@ -32,7 +34,7 @@ int		D_801e0960;					/* the player 1/2 switches at boot, inverted */
 extern void	load_font_texmap(void);
 extern void	load_misc_texmaps(void), init_smoke(void), init_blood_drops(void);
 #include "sprites.h"
-extern void	init_sparks(void), init_snow(void), init_flecks(void), func_8013f6d8(void);
+extern void	init_sparks(void), init_snow(void), init_flecks(void), stream_reset(void);
 extern void	draw_pass(void), think_pass(void *);
 extern int	free_mem_left;					/* 0x801e0ee8 */
 extern char	text_buffer[];
@@ -46,6 +48,73 @@ float		debug_p2x = 0.1f, debug_p2y = 0.0f, debug_p2z = 0.0f;		/* 0x80179c0c  the
 float		debug_angles[3];				/* 0x80179c44 */
 short		nearest_enemy;					/* 0x80212d92 */
 
+/* a vertex of the constant-colour triangles with an alpha and a depth (func_800d2ff0) */
+typedef struct qavert
+{
+	float	x, y;
+	float	q;			/* 1/w */
+	float	a;			/* 0..255 */
+} qavert_t;
+extern void	func_800d2ff0(qavert_t *, qavert_t *, qavert_t *);	/* the triangle set-up for qavert_t */
+extern void	guAlphaSource(int), guColorCombineFunction(int);
+extern float	fsin(float), fcos(float);		/* GOOSE sincos.c */
+extern void	world_to_view(float *, float *);	/* vecmat.c */
+extern void	draw_string_color(int, char *, float, float, unsigned int);
+extern void	func_800d14a4(float, float);		/* vecmat.c: a dot on the debug map */
+void		func_800c918c(void);
+float		marker_rim_alpha = 10.0f;		/* 0x80179c34: the markers' rim alpha, pulsing between 1 and 20 */
+float		marker_rim_step = 0.1f;			/* 0x80179c38: its change per marker drawn */
+
+/* 0x800c8a44: a disc of radius r round (x, y) at depth q in the colour: twelve triangles from
+   the centre (alpha 255) to the rim (the pulsing alpha), every corner snapped to a quarter
+   pixel; the rim alpha moves by its step each call and turns back past 20 and below 1 */
+void func_800c8a44(float x, float y, float q, float r, unsigned int color)
+{
+	qavert_t	v[3];
+	float		angle, next;
+
+	guAlphaSource(GR_ALPHASOURCE_ITERATED_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA);
+	guColorCombineFunction(GR_COLORCOMBINE_CCRGB);
+	grConstantColorValue(color);
+	v[2].q = q;
+	v[1].q = q;
+	v[0].q = q;
+	v[0].a = 255.0f;
+	v[1].a = v[2].a = marker_rim_alpha + 0.0f;
+	marker_rim_alpha += marker_rim_step;
+	if(marker_rim_alpha > 20.0f)
+	{
+		marker_rim_alpha -= marker_rim_step;
+		marker_rim_step = -marker_rim_step;
+	}
+	if(marker_rim_alpha < 1.0f)
+	{
+		marker_rim_alpha -= marker_rim_step;
+		marker_rim_step = -marker_rim_step;
+	}
+	angle = 0.0f;
+	v[0].x = x;
+	v[0].y = y;
+	do
+	{
+		v[1].x = v[0].x + r * fsin(angle);
+		v[1].y = v[0].y + r * fcos(angle);
+		next = angle + 0.5235987f;
+		v[2].x = v[0].x + r * fsin(next);
+		v[2].y = v[0].y + r * fcos(next);
+		v[0].x = (v[0].x + 2097152.0f) - 2097152.0f;
+		v[0].y = (v[0].y + 2097152.0f) - 2097152.0f;
+		v[1].x = (v[1].x + 2097152.0f) - 2097152.0f;
+		v[1].y = (v[1].y + 2097152.0f) - 2097152.0f;
+		v[2].x = (v[2].x + 2097152.0f) - 2097152.0f;
+		v[2].y = (v[2].y + 2097152.0f) - 2097152.0f;
+		func_800d2ff0(&v[0], &v[1], &v[2]);
+		angle = next;
+	} while(angle < 6.1086516f);
+	grAlphaBlendFunction(GR_BLEND_ONE, GR_BLEND_ZERO, GR_BLEND_ONE, GR_BLEND_ZERO);
+}
+
 /* 0x800c8ef0: a marker on the screen position of a world point (size in world units) */
 void draw_marker(float *pt, float size, unsigned int color)
 {
@@ -56,6 +125,58 @@ void draw_marker(float *pt, float size, unsigned int color)
 		return;
 	}
 	func_800c8a44(scr[0], scr[1], scr[2], size * scr[2] * proj_x, color);
+}
+
+/* 0x800c918c: with debug flag 0x40, a marker in its colour on every point light that is on
+   (three units across) and, with flag 0x20 as well, its dot on the debug map; then the number
+   of directional lights that are on, in green */
+void func_800c918c(void)
+{
+	level_light_t	*l;
+	int		n;
+	float		scr[3], size;
+	unsigned int	color;
+
+	l = light_root.next;
+	n = 0;
+	if(!(debug_mode & 0x40))
+	{
+		return;
+	}
+	for(; l; l = l->next)
+	{
+		if(!(l->flags & 1))
+		{
+			continue;
+		}
+		if(l->type == 4)
+		{
+			color = (((int)l->color[0] & 0xff) << 16) | (((int)l->color[1] & 0xff) << 8) | ((int)l->color[2] & 0xff);
+			size = 3.0f;
+			if(get_screen_pos(l->pos, scr) != -1.0f)
+			{
+				func_800c8a44(scr[0], scr[1], scr[2], scr[2] * size * proj_x, color);
+			}
+			if(debug_mode & 0x20)
+			{
+				guAlphaSource(GR_ALPHASOURCE_ITERATED_ALPHA);
+				guColorCombineFunction(GR_COLORCOMBINE_CCRGB);
+				grConstantColorValue((((int)l->color[0] & 0xff) << 16) | (((int)l->color[1] & 0xff) << 8) | ((int)l->color[2] & 0xff));
+				grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA);
+				func_800d14a4(l->pos[0] * 0.12f + 200.0f, l->pos[2] * 0.12f + 128.0f);
+				grAlphaBlendFunction(GR_BLEND_ONE, GR_BLEND_ZERO, GR_BLEND_ONE, GR_BLEND_ZERO);
+			}
+		}
+		else if(l->type == 2)
+		{
+			n++;
+		}
+	}
+	if(n > 0)
+	{
+		graphical_printf(text_buffer, "%d PARALLEL LIGHTS", n);
+		draw_string_color(0, text_buffer, 20.0f, 35.0f, 0xff00);
+	}
 }
 
 /* 0x800c9908: sample the switches once a frame; a press of player 3/4's bit 5 toggles the
@@ -301,6 +422,63 @@ void func_800c836c(void)
 	}
 }
 
+short		D_80179bf8 = -1;			/* 0x80179bf8: the object game_proc2 adds (type 0x2068) */
+float		debug_marker[3];			/* 0x801e6ed8: a point the debug overlay marks and moves */
+
+/* 0x800c83bc: the debug overlays the draw pass shows last: with debug flag 0x4000 a marker on
+   debug_marker, its coordinates, and player 1/2 switches 8-14 moving it by half a unit (z with
+   bits 8/9, x with 10/11, y with 12/14); with flag 0x80 the world and view position of the
+   object game_proc2 added; then the light display */
+void func_800c83bc(void)
+{
+	enemy_t	*o;
+	float	v[3];
+
+	if(debug_mode & 0x4000)
+	{
+		draw_marker(debug_marker, 2.0f, 0xffffffff);
+		graphical_printf(text_buffer, "X %.4f Y %.4f Z %.4f", debug_marker[0], debug_marker[1], debug_marker[2]);
+		draw_string(0, text_buffer, 40.0f, 166.0f);
+		if(switches12 & 0x100)
+		{
+			debug_marker[2] += 0.5f;
+		}
+		if(switches12 & 0x200)
+		{
+			debug_marker[2] -= 0.5f;
+		}
+		if(switches12 & 0x400)
+		{
+			debug_marker[0] -= 0.5f;
+		}
+		if(switches12 & 0x800)
+		{
+			debug_marker[0] += 0.5f;
+		}
+		if(switches12 & 0x1000)
+		{
+			debug_marker[1] -= 0.5f;
+		}
+		if(switches12 & 0x4000)
+		{
+			debug_marker[1] += 0.5f;
+		}
+	}
+	if(debug_mode & 0x80)
+	{
+		o = get_object_data(D_80179bf8);
+		if(o)
+		{
+			graphical_printf(text_buffer, "X %.4f Y %.4f Z %.4f", o->x, o->y, o->z);
+			draw_string(0, text_buffer, 40.0f, 166.0f);
+			world_to_view(&o->x, v);
+			graphical_printf(text_buffer, "RT X %.4f Y %.4f Z %.4f", v[0], v[1], v[2]);
+			draw_string(0, text_buffer, 12.0f, 146.0f);
+		}
+	}
+	func_800c918c();
+}
+
 /* 0x800c865c: empty */
 void func_800c865c(void)
 {
@@ -333,7 +511,7 @@ void load_level_assets(void)
 	init_sparks();
 	init_snow();
 	init_flecks();
-	func_8013f6d8();
+	stream_reset();
 }
 
 /* 0x800ca4a8 */

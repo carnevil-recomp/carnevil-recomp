@@ -90,6 +90,9 @@ void func_800d326c(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, -1, -1
 void func_800d3528(void *a, void *b, void *c) { port_draw_tri(a, b, c, 1, -1, 5); }
 /* 0x800d2dd4: x, y, q in the constant colour with the depth gradients (the flecks) */
 void func_800d2dd4(void *a, void *b, void *c) { port_draw_tri(a, b, c, 0, -1, -1); }
+/* 0x800d2ff0: x, y, q, a in the constant colour with the depth and alpha gradients (its alpha
+   packet starts at register 0xd0 like draw_tri_alpha's; the debug markers, scene.c and vecmat.c) */
+void func_800d2ff0(void *a, void *b, void *c) { port_draw_tri(a, b, c, 0, -1, 3); }
 /* 0x800d9cc0: the quad the flame effect draws (draw2d's file), not in C yet */
 
 /* ---- the per-frame passes (objects.c: draw_pass 0x800cbbb4, think_pass 0x800cca70) call
@@ -98,7 +101,6 @@ void draw_pass(void);
 void think_pass(void *);
 int get_free_mem_left(void) { return 0x400000; }			/* GOOSE 0x80143e90 */
 float fsqrt(float x) { return sqrtf(x); }				/* 0x80144900: sqrt.s */
-void func_800c83bc(void) { STUB(func_800c83bc); }
 void func_800c9620(int a) { STUB(func_800c9620); (void)a; }
 void func_800c9bf0(void) { STUB(func_800c9bf0); }
 int	shown_frame, RTP_val, DMA_val, D_801e0ecc, please_wait_timer;
@@ -114,9 +116,7 @@ void init_surfaces(void)			/* 0x800d6768: the texmap surface table */
 	int	i;
 	for(i = 0; i < MAX_SURFACES; i++) { surfaces[i].key = -1; surfaces[i].refs = 0; surfaces[i].index = -1; }
 }
-void func_800c8a44(float x, float y, float w, float r, unsigned int c) { STUB(func_800c8a44); (void)x; (void)y; (void)w; (void)r; (void)c; }	/* a screen marker */
 /* load_level_assets (0x800ca448, scene.c) is real; its loaders are not */
-void func_8013f6d8(void) { STUB(func_8013f6d8); }
 
 /* the boot callees the port does not have yet: level assets, models, the gun calibration */
 #define LOAD_STUB(n) void n(void) { STUB(n); }
