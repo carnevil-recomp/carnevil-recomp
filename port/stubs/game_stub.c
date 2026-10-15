@@ -59,7 +59,6 @@ void game_dma0_handler(void) { }
 void func_800e74f0(void) { movie_start(); }	/* movie play start */
 void func_800e7568(void) { movie_stop(); }	/* movie play stop */
 /* script callees and level data the attract movies touch */
-int attract_high_scores(int arg) { STUB(attract_high_scores); (void)arg; return 0; }	/* high-score reset screen */
 void graphical_printf(char *buf, char *fmt, ...) { va_list ap; va_start(ap, fmt); vsprintf(buf, fmt, ap); va_end(ap); }
 char attract_text1[136], attract_text2[136], attract_text3[136];	/* 0x8021eed0.. filled by something_todo_with_credits */
 int attract_text_state;
@@ -140,7 +139,8 @@ int  D_80212e10, D_801e0e24, D_801e70a8, D_801a25c8, D_80212da4, D_801e5cd4, D_8
 int  hhouse_texmap_set;
 void func_80162a10(int *size, int *avail, int *used, int *frag) { *size = *avail = *used = *frag = 0; }	/* texture memory statistics */
 void func_80163eec(int n) { (void)n; }
-void something_player_score(player_stats_t *p) { STUB(something_player_score); (void)p; }	/* 0x800e5560: high-score entry */
+void create_hstd_tex(unsigned short *ink, int place) { STUB(create_hstd_tex); (void)ink; (void)place; }	/* 0x800e6358: the signature into the place's picture and the table */
+void func_800e6670(int place) { STUB(func_800e6670); (void)place; }	/* 0x800e6670: the initials entry (HIGH SCORE AUTOGRAPH off) */
 
 /* the mouse's game-screen position as the raw gun reading the game's read_guns turns back
    into that position through the player's calibration (camera.c guns[]) */

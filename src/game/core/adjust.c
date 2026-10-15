@@ -15,7 +15,7 @@ extern int	violence_level;					/* 0x801e5bfc */
 extern int	stereo_output;					/* 0x801de954 */
 
 int	difficulty, D_801de8a4, D_80237438;			/* difficulty-type adjustments 0x30-0x32 (0..4) */
-int	D_801e5c10, D_801e70a0, D_801e6ed0, D_80237420, D_801e704c;
+int	D_801e5c10, high_score_autograph, D_801e6ed0, D_80237420, D_801e704c;	/* high_score_autograph: adjustment 0x36, HIGH SCORE AUTOGRAPH */
 float	D_80212df4;						/* adjustment 0x37 / 100 */
 
 /* the game's adjustments: number, min, max, default (0x8018ed48) */
@@ -53,7 +53,7 @@ int load_game_adjustments(void)
 		D_80212df4 = (float)val / 100.0f;
 	}
 	if(get_adjustment(0x34, &violence_level)) violence_level = 4;
-	if(get_adjustment(0x36, &D_801e70a0)) D_801e70a0 = 1;
+	if(get_adjustment(0x36, &high_score_autograph)) high_score_autograph = 1;
 	if(get_adjustment(0x3a, &D_801e6ed0)) D_801e6ed0 = 1;
 	if(get_adjustment(0x3b, &D_80237420)) D_80237420 = 1;
 	if(get_adjustment(0x3c, &stereo_output)) stereo_output = 1;
