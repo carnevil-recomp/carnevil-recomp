@@ -648,6 +648,29 @@ short nearest_enemy_bigtop(void)
 }
 
 
+/* 0x800ceaf0: the world position of a point given in a submesh's frame at the enemy's current
+   animation frame (off is added to the submesh's own offset): the Haunted House ghoul's eyes */
+extern void	rot_matrix_yxz(float *, float *), rot_matrix_zyx(float *, float *), mat_scale(float *, float *), mat_mul(float *, float *, float *);
+extern void	mat_vec_mul(float *, float *, float *);
+extern void	vec_add(float *, float *, float *);
+void func_800ceaf0(float *out, enemy_t *e, submesh_t *sub, int n, float *off)
+{
+	float	m[9], gm[9], pos[3];
+
+	rot_matrix_yxz(m, &e->rx);
+	rot_matrix_zyx(m, &e->rx);
+	mat_scale(m, e->scale);
+	rot_matrix_zyx(gm, sub[n].anim[e->frame].rot);
+	pos[0] = sub[n].anim[e->frame].pos[0] + off[0];
+	pos[1] = sub[n].anim[e->frame].pos[1] + off[1];
+	pos[2] = sub[n].anim[e->frame].pos[2] + off[2];
+	mat_mul(m, gm, gm);
+	mat_vec_mul(pos, m, pos);
+	vec_add(pos, &e->x, pos);
+	mat_vec_mul(sub[n].pivot, gm, out);
+	vec_add(out, pos, out);
+}
+
 /* 0x800ce63c: an enemy's scale: s times the model units' per-axis scale (-8.3333, 10, 8.3333:
    the models' x and z run the other way), and its radius from its own base radius */
 void set_enemy_scale(enemy_t *e, float s)

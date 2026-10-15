@@ -160,6 +160,56 @@ extern float	fatan(float);
 extern float	ffabs(float);
 int	move_cd(enemy_t *, float, float, float);
 
+/* 0x800fc550: angles_to on the turn alone: rot gets the heading from from to to, no pitch or
+   roll (Mari's thrown axe) */
+void func_800fc550(float *from, float *to, float *rot)
+{
+	float	d[3], a;
+
+	d[0] = to[0] - from[0];
+	d[1] = to[1] - from[1];
+	d[2] = to[2] - from[2];
+	if(d[2] == 0.0f)
+	{
+		if(d[0] > 0.0f)
+		{
+			rot[1] = 1.570796f;
+		}
+		else
+		{
+			rot[1] = 4.712388f;
+		}
+	}
+	else
+	{
+		a = fatan(ffabs(d[0] / d[2]));
+		if(d[0] > 0.0f)
+		{
+			if(d[2] > 0.0f)
+			{
+				rot[1] = 3.1415927f - a;
+			}
+			else
+			{
+				rot[1] = a;
+			}
+		}
+		else
+		{
+			if(d[2] > 0.0f)
+			{
+				rot[1] = a + 3.1415927f;
+			}
+			else
+			{
+				rot[1] = 6.2831855f - a;
+			}
+		}
+	}
+	rot[0] = 0;
+	rot[2] = 0;
+}
+
 /* 0x800fc66c: turn the enemy towards the view point by at most rate radians: 1 when it turned,
    0 when it already faces it (within the rate) */
 int face_camera(enemy_t *e, float rate)
@@ -840,4 +890,145 @@ void lob_toward(float *pos, float *target, float *vel, float frames, int unused)
 float distance_between(float *a, float *b)
 {
 	return fsqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
+}
+
+/* 0x800fcd70: face_camera towards any point: turn the enemy towards to by at most rate radians;
+   1 when it turned, 0 when it already faces it (within the rate) */
+int func_800fcd70(enemy_t *e, float *to, float rate)
+{
+	float	v[3];
+	float	d[3];
+	float	a, diff;
+
+	d[0] = e->x - to[0];
+	d[1] = e->y - to[1];
+	d[2] = e->z - to[2];
+	if(d[2] == 0.0f)
+	{
+		if(0.0f < d[0])
+		{
+			v[1] = 1.570796f;
+		}
+		else
+		{
+			v[1] = 4.712388f;
+		}
+	}
+	else
+	{
+		a = fatan(ffabs(d[0] / d[2]));
+		if(0.0f < d[0])
+		{
+			if(0.0f < d[2])
+			{
+				v[1] = 3.1415927f - a;
+			}
+			else
+			{
+				v[1] = a;
+			}
+		}
+		else
+		{
+			if(0.0f < d[2])
+			{
+				v[1] = a + 3.1415927f;
+			}
+			else
+			{
+				v[1] = 6.2831855f - a;
+			}
+		}
+	}
+	v[0] = 0;
+	v[2] = 0;
+	diff = v[1] - e->ry;
+	if(diff < -3.1415927f)
+	{
+		diff += 6.2831855f;
+		while(diff < -3.1415927f)
+		{
+			diff += 6.2831855f;
+		}
+	}
+	if(3.1415927f < diff)
+	{
+		diff -= 6.2831855f;
+		while(3.1415927f < diff)
+		{
+			diff -= 6.2831855f;
+		}
+	}
+	if(diff == 0.0f)
+	{
+		return(0);
+	}
+	if(0.0f < diff ? diff < rate : rate < diff)
+	{
+		return(0);
+	}
+	if(diff < -3.1415927f)
+	{
+		e->ry = e->ry + rate;
+	}
+	else if(diff < 0.0f)
+	{
+		e->ry = e->ry - rate;
+	}
+	else if(diff < 3.1415927f)
+	{
+		e->ry = e->ry + rate;
+	}
+	else
+	{
+		e->ry = e->ry - rate;
+	}
+	return(1);
+}
+
+/* 0x800fd0a8: step straight at the goal on x and z, at most step on each axis (the larger
+   one scaled to step, the other in proportion), without the collision test: 0 when the goal
+   was within a step on both axes (it moves there), else 1 */
+int func_800fd0a8(enemy_t *e, float step)
+{
+	float	dx, dz;
+	float	ax, az;
+
+	dx = e->goal[0] - e->hit_group->pos[0];
+	dz = e->goal[2] - e->hit_group->pos[2];
+	ax = ffabs(dx);
+	az = ffabs(dz);
+	if(ax < step && az < step)
+	{
+		func_800cde74(e, dx, 0.0f, dz);
+		return(0);
+	}
+	if(az < ax)
+	{
+		step = step / ax;
+	}
+	else
+	{
+		step = step / az;
+	}
+	ax = ffabs(dx * step);
+	az = ffabs(dz * step);
+	if(ax < dx)
+	{
+		dx = ax;
+	}
+	else if(dx < -ax)
+	{
+		dx = -ax;
+	}
+	if(az < dz)
+	{
+		dz = az;
+	}
+	else if(dz < -az)
+	{
+		dz = -az;
+	}
+	func_800cde74(e, dx, 0.0f, dz);
+	return(1);
 }

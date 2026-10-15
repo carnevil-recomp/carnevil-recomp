@@ -9,8 +9,6 @@ WEAK int D_801e6e70;
 WEAK int skeleton_anim_blob[8], D_8019fcf0[8];
 WEAK float *D_801e5b28, *D_801e57e4, *D_801e5b74, *D_801e5824;
 WEAK void *D_8021eec8, *D_8021f088;
-WEAK void func_800f75f8(void) { STUB(func_800f75f8); }
-WEAK void func_800f8798(void) { STUB(func_800f8798); }
 WEAK void func_801101c0(void) { STUB(func_801101c0); }
 WEAK void func_8012896c(void) { STUB(func_8012896c); }
 WEAK void func_80131330(void) { STUB(func_80131330); }
@@ -28,12 +26,8 @@ WEAK void load_doctorklot_texmap(void) { STUB(load_doctorklot_texmap); }
 WEAK void load_finn(void) { STUB(load_finn); }
 WEAK void load_flie(void) { STUB(load_flie); }
 WEAK void load_flie_texmap(void) { STUB(load_flie_texmap); }
-WEAK void load_gool(void) { STUB(load_gool); }
-WEAK void load_gool_texmap(void) { STUB(load_gool_texmap); }
 WEAK void load_grub(void) { STUB(load_grub); }
 WEAK void load_grub_texmap(void) { STUB(load_grub_texmap); }
-WEAK void load_hand(void) { STUB(load_hand); }
-WEAK void load_hand_texmap(void) { STUB(load_hand_texmap); }
 WEAK void load_junior(void) { STUB(load_junior); }
 WEAK void load_junoir_texmap(void) { STUB(load_junoir_texmap); }
 WEAK void load_krinkle(void) { STUB(load_krinkle); }
@@ -42,8 +36,6 @@ WEAK void load_litl(void) { STUB(load_litl); }
 WEAK void load_litl_texmap(void) { STUB(load_litl_texmap); }
 WEAK void load_mame(void) { STUB(load_mame); }
 WEAK void load_mame_texmap(void) { STUB(load_mame_texmap); }
-WEAK void load_mari(void) { STUB(load_mari); }
-WEAK void load_mari_texmap(void) { STUB(load_mari_texmap); }
 WEAK void load_monk(void) { STUB(load_monk); }
 WEAK void load_monk_texmap(void) { STUB(load_monk_texmap); }
 WEAK void load_pood(void) { STUB(load_pood); }
@@ -63,8 +55,6 @@ WEAK void load_tops(void) { STUB(load_tops); }
 WEAK void load_tops_texmap(void) { STUB(load_tops_texmap); }
 WEAK void load_tort(void) { STUB(load_tort); }
 WEAK void load_tort_texmap(void) { STUB(load_tort_texmap); }
-WEAK void load_zomb(void) { STUB(load_zomb); }
-WEAK void load_zombie_texmap(void) { STUB(load_zombie_texmap); }
 WEAK void remove_bat_assets(void) { STUB(remove_bat_assets); }
 WEAK void remove_batb_texmap(void) { STUB(remove_batb_texmap); }
 WEAK void remove_binn_assets(void) { STUB(remove_binn_assets); }
@@ -72,13 +62,11 @@ WEAK void remove_btop_gore_texmaps(void) { STUB(remove_btop_gore_texmaps); }
 WEAK void remove_clown_assets(void) { STUB(remove_clown_assets); }
 WEAK void remove_finn_assts(void) { STUB(remove_finn_assts); }
 WEAK void remove_flie_assets(void) { STUB(remove_flie_assets); }
-WEAK void remove_gool(void) { STUB(remove_gool); }
 WEAK void remove_grub_assets(void) { STUB(remove_grub_assets); }
 WEAK void remove_junior_texmap(void) { STUB(remove_junior_texmap); }
 WEAK void remove_krinkle_assets(void) { STUB(remove_krinkle_assets); }
 WEAK void remove_litl_assets(void) { STUB(remove_litl_assets); }
 WEAK void remove_mame_assets(void) { STUB(remove_mame_assets); }
-WEAK void remove_mari(void) { STUB(remove_mari); }
 WEAK void remove_monk_asets(void) { STUB(remove_monk_asets); }
 WEAK void remove_rodz_assets(void) { STUB(remove_rodz_assets); }
 WEAK void remove_skeleton_assets(void) { STUB(remove_skeleton_assets); }
@@ -87,12 +75,6 @@ WEAK void remove_taur_assets(void) { STUB(remove_taur_assets); }
 WEAK void remove_term_assets(void) { STUB(remove_term_assets); }
 WEAK void remove_tops_assets(void) { STUB(remove_tops_assets); }
 WEAK void remove_tort_assets(void) { STUB(remove_tort_assets); }
-WEAK int func_800eb150(void) { STUB(func_800eb150); return 0; }
-WEAK int func_800eb3e0(void) { STUB(func_800eb3e0); return 0; }
-WEAK int func_800eb7d4(void) { STUB(func_800eb7d4); return 0; }
-WEAK int func_800edff0(void) { STUB(func_800edff0); return 0; }
-WEAK int func_800ee228(void) { STUB(func_800ee228); return 0; }
-WEAK int func_800eeeec(void) { STUB(func_800eeeec); return 0; }
 WEAK int func_800f38c8(void) { STUB(func_800f38c8); return 0; }
 WEAK int func_800f3f1c(void) { STUB(func_800f3f1c); return 0; }
 WEAK int func_800f40c8(void) { STUB(func_800f40c8); return 0; }
@@ -100,14 +82,6 @@ WEAK int func_800f4618(void) { STUB(func_800f4618); return 0; }
 WEAK int func_800f4c50(void) { STUB(func_800f4c50); return 0; }
 WEAK int func_800f4e24(void) { STUB(func_800f4e24); return 0; }
 WEAK int func_800f5278(void) { STUB(func_800f5278); return 0; }
-WEAK int func_800f70b8(void) { STUB(func_800f70b8); return 0; }
-WEAK int func_800f7680(void) { STUB(func_800f7680); return 0; }
-WEAK int func_800f7824(void) { STUB(func_800f7824); return 0; }
-WEAK int func_800f7960(void) { STUB(func_800f7960); return 0; }
-WEAK int func_800f7988(void) { STUB(func_800f7988); return 0; }
-WEAK int func_800f8860(void) { STUB(func_800f8860); return 0; }
-WEAK int func_800f8c84(void) { STUB(func_800f8c84); return 0; }
-WEAK int func_800f96a8(void) { STUB(func_800f96a8); return 0; }
 WEAK int func_801163e8(void) { STUB(func_801163e8); return 0; }
 WEAK int func_80116e10(void) { STUB(func_80116e10); return 0; }
 WEAK int func_80117080(void) { STUB(func_80117080); return 0; }
@@ -188,8 +162,6 @@ WEAK int func_8013f0dc(void) { STUB(func_8013f0dc); return 0; }
 WEAK int func_8013f324(void) { STUB(func_8013f324); return 0; }
 WEAK int render_enetity_debug_info(void) { STUB(render_enetity_debug_info); return 0; }
 WEAK int something_bat_state(void) { STUB(something_bat_state); return 0; }
-WEAK int something_gool_anim(void) { STUB(something_gool_anim); return 0; }
-WEAK int something_mari_anim(void) { STUB(something_mari_anim); return 0; }
 WEAK int func_800c8938(void) { STUB(func_800c8938); return 0; }
 WEAK int func_800c99e4(void) { STUB(func_800c99e4); return 0; }
 WEAK int func_8015f30c(void) { STUB(func_8015f30c); return 0; }
@@ -201,7 +173,5 @@ WEAK int func_800cd094(void) { STUB(func_800cd094); return 0; }
 WEAK int func_800cd31c(void) { STUB(func_800cd31c); return 0; }
 WEAK int func_800cd904(void) { STUB(func_800cd904); return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */
-/* the Haunted House zombie's walk to the player (0x800fa1c4, the zombie file is not in C yet); the Rickety Town girl calls it on her holder when she dies */
-WEAK void func_800fa1c4(void) { STUB(func_800fa1c4); }
 /* enemy.c's steer-at-a-point-by-the-camera (0x800fbaac, 2 on arrival) and its step routine 0x800fc16c are still
    assembly; the flash (flash.c), the vict and Mike call it. Until then a flash never arrives. */
