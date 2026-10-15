@@ -166,6 +166,51 @@ void replace_group(struct enemy *e, group_t *from, group_t *to)
 	}
 }
 
+extern void	rot_matrix_yxz(float *, float *);
+
+/* 0x8011464c: place the groups an animation drives (flag 0x2000) from the enemy's current
+   frame: each one's rotation is the enemy's (scaled) times the frame's, its position the
+   frame's offset turned by the enemy and added to the enemy's, and its pivot the submesh
+   pivot turned by the group's matrix around that position; a group the animation does not
+   drive is reset to the origin with an identity rotation */
+void func_8011464c(struct enemy *e, submesh_t *sub, int nsub)
+{
+	float	m[9];
+	float	fm[9];
+	float	off[3];
+	group_t	*g;
+	int	i;
+
+	rot_matrix_zyx(m, &((enemy_t *)e)->rx);
+	mat_scale(m, ((enemy_t *)e)->scale);
+	for(i = 0; i < nsub; i++)
+	{
+		g = &((enemy_t *)e)->groups[i];
+		if(g->flags & 0x2000)
+		{
+			rot_matrix_zyx(fm, sub[i].anim[((enemy_t *)e)->frame].rot);
+			off[0] = sub[i].anim[((enemy_t *)e)->frame].pos[0];
+			off[1] = sub[i].anim[((enemy_t *)e)->frame].pos[1];
+			off[2] = sub[i].anim[((enemy_t *)e)->frame].pos[2];
+			mat_mul(m, fm, g->mat);
+			mat_vec_mul(off, m, off);
+			vec_add(off, &((enemy_t *)e)->x, g->pos);
+			mat_vec_mul(sub[i].pivot, g->mat, g->pivot);
+			vec_add(g->pivot, off, g->pivot);
+		}
+		else
+		{
+			g->pos[0] = 0.0f;
+			g->pos[1] = 0.0f;
+			g->pos[2] = 0.0f;
+			g->pivot[0] = 0.0f;
+			g->pivot[1] = 0.0f;
+			g->pivot[2] = 0.0f;
+			rot_matrix_yxz(g->mat, g->pos);
+		}
+	}
+}
+
 /* 0x80114cdc: knock a group loose: it leaves the animation (0x2000 off, 0x4000 on) and flies
    from where it is, its offset kept relative to from, upward at 0.99 and spinning, opaque,
    for 25 steps of life, until it falls to floor; drawn alpha-blended (0x80). The fourth

@@ -254,6 +254,100 @@ int face_camera(enemy_t *e, float rate)
 	return(1);
 }
 
+/* 0x800fcd70: face_camera towards a point: turn the enemy towards p by at most rate radians
+   (a transcription like face_camera's: the original keeps v in a saved register) */
+int func_800fcd70(enemy_t *e, float *p, float rate)
+{
+	float	v[3];
+	float	d[3];
+	float	a, diff;
+
+	d[0] = e->x - p[0];
+	d[1] = e->y - p[1];
+	d[2] = e->z - p[2];
+	if(d[2] == 0.0f)
+	{
+		if(0.0f < d[0])
+		{
+			v[1] = 1.570796f;
+		}
+		else
+		{
+			v[1] = 4.712388f;
+		}
+	}
+	else
+	{
+		a = fatan(ffabs(d[0] / d[2]));
+		if(0.0f < d[0])
+		{
+			if(0.0f < d[2])
+			{
+				v[1] = 3.1415927f - a;
+			}
+			else
+			{
+				v[1] = a;
+			}
+		}
+		else
+		{
+			if(0.0f < d[2])
+			{
+				v[1] = a + 3.1415927f;
+			}
+			else
+			{
+				v[1] = 6.2831855f - a;
+			}
+		}
+	}
+	v[0] = 0;
+	v[2] = 0;
+	diff = v[1] - e->ry;
+	if(diff < -3.1415927f)
+	{
+		diff += 6.2831855f;
+		while(diff < -3.1415927f)
+		{
+			diff += 6.2831855f;
+		}
+	}
+	if(3.1415927f < diff)
+	{
+		diff -= 6.2831855f;
+		while(3.1415927f < diff)
+		{
+			diff -= 6.2831855f;
+		}
+	}
+	if(diff == 0.0f)
+	{
+		return(0);
+	}
+	if(0.0f < diff ? diff < rate : rate < diff)
+	{
+		return(0);
+	}
+	if(diff < -3.1415927f)
+	{
+		e->ry = e->ry + rate;
+	}
+	else if(diff < 0.0f)
+	{
+		e->ry = e->ry - rate;
+	}
+	else if(diff < 3.1415927f)
+	{
+		e->ry = e->ry + rate;
+	}
+	else
+	{
+		e->ry = e->ry - rate;
+	}
+	return(1);
+}
+
 /* ---- steering (0x800fb934-0x800fc0f4) ---- */
 
 extern void	world_to_view(float *, float *), view_to_world(float *);	/* vecmat.c */
@@ -279,6 +373,31 @@ void set_goal_near_camera(enemy_t *e, float *from, float *goal, float side, floa
 		goal[0] = goal[0] + side;
 	}
 	view_to_world(goal);
+}
+
+int	step_toward_goal_xz(enemy_t *, float);
+
+/* 0x800fbba0: face the camera, set the goal as set_goal_near_camera does (side, dy, dz) and
+   take a ground step towards it: 2 when the goal is reached or the step was clear, else 0 */
+int func_800fbba0(enemy_t *e, float side, float dy, float dz, float step)
+{
+	float	*goal;
+
+	face_camera(e, 0.2f);
+	goal = e->goal;
+	world_to_view(&camera_x, goal);
+	e->goal[2] = e->goal[2] - dz;
+	e->goal[1] = e->goal[1] - dy;
+	if(e->target == player_stats)
+	{
+		e->goal[0] = e->goal[0] - side;
+	}
+	else
+	{
+		e->goal[0] = e->goal[0] + side;
+	}
+	view_to_world(goal);
+	return((step_toward_goal_xz(e, step) != 0) << 1);
 }
 
 /* 0x800fbc6c: a step of at most `step` on the largest axis towards the goal: 2 when the goal

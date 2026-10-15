@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Extract an enemy's .data tables from GAME.EXE as C initializers: its texmap_t table and
 its submesh_t table (see model.h). usage:
-  extract_tables.py texmap NAME ADDR COUNT   |   extract_tables.py submesh NAME ADDR COUNT"""
+  extract_tables.py texmap NAME ADDR COUNT   |   extract_tables.py submesh NAME ADDR COUNT
+  extract_tables.py path NAME ADDR COUNT     (a path compiled into .data: COUNT points of x, y, z, rx, ry, rz)"""
 import struct, glob, os, sys
 here = os.path.dirname(os.path.abspath(__file__)) + '/../..'
 BASE = 0x800c4000
@@ -25,4 +26,10 @@ elif kind == 'submesh':
     for i in range(count):
         fs, fe, anim, vs, ve, ns, ne, r, px, py, pz = struct.unpack('<hhIhhhhffff', exe[o:o + 32])
         print('\t{ %d, %d, 0, %d, %d, %d, %d, %s, { %s, %s, %s } },' % (fs, fe, vs, ve, ns, ne, f(r), f(px), f(py), f(pz))); o += 32
+    print('};')
+elif kind == 'path':
+    print('float\t%s[%d][6] =\t\t/* 0x%08x */\n{' % (name, count, addr))
+    for i in range(count):
+        v = struct.unpack('<6f', exe[o:o + 24])
+        print('\t{ %s },' % ', '.join(f(x) for x in v)); o += 24
     print('};')

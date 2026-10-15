@@ -648,6 +648,74 @@ short nearest_enemy_bigtop(void)
 }
 
 
+float	ffabs(float);
+
+/* 0x800ce428: move the enemy so that group g closes on goal: straight there (answering 1)
+   when it is within step on each axis (the original tests z without its absolute value), else
+   by at most step along the largest axis and in proportion along the others (answering 0) */
+int func_800ce428(enemy_t *e, int g, float *goal, float step)
+{
+	float	dx, dy, dz;
+	float	ax, ay, az;
+
+	dx = goal[0] - e->groups[g].pos[0];
+	dy = goal[1] - e->groups[g].pos[1];
+	dz = goal[2] - e->groups[g].pos[2];
+	ax = ffabs(dx);
+	ay = ffabs(dy);
+	az = ffabs(dz);
+	if(ax < step && ay < step && dz < step)
+	{
+		e->x += dx;
+		e->y += dy;
+		e->z += dz;
+		return(1);
+	}
+	if(ay < ax && az < ax)
+	{
+		step = step / ax;
+	}
+	else if(ax < ay && az < ay)
+	{
+		step = step / ay;
+	}
+	else
+	{
+		step = step / az;
+	}
+	ax = ffabs(dx * step);
+	ay = ffabs(dy * step);
+	az = ffabs(dz * step);
+	if(ax < dx)
+	{
+		dx = ax;
+	}
+	else if(dx < -ax)
+	{
+		dx = -ax;
+	}
+	if(ay < dy)
+	{
+		dy = ay;
+	}
+	else if(dy < -ay)
+	{
+		dy = -ay;
+	}
+	if(az < dz)
+	{
+		dz = az;
+	}
+	else if(dz < -az)
+	{
+		dz = -az;
+	}
+	e->x += dx;
+	e->y += dy;
+	e->z += dz;
+	return(0);
+}
+
 /* 0x800ce63c: an enemy's scale: s times the model units' per-axis scale (-8.3333, 10, 8.3333:
    the models' x and z run the other way), and its radius from its own base radius */
 void set_enemy_scale(enemy_t *e, float s)
@@ -656,6 +724,24 @@ void set_enemy_scale(enemy_t *e, float s)
 	e->scale[1] = s * 10.0f;
 	e->scale[2] = s * 8.3333f;
 	e->radius = e->unkcc * e->scale[1];
+}
+
+/* 0x800ce680: the enemy counter / blend_len of the way from vel (the start) to goal */
+void func_800ce680(enemy_t *e)
+{
+	float	d[3];
+	float	f;
+
+	d[0] = e->goal[0] - e->vel[0];
+	d[1] = e->goal[1] - e->vel[1];
+	d[2] = e->goal[2] - e->vel[2];
+	f = (float)e->counter / (float)e->blend_len;
+	d[0] *= f;
+	d[1] *= f;
+	d[2] *= f;
+	e->x = e->vel[0] + d[0];
+	e->y = e->vel[1] + d[1];
+	e->z = e->vel[2] + d[2];
 }
 
 /* 0x800cdc38: the enemy fields an init does not set: the effects list and the spare words */
@@ -679,6 +765,23 @@ void point_toward_camera(float *pos, float d, float *out)
 {
 	world_to_view(pos, out);
 	out[2] = out[2] - d;
+	view_to_world(out);
+}
+
+/* 0x800cec74: as point_toward_camera, then a seventh of the way (d / 3.5 in view x) to the
+   side of the enemy's target player: right of the view for player 1, left for player 2 */
+void func_800cec74(enemy_t *e, float *pos, float d, float *out)
+{
+	world_to_view(pos, out);
+	out[2] = out[2] - d;
+	if(e->target == &player_stats[0])
+	{
+		out[0] = out[0] + d / 3.5f;
+	}
+	else
+	{
+		out[0] = out[0] - d / 3.5f;
+	}
 	view_to_world(out);
 }
 
