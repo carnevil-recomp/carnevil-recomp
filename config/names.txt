@@ -1655,3 +1655,39 @@
 0x800f5568 spider_drop_limb6
 0x800f55e0 spider_drop_limb7
 0x800f5658 spider_drop_limb8
+# Junior, the Freak Show boss (junior.c, junior_data.c; 0x8011f4e0-0x801222d0) and the Freak Show
+# innocent (freakshow_innocent.c, freakshow_innocent_data.c; 0x801222d0-0x80122e3c); functions keep
+# their address names until the merge renames them
+0x8012142c junior_next_move
+0x80198448 puke_submesh
+0x80198468 puke_spin
+0x80198474 puke_offset
+0x80198480 junior_mouth_runs
+0x80198f08 junior_mouth
+0x80198f80 junior
+0x80198f84 junior_mouth_shape
+0x80198f8c junior_voices
+0x80198fc4 junior_last_voice
+0x80198fc8 junior_thud
+0x801e0ee4 junior_full_health
+0x802373e8 junior_post
+0x8023743c junior_speaking
+0x801e5cd0 junior_mouth_at
+0x801e5cc0 junior_thud_prio
+0x801e5818 baby_verts
+0x80212ddc baby_faces
+0x801e0f3c baby_normals
+0x801e57e0 bear_verts
+0x80212dc0 bear_faces
+0x801e0f28 bear_normals
+0x801e5b84 puke_verts
+0x8021f0c0 puke_faces
+0x801e5844 puke_normals
+0x8022b114 junior_path
+0x801e7504 junior_submesh
+0x801e5b0c finn_verts
+0x80212e88 finn_faces
+0x801e57b8 finn_normals
+0x802372b0 finn_path
+0x801992b0 finn_submesh
+0x801994d0 finn_cries
