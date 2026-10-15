@@ -9,6 +9,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -384,14 +385,30 @@ static void apply_brightness(void)
 static GLuint	movie_tex;
 static float	depth_of_word[65536];
 static int	depth_table_built;
+/* The Voodoo never decodes the depth words: under GR_CMP_LEQUAL it compares the stored word
+   with the word it computes from the pixel's iterated 1/w, held as 16.32 fixed point (MAME's
+   voodoo emulation): 0 when 1/w >= 1, 0xffff when 1/w < 2^-16, else with e = the leading zeros
+   of the low 32 bits t, word = ((e << 12) | (~t >> (19 - e) & 0xfff)) + 1. Within an exponent
+   that is linear in 1/w, not in the distance. A pixel therefore passes against word W exactly
+   when its 1/w is at least the smallest 1/w that encodes to W, 2^-(e+1) * (1 + (4095 - m) / 4096)
+   for W - 1 = e << 12 | m, and the table stores 1 minus that bound, so GL's LEQUAL on
+   1 - 1/w (vertex_rgba) gives the hardware's answer. The game's own depth_word_to_float
+   (scene.c), used for the gun's shot test, reads the word as the distance 2^e * (1 + m / 4096);
+   that is a linear approximation of the same curve, and the port took it for the depth buffer
+   until 2026-10-14, which put the scenery up to 12% farther than the hardware saw it: enemies
+   near scenery, and feet in the floor, showed through (about 7% of the vertices the cabinet
+   hides, measured over a Rickety Town session). */
 static void build_depth_table(void)
 {
 	int	i;
-	for(i = 0; i < 65536; i++)
+	depth_of_word[0] = 0.0f;			/* 1/w >= 1: only an equally near pixel passes */
+	for(i = 1; i < 0xffff; i++)
 	{
-		float	dist = (float)(1 << (i >> 12)) * (1.0f + (float)(i & 0xfff) / 4096.0f), oow = 1.0f / dist;
-		depth_of_word[i] = 1.0f - (oow > 1.0f ? 1.0f : oow);
+		int	e = (i - 1) >> 12, m = (i - 1) & 0xfff;
+		double	oow_min = ldexp(1.0 + (double)(4095 - m) / 4096.0, -(e + 1));
+		depth_of_word[i] = (float)(1.0 - (oow_min > 1.0 ? 1.0 : oow_min));
 	}
+	depth_of_word[0xffff] = 1.0f;			/* the farthest word: every pixel passes */
 	depth_table_built = 1;
 }
 void port_movie_blit(const unsigned int *buf, int scroll)
