@@ -34,3 +34,5 @@ script   src/game/movie/script.c    game2  0x80110270 0x80110b04  0x80173318 0x8
 levelsnd src/game/sound/levelsnd.c game2  0x800ebb18 0x800ec53c  0x80170f08 0x80170f40  0x8018e038 0x8018e050
 auditfmt src/game/core/auditfmt.c  game1  0x800ef870 0x800f18e0  0x80171148 0x80171a5f  -          -
 hiscore  src/game/core/hiscore.c  game0  0x800e4c70 0x800e7184  0x801708a0 0x80170a84  0x8017de08 0x8017dfd8
+hhouse_script src/game/movie/hhouse_script.c game2 0x800fa720 0x800fb4a0  -          -           -          -
+flash    src/game/enemies/flash.c  game2  0x80114df0 0x8011539c  0x80173480 0x801734b5  0x80194658 0x801946d8

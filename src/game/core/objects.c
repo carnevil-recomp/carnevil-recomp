@@ -885,6 +885,16 @@ player_stats_t *attack_target(enemy_t *e)
 	return(p);
 }
 
+/* 0x800cde74: move the enemy by (dx, dy, dz) with no collision test; always 1 (the free
+   counterpart of move_cd, used by the steps toward a goal near the camera) */
+int func_800cde74(enemy_t *e, float dx, float dy, float dz)
+{
+	e->x = e->x + dx;
+	e->y = e->y + dy;
+	e->z = e->z + dz;
+	return(1);
+}
+
 /* 0x800cdeac: the player's shot against a sphere of radius^2 r2 at pos: the shot's view-space
    ray is extended to the sphere's depth, the movie must not be nearer than the sphere (the
    hit point under the crosshair), and on a hit the aim point is converted to the world */

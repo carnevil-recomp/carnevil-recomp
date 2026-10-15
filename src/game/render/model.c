@@ -10,10 +10,12 @@
 #include "model.h"
 #include "camera.h"
 #include "enemy.h"
+
+extern int	randrng(int);
 #include "texmap.h"
 #include "credits.h"			/* debug_mode */
 
-extern void	rot_matrix_zyx(float *, float *), mat_mul(float *, float *, float *), mat_copy(float *, float *);
+extern void	rot_matrix_zyx(float *, float *), rot_matrix_yxz(float *, float *), mat_mul(float *, float *, float *), mat_copy(float *, float *);
 extern void	mat_scale(float *, float *), mat_unscale(float *, float *);
 extern void	mat_vec_mul(float *, float *, float *), vec_add(float *, float *, float *);
 extern void	project_vertices(int, float *, float *, float *, float *);
@@ -88,6 +90,37 @@ void draw_part_model(part_t *p, submesh_t *sub, float *verts, int nverts, face_t
 	guAlphaSource(GR_ALPHASOURCE_ITERATED_ALPHA);
 	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_ONE, GR_BLEND_ZERO);
 	draw_faces_alpha(faces, proj_verts, lit_colors, sub->face_start, sub->face_end, 0, p->alpha);
+}
+
+/* 0x800e059c: knock a group loose with a random fling: it leaves the animation (0x2000 off,
+   0x4000 on) keeping its offset of from relative to to, flies up at 1 to 1.5 with up to 0.25
+   sideways each way and spins, opaque, for 25 steps of life, until it falls to floor; drawn
+   alpha-blended (0x80). The zombie's body comes apart with it (state 0x403). The last argument
+   is not used */
+void func_800e059c(group_t *g, float *from, float *to, float floor, float *unused)
+{
+	if(!(g->flags & 0x4000))
+	{
+		g->flags = (g->flags & ~0x2000) | 0x4000;
+		g->off[0] = from[0] - to[0];
+		g->off[1] = from[1] - to[1];
+		g->off[2] = from[2] - to[2];
+		g->rot[0] = 0.0f;
+		g->rot[1] = 0.0f;
+		g->rot[2] = 0.0f;
+		g->spin[1] = 0.276f;
+		g->spin[0] = 0.79f;
+		g->spin[2] = 0.0f;
+		g->vel[0] = (float)(randrng(1000) - 500) / 2000.0f;
+		g->vel[1] = (float)randrng(1000) / 2000.0f + 1.0f;
+		g->vel[2] = (float)(randrng(1000) - 500) / 2000.0f;
+		g->life = 0x19;
+		g->life_step = 0;
+		g->floor = floor;
+		g->alpha = 255.0f;
+		g->alpha_step = 0.0f;
+		g->flags |= 0x80;
+	}
 }
 
 /* 0x800e06d8: one submesh drawn at a matrix and position of the caller's choosing with a
@@ -243,13 +276,16 @@ void animate_loose_groups(enemy_t *e, int n)
 	}
 }
 
-/* 0x8011464c: every group posed at the enemy's current frame (the Haunted House enemies' init
-   uses it where the others use init_groups): an animated group (0x2000) gets its world
-   rotation, position and pivot; the others are reset to the origin with an unrotated matrix */
-extern void	rot_matrix_yxz(float *, float *);
+/* 0x8011464c: place the groups at the current animation frame without drawing: a root group
+   (GROUP_ROOT) gets the enemy's rotation and scale times its frame's angles and sits at the
+   enemy's position plus its frame offset, its pivot carried along; any other group is reset to
+   the origin with an unrotated matrix. The Haunted House's hand, bat, ghoul and Mari call it from
+   their inits so their first hit test sees the pose */
 void func_8011464c(enemy_t *e, submesh_t *sub, int nsub)
 {
-	float	m[9], gm[9], pos[3];
+	float	m[9];
+	float	r[9];
+	float	p[3];
 	group_t	*g;
 	int	i;
 
@@ -258,28 +294,63 @@ void func_8011464c(enemy_t *e, submesh_t *sub, int nsub)
 	for(i = 0; i < nsub; i++)
 	{
 		g = &e->groups[i];
-		if(g->flags & 0x2000)
+		if(g->flags & GROUP_ROOT)
 		{
-			rot_matrix_zyx(gm, sub[i].anim[e->frame].rot);
-			pos[0] = sub[i].anim[e->frame].pos[0];
-			pos[1] = sub[i].anim[e->frame].pos[1];
-			pos[2] = sub[i].anim[e->frame].pos[2];
-			mat_mul(m, gm, g->mat);
-			mat_vec_mul(pos, m, pos);
-			vec_add(pos, &e->x, g->pos);
+			rot_matrix_zyx(r, sub[i].anim[e->frame].rot);
+			p[0] = sub[i].anim[e->frame].pos[0];
+			p[1] = sub[i].anim[e->frame].pos[1];
+			p[2] = sub[i].anim[e->frame].pos[2];
+			mat_mul(m, r, g->mat);
+			mat_vec_mul(p, m, p);
+			vec_add(p, &e->x, g->pos);
 			mat_vec_mul(sub[i].pivot, g->mat, g->pivot);
-			vec_add(g->pivot, pos, g->pivot);
+			vec_add(g->pivot, p, g->pivot);
 		}
 		else
 		{
-			g->pos[0] = 0;
-			g->pos[1] = 0;
-			g->pos[2] = 0;
-			g->pivot[0] = 0;
-			g->pivot[1] = 0;
-			g->pivot[2] = 0;
+			g->pos[0] = 0.0f;
+			g->pos[1] = 0.0f;
+			g->pos[2] = 0.0f;
+			g->pivot[0] = 0.0f;
+			g->pivot[1] = 0.0f;
+			g->pivot[2] = 0.0f;
 			rot_matrix_yxz(g->mat, g->pos);
 		}
+	}
+}
+
+/* 0x80114814: the same for one group n (a part put back at its frame pose) */
+void func_80114814(enemy_t *e, submesh_t *sub, int n)
+{
+	float	m[9];
+	float	r[9];
+	float	p[3];
+	group_t	*g;
+
+	rot_matrix_zyx(m, &e->rx);
+	mat_scale(m, e->scale);
+	g = &e->groups[n];
+	if(g->flags & GROUP_ROOT)
+	{
+		rot_matrix_zyx(r, sub[n].anim[e->frame].rot);
+		p[0] = sub[n].anim[e->frame].pos[0];
+		p[1] = sub[n].anim[e->frame].pos[1];
+		p[2] = sub[n].anim[e->frame].pos[2];
+		mat_mul(m, r, g->mat);
+		mat_vec_mul(p, m, p);
+		vec_add(p, &e->x, g->pos);
+		mat_vec_mul(sub[n].pivot, g->mat, g->pivot);
+		vec_add(g->pivot, p, g->pivot);
+	}
+	else
+	{
+		g->pos[0] = 0.0f;
+		g->pos[1] = 0.0f;
+		g->pos[2] = 0.0f;
+		g->pivot[0] = 0.0f;
+		g->pivot[1] = 0.0f;
+		g->pivot[2] = 0.0f;
+		rot_matrix_yxz(g->mat, g->pos);
 	}
 }
 

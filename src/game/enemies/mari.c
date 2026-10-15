@@ -1,5 +1,6 @@
 /*
- * mari.c - Mari, the Haunted House boss with the axe (object type 0x1104; MARI.ZM, mari.za and
+ * mari.c - Evil Marie (her life bar's name picture, texture 0x7082), the Haunted House boss with
+ * the axe (object type 0x1104; MARI.ZM, mari.za and
  * the mari*.WMS texmaps; the axe AXE.ZM with mariaxe/marihndl.WMS; sound bank "chastity"), and
  * the axe she throws (object type 0x2010). One original file, 0x800ed1e0-0x800ef870 (the axe
  * first, then Mari, then the boss fight's callbacks the Haunted House movie script calls),
