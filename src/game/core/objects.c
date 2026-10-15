@@ -716,6 +716,29 @@ int func_800ce428(enemy_t *e, int g, float *goal, float step)
 	return(0);
 }
 
+/* 0x800ceaf0: the world position of a point given in a submesh's frame at the enemy's current
+   animation frame (off is added to the submesh's own offset): the Haunted House ghoul's eyes */
+extern void	rot_matrix_yxz(float *, float *), rot_matrix_zyx(float *, float *), mat_scale(float *, float *), mat_mul(float *, float *, float *);
+extern void	mat_vec_mul(float *, float *, float *);
+extern void	vec_add(float *, float *, float *);
+void func_800ceaf0(float *out, enemy_t *e, submesh_t *sub, int n, float *off)
+{
+	float	m[9], gm[9], pos[3];
+
+	rot_matrix_yxz(m, &e->rx);
+	rot_matrix_zyx(m, &e->rx);
+	mat_scale(m, e->scale);
+	rot_matrix_zyx(gm, sub[n].anim[e->frame].rot);
+	pos[0] = sub[n].anim[e->frame].pos[0] + off[0];
+	pos[1] = sub[n].anim[e->frame].pos[1] + off[1];
+	pos[2] = sub[n].anim[e->frame].pos[2] + off[2];
+	mat_mul(m, gm, gm);
+	mat_vec_mul(pos, m, pos);
+	vec_add(pos, &e->x, pos);
+	mat_vec_mul(sub[n].pivot, gm, out);
+	vec_add(out, pos, out);
+}
+
 /* 0x800ce63c: an enemy's scale: s times the model units' per-axis scale (-8.3333, 10, 8.3333:
    the models' x and z run the other way), and its radius from its own base radius */
 void set_enemy_scale(enemy_t *e, float s)
@@ -963,6 +986,16 @@ player_stats_t *attack_target(enemy_t *e)
 		}
 	}
 	return(p);
+}
+
+/* 0x800cde74: move the enemy by (dx, dy, dz) with no collision test; always 1 (the free
+   counterpart of move_cd, used by the steps toward a goal near the camera) */
+int func_800cde74(enemy_t *e, float dx, float dy, float dz)
+{
+	e->x = e->x + dx;
+	e->y = e->y + dy;
+	e->z = e->z + dz;
+	return(1);
 }
 
 /* 0x800cdeac: the player's shot against a sphere of radius^2 r2 at pos: the shot's view-space
