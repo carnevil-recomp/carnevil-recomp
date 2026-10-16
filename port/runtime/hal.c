@@ -143,7 +143,13 @@ static void *map_fixed_page(unsigned long addr)
 	void *p = VirtualAlloc((void *)addr, 0x1000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	return p ? p : (void *)-1;
 #else
-	return mmap((void *)addr, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
+#ifdef MAP_FIXED_NOREPLACE			/* never over something already mapped there */
+	return mmap((void *)addr, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED_NOREPLACE, -1, 0);
+#else
+	void *p = mmap((void *)addr, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+	if(p != MAP_FAILED && (unsigned long)p != addr) { munmap(p, 0x1000); return MAP_FAILED; }
+	return p;
+#endif
 #endif
 }
 static void resolve(void);

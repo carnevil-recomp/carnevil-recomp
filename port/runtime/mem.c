@@ -27,19 +27,36 @@ typedef struct blk { size_t size; int free; struct blk *next, *prev; } blk_t;	/*
 static unsigned char	*arena;
 static blk_t		*head;
 
+/* Map the arena at the first free 256 MB slot from 0x20000000 below 4 GB. Never over an
+   existing mapping: with address randomisation the C library's own heap can sit in that range
+   (a non-PIE Linux binary's brk heap), and MAP_FIXED would silently replace it. */
+static void *map_low(uintptr_t want)
+{
+#ifdef _WIN32
+	return VirtualAlloc((void *)want, ARENA_SIZE, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+#else
+	void	*p;
+#ifdef MAP_FIXED_NOREPLACE
+	p = mmap((void *)want, ARENA_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED_NOREPLACE, -1, 0);
+#else
+	p = mmap((void *)want, ARENA_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);	/* a hint */
+#endif
+	if(p == MAP_FAILED) return 0;
+	if((uintptr_t)p != want) { munmap(p, ARENA_SIZE); return 0; }
+	return p;
+#endif
+}
+
 static void arena_init(void)
 {
-	void *p;
+	void		*p = 0;
+	uintptr_t	want;
 	if(arena) return;
-#ifdef _WIN32
-	p = VirtualAlloc((void *)(uintptr_t)ARENA_ADDR, ARENA_SIZE, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	if(!p || (uintptr_t)p != ARENA_ADDR)
-#else
-	p = mmap((void *)(uintptr_t)ARENA_ADDR, ARENA_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
-	if(p == MAP_FAILED || (uintptr_t)p != ARENA_ADDR)
-#endif
+	for(want = ARENA_ADDR; want + ARENA_SIZE <= 0xf0000000u && !p; want += 0x10000000u)
+		p = map_low(want);
+	if(!p)
 	{
-		const char msg[] = "[mem] cannot map the 32-bit arena (link with -Wl,-pagezero_size,0x1000)\n";
+		const char msg[] = "[mem] no free 256 MB below 4 GB for the 32-bit arena (macOS: link with -Wl,-pagezero_size,0x1000)\n";
 		(void)!write(2, msg, sizeof msg - 1); _exit(1);
 	}
 	arena = p;
