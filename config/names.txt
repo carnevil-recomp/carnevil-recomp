@@ -2150,3 +2150,33 @@
 0x8019feb8 clown_taunt_sounds
 0x8019fee8 clown_hurt_sounds
 0x8019ff18 clown_death_sounds
+# Big Top: Doctor Klot (doctor_klot.c, doctor_klot_data.c) and the skeleton (skeleton.c,
+# skeleton_data.c); spawn.c, wave.c and weapons.c keep the address names they use
+0x8013bbc4 klot_hit
+0x8013bc80 klot_die
+0x8013c514 klot_remove
+0x8013cc3c klot_approach
+0x8013ce50 klot_end_path
+0x8013cef0 klot_drop_parts_15_13
+0x8013cf50 klot_drop_parts_16_14
+0x801e593c doctor_verts
+0x80212e78 doctor_faces
+0x801e4398 doctor_normals
+0x802372a0 doctor_path
+0x801a1ab0 klot_head_spray_dir
+0x801a1abc klot_head_spray_base
+0x801a1af8 klot_taunts
+0x801a1b78 klot_hurt_calls
+0x801a1bb4 klot_death_calls
+0x801a1bbc klot_instrument_count
+0x8013d28c skeleton_hit
+0x8013d348 skeleton_die
+0x8013d938 skeleton_remove
+0x8013e6cc skeleton_approach
+0x8013e924 skeleton_end_path
+0x802372cc skeleton_path
+0x801a2040 skeleton_taunts
+0x801a2060 skeleton_hurt_calls
+0x801a2080 skeleton_death_calls
+0x801a20a0 skeleton_eye1
+0x801a20ac skeleton_eye2
