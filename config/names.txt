@@ -2284,3 +2284,20 @@
 0x8019ee64 mame_spray2b
 0x8019ee70 mame_spray3a
 0x8019ee7c mame_spray3b
+# the end credits (src/game/core/endcredits.c, 0x80140270-0x801412a4; -O2 without strength reduction, profile game2nsr)
+0x80140270 credits_rgb_to_565
+0x801402c0 credits_read_row
+0x8014039c credits_shade_row
+0x801407f8 credits_draw_rows
+0x801409fc credits_prime
+0x80140c18 credits_open
+0x80140d18 credits_step
+0x80141020 credits_close
+0x801e0eb0 credits_file
+0x802374b4 creditsb_file
+0x8021f0ec credits_edge_rows
+0x801e5c08 credits_rows
+0x801de880 creditsb_rows
+0x801e0ec8 credits_row
+0x801e5bd4 credits_target
+0x801e09f0 credits_speed
