@@ -5,6 +5,9 @@
 OUTPUT_ARCH(mips)
 ENTRY(_start)
 INCLUDE config/symbols_abs.ld
+/* one object, two names: the view point is camera_x/y/z to some code and camera_pos[3] to other
+   code (src/game/render/camera.c) */
+camera_pos = camera_x;
 SECTIONS
 {
     . = 0x800c4000;

@@ -554,17 +554,16 @@ int krampus_init(game_object_t *obj)
 	enemy_t	*e;
 	int	i;
 
-	e = malloc(sizeof(enemy_t));
-	obj->data = (short *)e;
-	if(!e)
+	obj->data = malloc(sizeof(enemy_t));
+	if(!obj->data)
 	{
 		return(1);
 	}
+	the_krampus = e = (enemy_t *)obj->data;
 	obj->hit = krampus_hit;
 	obj->die = krampus_die;
 	obj->remove = krampus_remove;
 	e->unk4 = 0x14;
-	the_krampus = e;
 	e->counter = 0;
 	e->frame = 0;
 	e->num = 0;

@@ -360,7 +360,8 @@ int dino_die(game_object_t *obj, player_stats_t *p)
 	case 7:
 	case 13:
 	case 17:
-		if(randrng(100) < 50)
+		i = randrng(100);
+		if(i < 50)
 		{
 			start_hit_reaction(e, 0xec, DINO_HIT1, submesh_info_dino, 0xd);
 		}

@@ -331,15 +331,15 @@ int teen_die(game_object_t *obj, player_stats_t *p)
 				if(e->flags2 & 0x40)
 				{
 					e->ai_state = TEEN_DIE2;
-					i = 0x248;
+					e->frame = 0x248;
+					e->flags &= 0xfffd;
 				}
 				else
 				{
 					e->ai_state = TEEN_DIE1;
-					i = 0x106;
+					e->frame = 0x106;
+					e->flags &= 0xfffd;
 				}
-				e->frame = i;
-				e->flags &= 0xfffd;
 			}
 		}
 		else
@@ -361,23 +361,11 @@ int teen_die(game_object_t *obj, player_stats_t *p)
 	}
 	switch(group)
 	{
-	case 3:
-	case 4:
-	case 5:
-		start_hit_reaction(e, 0xbb, 0x1002, submesh_info_teen, 0xd);
-		break;
-	case 9:
-	case 10:
-	case 14:
-		start_hit_reaction(e, 0xe2, 0x1004, submesh_info_teen, 0xd);
-		break;
-	case 13:
-		start_hit_reaction(e, 0xcf, 0x1005, submesh_info_teen, 0xd);
-		break;
 	case 12:
 	case 18:
 	case 20:
-		if(randrng(100) < 50)
+		i = randrng(100);
+		if(i < 50)
 		{
 			start_hit_reaction(e, 0xf4, 0x1008, submesh_info_teen, 0xd);
 		}
@@ -385,6 +373,19 @@ int teen_die(game_object_t *obj, player_stats_t *p)
 		{
 			start_hit_reaction(e, 0xf4, 0x1009, submesh_info_teen, 0xd);
 		}
+		break;
+	case 13:
+		start_hit_reaction(e, 0xbb, 0x1002, submesh_info_teen, 0xd);
+		break;
+	case 3:
+	case 4:
+	case 5:
+		start_hit_reaction(e, 0xe2, 0x1004, submesh_info_teen, 0xd);
+		break;
+	case 9:
+	case 10:
+	case 14:
+		start_hit_reaction(e, 0xcf, 0x1005, submesh_info_teen, 0xd);
 		break;
 	case 17:
 		break;

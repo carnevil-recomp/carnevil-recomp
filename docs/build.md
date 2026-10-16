@@ -65,7 +65,14 @@ lockup, inthand, randper and the DCS sound library (`src/sound/sound.c`, compile
 compares an object's sections with the original bytes; `tools/match/fit.sh <file.c> <profile>`
 compiles a module and lets `modfit.py` locate and diff every function, `tools/match/trymatch.sh`
 diffs named functions at given addresses, and `tools/analysis/fn.py` annotates one function. Those are
-the per-function decompilation loop. `secdiff.py` reads the object, so jump-table words show
+the per-function decompilation loop. `match.py` also compares every switch jump table the
+function indexes against the original's (case value -> place in the function): the masked
+instruction compare cannot see a case body attached to the wrong case values, and a function
+with such a table is reported as `JUMP TABLE MISMATCH`, never 100%. `tools/match/permsetup.py
+<file.c> <profile> <function>` prepares a [decomp-permuter](https://github.com/simonlindholm/decomp-permuter)
+run (base.c, target.o, compile.sh with this toolchain) for register-allocation and scheduling
+differences; the permuter only proposes source, and a candidate is kept only when it reads like
+code someone wrote. `secdiff.py` reads the object, so jump-table words show
 their unrelocated addends there; the linked image (`build/game.elf`) has them resolved.
 
 Adding a module = find its three ranges in the image (text from the function files; rodata

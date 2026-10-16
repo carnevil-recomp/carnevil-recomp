@@ -153,6 +153,21 @@ def main():
                 continue                       # addu base,base,index keeps the lui live
             wr=gpr_written(w)
             if wr is not None and wr in state: del state[wr]
+    # an address inside a C module's rodata/data that the module does not export by name (a member
+    # of one of its tables) is written as the nearest named symbol below it plus the offset
+    mranges=[m[k] for m in modules for k in ('rodata','data') if m[k]]
+    named=sorted(dnames)
+    for base in sorted(symaddrs):
+        if base in dnames: continue
+        r=next((r for r in mranges if r[0]<=base<r[1]),None)
+        if not r: continue
+        nb=max((x for x in named if r[0]<=x<=base),default=None)
+        if nb is None: continue
+        for A,v in list(sym_hi.items()):
+            if v==base: sym_hi[A]=(nb,base-nb)
+        for A,(b0,d) in list(sym_lo.items()):
+            if b0==base: sym_lo[A]=(nb,d+base-nb)
+        symaddrs.discard(base); symaddrs.add(nb)
     # ---- symbol placement ----
     def tname(A):
         if A in fnames: return fnames[A]
@@ -270,7 +285,10 @@ def main():
 
 def render(i,w,A,label,sym_hi,sym_lo,symname):
     m=i.mnemonic; ops=i.op_str; op=w>>26; rs=(w>>21)&31; rt=(w>>16)&31; rd=(w>>11)&31
-    if A in sym_hi: return "lui %s, %%hi(%s)"%(GPR[rt],symname(sym_hi[A]))
+    if A in sym_hi:
+        h=sym_hi[A]
+        if isinstance(h,tuple): return "lui %s, %%hi(%s+0x%x)"%(GPR[rt],symname(h[0]),h[1])
+        return "lui %s, %%hi(%s)"%(GPR[rt],symname(h))
     if A in sym_lo:
         base,delta=sym_lo[A]; e=symname(base)+("+0x%x"%delta if delta>0 else "-0x%x"%-delta if delta<0 else "")
         if op==0x09: return "addiu %s, %s, %%lo(%s)"%(GPR[rt],GPR[rs],e)

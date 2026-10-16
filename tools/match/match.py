@@ -3,7 +3,10 @@
 
 Usage: match.py <file.s> <func>=<game_vaddr> [<func>=<vaddr> ...]
 Reports per-function instruction match percentage. Immediates that carry relocations
-(lui hi16 / lo16 / jal targets) are masked, since the link layout differs.
+(lui hi16 / lo16 / jal targets) are masked, since the link layout differs. Switch jump tables
+are compared separately: each table the function indexes (lui/lw pair against .rodata) must send
+every case to the same place in the function as the original's, or the cases are reported (the
+masked instruction compare cannot see a case body attached to the wrong case values).
 """
 import sys, os, os, subprocess, struct, re, tempfile
 HERE=os.path.dirname(os.path.abspath(__file__))
@@ -42,6 +45,46 @@ def relocs(obj):
         p=line.split()
         if len(p)>=3 and re.match(r"^[0-9a-f]+$",p[0]) and p[1].startswith("R_"): r[int(p[0],16)]=p[1]
     return r
+def section_relocs(obj, sec):
+    """{offset: (type, symbol)} for one section (REL: addends are in the section bytes)"""
+    out=subprocess.run([OBJDUMP,"-r","-j",sec,obj],capture_output=True,text=True).stdout
+    r={}
+    for line in out.splitlines():
+        p=line.split()
+        if len(p)>=3 and re.match(r"^[0-9a-f]+$",p[0]) and p[1].startswith("R_"): r[int(p[0],16)]=(p[1],p[2])
+    return r
+def section_bytes(obj, sec):
+    hdr=subprocess.check_output([OBJDUMP,"-h",obj]).decode()
+    m=re.search(r"\s%s\s+([0-9a-f]+)\s+[0-9a-f]+\s+[0-9a-f]+\s+([0-9a-f]+)"%re.escape(sec),hdr)
+    if not m: return b""
+    size=int(m.group(1),16); off=int(m.group(2),16)
+    return open(obj,"rb").read()[off:off+size]
+def jump_tables(obj, ours, oaddr, theirs, addr, game):
+    """compare each switch table's targets (relative to the function) with the original's"""
+    trel=section_relocs(obj,".text"); rrel=section_relocs(obj,".rodata"); rod=section_bytes(obj,".rodata")
+    w=lambda b,i: struct.unpack("<I",b[i:i+4])[0]
+    sx=lambda v: v-0x10000 if v&0x8000 else v
+    out=[]; n=len(ours)//4; found=[]
+    for k in range(n):
+        t=trel.get(oaddr+4*k)
+        if not t or t[0]!="R_MIPS_HI16" or t[1]!=".rodata": continue
+        for j in range(k+1,min(k+4,n)):               # its lo16: the table load
+            u=trel.get(oaddr+4*j)
+            if u and u[0]=="R_MIPS_LO16" and u[1]==".rodata": break
+        else: continue
+        if not any((w(ours,4*m)&0xfc1fffff)==0x00000008 for m in range(j+1,min(j+4,n))): continue   # then jr
+        found.append((k,((w(ours,4*k)&0xffff)<<16)+sx(w(ours,4*j)&0xffff),((w(theirs,4*k)&0xffff)<<16)+sx(w(theirs,4*j)&0xffff)))
+    starts={f[1] for f in found}
+    for k,toff,tabs in found:
+        e=0; bad=[]
+        while toff+4*e+4<=len(rod) and rrel.get(toff+4*e,("",""))[0]=="R_MIPS_32" and rrel[toff+4*e][1]==".text" and (e==0 or toff+4*e not in starts):
+            mine=w(rod,toff+4*e)-oaddr
+            if not (LOAD<=tabs+4*e<LOAD+len(game)-4): bad.append(e); e+=1; continue
+            orig=w(game,tabs+4*e-LOAD)-addr
+            if mine!=orig: bad.append((e,mine,orig))
+            e+=1
+        if e: out.append((k,e,bad,tabs))
+    return out
 def relmask(rtype):
     if rtype in ("R_MIPS_HI16","R_MIPS_LO16","R_MIPS_GPREL16","R_MIPS_LITERAL"): return 0xffff0000
     if rtype=="R_MIPS_26": return 0xfc000000
@@ -78,8 +121,16 @@ def main():
             else:
                 x=dis(wo,addr+4*k); y=dis(wt,addr+4*k)
                 diffs.append("  %08x  ours: %-28s theirs: %s"%(addr+4*k, (x.mnemonic+" "+x.op_str) if x else "%08x"%wo, (y.mnemonic+" "+y.op_str) if y else "%08x"%wt))
+        tabs=jump_tables(obj,ours,oaddr,theirs,addr,game)
+        tbad=[t for t in tabs if t[2]]
+        if tbad: ok=min(ok,n-1)                          # a misrouted switch is not a match
         total+=n; total_ok+=ok
-        print("%-24s %4d insns  %3d%% match (words, relocs masked)"%(name,n,100*ok//max(n,1)))
+        print("%-24s %4d insns  %3d%% match (words, relocs masked)%s"%(name,n,100*ok//max(n,1),
+            "  JUMP TABLE MISMATCH" if tbad else (", %d jump table(s) ok"%len(tabs) if tabs else "")))
+        for k,e,bad,ta in tbad:
+            print("  switch at %08x (table 0x%08x, %d entries): %d entries go elsewhere"%(addr+4*k,ta,e,len(bad)))
+            for b in bad[:8]:
+                if isinstance(b,tuple): print("    entry %d: ours -> +0x%x, theirs -> +0x%x"%b)
         lim=int(os.environ.get("MATCH_MAXDIFF","12"))
         for d in diffs[:lim]: print(d)
         if len(diffs)>lim: print("  ... %d more"%(len(diffs)-lim))

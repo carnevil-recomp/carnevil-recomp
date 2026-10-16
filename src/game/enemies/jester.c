@@ -566,16 +566,15 @@ int init_jester(game_object_t *o)
 	enemy_t	*e;
 	int	i;
 
-	e = malloc(sizeof(enemy_t));
-	o->data = (short *)e;
-	if(!e)
+	o->data = malloc(sizeof(enemy_t));
+	if(!o->data)
 	{
 		return 1;
 	}
+	the_jester = e = (enemy_t *)o->data;
 	o->hit = jester_hit;
 	o->die = jester_die;
 	o->remove = remove_jester_object;
-	the_jester = e;
 	e->counter = 0;
 	e->frame = 0;
 	e->num = 0;
