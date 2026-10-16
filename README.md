@@ -14,10 +14,13 @@ and the port runs that code on a thin hardware layer. See `docs/PLAN.md` for the
   CMOS, audits and adjustments, high scores, pricing and credits, the sound board bring-up,
   then the attract mode with its movies, text, music and sound effects. Coins, start
   buttons, service credit and the volume buttons work. A start runs the real game flow:
-  the level-select gallery, Rickety Town with its movie, script, lights, sound and music,
-  Krinkle and the termites, the light gun (the mouse), muzzle flashes and hit effects.
-  What the game code still lacks is stubbed, and every stub announces itself (below).
-- macOS (Apple Silicon and Intel), Linux (x86_64) and Windows (32-bit, cross-compiled from Linux) build today.
+  the level-select gallery, Haunted House, Rickety Town and Freak Show, the Big Top, the
+  end credits and back to attract, for one or two players. What the game code still lacks
+  would be stubbed, and every stub announces itself (below); a full game reaches none.
+- Port additions (none change the game): mouse and gamepad aiming for both players with
+  MAME-style crosshairs, fullscreen and borderless windows, a smooth `--hires` picture.
+- macOS (Apple Silicon and Intel), Linux (x86_64) and Windows (32-bit, cross-compiled from
+  Linux) build today; GitHub Actions builds all three on every push.
 
 ## Layout
 - `docs/` plan and notes; `config/` symbols and module ranges; `include/` shared headers;
@@ -95,22 +98,48 @@ make host                  # native compile of every C module + self-test
 
 ## Running the port
 ```
-build/host/carnevil --partition original/partition --raw original/carn.raw
+build/host/carnevil --raw original/carn.raw
 ```
-Options: `--state DIR` where the port keeps the game's CMOS image and the files the game
-writes (default `state/`; delete it for a factory-fresh boot), `--wav FILE` to capture the
-soundtrack, `--frames N` to stop after N frames, `--fast` to disable frame pacing,
-`--headless` for no window, `--dump frame.ppm` or `--dump-every PREFIX N` for screenshots,
-`--violence 0..3` to set the operator's VIOLENCE adjustment (0 none: smoke instead of blood,
-no acid or flamethrower pickups; 1 green blood; 2 red blood; 3 full gore, the factory default) or
-`--adjust N=V` for any adjustment by its number in the game's ADJUST.FMT (e.g. 58=0 turns BIG
-BABY off); both are written into the CMOS state as the test menu would and persist, `--fullscreen` to start fullscreen (the desktop's resolution, no display mode change; the
-picture keeps its shape with black bars), `--borderless` for a window without a title bar (the
-window is resizable either way), `--crosshair 0` for no port crosshairs, `--hires` to draw at the window's resolution in 24-bit colour instead of the cabinet's 400x256
-16-bit picture (the default, see docs/port.md), `--load-time X` to scale level-load time (default 2.8, a test calibration explained in
-docs/port.md; 1 is the port's instant loading), `--press FRAME:SWITCH,...` to script cabinet switches for tests, `-v` (twice for every
-ioctl) for traces. `CARNEVIL_PARTITION`, `CARNEVIL_RAW` and `CARNEVIL_STATE` are the
-environment equivalents.
+The release packages start it through `run.sh` (Linux, macOS) or `play.bat` (Windows): give
+the image's path once (`run.sh` remembers it), then any of the options below.
+
+**Picture and window**
+
+| Option | Effect |
+|---|---|
+| *(none)* | Cabinet mode: the game's 400x256 16-bit picture (with the Voodoo's dithering where the game enables it), scaled up without smoothing (see docs/port.md) |
+| `--hires` | Draw at the window's resolution in 24-bit colour instead |
+| `--fullscreen` | Start fullscreen at the desktop's own resolution (no display mode change; the picture keeps its shape with black bars) |
+| `--borderless` | A window without a title bar |
+| `--crosshair 0` | No port crosshairs (see Controls) |
+
+Windows can be resized, and the picture always scales to fit.
+
+**Game settings**
+
+| Option | Effect |
+|---|---|
+| `--violence 0..3` | The operator's VIOLENCE adjustment: 0 none (smoke instead of blood, no acid or flamethrower pickups), 1 green blood, 2 red blood, 3 full gore (the factory default) |
+| `--adjust N=V` | Any adjustment by its number in the game's ADJUST.FMT (e.g. `58=0` turns BIG BABY off) |
+| `--load-time X` | Scale the level-load time (default 2.8, a test calibration explained in docs/port.md; 1 is the port's instant loading) |
+
+`--violence` and `--adjust` are written into the CMOS state as the operator's test menu
+would, so they persist.
+
+**Files**
+
+| Option | Effect |
+|---|---|
+| `--raw IMAGE` | The hard disk image (default `original/carn.raw`) |
+| `--partition DIR` | Already-unpacked game files (default `original/partition` if present; otherwise partition 1 of the image is unpacked into `<state>/partition` on the first run) |
+| `--state DIR` | Where the game's CMOS image and the files it writes are kept (default `state/`; delete it for a factory-fresh boot) |
+
+`CARNEVIL_RAW`, `CARNEVIL_PARTITION` and `CARNEVIL_STATE` are the environment equivalents.
+
+**Testing and debugging**: `--headless` (no window), `--fast` (no frame pacing),
+`--frames N` (stop after N frames), `--press FRAME:SWITCH,...` (script cabinet switches),
+`--dump frame.ppm` or `--dump-every PREFIX N` (screenshots), `--wav FILE` (capture the
+soundtrack), `-v` (traces; twice for every ioctl).
 
 ## Controls
 The cabinet's switches are mapped to the keyboard, and the mouse is player 1's light gun:
@@ -129,11 +158,16 @@ which is how the original reloads.
 | Left mouse button or `Left Ctrl` | Player 1 trigger |
 | Mouse position | Player 1 aim |
 | `F2` | Test switch (diagnostics not implemented yet) |
-| `F11` or `Alt+Enter` (macOS: `Option+Return`, `Ctrl+Cmd+F` or the green button) | Fullscreen on/off |
 
-Gamepads (SDL game controllers on Linux and Windows, Apple's GameController framework on
-macOS): the first connected pad plays player 1 and the second player 2. Moving the mouse
-gives player 1 back to the mouse.
+| Key | Port |
+|---|---|
+| `F11` or `Alt+Enter` (macOS: `Option+Return` or the green window button) | Fullscreen on/off |
+
+### Gamepads
+Both players can use a gamepad: SDL game controllers on Linux and Windows (Xbox,
+PlayStation, Switch Pro and most others), Apple's GameController framework on macOS. The
+first pad connected plays player 1 and the second player 2; pads can be plugged in and out
+while the game runs. Moving the mouse gives player 1 back to the mouse.
 
 | Pad | Cabinet |
 |---|---|
@@ -144,24 +178,27 @@ gives player 1 back to the mouse.
 | Start / Menu | That player's start |
 | Back / Options | Coin (player 1 the left slot, player 2 the right) |
 
+### Crosshairs
 The cabinet's light guns need no on-screen sight, so the original draws none during play
-(only on the initials board). Like MAME, the port draws one over the picture for each aiming
-player (player 1 red, player 2 blue) and hides the system pointer over the picture;
-`--crosshair 0` turns that off.
+(only on the high-score initials board). Like MAME, the port draws one over the finished
+picture for each aiming player, mouse or pad (player 1 red, player 2 blue), and hides the
+system pointer over the picture. It is not part of the game's picture: `--crosshair 0`
+turns it off.
 
-For scripted runs, `--press` takes these switch names: `coin`, `coin2`, `coin3`, `coin4`,
-`bill`, `start1`, `start2`, `service`, `test`, `slam`, `voldown`, `volup`, `p1a`..`p1d`,
-`p2a`, `p2b`, `trigger`, `pump`, `trigger2`, `pump2` (each press is held for 6 frames);
-headless shots go to the screen centre, or to `CARNEVIL_AIM=x,y` (x 0..400, y 0..256 from
-the bottom). `CARNEVIL_PADSIM="FRAME:PAD:LX,LY,BUTTONS;..."` stands in for a gamepad
-(the stick and `PAD_*` button bits from `port/runtime/hal.h`, from that frame on). Coins are not counted while the boot load runs (until about frame 960 with
-the default `--load-time`), so scripts press later:
+### Scripted input
+`--press` takes these switch names: `coin`, `coin2`, `coin3`, `coin4`, `bill`, `start1`,
+`start2`, `service`, `test`, `slam`, `voldown`, `volup`, `p1a`..`p1d`, `p2a`, `p2b`,
+`trigger`, `pump`, `trigger2`, `pump2` (each press is held for 6 frames). Headless shots go
+to the screen centre, or to `CARNEVIL_AIM=x,y` (x 0..400, y 0..256 from the bottom) or a
+schedule `CARNEVIL_AIM="FRAME:x,y;..."`. `CARNEVIL_PADSIM="FRAME:PAD:LX,LY,BUTTONS;..."`
+stands in for a gamepad (the stick and the `PAD_*` button bits from `port/runtime/hal.h`,
+from that frame on). Coins are not counted while the boot load runs (until about frame 960
+with the default `--load-time`), so scripts press later:
 
 ```
 build/host/carnevil --partition original/partition --raw original/carn.raw \
     --headless --fast --frames 1150 --press 1000:coin,1010:coin,1050:start1
 ```
-This table grows as inputs are added (the test menu).
 
 ## Documentation
 - `docs/PLAN.md` the phased plan.

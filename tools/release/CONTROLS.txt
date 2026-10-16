@@ -6,9 +6,10 @@ Controls
   mouse ............. aim the light gun (point off the picture to reload)
   left click / Ctrl . trigger
   Space ............. pump
-  F11 or Alt+Enter .. fullscreen on/off (macOS: Option+Return or Ctrl+Cmd+F)
+  F11 or Alt+Enter .. fullscreen on/off (macOS: Option+Return)
 
-Gamepads (first pad player 1, second pad player 2; moving the mouse gives player 1 back to it)
+Gamepads (first pad player 1, second pad player 2; moving the mouse gives player 1 back to it;
+red crosshair player 1, blue player 2)
   left stick / d-pad  aim
   A or right trigger  trigger
   B or left trigger   pump

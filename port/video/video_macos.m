@@ -58,7 +58,7 @@ int video_open(int width, int height, const char *title)
 			styleMask:(video_borderless ? NSWindowStyleMaskBorderless :
 				NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable)
 			backing:NSBackingStoreBuffered defer:NO];
-		[win setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];	/* the green button, Ctrl+Cmd+F */
+		[win setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];	/* the green button and Option+Return */
 		[win center];
 		[win setTitle:[NSString stringWithUTF8String:title]];
 		[win setDelegate:del];
@@ -132,12 +132,10 @@ void video_present(void)
 		while((ev = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:nil inMode:NSDefaultRunLoopMode dequeue:YES]))
 		{
 			NSEventType t = [ev type];
-			if(t == NSEventTypeKeyDown && ![ev isARepeat] && [[ev charactersIgnoringModifiers] length] &&
-			   (([ev modifierFlags] & NSEventModifierFlagOption && [[ev charactersIgnoringModifiers] characterAtIndex:0] == '\r') ||
-			    (([ev modifierFlags] & (NSEventModifierFlagControl | NSEventModifierFlagCommand)) == (NSEventModifierFlagControl | NSEventModifierFlagCommand) &&
-			     [[ev charactersIgnoringModifiers] characterAtIndex:0] == 'f')))
+			if(t == NSEventTypeKeyDown && ![ev isARepeat] && ([ev modifierFlags] & NSEventModifierFlagOption) &&
+			   [[ev charactersIgnoringModifiers] length] && [[ev charactersIgnoringModifiers] characterAtIndex:0] == '\r')
 			{
-				[win toggleFullScreen:nil];	/* Option+Return or Ctrl+Cmd+F */
+				[win toggleFullScreen:nil];	/* Option+Return (Ctrl is the trigger, so no Ctrl+Cmd+F) */
 				continue;
 			}
 			if((t == NSEventTypeKeyDown || t == NSEventTypeKeyUp) && ![ev isARepeat])
