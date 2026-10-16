@@ -3,14 +3,21 @@
 # host-specific lives in per-OS places. macOS keeps the original paths (build/host/carnevil,
 # build/port, tools/mipsel-elf-binutils); Linux uses build/linux/... and tools/mipsel-elf-binutils-linux.
 UNAME    := $(shell uname -s)
+# WINDOWS=1 cross-compiles the port for 32-bit Windows from Linux with MinGW-w64 (see below)
+WINDOWS  ?=
 ifeq ($(UNAME),Darwin)
 BINUTILS ?= tools/mipsel-elf-binutils
 PORT_OUT := build/port
 PORT_BIN := build/host/carnevil
 else
 BINUTILS ?= tools/mipsel-elf-binutils-linux
+ifeq ($(WINDOWS),1)
+PORT_OUT := build/win/port
+PORT_BIN := build/win/carnevil.exe
+else
 PORT_OUT := build/linux/port
 PORT_BIN := build/linux/carnevil
+endif
 # lower-case links to the SDK's capitalised headers (tools/build/sdkcase.sh)
 SDKCASE  := build/linux/sdkcase
 SDKCASE_HOST := build/linux/sdkcase-host
@@ -146,11 +153,34 @@ PORT_GAME_SRCS := $(wildcard src/game/*/*.c)
 PORT_OBJS := $(patsubst %.c,$(PORT_OUT)/%.o,$(sort $(filter-out $(HOST_SKIP),$(C_SRCS)) $(PORT_GAME_SRCS)))
 comma := ,
 PORT_FORTIFY ?= 0     # libc fortification trips on ILP32 idioms; set 2 to debug with it
-ifeq ($(shell uname),Darwin)
+ifeq ($(WINDOWS),1)
+# 32-bit Windows (i686), cross-compiled with MinGW-w64: a 32-bit process matches the game's ILP32
+# layout outright, and --large-address-aware lets the gun ports at 0xb6800000/0xb7f00000 map.
+# SDL2's MinGW development package (SDL2-devel-*-mingw) gives the window, input and sound.
+HOSTCC       := i686-w64-mingw32-gcc
+HOSTCXX      := i686-w64-mingw32-g++
+SDL2_MINGW   ?= $(HOME)/win-deps/SDL2-2.30.9/i686-w64-mingw32
+PORT_ARCH    :=
+HOSTCFLAGS   := $(filter-out -Wno-nonportable-include-path,$(HOSTCFLAGS)) -fcommon -D_FILE_OFFSET_BITS=64 -I$(SDL2_MINGW)/include/SDL2
+PORT_LDFLAGS := -Wl$(comma)--large-address-aware -static-libgcc -static-libstdc++
+# the HAL's file layer (hal.c defines __wrap_NAME): see port/runtime/compat.h
+PORT_LDFLAGS += $(foreach f,open close read write lseek lseek64 fopen fopen64 remove rename,-Wl$(comma)--wrap=$(f))
+PORT_VIDEO   := port/video/video_sdl.c
+PORT_AUDIO   := port/audio/audio_sdl.c
+PORT_LIBS    := -L$(SDL2_MINGW)/lib -lSDL2 -lopengl32 -Wl$(comma)-Bstatic -lstdc++ -lpthread -Wl$(comma)-Bdynamic -lm
+# MinGW ships a dir.h of its own; the SDK's (struct ffblk, findfirst) must win, so it gets a
+# one-file include directory searched before the system's
+HOSTCFLAGS   += -Ibuild/win/sdkdir
+build/win/sdkdir/dir.h: $(SDKCASE_HOST)/.stamp
+	@mkdir -p $(dir $@)
+	cp $(SDKCASE_HOST)/dir.h $@
+PORT_EXTRA   := build/win/SDL2.dll
+build/win/SDL2.dll: $(SDL2_MINGW)/bin/SDL2.dll
+	@mkdir -p $(dir $@)
+	cp $< $@
+else ifeq ($(shell uname),Darwin)
 PORT_ARCH    := -arch x86_64
 PORT_LDFLAGS := -Wl$(comma)-pagezero_size$(comma)0x4000 -framework Cocoa -framework OpenGL
-# camera.c defines the camera position as three scalars, objects.c reads it as an array (docs/toolchain.md)
-PORT_LDFLAGS += -Wl$(comma)-alias$(comma)_camera_x$(comma)_camera_pos
 PORT_VIDEO   := port/video/video_macos.m
 PORT_AUDIO   := port/audio/audio_macos.m
 PORT_LDFLAGS += -framework AudioToolbox
@@ -159,7 +189,7 @@ else
 PORT_ARCH    :=
 SDL_CFLAGS   := $(shell pkg-config --cflags sdl2 2>/dev/null)
 SDL_LIBS     := $(shell pkg-config --libs sdl2 2>/dev/null)
-PORT_LDFLAGS := -no-pie -Wl$(comma)--defsym=camera_pos=camera_x
+PORT_LDFLAGS := -no-pie
 # globals defined in more than one file (stream_volume, ...) were merged as common symbols by the
 # game's GCC 2.7; modern compilers default to -fno-common
 HOSTCFLAGS   += -fcommon
@@ -189,8 +219,15 @@ $(PORT_OUT)/%.o: %.c include/types.h port/runtime/compat.h
 $(PORT_OUT)/src/game/%.o: HOSTCFLAGS += $(GAME_INC)
 $(PORT_BIN): $(PORT_OBJS) $(PORT_CXX_OBJS) $(PORT_SRCS) port/runtime/hal.h port/video/video.h port/runtime/texture.h port/audio/audio.h
 	@mkdir -p $(dir $@)
-	$(HOSTCC) $(HOSTCFLAGS) $(PORT_INC) $(GAME_INC) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -Wno-deprecated-declarations $(PORT_LDFLAGS) -o $@ $(PORT_SRCS) $(PORT_OBJS) $(PORT_CXX_OBJS) $(PORT_LIBS)
-port: prereqs-sdk $(PORT_BIN)
+	$(HOSTCC) $(HOSTCFLAGS) $(PORT_INC) $(GAME_INC) $(PORT_ARCH) -D_FORTIFY_SOURCE=$(PORT_FORTIFY) -Wno-deprecated-declarations $(PORT_LDFLAGS) -o $@ $(PORT_LINK) $(PORT_LIBS)
+ifeq ($(WINDOWS),1)
+$(PORT_OBJS) $(PORT_CXX_OBJS) $(PORT_BIN): | build/win/sdkdir/dir.h
+# the stubs last, so a real definition anywhere else comes first and wins (no weak symbols on PE)
+PORT_LINK := $(filter-out port/stubs/%,$(PORT_SRCS)) $(PORT_OBJS) $(PORT_CXX_OBJS) $(filter port/stubs/%,$(PORT_SRCS)) -Wl$(comma)--allow-multiple-definition
+else
+PORT_LINK := $(PORT_SRCS) $(PORT_OBJS) $(PORT_CXX_OBJS)
+endif
+port: prereqs-sdk $(PORT_BIN) $(PORT_EXTRA)
 
 check: build/GAME.EXE
 	@cmp $(ORIG) build/GAME.EXE && echo "OK: build/GAME.EXE is byte-identical to $(ORIG)"

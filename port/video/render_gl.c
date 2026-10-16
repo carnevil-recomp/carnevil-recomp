@@ -13,6 +13,40 @@
 #include <string.h>
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
+#elif defined(_WIN32)
+/* Windows' opengl32 exports OpenGL 1.1 only: the newer calls are loaded once the context exists
+   (port_gl_load, called by video_sdl.c with SDL_GL_GetProcAddress) */
+#include <windows.h>
+#include <GL/gl.h>
+#include <GL/glext.h>
+#define GL_FN(type, name)	static type p_##name;
+#define GL_FNS \
+	GL_FN(PFNGLBLENDFUNCSEPARATEPROC, glBlendFuncSeparate) GL_FN(PFNGLFOGCOORDFPROC, glFogCoordf) \
+	GL_FN(PFNGLWINDOWPOS2FPROC, glWindowPos2f) GL_FN(PFNGLGENFRAMEBUFFERSEXTPROC, glGenFramebuffersEXT) \
+	GL_FN(PFNGLBINDFRAMEBUFFEREXTPROC, glBindFramebufferEXT) GL_FN(PFNGLGENRENDERBUFFERSEXTPROC, glGenRenderbuffersEXT) \
+	GL_FN(PFNGLBINDRENDERBUFFEREXTPROC, glBindRenderbufferEXT) GL_FN(PFNGLRENDERBUFFERSTORAGEEXTPROC, glRenderbufferStorageEXT) \
+	GL_FN(PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC, glFramebufferRenderbufferEXT) \
+	GL_FN(PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC, glCheckFramebufferStatusEXT)
+GL_FNS
+#undef GL_FN
+int port_gl_load(void *(*getproc)(const char *))
+{
+	int	missing = 0;
+#define GL_FN(type, name)	if(!(p_##name = (type)getproc(#name))) { fprintf(stderr, "[render] OpenGL lacks %s\n", #name); missing++; }
+	GL_FNS
+#undef GL_FN
+	return missing;
+}
+#define glBlendFuncSeparate		p_glBlendFuncSeparate
+#define glFogCoordf			p_glFogCoordf
+#define glWindowPos2f			p_glWindowPos2f
+#define glGenFramebuffersEXT		p_glGenFramebuffersEXT
+#define glBindFramebufferEXT		p_glBindFramebufferEXT
+#define glGenRenderbuffersEXT		p_glGenRenderbuffersEXT
+#define glBindRenderbufferEXT		p_glBindRenderbufferEXT
+#define glRenderbufferStorageEXT	p_glRenderbufferStorageEXT
+#define glFramebufferRenderbufferEXT	p_glFramebufferRenderbufferEXT
+#define glCheckFramebufferStatusEXT	p_glCheckFramebufferStatusEXT
 #else
 #define GL_GLEXT_PROTOTYPES	1	/* glWindowPos, glFogCoord, the EXT framebuffer calls (GL 1.4 / EXT_framebuffer_object) */
 #include <GL/gl.h>

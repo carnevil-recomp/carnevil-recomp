@@ -13,11 +13,16 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <dirent.h>
-#include <dlfcn.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <io.h>
+#else
+#include <dlfcn.h>
 #include <sys/mman.h>
+#endif
 #include "hal.h"
 #include "dcs_board.h"
 #include "audio.h"
@@ -116,6 +121,31 @@ int		D_801de8ec;
 unsigned int	D_801a37b0[20] = { 0x19, 0x27c, 5, 0x1b2, 0x5a, 0x23, 400, 256, 0x60, 0, 0x100, 0x100, 8, 0x17, 1, 1 };
 
 #define CMOS_FD		3
+/* the C library calls the HAL stands in for: defined under their own names on macOS and Linux
+   (the executable's definition wins), as __wrap_NAME on Windows (the link's --wrap=NAME) */
+#ifdef _WIN32
+#define HAL_FN(name)	__wrap_##name
+#else
+#define HAL_FN(name)	name
+#endif
+/* a path the port itself built (absolute): passed to the host untouched */
+static int is_host_path(const char *p)
+{
+#ifdef _WIN32
+	if(p[0] == '\\' || (p[0] && p[1] == ':')) return 1;
+#endif
+	return p[0] == '/';
+}
+/* a page at a fixed address the game reads as hardware (the light-gun ports) */
+static void *map_fixed_page(unsigned long addr)
+{
+#ifdef _WIN32
+	void *p = VirtualAlloc((void *)addr, 0x1000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	return p ? p : (void *)-1;
+#else
+	return mmap((void *)addr, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
+#endif
+}
 static void resolve(void);
 
 /* Where the game's files come from: --partition (or CARNEVIL_PARTITION) if given; else the
@@ -148,7 +178,7 @@ void port_apply_adjustments(void)
 static void make_absolute(const char *path, char *out, size_t n)
 {
 	char	cwd[1024];
-	if(path[0] == '/' || !getcwd(cwd, sizeof cwd)) snprintf(out, n, "%s", path);
+	if(is_host_path(path) || !getcwd(cwd, sizeof cwd)) snprintf(out, n, "%s", path);
 	else snprintf(out, n, "%s/%s", cwd, path);
 }
 static void choose_partition(void)
@@ -197,7 +227,11 @@ void hal_init(int argc, char **argv)
 	if(getenv("CARNEVIL_AIM")) aim_parse(getenv("CARNEVIL_AIM"));
 	/* fd 3 is the BIOS CMOS device: park /dev/null there so no real file ever gets it */
 	resolve();
+#ifdef _WIN32
+	nul = real_open("NUL", O_RDONLY, 0);
+#else
 	nul = real_open("/dev/null", O_RDONLY, 0);
+#endif
 	if(nul >= 0 && nul != CMOS_FD) { dup2(nul, CMOS_FD); real_close(nul); }
 	for(i = 1; i < argc; i++)
 	{
@@ -219,16 +253,37 @@ void hal_init(int argc, char **argv)
 		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
 	choose_partition();
-	hal_gun_regs = mmap((void *)0xb6800000, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
-	if(hal_gun_regs == MAP_FAILED) { fprintf(stderr, "[hal] cannot map the gun port at 0xb6800000\n"); hal_gun_regs = 0; }
+	hal_gun_regs = map_fixed_page(0xb6800000);
+	if(hal_gun_regs == (void *)-1) { fprintf(stderr, "[hal] cannot map the gun port at 0xb6800000\n"); hal_gun_regs = 0; }
 	else gun_update();
-	hal_gun_control = mmap((void *)0xb7f00000, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
-	if(hal_gun_control == MAP_FAILED) { fprintf(stderr, "[hal] cannot map the gun control byte at 0xb7f00000\n"); hal_gun_control = 0; }
+	hal_gun_control = map_fixed_page(0xb7f00000);
+	if(hal_gun_control == (void *)-1) { fprintf(stderr, "[hal] cannot map the gun control byte at 0xb7f00000\n"); hal_gun_control = 0; }
 	if(wav_path) { audio_wav_open(wav_path); atexit(audio_wav_close); }
 	else if(!hal_headless && !audio_start()) fprintf(stderr, "[audio] no audio output\n");
 }
 
 int hal_refresh_hz(void) { return refresh_hz; }
+
+#ifdef _WIN32
+/* GOOSE's randper.c calls the C library's random() (31 random bits on DJGPP, BSD and glibc);
+   the Windows runtime has none, so the port supplies an xorshift generator with that range */
+static unsigned int random_state = 2463534242u;
+long random(void)
+{
+	random_state ^= random_state << 13; random_state ^= random_state >> 17; random_state ^= random_state << 5;
+	return (long)(random_state & 0x7fffffff);
+}
+void srandom(unsigned int seed) { random_state = seed ? seed : 2463534242u; }
+/* strsep (BSD/glibc) for --press parsing */
+char *strsep(char **sp, const char *delim)
+{
+	char	*s = *sp, *e;
+	if(!s) return 0;
+	e = strpbrk(s, delim);
+	if(e) { *e = 0; *sp = e + 1; } else *sp = 0;
+	return s;
+}
+#endif
 
 /* ---- switches: switch ids follow goose/switch.h (coin word: 0 left coin, 1 right coin, 2 P1 start,
    3 slam, 4 test, 5 P2 start, 6 service credit, 7 center coin, 8 extra coin, 11/12 volume
@@ -534,34 +589,60 @@ static int map_path(const char *path, char *out, size_t n)
 static ssize_t (*real_read)(int, void *, size_t);
 static ssize_t (*real_write)(int, const void *, size_t);
 static off_t (*real_lseek)(int, off_t, int);
+#ifdef _WIN32
+static off_t win_lseek(int fd, off_t off, int whence) { return (off_t)_lseeki64(fd, off, whence); }
+#endif
 static void resolve(void)
 {
 	if(real_open) return;
+#ifdef _WIN32
+	/* the CRT's own functions (compat.h renames only calls written open(...), not addresses) */
+	{
+		extern int __real_open(const char *, int, ...), __real_close(int);
+		extern FILE *__real_fopen(const char *, const char *);
+		real_open = __real_open; real_read = (ssize_t (*)(int, void *, size_t))_read;
+		real_write = (ssize_t (*)(int, const void *, size_t))_write; real_lseek = win_lseek;
+		real_close = __real_close; real_fopen = __real_fopen;
+	}
+#else
 	real_open = dlsym(RTLD_NEXT, "open"); real_read = dlsym(RTLD_NEXT, "read");
 	real_write = dlsym(RTLD_NEXT, "write"); real_lseek = dlsym(RTLD_NEXT, "lseek");
 	real_close = dlsym(RTLD_NEXT, "close"); real_fopen = dlsym(RTLD_NEXT, "fopen");
+#endif
 }
 
-int open(const char *path, int flags, ...)
+int HAL_FN(open)(const char *path, int flags, ...)
 {
 	char	full[1024];
 	resolve();
 	if(!strcmp(path, "pci:")) return 1000;		/* the system controller device */
 	if(!strcmp(path, "pic:")) return 1001;		/* the security PIC (serial number) */
-	if(path[0] == '/') { }			/* a host path from the port itself */
+	if(is_host_path(path)) { }			/* a host path from the port itself */
 	else if(flags & (O_WRONLY | O_RDWR | O_CREAT)) state_path(path, full, sizeof full), path = full;
 	else if(map_path(path, full, sizeof full)) path = full;
 	if(verbose) fprintf(stderr, "[hal] open(%s)\n", path);
+#ifdef _WIN32
+	return real_open(path, flags | _O_BINARY, 0644);	/* never text mode (CR/LF translation) */
+#else
 	return real_open(path, flags & ~0x8000 /* O_BINARY */, 0644);
+#endif
 }
-FILE *fopen(const char *path, const char *mode)
+FILE *HAL_FN(fopen)(const char *path, const char *mode)
 {
 	char	full[1024];
 	resolve();
-	if(path[0] == '/') { }			/* a host path from the port itself */
+	if(is_host_path(path)) { }			/* a host path from the port itself */
 	else if(strchr(mode, 'w') || strchr(mode, 'a') || strchr(mode, '+')) state_path(path, full, sizeof full), path = full;
 	else if(map_path(path, full, sizeof full)) path = full;
 	if(verbose) fprintf(stderr, "[hal] fopen(%s, %s)\n", path, mode);
+#ifdef _WIN32
+	if(!strchr(mode, 'b'))					/* never text mode (CR/LF translation) */
+	{
+		static char	bmode[8];
+		snprintf(bmode, sizeof bmode, "%sb", mode);
+		mode = bmode;
+	}
+#endif
 	return real_fopen(path, mode);
 }
 /* the game's remove() and rename() (DJGPP libc on the BIOS file system; the high-score file
@@ -571,24 +652,32 @@ FILE *fopen(const char *path, const char *mode)
    new name (the extracted partition is never modified). Host paths ("/...") pass through. */
 static int (*real_remove)(const char *);
 static int (*real_rename)(const char *, const char *);
-int remove(const char *path)
+int HAL_FN(remove)(const char *path)
 {
 	char	full[1024];
 
+#ifdef _WIN32
+	if(!real_remove) { extern int __real_remove(const char *); real_remove = __real_remove; }
+#else
 	if(!real_remove) real_remove = dlsym(RTLD_NEXT, "remove");
-	if(path[0] == '/') return real_remove(path);
+#endif
+	if(is_host_path(path)) return real_remove(path);
 	state_path(path, full, sizeof full);
 	if(verbose) fprintf(stderr, "[hal] remove(%s)\n", full);
 	return real_remove(full);
 }
-int rename(const char *from, const char *to)
+int HAL_FN(rename)(const char *from, const char *to)
 {
 	char	src[1024], dst[1024], buf[4096];
 	FILE	*in, *out;
 	size_t	n;
 
+#ifdef _WIN32
+	if(!real_rename) { extern int __real_rename(const char *, const char *); real_rename = __real_rename; }
+#else
 	if(!real_rename) real_rename = dlsym(RTLD_NEXT, "rename");
-	if(from[0] == '/' || to[0] == '/') return real_rename(from, to);
+#endif
+	if(is_host_path(from) || is_host_path(to)) return real_rename(from, to);
 	resolve();
 	state_path(to, dst, sizeof dst);
 	if(!map_path(from, src, sizeof src)) return -1;
@@ -608,7 +697,7 @@ int rename(const char *from, const char *to)
 FILE *fopen_plain(const char *path, const char *mode) __asm__("_fopen");
 FILE *fopen_plain(const char *path, const char *mode) { return fopen(path, mode); }
 #endif
-ssize_t read(int fd, void *buf, size_t n)
+ssize_t HAL_FN(read)(int fd, void *buf, size_t n)
 {
 	resolve();
 	if(fd == CMOS_FD)					/* one CMOS byte per 32-bit word */
@@ -621,7 +710,7 @@ ssize_t read(int fd, void *buf, size_t n)
 	}
 	return real_read(fd, buf, n);
 }
-ssize_t write(int fd, const void *buf, size_t n)
+ssize_t HAL_FN(write)(int fd, const void *buf, size_t n)
 {
 	resolve();
 	if(fd == CMOS_FD)
@@ -634,7 +723,7 @@ ssize_t write(int fd, const void *buf, size_t n)
 	}
 	return real_write(fd, buf, n);
 }
-off_t lseek(int fd, off_t off, int whence)
+off_t HAL_FN(lseek)(int fd, off_t off, int whence)
 {
 	resolve();
 	if(fd == CMOS_FD)
@@ -644,7 +733,12 @@ off_t lseek(int fd, off_t off, int whence)
 	}
 	return real_lseek(fd, off, whence);
 }
-int close(int fd)
+#ifdef _WIN32
+/* with _FILE_OFFSET_BITS=64 MinGW's headers call lseek64/fopen64: the same HAL entries */
+off_t __wrap_lseek64(int fd, off_t off, int whence) { return __wrap_lseek(fd, off, whence); }
+FILE *__wrap_fopen64(const char *path, const char *mode) { return __wrap_fopen(path, mode); }
+#endif
+int HAL_FN(close)(int fd)
 {
 	resolve();
 	if(fd == CMOS_FD || fd == 1000 || fd == 1001) return 0;

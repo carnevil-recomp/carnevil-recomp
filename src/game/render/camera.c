@@ -29,7 +29,20 @@ extern void	gun_trigger(int player, int bit), gun_pump(player_stats_t *player, i
 
 void		*camera_data;		/* 0x801e5cbc: the level's camera file, 0 when none */
 int		camera_data_count;	/* 0x801e70fc: entries in it */
+#ifndef PORT_HOST
 float		camera_x, camera_y, camera_z;		/* 0x801de8f0..f8: the view point */
+#else
+/* The port: the view point is read both as these three scalars and as camera_pos[3]
+   (enemy.h), as in the original where they are consecutive words. One data block holds all
+   four names, so they are adjacent on every host (no linker aliases needed). */
+extern float	camera_x, camera_y, camera_z;
+#define CAM_STR2(x)	#x
+#define CAM_STR(x)	CAM_STR2(x)
+#define CAM_SYM(n)	CAM_STR(__USER_LABEL_PREFIX__) #n
+__asm__(".data\n.p2align 2\n"
+	".globl " CAM_SYM(camera_pos) "\n.globl " CAM_SYM(camera_x) "\n.globl " CAM_SYM(camera_y) "\n.globl " CAM_SYM(camera_z) "\n"
+	CAM_SYM(camera_pos) ":\n" CAM_SYM(camera_x) ":\n.long 0\n" CAM_SYM(camera_y) ":\n.long 0\n" CAM_SYM(camera_z) ":\n.long 0\n.text\n");
+#endif
 float		camera_rx, camera_ry, camera_rz;	/* 0x801de890..98: its angles */
 float		view_matrix[9];		/* 0x801fad48 */
 float		camera_neg_pos[3];	/* 0x801e5b58: -camera, for the view transform */

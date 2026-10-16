@@ -3,7 +3,7 @@
  *
  * Replaces mthread.c, whose dispatcher, sleep() and die() switch MIPS register sets by hand.
  * The loop below is mthread.c's process_dispatch() line for line; the register switching is
- * done with ucontext on a private host stack per process. process.c (the process lists,
+ * done with ucontext (fibers on Windows, hostctx.h) on a private host stack per process. process.c (the process lists,
  * create_process, kill, ...) is the original library source, unchanged.
  */
 #define _XOPEN_SOURCE 600
@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <ucontext.h>
+#include "hostctx.h"
 #include <goose/process.h>
 #include "hal.h"
 
@@ -40,14 +40,14 @@ int	profile_enable = 1;
    re-initialised whenever create_process() has written its fresh-stack marker */
 typedef struct hctx {
 	struct process_node	*pn;
-	ucontext_t		ctx;
+	hostctx_t		ctx;
 	void			*stack;
 	int			dead;
 	struct hctx		*next;
 } hctx_t;
 static hctx_t		*ctx_list;
 static hctx_t		*running;
-static ucontext_t	sys_ctx;
+static hostctx_t	sys_ctx;
 
 void _proc_shell(void) { }		/* only its address matters: create_process() stores it as the marker */
 
@@ -81,14 +81,10 @@ static void resume(struct process_node *pn)
 		*((int *)pn->process_stack_ptr - 10) = 0;
 		if(!h->stack) h->stack = malloc(HOST_STACK_SIZE);
 		h->dead = 0;
-		getcontext(&h->ctx);
-		h->ctx.uc_stack.ss_sp = h->stack;
-		h->ctx.uc_stack.ss_size = HOST_STACK_SIZE;
-		h->ctx.uc_link = &sys_ctx;
-		makecontext(&h->ctx, proc_entry, 0);
+		hctx_make(&h->ctx, proc_entry, h->stack, HOST_STACK_SIZE, &sys_ctx);
 	}
 	running = h;
-	swapcontext(&sys_ctx, &h->ctx);
+	hctx_swap(&sys_ctx, &h->ctx);
 	running = 0;
 }
 
@@ -104,7 +100,7 @@ void sleep(int ticks)
 		abort();
 	}
 	cur_proc->process_sleep_time |= ticks;
-	swapcontext(&running->ctx, &sys_ctx);
+	hctx_swap(&running->ctx, &sys_ctx);
 }
 
 void die(int cause)
@@ -112,7 +108,7 @@ void die(int cause)
 	hctx_t	*h = running;
 	kill(cur_proc, cause);
 	h->dead = 1;
-	setcontext(&sys_ctx);
+	hctx_set(&sys_ctx);
 }
 
 void clear_screen(void)

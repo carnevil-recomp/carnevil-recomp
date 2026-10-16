@@ -1,6 +1,7 @@
 /* SDL2 window with a legacy (compatibility) OpenGL context, for Linux and other non-Apple hosts.
    The keys and the mouse-as-gun mapping are the same as the macOS backend (video_macos.m). */
 #include <stdio.h>
+#define SDL_MAIN_HANDLED	/* the port's own main(), not SDL's WinMain wrapper */
 #include <SDL.h>
 #include "video.h"
 #include "hal.h"
@@ -28,6 +29,7 @@ static const char *key_name(SDL_Keycode k)
 
 int video_open(int width, int height, const char *title)
 {
+	SDL_SetMainReady();
 	if(SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) { fprintf(stderr, "[video] SDL: %s\n", SDL_GetError()); return 0; }
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
@@ -41,6 +43,12 @@ int video_open(int width, int height, const char *title)
 	if(!ctx) { fprintf(stderr, "[video] SDL: %s\n", SDL_GetError()); SDL_DestroyWindow(win); win = 0; return 0; }
 	SDL_GL_MakeCurrent(win, ctx);
 	SDL_GL_SetSwapInterval(0);		/* the HAL paces frames itself */
+#ifdef _WIN32
+	{
+		extern int port_gl_load(void *(*)(const char *));
+		if(port_gl_load(SDL_GL_GetProcAddress)) fprintf(stderr, "[video] the OpenGL driver lacks calls the renderer needs\n");
+	}
+#endif
 	return 1;
 }
 

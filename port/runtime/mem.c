@@ -12,7 +12,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <sys/mman.h>
+#endif
 #include <unistd.h>
 
 #define ARENA_ADDR	0x20000000u
@@ -27,8 +31,13 @@ static void arena_init(void)
 {
 	void *p;
 	if(arena) return;
+#ifdef _WIN32
+	p = VirtualAlloc((void *)(uintptr_t)ARENA_ADDR, ARENA_SIZE, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	if(!p || (uintptr_t)p != ARENA_ADDR)
+#else
 	p = mmap((void *)(uintptr_t)ARENA_ADDR, ARENA_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
 	if(p == MAP_FAILED || (uintptr_t)p != ARENA_ADDR)
+#endif
 	{
 		const char msg[] = "[mem] cannot map the 32-bit arena (link with -Wl,-pagezero_size,0x1000)\n";
 		(void)!write(2, msg, sizeof msg - 1); _exit(1);

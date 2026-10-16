@@ -1,6 +1,7 @@
 /* SDL2 audio output pulling stereo 16-bit frames at 31250 Hz from the virtual DCS board
    (the counterpart of audio_macos.m). */
 #include <stdio.h>
+#define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include "audio.h"
 #include "dcs_board.h"

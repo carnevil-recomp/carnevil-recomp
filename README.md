@@ -17,7 +17,7 @@ and the port runs that code on a thin hardware layer. See `docs/PLAN.md` for the
   the level-select gallery, Rickety Town with its movie, script, lights, sound and music,
   Krinkle and the termites, the light gun (the mouse), muzzle flashes and hit effects.
   What the game code still lacks is stubbed, and every stub announces itself (below).
-- macOS (Apple Silicon and Intel) and Linux (x86_64) build today; Windows is planned.
+- macOS (Apple Silicon and Intel), Linux (x86_64) and Windows (32-bit, cross-compiled from Linux) build today.
 
 ## Layout
 - `docs/` plan and notes; `config/` symbols and module ranges; `include/` shared headers;
@@ -66,7 +66,15 @@ make port
 build/host/carnevil --partition original/partition --raw original/carn.raw     # macOS
 build/linux/carnevil --partition original/partition --raw original/carn.raw    # Linux
 ```
-macOS and Linux keep separate outputs (`build/host` + `build/port` on macOS, `build/linux` on
+Windows: cross-compile from Linux with MinGW-w64 (`sudo apt install mingw-w64`) and SDL2's
+MinGW development package (SDL2-devel-2.30.9-mingw from libsdl.org, unpacked under
+`~/win-deps`, or pass `SDL2_MINGW=.../i686-w64-mingw32`):
+```
+make port WINDOWS=1          # build/win/carnevil.exe and SDL2.dll
+carnevil.exe --raw C:\path\to\carnevil.raw
+```
+It is a 32-bit program (the game's own 32-bit layout) and runs on 64-bit Windows; Wine runs it
+too. macOS and Linux keep separate outputs (`build/host` + `build/port` on macOS, `build/linux` on
 Linux; the MIPS binutils in `tools/mipsel-elf-binutils` and `tools/mipsel-elf-binutils-linux`),
 so one checkout shared with a VM builds on both without one clobbering the other.
 Without `setup.sh` the port only needs the disk image: `build/host/carnevil --raw

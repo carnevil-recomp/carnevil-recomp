@@ -2,7 +2,12 @@
    call or touch that the port does not have in C yet. Generated from
    tools/extract/extract_scripts.py --stubs; a real definition anywhere else overrides a stub. */
 #include <stdio.h>
+#ifdef _WIN32
+#define WEAK	/* MinGW's linker ignores weak definitions across objects: the Windows link puts the
+		   stubs last and lets the first definition win (Makefile, --allow-multiple-definition) */
+#else
 #define WEAK __attribute__((weak))
+#endif
 WEAK void disable_spawning(void) { fprintf(stderr, "[script] disable_spawning not implemented\n"); }
 WEAK void fade_out_level_stream(void) { fprintf(stderr, "[script] fade_out_level_stream not implemented\n"); }
 WEAK void hhouse_script_init(void) { fprintf(stderr, "[script] hhouse_script_init not implemented\n"); }
