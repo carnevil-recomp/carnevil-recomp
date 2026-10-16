@@ -248,6 +248,8 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--frames") && i + 1 < argc) hal_frame_limit = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--fast")) hal_fast = 1;
 		else if(!strcmp(argv[i], "--crosshair") && i + 1 < argc) port_crosshair = atoi(argv[++i]);
+		else if(!strcmp(argv[i], "--fullscreen")) { extern int video_fullscreen; video_fullscreen = 1; }
+		else if(!strcmp(argv[i], "--borderless")) { extern int video_borderless; video_borderless = 1; }
 		else if(!strcmp(argv[i], "--hires")) { extern int port_hires; port_hires = 1; }	/* window-resolution 24-bit drawing instead of the cabinet's 400x256 RGB565 */
 		else if(!strcmp(argv[i], "--load-time") && i + 1 < argc) { hal_load_time = atof(argv[++i]); if(hal_load_time < 1.0) hal_load_time = 1.0; }
 		else if(!strcmp(argv[i], "--headless")) hal_headless = 1;
@@ -259,7 +261,7 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--press") && i + 1 < argc) parse_presses(argv[++i]);
 		else if(!strcmp(argv[i], "--state") && i + 1 < argc) hal_state_root = argv[++i];
 		else if(!strcmp(argv[i], "-v")) { verbose++; port_texture_verbose(1); dcs_set_verbose(verbose); }
-		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--hires] [--crosshair 0|1] [--load-time X] [--violence 0-3] [--adjust N=V] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
+		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--fullscreen] [--borderless] [--hires] [--crosshair 0|1] [--load-time X] [--violence 0-3] [--adjust N=V] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
 	choose_partition();
 	hal_gun_regs = map_fixed_page(0xb6800000);

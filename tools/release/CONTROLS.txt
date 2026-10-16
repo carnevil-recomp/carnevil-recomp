@@ -6,6 +6,7 @@ Controls
   mouse ............. aim the light gun (point off the picture to reload)
   left click / Ctrl . trigger
   Space ............. pump
+  F11 or Alt+Enter .. fullscreen on/off (macOS: Option+Return or Ctrl+Cmd+F)
 
 Gamepads (first pad player 1, second pad player 2; moving the mouse gives player 1 back to it)
   left stick / d-pad  aim
@@ -16,6 +17,8 @@ Gamepads (first pad player 1, second pad player 2; moving the mouse gives player
   Back / Options .... coin
 
 Options (after the image path)
+  --fullscreen     start fullscreen
+  --borderless     window without a title bar
   --crosshair 0    no crosshairs (the cabinet had none; the port draws them like MAME)
   --hires          smooth window-resolution picture instead of the cabinet's 400x256 one
   --violence 0..3  0 none, 1 green blood, 2 red blood, 3 full gore (default); it is saved

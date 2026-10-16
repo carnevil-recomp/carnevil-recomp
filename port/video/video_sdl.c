@@ -9,6 +9,7 @@
 static SDL_Window	*win;
 static SDL_GLContext	ctx;
 static int		closed;
+int			video_fullscreen, video_borderless;
 static SDL_GameController *pad[2];	/* the first two controllers: players 1 and 2 */
 
 static void pads_open(void)
@@ -90,7 +91,8 @@ int video_open(int width, int height, const char *title)
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 	win = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
+		SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE |
+		(video_borderless ? SDL_WINDOW_BORDERLESS : 0) | (video_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0));
 	if(!win) { fprintf(stderr, "[video] SDL: %s\n", SDL_GetError()); return 0; }
 	ctx = SDL_GL_CreateContext(win);
 	if(!ctx) { fprintf(stderr, "[video] SDL: %s\n", SDL_GetError()); SDL_DestroyWindow(win); win = 0; return 0; }
@@ -134,6 +136,14 @@ void video_present(void)
 		case SDL_CONTROLLERDEVICEADDED: pads_open(); break;
 		case SDL_CONTROLLERDEVICEREMOVED: pads_close_removed(ev.cdevice.which); break;
 		case SDL_KEYDOWN: case SDL_KEYUP:
+			/* F11 or Alt+Enter: fullscreen on the desktop's mode, or back to the window */
+			if(ev.type == SDL_KEYDOWN && !ev.key.repeat && (ev.key.keysym.sym == SDLK_F11 ||
+			   ((ev.key.keysym.sym == SDLK_RETURN || ev.key.keysym.sym == SDLK_KP_ENTER) && (ev.key.keysym.mod & KMOD_ALT))))
+			{
+				video_fullscreen = !(SDL_GetWindowFlags(win) & SDL_WINDOW_FULLSCREEN_DESKTOP);
+				SDL_SetWindowFullscreen(win, video_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+				break;
+			}
 			if(!ev.key.repeat)
 			{
 				const char *k = key_name(ev.key.keysym.sym);

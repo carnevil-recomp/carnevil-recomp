@@ -28,6 +28,15 @@ static NSWindow		*win;
 static NSOpenGLContext	*ctx;
 static NSOpenGLView	*view;
 static int		closed;
+int			video_fullscreen, video_borderless;
+
+/* a borderless window has to be told it may take the keyboard */
+@interface PortWindow : NSWindow
+@end
+@implementation PortWindow
+- (BOOL)canBecomeKeyWindow { return YES; }
+- (BOOL)canBecomeMainWindow { return YES; }
+@end
 
 @interface PortDelegate : NSObject <NSWindowDelegate, NSApplicationDelegate>
 @end
@@ -45,9 +54,12 @@ int video_open(int width, int height, const char *title)
 		[NSApplication sharedApplication];
 		[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 		[NSApp setDelegate:del];
-		win = [[NSWindow alloc] initWithContentRect:NSMakeRect(100, 100, width, height)
-			styleMask:(NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable)
+		win = [[PortWindow alloc] initWithContentRect:NSMakeRect(100, 100, width, height)
+			styleMask:(video_borderless ? NSWindowStyleMaskBorderless :
+				NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable)
 			backing:NSBackingStoreBuffered defer:NO];
+		[win setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];	/* the green button, Ctrl+Cmd+F */
+		[win center];
 		[win setTitle:[NSString stringWithUTF8String:title]];
 		[win setDelegate:del];
 		pf = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
@@ -60,6 +72,7 @@ int video_open(int width, int height, const char *title)
 		[NSApp activateIgnoringOtherApps:YES];
 		[NSApp finishLaunching];
 		[win setAcceptsMouseMovedEvents:YES];
+		if(video_fullscreen) [win toggleFullScreen:nil];
 	}
 	return 1;
 }
@@ -119,6 +132,14 @@ void video_present(void)
 		while((ev = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:nil inMode:NSDefaultRunLoopMode dequeue:YES]))
 		{
 			NSEventType t = [ev type];
+			if(t == NSEventTypeKeyDown && ![ev isARepeat] && [[ev charactersIgnoringModifiers] length] &&
+			   (([ev modifierFlags] & NSEventModifierFlagOption && [[ev charactersIgnoringModifiers] characterAtIndex:0] == '\r') ||
+			    (([ev modifierFlags] & (NSEventModifierFlagControl | NSEventModifierFlagCommand)) == (NSEventModifierFlagControl | NSEventModifierFlagCommand) &&
+			     [[ev charactersIgnoringModifiers] characterAtIndex:0] == 'f')))
+			{
+				[win toggleFullScreen:nil];	/* Option+Return or Ctrl+Cmd+F */
+				continue;
+			}
 			if((t == NSEventTypeKeyDown || t == NSEventTypeKeyUp) && ![ev isARepeat])
 			{
 				const char *k = key_name(ev);
