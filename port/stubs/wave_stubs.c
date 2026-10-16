@@ -6,12 +6,9 @@
 #define STUB(n)	do { static int seen; if(!seen) { seen = 1; stub_reached(#n); } } while(0)
 WEAK void func_801101c0(void) { STUB(func_801101c0); }
 WEAK void func_8012896c(void) { STUB(func_8012896c); }
-WEAK void func_80139444(void) { STUB(func_80139444); }
 WEAK void load_krinkle(void) { STUB(load_krinkle); }
 WEAK void load_krinkle_texmap(void) { STUB(load_krinkle_texmap); }
 WEAK void load_term(void) { STUB(load_term); }
-WEAK void load_toke(void) { STUB(load_toke); }
-WEAK void load_toke_texmap(void) { STUB(load_toke_texmap); }
 WEAK void remove_btop_gore_texmaps(void) { STUB(remove_btop_gore_texmaps); }
 WEAK void remove_krinkle_assets(void) { STUB(remove_krinkle_assets); }
 WEAK void remove_term_assets(void) { STUB(remove_term_assets); }
@@ -22,10 +19,6 @@ WEAK int func_80128398(void) { STUB(func_80128398); return 0; }
 WEAK int func_80128adc(void) { STUB(func_80128adc); return 0; }
 WEAK int func_80128d6c(void) { STUB(func_80128d6c); return 0; }
 WEAK int func_80129120(void) { STUB(func_80129120); return 0; }
-WEAK int func_80138ac4(void) { STUB(func_80138ac4); return 0; }
-WEAK int func_801394f4(void) { STUB(func_801394f4); return 0; }
-WEAK int func_801397f4(void) { STUB(func_801397f4); return 0; }
-WEAK int func_8013aa34(void) { STUB(func_8013aa34); return 0; }
 WEAK int func_8013ea08(void) { STUB(func_8013ea08); return 0; }
 WEAK int func_8013ef18(void) { STUB(func_8013ef18); return 0; }
 WEAK int func_8013f0dc(void) { STUB(func_8013f0dc); return 0; }
@@ -40,12 +33,3 @@ WEAK int func_8015f30c(void) { STUB(func_8015f30c); return 0; }
 /* the muzzle flash and the continue-screen shot are still assembly */
 /* enemy.c's steer-at-a-point-by-the-camera (0x800fbaac, 2 on arrival) and its step routine 0x800fc16c are still
    assembly; the flash (flash.c), the vict and Mike call it. Until then a flash never arrives. */
-/* the toke file's tests the Big Top script's timers ask (0x8013b1dc-0x8013b49c; not in C yet) */
-WEAK void func_8013b1dc(void) { STUB(func_8013b1dc); }
-WEAK int func_8013b214(void) { STUB(func_8013b214); return 0; }
-WEAK void func_8013b288(void) { STUB(func_8013b288); }
-WEAK int func_8013b2f8(void) { STUB(func_8013b2f8); return 0; }
-WEAK int func_8013b36c(void) { STUB(func_8013b36c); return 0; }
-WEAK int func_8013b3e0(void) { STUB(func_8013b3e0); return 0; }
-WEAK int func_8013b454(void) { STUB(func_8013b454); return 0; }
-WEAK int func_8013b49c(void) { STUB(func_8013b49c); return 0; }

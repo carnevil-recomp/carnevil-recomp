@@ -2137,6 +2137,54 @@
 0x80130adc sub_80130adc
 0x80130b58 sub_80130b58
 0x80130b88 sub_80130b88
+# toke.c (0x80138320-0x8013b9c8, the Big Top's TOKE, type 0x2066, and the pieces it throws,
+# type 0x1901) and toke_data.c; the address names spawn.c, wave.c and the Big Top script use stay
+0x80138320 toke_throw_misl
+0x8013844c toke_throw_misl_spread
+0x801385fc toke_throw_misl_at
+0x801386d0 toke_misl_draw
+0x80138740 toke_misl_hit
+0x801387cc toke_misl_pop
+0x8013884c toke_misl_init
+0x80138984 toke_misl_think
+0x80138a8c toke_misl_remove
+0x80138d34 toke_hit
+0x80138dfc toke_die
+0x8013932c remove_toke_texmap
+0x8013979c toke_remove
+0x8013aa88 toke_pick_action
+0x8013ab54 toke_stand
+0x8013abac toke_drop_right_arm
+0x8013ac0c toke_drop_left_arm
+0x8013ac6c toke_draw_name
+0x8013ae84 toke_set_state
+0x801e5b64 toke_verts
+0x8021f078 toke_faces
+0x801e5814 toke_normals
+0x802373cc toke_misl_path
+0x801e0ec0 toke_enemy
+0x801e5dcc toke_shown
+0x801e6760 toke_damage_scaled
+0x801e1778 toke_full_health
+0x801e0ee0 toke_gore
+0x801e0e98 toke_hits_head
+0x801e5da0 toke_hits_body
+0x801e0efc toke_hits_14
+0x801e0ed4 toke_hits_1
+0x801e0a04 toke_reactions
+0x801e6b70 toke_spray_r
+0x801e5dc0 toke_spray_g
+0x801e5db8 toke_spray_b
+0x801a06a8 toke_texmap
+0x801a0e08 submesh_info_toke
+0x801a111c toke_actions
+0x801a1164 toke_action_picks
+0x801a1168 toke_calls1
+0x801a1180 toke_call1
+0x801a1184 toke_calls2
+0x801a11ac toke_call2
+# enemy.c: the path step toke's thrown pieces use, decompiled for the port (byte-exact)
+0x800fb598 path_place_by_camera
 # the Big Top's BATB (batb.c, batb_data.c; the spawn table's callbacks keep their address names)
 0x8013377c batb_hit
 0x80133838 batb_die

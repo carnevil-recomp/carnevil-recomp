@@ -64,6 +64,40 @@ void set_enemy_health2(enemy_t *e, float health)
 	}
 }
 
+extern void	rot_matrix_yxz(float *, float *), mat_vec_mul(float *, float *, float *);
+void	angles_to(float *from, float *to, float *rot);
+
+/* 0x800fb598: put the enemy on path point n taken in the camera's frame: the point (scaled)
+   turned by the camera's angles and added to the base point in e->vel; before the last point
+   (e->unk92) it is turned to face the next one */
+void path_place_by_camera(enemy_t *e, float *path, int n, float scale)
+{
+	float	p[3], d[3], m[9];
+	float	*q;
+
+	q = path + n * 6;
+	p[0] = q[0] * scale;
+	p[1] = q[1] * scale;
+	p[2] = q[2] * scale;
+	rot_matrix_yxz(m, &camera_rx);
+	mat_vec_mul(p, m, d);
+	e->x = e->vel[0] + d[0];
+	e->y = e->vel[1] + d[1];
+	e->z = e->vel[2] + d[2];
+	if(n < e->unk92)
+	{
+		q = &path[n * 6 + 6];
+		p[0] = q[0] * scale;
+		p[1] = q[1] * scale;
+		p[2] = q[2] * scale;
+		mat_vec_mul(p, m, d);
+		p[0] = e->vel[0] + d[0];
+		p[1] = e->vel[1] + d[1];
+		p[2] = e->vel[2] + d[2];
+		angles_to(p, &e->x, &e->rx);
+	}
+}
+
 /* 0x800fb70c: put the enemy on path point n: a position (scaled) and three angles */
 void path_place(enemy_t *e, float *path, int n, float scale)
 {
