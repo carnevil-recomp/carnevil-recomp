@@ -48,7 +48,7 @@ int	coinage_source;					/* 0x801e096c: 1 CMOS, 2 dipswitch */
 int	gun_status;					/* 0x80237404 */
 int	D_801facc8;					/* seconds since boot while not in a game */
 int	D_801fad10;					/* booting */
-int	D_80212d98;
+extern int	attract_cycles;		/* 0x80212d98 */
 void	*ccproc_node;					/* 0x801e5da8 */
 
 /* 0x800c4f30: uptime and play-time audits, every 300 frames */
@@ -279,7 +279,7 @@ void main_proc(void)
 	}
 	hw_obj = add_object1_wrapper(0x20, (void (*)(game_object_t *))hw_info_screen, 0, 0);
 	sleep(20);
-	D_80212d98 = 0;
+	attract_cycles = 0;
 	set_dcsw_handler(2, dispatch_start_proc);
 	set_dcsw_handler(5, dispatch_start_proc);
 	if(debug_mode & DEBUG_ON)

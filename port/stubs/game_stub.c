@@ -38,7 +38,7 @@ extern void scan_switches(void);
 extern int tick_counter, gfx_scale, got_interrupt, uptime;
 int  D_801facc8;
 extern int D_80179d50;			/* camera.c: guns sampled every vblank */
-extern int D_80212e60;
+extern int wave_busy;			/* wave.c: the frame clock stops while a wave loads */
 /* 0x800c6030: the game's own vertical-retrace handler (it does not call the library's) */
 extern void read_guns(void), gun_vblank(void);
 int  vblank_handler(void)
@@ -48,7 +48,7 @@ int  vblank_handler(void)
 	if(!(tick_counter % gfx_scale))
 	{
 		uptime++;
-		if(D_80212e60 != 1) D_801facc8++;
+		if(wave_busy != 1) D_801facc8++;
 	}
 	if(D_80179d50 == 1) { read_guns(); gun_vblank(); }
 	scan_switches();

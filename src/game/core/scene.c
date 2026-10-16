@@ -29,7 +29,8 @@ extern float	camera_x, camera_rx, view_matrix[9], camera_neg_pos[3];	/* camera.c
 extern void	init_player(int player);				/* 0x800e2f08 (player.c) */
 extern int	read_player12_direct(void);
 extern int	loaded_wave;					/* 0x80212e30 */
-int		D_80212e60, D_80212e28, D_80212e24, D_80212e2c, D_802372b8;
+int		D_80212e28, D_80212e24, D_80212e2c, D_802372b8;
+extern int	wave_busy;			/* wave.c, 0x80212e60 */
 int		D_801e0960;					/* the player 1/2 switches at boot, inverted */
 extern void	load_font_texmap(void);
 extern void	load_misc_texmaps(void), init_smoke(void), init_blood_drops(void);
@@ -446,7 +447,7 @@ void init_game_state(void)
 
 	game_state[0] = 0x800;
 	loaded_wave = 0;
-	D_80212e60 = 0;
+	wave_busy = 0;
 	debug_mode = 0;
 	D_80212e28 = 0;
 	D_80212e24 = 0;

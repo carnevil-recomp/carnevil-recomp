@@ -4,11 +4,6 @@
 #define WEAK __attribute__((weak))
 #include "hal.h"
 #define STUB(n)	do { static int seen; if(!seen) { seen = 1; stub_reached(#n); } } while(0)
-WEAK int D_801e6e70;
-/* the 0x8019fcf0 model's tables and model pointers (weapons.c draws it held or thrown; its loaders are not in C yet; the skeleton's are in skeleton.c) */
-WEAK int D_8019fcf0[8];
-WEAK float *D_801e5b74, *D_801e5824;
-WEAK void *D_8021f088;
 WEAK void func_801101c0(void) { STUB(func_801101c0); }
 WEAK void func_8012896c(void) { STUB(func_8012896c); }
 WEAK void func_80139444(void) { STUB(func_80139444); }

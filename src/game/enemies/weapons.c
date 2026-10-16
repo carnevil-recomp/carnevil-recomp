@@ -50,9 +50,9 @@ extern int	load_model(void **, int, void **, int, void **, int, char *, int);
 extern void	remove_model(void **, int, void **, int, void **, int, char *);
 
 /* the other enemies' models the held drawer can show */
-extern submesh_t skeleton_anim_blob[], D_8019fcf0[];
-extern float	*D_801e5b28, *D_801e57e4, *D_801e5b74, *D_801e5824;
-extern face_t	*D_8021eec8, *D_8021f088;
+extern submesh_t skeleton_anim_blob[], submesh_info_clown[];	/* clown_data.c: part 9 is the mallet (0x8019fcf0) */
+extern float	*D_801e5b28, *D_801e57e4, *clown_verts, *clown_normals;
+extern face_t	*D_8021eec8, *clown_faces;
 
 /* the weapon models */
 float	*bone_verts, *bone_normals;		/* 0x801e5878, 0x801e15a0 */
@@ -343,7 +343,7 @@ static void draw_thrown_object(game_object_t *o)
 		draw_model(e, skeleton_anim_blob, 1, D_801e5b28, 0x184, D_8021eec8, 0x2d6, D_801e57e4, 0x210);
 		break;
 	case WEAPON_UNK33:
-		draw_model(e, D_8019fcf0, 1, D_801e5b74, 0x331, D_8021f088, 0x5b1, D_801e5824, 0x379);
+		draw_model(e, &submesh_info_clown[9], 1, clown_verts, 0x331, clown_faces, 0x5b1, clown_normals, 0x379);
 		break;
 	case WEAPON_MISSILE:
 		draw_model(e, &missile_submesh[5], 1, missile_verts, 0x14e, missile_faces, 0x1a6, missile_normals, 0x158);
@@ -770,7 +770,7 @@ void draw_held_object(group_t *g, int kind, float *off, float *mat, float *scale
 		draw_submesh_at(g, skeleton_anim_blob, D_801e5b28, 0x184, D_8021eec8, 0x2d6, D_801e57e4, 0x210, m, pos, scale);
 		break;
 	case WEAPON_UNK33:
-		draw_submesh_at(g, D_8019fcf0, D_801e5b74, 0x331, D_8021f088, 0x5b1, D_801e5824, 0x379, m, pos, scale);
+		draw_submesh_at(g, &submesh_info_clown[9], clown_verts, 0x331, clown_faces, 0x5b1, clown_normals, 0x379, m, pos, scale);
 		break;
 	case WEAPON_MISSILE:
 		draw_submesh_at(g, &missile_submesh[5], missile_verts, 0x14e, missile_faces, 0x1a6, missile_normals, 0x158, m, pos, scale);
