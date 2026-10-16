@@ -512,11 +512,20 @@ void flie_setup(enemy_t *e, unsigned short state)
 	e->ai_state = state;
 	switch(state)
 	{
+	case FLIE_IDLE:
+	case 1:		/* the original's compare tree needs a two-value case below 0x801 whose body
+			   is the default's; its test folds away, so which pair it was is not in the
+			   binary: the init's state 0 and its neighbour */
+		e->frame = 0;
+		break;
 	case FLIE_PATH:
 		path_place(e, flie_path, e->path, 1.0f);
 		e->frame = 0;
 		break;
 	case FLIE_PATH_SWAT:
+		path_place(e, flie_path, e->path, 1.0f);
+		e->frame = 0;
+		break;
 	case FLIE_CIRCLE:
 		path_place(e, flie_path, e->path, 1.0f);
 		e->frame = 0;
@@ -594,9 +603,12 @@ void flie_approach(enemy_t *e)
    else come for the camera */
 void func_80123f24(enemy_t *e)
 {
-	if((unsigned short)e->unk6 == FLIE_PATH)
+	int	state;
+
+	state = FLIE_PATH;		/* one register holds it for the test and the store */
+	if(e->unk6 == state)
 	{
-		e->ai_state = FLIE_PATH;
+		e->ai_state = state;
 		path_place(e, flie_path, e->path, 1.0f);
 		e->frame = 0;
 		e->unk6 = 0;

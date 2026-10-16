@@ -92,3 +92,5 @@ pickups_data         src/game/enemies/pickups_data.c         game2  -          -
 pickup_flamethrower  src/game/enemies/pickup_flamethrower.c  game2  0x80104bc8 0x80105388  0x80172b78 0x80172be0  -          -
 junior               src/game/enemies/junior.c               game2  0x8011f4e0 0x801222d0  0x80173a08 0x80173b34  0x80198f80 0x80198fcc
 junior_data          src/game/enemies/junior_data.c          game2  -          -           -          -           0x80197848 0x80198f80
+flie                 src/game/enemies/flie.c                 game2  0x80122e40 0x80123f84  0x80173b88 0x80173c1c  -          -
+flie_data            src/game/enemies/flie_data.c            game2  -          -           -          -           0x801994e0 0x80199d80
