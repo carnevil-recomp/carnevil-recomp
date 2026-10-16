@@ -1,0 +1,22 @@
+Third-party code in this package
+
+DCS audio decoder (port/third_party/dcsdecoder): Copyright 2023 Michael J Roberts.
+BSD 3-clause license - NO WARRANTY.
+  Redistribution and use in source and binary forms, with or without modification, are
+  permitted provided that the following conditions are met: (1) redistributions of source
+  code must retain the above copyright notice, this list of conditions and the following
+  disclaimer; (2) redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation and/or other
+  materials provided with the distribution; (3) neither the name of the copyright holder nor
+  the names of its contributors may be used to endorse or promote products derived from this
+  software without specific prior written permission. THIS SOFTWARE IS PROVIDED "AS IS",
+  WITHOUT WARRANTY OF ANY KIND.
+
+SDL2 (Windows package: SDL2.dll): Copyright (C) 1997-2024 Sam Lantinga. zlib license:
+  This software is provided 'as-is', without any express or implied warranty. Permission is
+  granted to anyone to use this software for any purpose, including commercial applications,
+  and to alter it and redistribute it freely, subject to the restrictions that the origin
+  must not be misrepresented, altered versions must be plainly marked as such, and this
+  notice may not be removed or altered from any source distribution.
+
+CarnEvil is (C) 1998 Midway Games. No Midway game data is included.

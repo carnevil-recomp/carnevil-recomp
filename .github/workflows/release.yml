@@ -1,0 +1,88 @@
+# Builds the native port for Linux, Windows and macOS and packages it (tools/release/package.sh).
+# Every push and manual run uploads the packages as workflow artifacts; pushing a tag v*
+# (e.g. git tag v0.1.0 && git push origin v0.1.0) also publishes them as a GitHub release.
+# No game data is involved: the port compiles from this repository and the public Midway SDK.
+name: build and release
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  SDK_REPO: https://github.com/historicalsource/midwayvideo
+  SDL2_VERSION: 2.30.9
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: linux,   runner: ubuntu-24.04 }
+          - { os: windows, runner: ubuntu-24.04 }
+          - { os: macos,   runner: macos-14 }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = tag ]; then echo "VER=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+          else echo "VER=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"; fi
+
+      - name: the Midway SDK (headers and library sources the port compiles from)
+        run: |
+          git clone --depth 1 "$SDK_REPO" ../midwayvideo
+          mkdir -p original && ln -sfn "$(cd ../midwayvideo && pwd)" original/sdk
+
+      - name: packages (Linux)
+        if: matrix.os == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y clang make python3 pkg-config libsdl2-dev libgl-dev
+
+      - name: packages (Windows cross-compile)
+        if: matrix.os == 'windows'
+        run: |
+          sudo apt-get update && sudo apt-get install -y clang make python3 mingw-w64 zip
+          mkdir -p "$HOME/win-deps" && cd "$HOME/win-deps"
+          curl -sSL -o sdl2.tgz "https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-devel-${SDL2_VERSION}-mingw.tar.gz"
+          tar xzf sdl2.tgz
+
+      - name: build
+        run: |
+          if [ "${{ matrix.os }}" = windows ]; then
+            make port WINDOWS=1 SDL2_MINGW="$HOME/win-deps/SDL2-${SDL2_VERSION}/i686-w64-mingw32" -j4
+          else
+            make port -j4
+          fi
+
+      - name: package
+        run: tools/release/package.sh ${{ matrix.os }} "$VER"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: carnevil-${{ matrix.os }}
+          path: |
+            dist/*.zip
+            dist/*.tar.gz
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ls -l dist
+          gh release create "${GITHUB_REF_NAME}" dist/* --repo "${GITHUB_REPOSITORY}" \
+            --title "CarnEvil port ${GITHUB_REF_NAME}" --generate-notes

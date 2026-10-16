@@ -22,3 +22,4 @@ state/
 src/goose/*.c
 src/goose/pshell.s
 src/sound/sound.c
+/dist/
