@@ -172,14 +172,14 @@ int init_machinegun_pickup(game_object_t *o)
 		e->groups[i].pivot[0] = 0.0f;
 		e->groups[i].pivot[1] = 0.0f;
 		e->groups[i].pivot[2] = 0.0f;
-		e->groups[i].rot[0] = 4.712389f;
+		e->groups[i].rot[0] = 4.712388f;
 		e->groups[i].rot[1] = 0.0f;
 		e->groups[i].rot[2] = 0.0f;
 	}
 	e->unkcc = 0.3f;
 	set_enemy_scale(e, 1.0f);
 	e->hit_group = e->groups;
-	e->hit_group->rot[0] = 3.6651914f;
+	e->hit_group->rot[0] = 3.6651905f;
 	e->unk98 = 0.0f;
 	e->ai_state = PICKUP_WAITING;
 	return 0;

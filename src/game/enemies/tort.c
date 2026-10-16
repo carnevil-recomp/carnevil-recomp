@@ -8,7 +8,7 @@
  *
  * A humanoid freak that walks at the player and fights with its hands, often holding a sword,
  * hook or blade (init: 45%), which it can throw (0x203). Spawned with 0x100 or 0x80 it slides
- * along a fixed heading each frame, the 0x80 one bleeding and calling out ("freakshow" cue
+ * along a fixed heading each frame, the 0x80 one bleeding and calling out ("freaksho" cue
  * 0x2d) on the 0x5e'th. Shot, it plays a hurt cue, takes the damage and reacts by the part hit;
  * at the highest violence its arms come off (tort_lose_right_arm, tort_lose_left_arm) and the parts in the
  * damage table turn gory. Dead it falls (0x2001, or 0x2002 when spawned with 0x100), 500 points.
@@ -577,7 +577,7 @@ void tort_think(game_object_t *obj)
 			e->z += 0.84433f;
 			if(++e->unkb0 == 0x5e)
 			{
-				play_rotating_cue_flags(0x2d, "freakshow", 1);
+				play_rotating_cue_flags(0x2d, "freaksho", 1);
 				play_enemy_sound(e, randrng(10) + 1, "tort", 0xc);
 			}
 			if(e->unkb0 >= 0x5f && (e->unkb0 & 3))

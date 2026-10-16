@@ -28,15 +28,17 @@ void draw_flamethrower_pickup(game_object_t *o)
 		colour[0] = (float)(((unsigned int)e->unk20 >> 16) & 0xff) - (float)(e->counter * 12);
 		colour[1] = (float)(((unsigned int)e->unk20 >> 8) & 0xff) - (float)(e->counter * 12);
 		colour[2] = (float)((unsigned int)e->unk20 & 0xff) - (float)(e->counter * 12);
+		point_toward_camera(e->hit_group->pos, 1.0f, p);
+		light = add_dynamic_light(0x11, p, colour, 3.0f, 15);
 	}
 	else
 	{
 		colour[0] = 255.0f;
 		colour[1] = 200.0f;
 		colour[2] = 0.0f;
+		point_toward_camera(e->hit_group->pos, 1.0f, p);
+		light = add_dynamic_light(0x11, p, colour, 3.0f, 15);
 	}
-	point_toward_camera(e->hit_group->pos, 1.0f, p);
-	light = add_dynamic_light(0x11, p, colour, 3.0f, 15);
 	draw_model(e, flamethrower_submesh, 1, flamethrower_verts, 0x5e, flamethrower_faces, 0xb8, flamethrower_normals, 0x4f);
 	remove_light(light);
 	if(debug_mode & 0x400)
@@ -175,14 +177,14 @@ int init_flamethrower_pickup(game_object_t *o)
 		e->groups[i].pivot[0] = 0.0f;
 		e->groups[i].pivot[1] = 0.0f;
 		e->groups[i].pivot[2] = 0.0f;
-		e->groups[i].rot[0] = 1.5707964f;
+		e->groups[i].rot[0] = 1.570796f;
 		e->groups[i].rot[1] = 0.0f;
 		e->groups[i].rot[2] = 0.0f;
 	}
 	e->unkcc = 0.25f;
 	set_enemy_scale(e, 1.0f);
 	e->hit_group = e->groups;
-	e->hit_group->rot[0] = -3.6651914f;
+	e->hit_group->rot[0] = -3.6651905f;
 	e->unk98 = 0.0f;
 	e->ai_state = PICKUP_WAITING;
 	return 0;

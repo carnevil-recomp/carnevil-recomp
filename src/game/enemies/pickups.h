@@ -50,7 +50,7 @@ extern char	text_buffer[];
 
 /* pickups_data.c */
 extern texmap_t	shotgun_texmap[2], health_texmap[1], ammo_texmap[2], acid_texmap[1], machinegun_texmap[2], flamethrower_texmap[2];
-extern float	health_pulse[21];
+extern float	health_pulse[22];
 extern submesh_t shotgun_submesh[1], health_submesh[1], ammo_submesh[1], acid_submesh[1], machinegun_submesh[1], flamethrower_submesh[1];
 
 #endif

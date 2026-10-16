@@ -12,7 +12,8 @@
      tools/extract/extract_tables.py submesh machinegun_submesh 0x80191f50 1
      tools/extract/extract_tables.py texmap flamethrower_texmap 0x80191f70 2
      tools/extract/extract_tables.py submesh flamethrower_submesh 0x80191fb0 1
-   (health_pulse, the 21 floats at 0x80191e18, copied by hand). Edit those, not this. */
+   (health_pulse, the 22 floats at 0x80191e18, copied by hand: the beat reads the first 21, the
+   last is a 0.0 the table carries). Edit those, not this. */
 #include "texmap.h"
 #include "model.h"
 
@@ -38,9 +39,9 @@ submesh_t	health_submesh[1] =		/* 0x80191df8 */
 };
 
 /* 0x80191e18: the health pickup's beat: its scale (times 0.5) frame by frame */
-float		health_pulse[21] =
+float		health_pulse[22] =
 {
-	1.0f, 1.0f, 1.08000004f, 1.15999997f, 1.24000001f, 1.12f, 1.0f, 1.0f, 1.0f, 1.08000004f, 1.15999997f, 1.24000001f, 1.12f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f
+	1.0f, 1.0f, 1.08000004f, 1.15999997f, 1.24000001f, 1.12f, 1.0f, 1.0f, 1.0f, 1.08000004f, 1.15999997f, 1.24000001f, 1.12f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f
 };
 
 texmap_t	ammo_texmap[2] =		/* 0x80191e70 */
