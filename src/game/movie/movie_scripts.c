@@ -29,6 +29,11 @@ extern int	krampus_section3_waiting();
 extern void	krampus_section4();
 extern void	krampus_section4_wait();
 extern int	krampus_section4_waiting();
+extern void	movie_gamma_0();
+extern void	movie_gamma_100();
+extern void	movie_gamma_25();
+extern void	movie_gamma_50();
+extern void	movie_gamma_75();
 extern void	movie_load_ending();
 extern void	reset_stream_volume();
 extern void	rickity_gate1();
@@ -61,11 +66,6 @@ extern void	script_fade_out_40();
 extern void	script_fade_out_90();
 extern void	script_level_end_stats();
 extern void	start_btopload();
-extern void	sub_800e81e4();
-extern void	sub_800e8210();
-extern void	sub_800e8240();
-extern void	sub_800e8270();
-extern void	sub_800e82a0();
 extern int	sub_800eef68();
 extern int	sub_800eef94();
 extern void	sub_800eefa4();
@@ -4092,19 +4092,19 @@ script_word_t	bigtop_script[] =
 	29,
 	18,
 	5,
-	SCRIPT_FN(sub_800e8210),
+	SCRIPT_FN(movie_gamma_25),
 	1,
 	4228,
 	5,
-	SCRIPT_FN(sub_800e8240),
+	SCRIPT_FN(movie_gamma_50),
 	1,
 	4229,
 	5,
-	SCRIPT_FN(sub_800e8270),
+	SCRIPT_FN(movie_gamma_75),
 	1,
 	4230,
 	5,
-	SCRIPT_FN(sub_800e82a0),
+	SCRIPT_FN(movie_gamma_100),
 	5,
 	SCRIPT_FN(movie_load_ending),
 	5,
@@ -4114,19 +4114,19 @@ script_word_t	bigtop_script[] =
 	1,
 	1,
 	5,
-	SCRIPT_FN(sub_800e8270),
+	SCRIPT_FN(movie_gamma_75),
 	1,
 	2,
 	5,
-	SCRIPT_FN(sub_800e8240),
+	SCRIPT_FN(movie_gamma_50),
 	1,
 	3,
 	5,
-	SCRIPT_FN(sub_800e8210),
+	SCRIPT_FN(movie_gamma_25),
 	1,
 	4,
 	5,
-	SCRIPT_FN(sub_800e81e4),
+	SCRIPT_FN(movie_gamma_0),
 	1,
 	345,
 	24,

@@ -735,6 +735,8 @@ void start_btopload(void)
    banks for the finale's and switch the music stream */
 void btopload_proc(void)
 {
+	int	*busy;		/* &wave_busy, held in a saved register as the original does (100% with it) */
+
 	disable_guns();
 	free_chunks();
 	free_screen_sprites();
@@ -744,7 +746,8 @@ void btopload_proc(void)
 	{
 		sleep(1);
 	}
-	wave_busy = 1;
+	busy = &wave_busy;
+	*busy = 1;
 	clean_up_level_sounds();
 	snd_delay(20);
 	snd_scall_bank("tokken", 0x24, 0xff, 0x80, 0x8181);
@@ -771,7 +774,7 @@ void btopload_proc(void)
 	load_toke();
 	load_jester_path();
 	sleep(3);
-	wave_busy = 0;
+	*busy = 0;
 	install_disk_info(0, 0, 0);
 	movie_resume();
 	enable_guns();

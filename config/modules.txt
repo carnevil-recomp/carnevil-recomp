@@ -69,3 +69,6 @@ rickity_innocent_data src/game/enemies/rickity_innocent_data.c game2 -        - 
 fog                  src/game/render/fog.c                   game2  0x800d6e60 0x800d6eec  -          -           0x80179da8 0x80179de8
 soundio              src/game/sound/soundio.c                game2  0x800c5e50 0x800c6030  0x8016e0fc 0x8016e209  -          -
 rickity_script       src/game/movie/rickity_script.c         game2  0x80123f88 0x80124c68  -          -           -          -
+bigtop_script        src/game/movie/bigtop_script.c          game2  0x8012fa20 0x80130bf4  -          -           -          -
+binn                 src/game/enemies/binn.c                 game2  0x8013ea08 0x8013f464  0x80174cc8 0x80174d10  0x801a25b8 0x801a25c4
+binn_data            src/game/enemies/binn_data.c            game2  -          -           -          -           0x801a20b8 0x801a25b8
