@@ -43,7 +43,17 @@ __asm__(".data\n.p2align 2\n"
 	".globl " CAM_SYM(camera_pos) "\n.globl " CAM_SYM(camera_x) "\n.globl " CAM_SYM(camera_y) "\n.globl " CAM_SYM(camera_z) "\n"
 	CAM_SYM(camera_pos) ":\n" CAM_SYM(camera_x) ":\n.long 0\n" CAM_SYM(camera_y) ":\n.long 0\n" CAM_SYM(camera_z) ":\n.long 0\n.text\n");
 #endif
+#ifndef PORT_HOST
 float		camera_rx, camera_ry, camera_rz;	/* 0x801de890..98: its angles */
+#else
+/* the angles too are read as a vector (rot_matrix_yxz(m, &camera_rx)): one block keeps them
+   adjacent; as three tentative definitions MinGW placed camera_ry elsewhere, which tilted every
+   model and sprite in the Windows port */
+extern float	camera_rx, camera_ry, camera_rz;
+__asm__(".data\n.p2align 2\n"
+	".globl " CAM_SYM(camera_rx) "\n.globl " CAM_SYM(camera_ry) "\n.globl " CAM_SYM(camera_rz) "\n"
+	CAM_SYM(camera_rx) ":\n.long 0\n" CAM_SYM(camera_ry) ":\n.long 0\n" CAM_SYM(camera_rz) ":\n.long 0\n.text\n");
+#endif
 float		view_matrix[9];		/* 0x801fad48 */
 float		camera_neg_pos[3];	/* 0x801e5b58: -camera, for the view transform */
 int		camera_follow;		/* 0x801e5dd4: run add_snow_around on the camera position */
