@@ -513,7 +513,7 @@ static int init_thrown_object(game_object_t *o)
 		e->groups[i].pivot[0] = 0.0f;
 		e->groups[i].pivot[1] = 0.0f;
 		e->groups[i].pivot[2] = 0.0f;
-		e->groups[i].rot[0] = 4.712389f;
+		e->groups[i].rot[0] = 4.712388f;
 		e->groups[i].rot[1] = 0.0f;
 		e->groups[i].rot[2] = 0.0f;
 	}
@@ -539,10 +539,10 @@ static void thrown_object_think(game_object_t *o)
 	{
 	case THROWN_SHOT:
 		e->ry = e->ry + 0.71f;
-		e->z = e->z + e->goal[2];
 		e->rz = e->rz + 0.91f;
 		e->x = e->x + e->goal[0];
 		e->y = e->y + e->goal[1];
+		e->z = e->z + e->goal[2];
 		e->goal[1] = e->goal[1] + -0.22f;
 		if(--e->counter == 0)
 		{
