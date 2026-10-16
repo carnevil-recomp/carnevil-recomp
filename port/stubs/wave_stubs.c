@@ -5,35 +5,17 @@
 #include "hal.h"
 #define STUB(n)	do { static int seen; if(!seen) { seen = 1; stub_reached(#n); } } while(0)
 WEAK int D_801e6e70;
-/* the skeleton's and the 0x8019fcf0 model's tables and model pointers (weapons.c draws them held or thrown; their loaders are not in C yet) */
-WEAK int skeleton_anim_blob[8], D_8019fcf0[8];
-WEAK float *D_801e5b28, *D_801e57e4, *D_801e5b74, *D_801e5824;
-WEAK void *D_8021eec8, *D_8021f088;
+/* the 0x8019fcf0 model's tables and model pointers (weapons.c draws it held or thrown; its loaders are not in C yet; the skeleton's are in skeleton.c) */
+WEAK int D_8019fcf0[8];
+WEAK float *D_801e5b74, *D_801e5824;
+WEAK void *D_8021f088;
 WEAK void func_801101c0(void) { STUB(func_801101c0); }
 WEAK void func_8012896c(void) { STUB(func_8012896c); }
-WEAK void func_80131330(void) { STUB(func_80131330); }
-WEAK void func_8013c2a4(void) { STUB(func_8013c2a4); }
-WEAK void load_batb(void) { STUB(load_batb); }
-WEAK void load_batb_texmap(void) { STUB(load_batb_texmap); }
-WEAK void load_clown(void) { STUB(load_clown); }
-WEAK void load_clown_texmap(void) { STUB(load_clown_texmap); }
-WEAK void load_doctor_klot(void) { STUB(load_doctor_klot); }
-WEAK void load_doctorklot_texmap(void) { STUB(load_doctorklot_texmap); }
 WEAK void load_krinkle(void) { STUB(load_krinkle); }
 WEAK void load_krinkle_texmap(void) { STUB(load_krinkle_texmap); }
-WEAK void load_mame(void) { STUB(load_mame); }
-WEAK void load_mame_texmap(void) { STUB(load_mame_texmap); }
-WEAK void load_pood(void) { STUB(load_pood); }
-WEAK void load_pood_texmap(void) { STUB(load_pood_texmap); }
-WEAK void load_skeleton(void) { STUB(load_skeleton); }
-WEAK void load_skeleton_texmap(void) { STUB(load_skeleton_texmap); }
 WEAK void load_term(void) { STUB(load_term); }
-WEAK void remove_batb_texmap(void) { STUB(remove_batb_texmap); }
 WEAK void remove_btop_gore_texmaps(void) { STUB(remove_btop_gore_texmaps); }
-WEAK void remove_clown_assets(void) { STUB(remove_clown_assets); }
 WEAK void remove_krinkle_assets(void) { STUB(remove_krinkle_assets); }
-WEAK void remove_mame_assets(void) { STUB(remove_mame_assets); }
-WEAK void remove_skeleton_assets(void) { STUB(remove_skeleton_assets); }
 WEAK void remove_term_assets(void) { STUB(remove_term_assets); }
 WEAK int func_80126410(void) { STUB(func_80126410); return 0; }
 WEAK int func_80126d98(void) { STUB(func_80126d98); return 0; }
@@ -42,34 +24,10 @@ WEAK int func_80128398(void) { STUB(func_80128398); return 0; }
 WEAK int func_80128adc(void) { STUB(func_80128adc); return 0; }
 WEAK int func_80128d6c(void) { STUB(func_80128d6c); return 0; }
 WEAK int func_80129120(void) { STUB(func_80129120); return 0; }
-WEAK int func_80130bf8(void) { STUB(func_80130bf8); return 0; }
-WEAK int func_801313e0(void) { STUB(func_801313e0); return 0; }
-WEAK int func_801315d4(void) { STUB(func_801315d4); return 0; }
-WEAK int func_80131a9c(void) { STUB(func_80131a9c); return 0; }
-WEAK int func_80131f10(void) { STUB(func_80131f10); return 0; }
-WEAK int func_8013281c(void) { STUB(func_8013281c); return 0; }
-WEAK int func_80132a14(void) { STUB(func_80132a14); return 0; }
-WEAK int func_80133118(void) { STUB(func_80133118); return 0; }
-WEAK int func_80133580(void) { STUB(func_80133580); return 0; }
-WEAK int func_80133d38(void) { STUB(func_80133d38); return 0; }
-WEAK int func_80133f28(void) { STUB(func_80133f28); return 0; }
-WEAK int func_80134420(void) { STUB(func_80134420); return 0; }
-WEAK int func_801348e0(void) { STUB(func_801348e0); return 0; }
-WEAK int func_801352f4(void) { STUB(func_801352f4); return 0; }
-WEAK int func_801354fc(void) { STUB(func_801354fc); return 0; }
-WEAK int func_80135f98(void) { STUB(func_80135f98); return 0; }
-WEAK int func_8013c35c(void) { STUB(func_8013c35c); return 0; }
-WEAK int func_8013c56c(void) { STUB(func_8013c56c); return 0; }
-WEAK int func_8013cad4(void) { STUB(func_8013cad4); return 0; }
-WEAK int func_8013cfb0(void) { STUB(func_8013cfb0); return 0; }
-WEAK int func_8013d794(void) { STUB(func_8013d794); return 0; }
-WEAK int func_8013d990(void) { STUB(func_8013d990); return 0; }
-WEAK int func_8013e518(void) { STUB(func_8013e518); return 0; }
 WEAK int func_8013ea08(void) { STUB(func_8013ea08); return 0; }
 WEAK int func_8013ef18(void) { STUB(func_8013ef18); return 0; }
 WEAK int func_8013f0dc(void) { STUB(func_8013f0dc); return 0; }
 WEAK int func_8013f324(void) { STUB(func_8013f324); return 0; }
-WEAK int render_enetity_debug_info(void) { STUB(render_enetity_debug_info); return 0; }
 WEAK int func_800c8938(void) { STUB(func_800c8938); return 0; }
 WEAK int func_800c99e4(void) { STUB(func_800c99e4); return 0; }
 WEAK int func_8015f30c(void) { STUB(func_8015f30c); return 0; }
