@@ -148,30 +148,6 @@ WEAK void sub_801221d8(void) { fprintf(stderr, "[script] sub_801221d8 not implem
 WEAK void sub_801221e0(void) { fprintf(stderr, "[script] sub_801221e0 not implemented\n"); }
 WEAK int sub_80122218(void) { fprintf(stderr, "[script] sub_80122218 not implemented\n"); return 0; }
 WEAK void sub_8012225c(void) { fprintf(stderr, "[script] sub_8012225c not implemented\n"); }
-WEAK void sub_8013af24(void) { fprintf(stderr, "[script] sub_8013af24 not implemented\n"); }
-WEAK void sub_8013af38(void) { fprintf(stderr, "[script] sub_8013af38 not implemented\n"); }
-WEAK void sub_8013af6c(void) { fprintf(stderr, "[script] sub_8013af6c not implemented\n"); }
-WEAK void sub_8013af84(void) { fprintf(stderr, "[script] sub_8013af84 not implemented\n"); }
-WEAK void sub_8013afbc(void) { fprintf(stderr, "[script] sub_8013afbc not implemented\n"); }
-WEAK void sub_8013b078(void) { fprintf(stderr, "[script] sub_8013b078 not implemented\n"); }
-WEAK void sub_8013b09c(void) { fprintf(stderr, "[script] sub_8013b09c not implemented\n"); }
-WEAK void sub_8013b0c0(void) { fprintf(stderr, "[script] sub_8013b0c0 not implemented\n"); }
-WEAK void sub_8013b0f4(void) { fprintf(stderr, "[script] sub_8013b0f4 not implemented\n"); }
-WEAK void sub_8013b11c(void) { fprintf(stderr, "[script] sub_8013b11c not implemented\n"); }
-WEAK void sub_8013b18c(void) { fprintf(stderr, "[script] sub_8013b18c not implemented\n"); }
-WEAK void sub_8013b1b0(void) { fprintf(stderr, "[script] sub_8013b1b0 not implemented\n"); }
-WEAK void sub_8013b1d4(void) { fprintf(stderr, "[script] sub_8013b1d4 not implemented\n"); }
-WEAK void sub_8013b518(void) { fprintf(stderr, "[script] sub_8013b518 not implemented\n"); }
-WEAK void sub_8013b584(void) { fprintf(stderr, "[script] sub_8013b584 not implemented\n"); }
-WEAK void sub_8013b5c8(void) { fprintf(stderr, "[script] sub_8013b5c8 not implemented\n"); }
-WEAK void sub_8013b60c(void) { fprintf(stderr, "[script] sub_8013b60c not implemented\n"); }
-WEAK void sub_8013b678(void) { fprintf(stderr, "[script] sub_8013b678 not implemented\n"); }
-WEAK void sub_8013b6bc(void) { fprintf(stderr, "[script] sub_8013b6bc not implemented\n"); }
-WEAK void sub_8013b728(void) { fprintf(stderr, "[script] sub_8013b728 not implemented\n"); }
-WEAK void sub_8013b76c(void) { fprintf(stderr, "[script] sub_8013b76c not implemented\n"); }
-WEAK void sub_8013b7b0(void) { fprintf(stderr, "[script] sub_8013b7b0 not implemented\n"); }
-WEAK void sub_8013b814(void) { fprintf(stderr, "[script] sub_8013b814 not implemented\n"); }
-WEAK void sub_8013b850(void) { fprintf(stderr, "[script] sub_8013b850 not implemented\n"); }
 
 WEAK int D_801e6b74;
 WEAK int D_801e6b78;
