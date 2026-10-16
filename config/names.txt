@@ -2061,3 +2061,33 @@
 0x801e6bec D_801e6bec
 0x801e6c10 D_801e6c10
 0x801e6c34 D_801e6c34
+# the Big Top's BATB (batb.c, batb_data.c; the spawn table's callbacks keep their address names)
+0x8013377c batb_hit
+0x80133838 batb_die
+0x80133ed0 batb_remove
+0x80134580 batb_approach
+0x80134774 batb_end_path
+0x801e57d4 batb_verts
+0x80212db4 batb_faces
+0x801e0f18 batb_normals
+0x8021f0e4 batb_path
+0x8019f248 submesh_info_batb
+0x8019f530 batb_taunt_sounds
+0x8019f55c batb_hurt_sounds
+0x8019f580 batb_death_sounds
+# the Big Top clown (clown.c, clown_data.c; the spawn table's callbacks keep their address names)
+0x80134adc clown_hit
+0x80134b98 clown_die
+0x801354a4 clown_remove
+0x8013614c clown_approach
+0x8013662c clown_end_path
+0x801e5b74 clown_verts
+0x8021f088 clown_faces
+0x801e5824 clown_normals
+0x802373c4 clown_path
+0x8019fbd0 submesh_info_clown
+0x8019fe70 clown_spray_dir
+0x8019fe7c clown_spray_base
+0x8019feb8 clown_taunt_sounds
+0x8019fee8 clown_hurt_sounds
+0x8019ff18 clown_death_sounds
