@@ -44,18 +44,19 @@ static int		npresses;
 static void		parse_presses(const char *spec);
 static void		gun_update(void);
 static float	mouse_gx = 200.0f, mouse_gy = 128.0f;	/* CARNEVIL_AIM=x,y fixes the aim (tests) */
-static int	aim_fixed;
+static int	aim_fixed, mouse_seen;
 /* tests: CARNEVIL_AIM is "x,y" (a fixed aim) or a schedule "FRAME:x,y;FRAME:x,y;..." (the aim
    moves to each point at its frame) */
 #define MAX_AIMS	32
 static struct { unsigned long frame; float x, y; } aims[MAX_AIMS];
 static int	num_aims;
+static void padsim_parse(const char *spec);
 static void aim_parse(const char *s)
 {
 	unsigned long	f;
 	float		x, y;
 
-	aim_fixed = 1;
+	aim_fixed = 1; mouse_seen = 1;
 	if(!strchr(s, ':')) { sscanf(s, "%f,%f", &mouse_gx, &mouse_gy); return; }
 	while(*s && num_aims < MAX_AIMS && sscanf(s, "%lu:%f,%f", &f, &x, &y) == 3)
 	{
@@ -231,6 +232,7 @@ void hal_init(int argc, char **argv)
 	if(getenv("CARNEVIL_STATE")) hal_state_root = getenv("CARNEVIL_STATE");
 	if(getenv("CARNEVIL_TRACE")) port_trace = 1;
 	if(getenv("CARNEVIL_AIM")) aim_parse(getenv("CARNEVIL_AIM"));
+	if(getenv("CARNEVIL_PADSIM")) padsim_parse(getenv("CARNEVIL_PADSIM"));
 	/* fd 3 is the BIOS CMOS device: park /dev/null there so no real file ever gets it */
 	resolve();
 #ifdef _WIN32
@@ -245,6 +247,7 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--raw") && i + 1 < argc) hal_raw_image = argv[++i];
 		else if(!strcmp(argv[i], "--frames") && i + 1 < argc) hal_frame_limit = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--fast")) hal_fast = 1;
+		else if(!strcmp(argv[i], "--crosshair") && i + 1 < argc) port_crosshair = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--hires")) { extern int port_hires; port_hires = 1; }	/* window-resolution 24-bit drawing instead of the cabinet's 400x256 RGB565 */
 		else if(!strcmp(argv[i], "--load-time") && i + 1 < argc) { hal_load_time = atof(argv[++i]); if(hal_load_time < 1.0) hal_load_time = 1.0; }
 		else if(!strcmp(argv[i], "--headless")) hal_headless = 1;
@@ -256,7 +259,7 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--press") && i + 1 < argc) parse_presses(argv[++i]);
 		else if(!strcmp(argv[i], "--state") && i + 1 < argc) hal_state_root = argv[++i];
 		else if(!strcmp(argv[i], "-v")) { verbose++; port_texture_verbose(1); dcs_set_verbose(verbose); }
-		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
+		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--hires] [--crosshair 0|1] [--load-time X] [--violence 0-3] [--adjust N=V] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
 	choose_partition();
 	hal_gun_regs = map_fixed_page(0xb6800000);
@@ -323,21 +326,104 @@ void hal_key(const char *name, int down)
    game's reader expects are computed back through its calibration (port_gun_raw, game_stub.c) */
 static int	mouse_on = 1;				/* headless runs shoot at the centre */
 void port_gun_raw(int player, float sx, float sy, int *rx, int *ry);
+/* Gamepads stand in for the light guns: the left stick moves each player's aim point across the
+   picture (the light gun has no on-screen cursor, so the renderer draws a crosshair for a
+   pad-aimed player), the buttons close the same switches as the keyboard. Pad 0 is player 1
+   (sharing with the mouse: whichever moved last aims), pad 1 player 2. Reloading is what the
+   cabinet does: the gun is pointed off the screen and fired; PAD_RELOAD does both for a moment. */
+#define PAD_SPEED	7.0f			/* game pixels per frame at full tilt (the picture is 400 wide) */
+#define PAD_DEADZONE	0.2f
+#define PAD_RELOAD_FRAMES 8
+static struct {
+	float		x, y;			/* aim, game-screen units, y from the bottom */
+	int		used;			/* this pad aims for its player (it moved or fired since the mouse did) */
+	unsigned int	buttons, prev;
+	int		reload;			/* frames left of the off-screen shot */
+	float		lx, ly;
+} pads[2] = { { 200.0f, 128.0f }, { 200.0f, 128.0f } };
+static unsigned int	pad_coin, pad_gun;	/* switch bits the pads hold closed */
+/* tests: CARNEVIL_PADSIM="FRAME:PAD:LX,LY,BUTTONS;..." sets a pad's stick and buttons (hal.h PAD_*
+   bits, hex or decimal) from that vblank on, standing in for a controller */
+static struct padsim { unsigned long at; int pad; float lx, ly; unsigned int b; } padsim[64];
+static int	npadsim;
+static void padsim_parse(const char *spec)
+{
+	char buf[2048], *s, *tok;
+	snprintf(buf, sizeof buf, "%s", spec);
+	for(s = buf; (tok = strsep(&s, ";")) && npadsim < 64; )
+	{
+		struct padsim *q = &padsim[npadsim];
+		if(sscanf(tok, "%lu:%d:%f,%f,%i", &q->at, &q->pad, &q->lx, &q->ly, (int *)&q->b) == 5) npadsim++;
+	}
+}
 void hal_mouse(float gx, float gy, int on)
 {
 	if(aim_fixed) return;
-	mouse_gx = gx; mouse_gy = gy; mouse_on = on;
+	if(gx != mouse_gx || gy != mouse_gy) pads[0].used = 0;	/* the mouse takes player 1 back */
+	mouse_gx = gx; mouse_gy = gy; mouse_on = on; mouse_seen = 1;
+}
+void hal_pad(int pad, float lx, float ly, unsigned int buttons)
+{
+	if(pad < 0 || pad > 1) return;
+	pads[pad].lx = lx; pads[pad].ly = ly; pads[pad].buttons = buttons;
+}
+static float pad_axis(float v)
+{
+	float a = v < 0 ? -v : v;
+	if(a < PAD_DEADZONE) return 0.0f;
+	a = (a - PAD_DEADZONE) / (1.0f - PAD_DEADZONE);
+	return (v < 0 ? -a * a : a * a) * PAD_SPEED;		/* fine near the centre, fast at the edge */
+}
+static void pads_update(void)
+{
+	int	i;
+	pad_coin = pad_gun = 0;
+	for(i = 0; i < npadsim; i++)
+		if(hal_frame_count == padsim[i].at) hal_pad(padsim[i].pad, padsim[i].lx, padsim[i].ly, padsim[i].b);
+	for(i = 0; i < 2; i++)
+	{
+		unsigned int b = pads[i].buttons, pressed = b & ~pads[i].prev;
+		float dx = pad_axis(pads[i].lx), dy = pad_axis(pads[i].ly);
+		if(dx != 0.0f || dy != 0.0f || pressed) pads[i].used = 1;
+		pads[i].x += dx; pads[i].y += dy;
+		if(pads[i].x < 0.0f) pads[i].x = 0.0f; else if(pads[i].x > 400.0f) pads[i].x = 400.0f;
+		if(pads[i].y < 0.0f) pads[i].y = 0.0f; else if(pads[i].y > 256.0f) pads[i].y = 256.0f;
+		if(pressed & PAD_RELOAD) pads[i].reload = PAD_RELOAD_FRAMES;
+		if(pads[i].reload > 0) pads[i].reload--;
+		if(b & PAD_TRIGGER || pads[i].reload > PAD_RELOAD_FRAMES / 2) pad_gun |= i ? 0x10 : 0x01;
+		if(b & PAD_PUMP) pad_gun |= i ? 0x20 : 0x02;
+		if(b & PAD_START) pad_coin |= i ? (1 << 5) : (1 << 2);	/* start2 / start1 */
+		if(b & PAD_COIN) pad_coin |= i ? (1 << 1) : (1 << 0);	/* right / left coin slot */
+		pads[i].prev = b;
+	}
+}
+int	port_crosshair = 1;		/* --crosshair 0 hides them (the cabinet had none; MAME draws them) */
+int hal_crosshair(int player, float *gx, float *gy)
+{
+	if(!port_crosshair || player < 0 || player > 1) return 0;
+	if(player == 0 && !pads[0].used)
+	{
+		if(!mouse_seen || !mouse_on) return 0;
+		*gx = mouse_gx; *gy = mouse_gy;
+		return 1;
+	}
+	if(!pads[player].used) return 0;
+	*gx = pads[player].x; *gy = pads[player].y;
+	return 1;
 }
 static void gun_update(void)
 {
 	int rx = 128 << 4, ry = 128 << 4, rx2 = 128 << 4, ry2 = 128 << 4;
 	if(!hal_gun_regs) return;
-	port_gun_raw(0, mouse_gx, mouse_gy, &rx, &ry);
-	port_gun_raw(1, 200.0f, 128.0f, &rx2, &ry2);
+	unsigned int held = gun_held | pad_gun;
+	int on1 = pads[0].used ? pads[0].reload == 0 : mouse_on, on2 = pads[1].reload == 0;
+	if(pads[0].used) port_gun_raw(0, pads[0].x, pads[0].y, &rx, &ry);
+	else port_gun_raw(0, mouse_gx, mouse_gy, &rx, &ry);
+	port_gun_raw(1, pads[1].x, pads[1].y, &rx2, &ry2);
 	/* MAME carnevil_gun_r layout, one byte per 32-bit slot: X low, X high | buttons | 0x40 (sees the screen), Y low, Y high; P2 at +0x10 */
-	hal_gun_regs[0x00] = rx & 0xff; hal_gun_regs[0x04] = ((rx >> 8) & 0xf) | ((gun_held & 3) << 4) | (mouse_on ? 0x40 : 0);
+	hal_gun_regs[0x00] = rx & 0xff; hal_gun_regs[0x04] = ((rx >> 8) & 0xf) | ((held & 3) << 4) | (on1 ? 0x40 : 0);
 	hal_gun_regs[0x08] = ry & 0xff; hal_gun_regs[0x0c] = (ry >> 8) & 3;
-	hal_gun_regs[0x10] = rx2 & 0xff; hal_gun_regs[0x14] = ((rx2 >> 8) & 0xf) | (gun_held & 0x30) | 0x40;
+	hal_gun_regs[0x10] = rx2 & 0xff; hal_gun_regs[0x14] = ((rx2 >> 8) & 0xf) | (held & 0x30) | (on2 ? 0x40 : 0);
 	hal_gun_regs[0x18] = ry2 & 0xff; hal_gun_regs[0x1c] = (ry2 >> 8) & 3;
 }
 static void presses_update(void)
@@ -391,6 +477,7 @@ void hal_wait_frame(int frames)
 			else next = now;		/* fell behind: resynchronise */
 		}
 		hal_frame_count++;
+		pads_update();
 		presses_update();
 		aim_update();
 		audio_wav_frame();
@@ -492,7 +579,7 @@ int _ioctl(int dev, int req, int arg)
 		switch(req)
 		{
 			case FIOC('i', 0): if(p) *p = dipswitches; return 0;
-			case FIOC('i', 1): if(p) *p = 0xffff & ~coin_held; return 0;		/* coins, starts, service, test, volume: active low */
+			case FIOC('i', 1): if(p) *p = 0xffff & ~(coin_held | pad_coin); return 0;		/* coins, starts, service, test, volume: active low */
 			case FIOC('i', 2): if(p) *p = 0xffff & ~player_held; return 0;	/* player 1 and 2 buttons */
 			case FIOC('i', 3): if(p) *p = 0xffff; return 0;			/* players 3 and 4: none */
 			case FIOC('i', 4): if(p) *p = 0; return 0;			/* coin meters */

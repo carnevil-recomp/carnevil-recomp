@@ -9,6 +9,58 @@
 static SDL_Window	*win;
 static SDL_GLContext	ctx;
 static int		closed;
+static SDL_GameController *pad[2];	/* the first two controllers: players 1 and 2 */
+
+static void pads_open(void)
+{
+	int	i, n = SDL_NumJoysticks(), slot;
+	for(i = 0; i < n; i++)
+	{
+		SDL_JoystickID id;
+		if(!SDL_IsGameController(i)) continue;
+		id = SDL_JoystickGetDeviceInstanceID(i);
+		if((pad[0] && SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad[0])) == id) ||
+		   (pad[1] && SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad[1])) == id)) continue;
+		slot = !pad[0] ? 0 : !pad[1] ? 1 : -1;
+		if(slot < 0) return;
+		pad[slot] = SDL_GameControllerOpen(i);
+		if(pad[slot]) fprintf(stderr, "[video] gamepad %d: %s (player %d)\n", slot + 1, SDL_GameControllerName(pad[slot]), slot + 1);
+	}
+}
+static void pads_close_removed(SDL_JoystickID id)
+{
+	int	i;
+	for(i = 0; i < 2; i++)
+		if(pad[i] && SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(pad[i])) == id)
+		{
+			SDL_GameControllerClose(pad[i]); pad[i] = 0;
+			hal_pad(i, 0, 0, 0);
+			fprintf(stderr, "[video] gamepad %d disconnected\n", i + 1);
+		}
+}
+static void pads_poll(void)
+{
+	int	i;
+	for(i = 0; i < 2; i++)
+	{
+		SDL_GameController *c = pad[i];
+		float		lx, ly;
+		unsigned int	b = 0;
+		if(!c) continue;
+		lx = SDL_GameControllerGetAxis(c, SDL_CONTROLLER_AXIS_LEFTX) / 32767.0f;
+		ly = -SDL_GameControllerGetAxis(c, SDL_CONTROLLER_AXIS_LEFTY) / 32767.0f;	/* up is positive */
+		if(SDL_GameControllerGetButton(c, SDL_CONTROLLER_BUTTON_DPAD_LEFT)) lx = -1.0f;
+		if(SDL_GameControllerGetButton(c, SDL_CONTROLLER_BUTTON_DPAD_RIGHT)) lx = 1.0f;
+		if(SDL_GameControllerGetButton(c, SDL_CONTROLLER_BUTTON_DPAD_UP)) ly = 1.0f;
+		if(SDL_GameControllerGetButton(c, SDL_CONTROLLER_BUTTON_DPAD_DOWN)) ly = -1.0f;
+		if(SDL_GameControllerGetButton(c, SDL_CONTROLLER_BUTTON_A) || SDL_GameControllerGetAxis(c, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 16000) b |= PAD_TRIGGER;
+		if(SDL_GameControllerGetButton(c, SDL_CONTROLLER_BUTTON_B) || SDL_GameControllerGetAxis(c, SDL_CONTROLLER_AXIS_TRIGGERLEFT) > 16000) b |= PAD_PUMP;
+		if(SDL_GameControllerGetButton(c, SDL_CONTROLLER_BUTTON_Y) || SDL_GameControllerGetButton(c, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)) b |= PAD_RELOAD;
+		if(SDL_GameControllerGetButton(c, SDL_CONTROLLER_BUTTON_START)) b |= PAD_START;
+		if(SDL_GameControllerGetButton(c, SDL_CONTROLLER_BUTTON_BACK)) b |= PAD_COIN;
+		hal_pad(i, lx, ly, b);
+	}
+}
 
 static const char *key_name(SDL_Keycode k)
 {
@@ -30,6 +82,7 @@ static const char *key_name(SDL_Keycode k)
 int video_open(int width, int height, const char *title)
 {
 	SDL_SetMainReady();
+	if(SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) != 0) fprintf(stderr, "[video] no gamepad support: %s\n", SDL_GetError());
 	if(SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) { fprintf(stderr, "[video] SDL: %s\n", SDL_GetError()); return 0; }
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
@@ -43,6 +96,7 @@ int video_open(int width, int height, const char *title)
 	if(!ctx) { fprintf(stderr, "[video] SDL: %s\n", SDL_GetError()); SDL_DestroyWindow(win); win = 0; return 0; }
 	SDL_GL_MakeCurrent(win, ctx);
 	SDL_GL_SetSwapInterval(0);		/* the HAL paces frames itself */
+	if(port_crosshair) SDL_ShowCursor(SDL_DISABLE);	/* the port draws the crosshair instead */
 #ifdef _WIN32
 	{
 		extern int port_gl_load(void *(*)(const char *));
@@ -77,6 +131,8 @@ void video_present(void)
 		switch(ev.type)
 		{
 		case SDL_QUIT: closed = 1; break;
+		case SDL_CONTROLLERDEVICEADDED: pads_open(); break;
+		case SDL_CONTROLLERDEVICEREMOVED: pads_close_removed(ev.cdevice.which); break;
 		case SDL_KEYDOWN: case SDL_KEYUP:
 			if(!ev.key.repeat)
 			{
@@ -94,6 +150,7 @@ void video_present(void)
 			break;
 		}
 	}
+	pads_poll();
 }
 
 int video_closed(void) { return closed; }

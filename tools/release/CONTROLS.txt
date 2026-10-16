@@ -7,7 +7,16 @@ Controls
   left click / Ctrl . trigger
   Space ............. pump
 
+Gamepads (first pad player 1, second pad player 2; moving the mouse gives player 1 back to it)
+  left stick / d-pad  aim
+  A or right trigger  trigger
+  B or left trigger   pump
+  Y or right shoulder reload
+  Start / Menu ...... start
+  Back / Options .... coin
+
 Options (after the image path)
+  --crosshair 0    no crosshairs (the cabinet had none; the port draws them like MAME)
   --hires          smooth window-resolution picture instead of the cabinet's 400x256 one
   --violence 0..3  0 none, 1 green blood, 2 red blood, 3 full gore (default); it is saved
   --adjust N=V     any operator adjustment by its number in the game's ADJUST.FMT

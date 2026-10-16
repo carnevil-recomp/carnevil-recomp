@@ -183,7 +183,7 @@ PORT_ARCH    := -arch x86_64
 PORT_LDFLAGS := -Wl$(comma)-pagezero_size$(comma)0x4000 -framework Cocoa -framework OpenGL
 PORT_VIDEO   := port/video/video_macos.m
 PORT_AUDIO   := port/audio/audio_macos.m
-PORT_LDFLAGS += -framework AudioToolbox
+PORT_LDFLAGS += -framework AudioToolbox -framework GameController
 PORT_LIBS    := -lc++
 else
 PORT_ARCH    :=

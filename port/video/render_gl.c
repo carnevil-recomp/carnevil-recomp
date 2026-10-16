@@ -822,12 +822,48 @@ static void cabinet_present(void)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glPixelStorei(GL_PACK_ALIGNMENT, 4); glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }
+/* A gamepad-aimed player's crosshair (a light gun has none; port-only, drawn over the finished
+   picture in the window so it stays sharp in cabinet mode): player 1 red, player 2 blue */
+static void draw_crosshairs(void)
+{
+	static const float	col[2][3] = { { 1.0f, 0.25f, 0.25f }, { 0.3f, 0.6f, 1.0f } };
+	float			x, y, sx, sy, sc;
+	int			i, vw, vh;
+
+	video_size(&win_w, &win_h);
+	sx = win_w / hres; sy = win_h / vres; sc = sx < sy ? sx : sy;
+	vw = (int)(hres * sc); vh = (int)(vres * sc);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	glViewport((win_w - vw) / 2, (win_h - vh) / 2, vw, vh);
+	glMatrixMode(GL_PROJECTION); glLoadIdentity(); glOrtho(0, hres, 0, vres, -1, 1);
+	glMatrixMode(GL_MODELVIEW); glLoadIdentity();
+	glDisable(GL_TEXTURE_2D); glDisable(GL_DEPTH_TEST); glDisable(GL_ALPHA_TEST); glDisable(GL_FOG); glDisable(GL_STENCIL_TEST);
+	glDisable(GL_BLEND);
+	glLineWidth(sc > 3.0f ? sc * 0.7f : 2.0f);	/* about a game pixel thick at any window size */
+	for(i = 0; i < 2; i++)
+	{
+		if(!hal_crosshair(i, &x, &y)) continue;
+		glColor3f(col[i][0], col[i][1], col[i][2]);
+		glBegin(GL_LINES);
+		glVertex2f(x - 9, y); glVertex2f(x - 3, y); glVertex2f(x + 3, y); glVertex2f(x + 9, y);
+		glVertex2f(x, y - 9); glVertex2f(x, y - 3); glVertex2f(x, y + 3); glVertex2f(x, y + 9);
+		glEnd();
+		glBegin(GL_LINE_LOOP);
+		{
+			int k;
+			for(k = 0; k < 16; k++) glVertex2f(x + 6.0f * cosf(k * 0.3927f), y + 6.0f * sinf(k * 0.3927f));
+		}
+		glEnd();
+	}
+	glLineWidth(1.0f);
+}
 void grBufferSwap(int interval)
 {
 	(void)interval;
 	if(!have_display) return;
 	if(port_hires) apply_brightness();
 	else cabinet_present();
+	draw_crosshairs();
 	dump_frame();
 	video_present();
 	if(video_closed()) exit(0);
