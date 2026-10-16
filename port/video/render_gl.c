@@ -630,6 +630,48 @@ void port_movie_blit(const unsigned int *buf, int scroll)
    words (colour in the low half, depth in the high half, row 0 at the bottom with the lower-left
    origin) stored at x, y. The high-score signing board writes its ink this way
    (draw_autograph_board, hiscore.c). Pixels are written as they are, unfiltered. */
+/* An LFB write in GR_LFBWRITEMODE_565 with GR_ORIGIN_UPPER_LEFT and the pipeline bypassed
+   (the end credits, endcredits.c): w x h RGB565 pixels, top row first, over the whole frame
+   from its top-left corner. Colour only: the 565 write mode carries no depth. */
+void port_lfb_write565(const unsigned short *rows, int w, int h)
+{
+	static GLuint	tex;
+
+	if(!have_display || w <= 0 || h <= 0) return;
+	frame_setup();
+	if(!tex) glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, rows);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	glEnable(GL_TEXTURE_2D); glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glDisable(GL_DEPTH_TEST); glDepthMask(GL_FALSE); glDisable(GL_BLEND); glDisable(GL_ALPHA_TEST); glDisable(GL_FOG);	/* LFB writes bypass the pixel pipeline */
+	if(!port_hires) { glEnable(GL_STENCIL_TEST); glStencilFunc(GL_ALWAYS, 0, 1); glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); }	/* not dithered */
+	glColor4f(1, 1, 1, 1);
+	glBegin(GL_QUADS);
+	if(origin_lower_left)
+	{
+		glTexCoord2f(0, 1); glVertex3f(0, vres - h, 0);
+		glTexCoord2f(1, 1); glVertex3f((float)w, vres - h, 0);
+		glTexCoord2f(1, 0); glVertex3f((float)w, vres, 0);
+		glTexCoord2f(0, 0); glVertex3f(0, vres, 0);
+	}
+	else
+	{
+		glTexCoord2f(0, 0); glVertex3f(0, 0, 0);
+		glTexCoord2f(1, 0); glVertex3f((float)w, 0, 0);
+		glTexCoord2f(1, 1); glVertex3f((float)w, (float)h, 0);
+		glTexCoord2f(0, 1); glVertex3f(0, (float)h, 0);
+	}
+	glEnd();
+	glDisable(GL_TEXTURE_2D);
+}
+
 void port_lfb_write(const unsigned int *src, int x, int y, int w, int h)
 {
 	static GLuint		lfb_tex;

@@ -32,6 +32,7 @@ PORT_INC  := $(addprefix -I,$(PORT_DIRS))
 CC1_goose := -O3 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
 CC1_game  := -O3 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin   # game objects: signed char, pre-R5000 ISA (docs/toolchain.md)
 CC1_game2 := -O2 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin   # the game's own files (credits, stream, ...)
+CC1_game2nsr := -O2 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin -fno-strength-reduce   # the end credits (no loop strength reduction)
 CC1_game1 := -O -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin    # the audit helpers
 CC1_game0 := -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin       # the high-score file
 CC1_noopt := -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
@@ -89,6 +90,7 @@ build/%.sn.s: build/%.i tools/build/sncc.sh
 SN2GAS_game := --fpu-hazard
 SN2GAS_game2 := --fpu-hazard
 SN2GAS_game1 := --fpu-hazard
+SN2GAS_game2nsr := --fpu-hazard
 SN2GAS_game0 := --fpu-hazard
 build/%.s: build/%.sn.s tools/build/sn2gas.py
 	python3 tools/build/sn2gas.py $< $@ $(SN2GAS_$(PROFILE))

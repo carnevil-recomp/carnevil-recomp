@@ -161,8 +161,6 @@ void game_proc2(void) { STUB(game_proc2); for(;;) sleep(1); }
 void ide_set_partition(int n) { (void)n; }				/* GOOSE IDE: the HAL maps partition 1 itself */
 int gfx_scale_from_refresh(void) { return 54; }				/* 0x80157004: frames per second of the display mode */
 
-/* 0x801410a4 load_credits reloads the pricing (after a won game) */
-void load_credits(void) { STUB(load_credits); }
 
 /* ---- the level flow (main_game_proc, wave.c): what the port still lacks ---- */
 int  D_80212e10, D_801e0e24, D_801e70a8, D_801a25c8, D_80212da4, D_801e5cd4, D_801e0f0c_pad;

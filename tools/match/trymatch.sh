@@ -8,6 +8,7 @@ case "$PROF" in
   goose) F="-O3 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;   # GOOSE library objects
   game)  F="-O3 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;   # game objects: signed char, pre-R5000 ISA (see docs/toolchain.md)                # init/game code (default cpu model)
   game2) F="-O2 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;   # game objects built at -O2 (no inlining)
+  game2nsr) F="-O2 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin -fno-strength-reduce"; export SN2GAS_FPU_HAZARD=1;;   # -O2 without loop strength reduction (endcredits.c)
   game1) F="-O -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;
   game0) F="-mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;
   o2)    F="-O2 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
