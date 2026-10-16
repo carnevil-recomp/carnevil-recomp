@@ -12,7 +12,7 @@ typedef struct enemy
 	short		id;			/* 0x00: the game object id, written by add_object() */
 	unsigned short	counter;		/* 0x02: Krinkle counts hits, a thrown object counts down its life */
 	short		unk4;
-	short		unk6;			/* 0x06: from the spawn entry */
+	unsigned short	unk6;			/* 0x06: from the spawn entry (what to do when the path runs out) */
 	short		frame;			/* 0x08: animation frame */
 	unsigned short	flags2;			/* 0x0a: the state bits 0x100/0x80/0x40/0x20 stripped by the set-up */
 	short		frame_from;		/* 0x0c: a blend runs from this frame ... */

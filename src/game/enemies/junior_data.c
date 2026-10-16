@@ -2,7 +2,8 @@
    adjustment off the teddy bear): his texmaps and submeshes for both models (0x80197848-
    0x801983e8), the puke blob's texmaps, submesh, spin and spawn offset (0x801983e8-0x80198480),
    the mouth-shape runs his voice lines are lip-synced with (0x80198480-0x80198f08, -1 ends a
-   run), the run for each "baby" bank call (0x80198f08) and his voice lines (0x80198f8c).
+   run), and the run for each "baby" bank call (0x80198f08); his voice lines (0x80198f8c) sit among
+   junior.c's variables, so they are defined there.
    Generated with tools/extract/extract_tables.py and the mouth dump below: edit those, not this.
      extract_tables.py texmap baby_texmap 0x80197848 42
      extract_tables.py submesh baby_anim_blob 0x80197d88 15
@@ -229,5 +230,3 @@ int	*junior_mouth[30] =
 	&junior_mouth_runs[633],	/* call 29 */
 };
 
-/* 0x80198f8c: his voice lines, the "baby" calls junior_speak picks from */
-int	junior_voices[14] = { 0xb, 0xe, 0xf, 0x10, 0x11, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b };

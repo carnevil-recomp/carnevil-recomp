@@ -82,7 +82,6 @@ extern texmap_t	baby_texmap[42], bear_texmap[21], puke_texmap[3];	/* junior_data
 extern submesh_t baby_anim_blob[15], bear_anim_blob[15], puke_submesh[1];
 extern float	puke_spin[3], puke_offset[3];
 extern int	*junior_mouth[30];
-extern int	junior_voices[14];
 
 #define JUNIOR_GROUPS	15
 #define JUNIOR_FRAMES	0x2ad
@@ -111,6 +110,8 @@ submesh_t *junior_submesh;		/* 0x801e7504: the model's submesh table that was lo
 enemy_t	*junior = 0;			/* 0x80198f80 */
 int	junior_mouth_shape = 0;		/* 0x80198f84: 0-3, the face texture of the frame */
 int	D_80198f88 = 0;			/* his burst: smoke on the even frames */
+/* 0x80198f8c: his voice lines, the "baby" calls junior_speak picks from */
+int	junior_voices[14] = { 0xb, 0xe, 0xf, 0x10, 0x11, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b };
 int	junior_last_voice = 0;		/* 0x80198fc4 */
 int	junior_thud = 0;		/* 0x80198fc8: his footfalls cycle through three sounds */
 float	junior_full_health;		/* 0x801e0ee4 */
@@ -712,12 +713,11 @@ int junior_init(game_object_t *obj)
 	{
 		return 1;
 	}
+	junior = e = (enemy_t *)obj->data;
 	obj->hit = junior_hit;
 	obj->die = junior_die;
 	obj->remove = junior_remove;
-	e = (enemy_t *)obj->data;
 	e->unk4 = 0x14;
-	junior = e;
 	e->counter = 0;
 	e->frame = 0;
 	e->num = 0;
