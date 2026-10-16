@@ -211,6 +211,9 @@ void main_proc(void)
 		set_adjustment(0x2f, 0);
 		reset_high_scores();
 	}
+#ifdef PORT_HOST
+	{ extern void port_apply_adjustments(void); port_apply_adjustments(); }	/* --adjust / --violence */
+#endif
 	load_game_adjustments();
 	if(restored)
 	{

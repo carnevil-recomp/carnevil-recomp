@@ -123,6 +123,28 @@ static void resolve(void);
    (partition 1) is unpacked once into <state>/partition by lfn32.c, so a player only needs the
    raw image and no Python. The movies and music are read from the image as raw sectors anyway. */
 extern int lfn32_extract(const char *image, int index, const char *outdir);
+
+/* --adjust N=V and --violence V: operator adjustments set the way the test menu would, through
+   GOOSE's set_adjustment into the CMOS image (so they persist in the state directory), just
+   before the game reads them (main_proc -> load_game_adjustments). N is the number in the game's
+   ADJUST.FMT (52 VIOLENCE: 0 none, 1 green blood, 2 red blood, 3 full gore; 58 BIG BABY; ...). */
+#define MAX_ADJUST	16
+static struct { int num, val; } adjust_req[MAX_ADJUST];
+static int	num_adjust;
+static void add_adjust(int num, int val)
+{
+	if(num_adjust < MAX_ADJUST) { adjust_req[num_adjust].num = num; adjust_req[num_adjust].val = val; num_adjust++; }
+}
+void port_apply_adjustments(void)
+{
+	extern int set_adjustment(int, int);
+	int	i;
+	for(i = 0; i < num_adjust; i++)
+	{
+		int r = set_adjustment(adjust_req[i].num, adjust_req[i].val);
+		fprintf(stderr, "[hal] adjustment %d = %d%s\n", adjust_req[i].num, adjust_req[i].val, r ? " (refused)" : "");
+	}
+}
 static void make_absolute(const char *path, char *out, size_t n)
 {
 	char	cwd[1024];
@@ -186,6 +208,8 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--hires")) { extern int port_hires; port_hires = 1; }	/* window-resolution 24-bit drawing instead of the cabinet's 400x256 RGB565 */
 		else if(!strcmp(argv[i], "--load-time") && i + 1 < argc) { hal_load_time = atof(argv[++i]); if(hal_load_time < 1.0) hal_load_time = 1.0; }
 		else if(!strcmp(argv[i], "--headless")) hal_headless = 1;
+		else if(!strcmp(argv[i], "--violence") && i + 1 < argc) add_adjust(52, atoi(argv[++i]));
+		else if(!strcmp(argv[i], "--adjust") && i + 1 < argc) { int n, v; if(sscanf(argv[++i], "%d=%d", &n, &v) == 2) add_adjust(n, v); }
 		else if(!strcmp(argv[i], "--dump") && i + 1 < argc) render_set_dump(argv[++i], 0);
 		else if(!strcmp(argv[i], "--dump-every") && i + 2 < argc) { render_set_dump(argv[i+1], atoi(argv[i+2])); i += 2; }
 		else if(!strcmp(argv[i], "--wav") && i + 1 < argc) wav_path = argv[++i];
