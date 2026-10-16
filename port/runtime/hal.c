@@ -23,7 +23,7 @@
 #include "audio.h"
 void port_texture_verbose(int);
 
-const char	*hal_partition_root = ".";
+const char	*hal_partition_root = 0;		/* --partition; otherwise chosen by choose_partition() */
 const char	*hal_state_root = "state";		/* CMOS image and the files the game writes */
 unsigned char	*hal_gun_control;			/* the gun board control byte at 0xb7f00000 */
 signed char	nss_control;				/* the same byte as the variable camera.c's kss_ routines use */
@@ -117,6 +117,50 @@ unsigned int	D_801a37b0[20] = { 0x19, 0x27c, 5, 0x1b2, 0x5a, 0x23, 400, 256, 0x6
 
 #define CMOS_FD		3
 static void resolve(void);
+
+/* Where the game's files come from: --partition (or CARNEVIL_PARTITION) if given; else the
+   repository's original/partition (setup.sh); else the disk image itself: its file system
+   (partition 1) is unpacked once into <state>/partition by lfn32.c, so a player only needs the
+   raw image and no Python. The movies and music are read from the image as raw sectors anyway. */
+extern int lfn32_extract(const char *image, int index, const char *outdir);
+static void make_absolute(const char *path, char *out, size_t n)
+{
+	char	cwd[1024];
+	if(path[0] == '/' || !getcwd(cwd, sizeof cwd)) snprintf(out, n, "%s", path);
+	else snprintf(out, n, "%s/%s", cwd, path);
+}
+static void choose_partition(void)
+{
+	static char	dir[1024], exe[1100], raw[1024];
+	int		files;
+
+	if(hal_partition_root) return;
+	if(access("original/partition/GAME.EXE", F_OK) == 0) { hal_partition_root = "original/partition"; return; }
+	if(!hal_raw_image) hal_raw_image = "original/carn.raw";
+	snprintf(dir, sizeof dir, "%s/partition", hal_state_root);
+	snprintf(exe, sizeof exe, "%s/GAME.EXE", dir);
+	hal_partition_root = dir;
+	if(access(exe, F_OK) == 0) return;
+	if(access(hal_raw_image, R_OK) != 0)
+	{
+		fprintf(stderr, "[hal] no game files: give --raw IMAGE (your CarnEvil v1.0.3 disk image, chdman extractraw) or --partition DIR\n");
+		exit(1);
+	}
+	mkdir(hal_state_root, 0755);
+	make_absolute(hal_raw_image, raw, sizeof raw);
+	{
+		char	adir[1024];
+		make_absolute(dir, adir, sizeof adir);
+		fprintf(stderr, "[hal] unpacking the game's files from %s into %s (once) ...\n", hal_raw_image, dir);
+		files = lfn32_extract(raw, 1, adir);
+	}
+	if(files <= 0 || access(exe, F_OK) != 0)
+	{
+		fprintf(stderr, "[hal] %s does not hold CarnEvil's file system (partition 1)\n", hal_raw_image);
+		exit(1);
+	}
+	fprintf(stderr, "[hal] %d files unpacked\n", files);
+}
 static int (*real_open)(const char *, int, ...);
 static int (*real_close)(int);
 void hal_init(int argc, char **argv)
@@ -150,6 +194,7 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "-v")) { verbose++; port_texture_verbose(1); dcs_set_verbose(verbose); }
 		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
+	choose_partition();
 	hal_gun_regs = mmap((void *)0xb6800000, 0x1000, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
 	if(hal_gun_regs == MAP_FAILED) { fprintf(stderr, "[hal] cannot map the gun port at 0xb6800000\n"); hal_gun_regs = 0; }
 	else gun_update();

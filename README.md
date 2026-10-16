@@ -69,6 +69,9 @@ build/linux/carnevil --partition original/partition --raw original/carn.raw    #
 macOS and Linux keep separate outputs (`build/host` + `build/port` on macOS, `build/linux` on
 Linux; the MIPS binutils in `tools/mipsel-elf-binutils` and `tools/mipsel-elf-binutils-linux`),
 so one checkout shared with a VM builds on both without one clobbering the other.
+Without `setup.sh` the port only needs the disk image: `build/host/carnevil --raw
+/path/to/carnevil.raw` unpacks the game's files from the image's file system into
+`state/partition` on the first run (no Python needed) and plays from there.
 `./setup.sh --partition DIR` works instead of `--raw` if you extracted the files yourself
 (`tools/rom/legacy/` has the stand-alone extractors); add `--raw` as well for the movies.
 
