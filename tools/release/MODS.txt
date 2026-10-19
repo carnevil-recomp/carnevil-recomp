@@ -1,0 +1,18 @@
+Mods folder
+
+Files in this folder replace the game's own while it runs; your extracted game files are never
+changed. Run with --no-mods to play without them, or --mods DIR to use another folder.
+
+  mods/FILE.WMS, FILE.BNK, ...   a loose file replaces the game file of that name (any case)
+  mods/PACK/...                  a pack: its files (and one level of subfolders) do the same
+  mods/PACK/NAME.png             a picture in place of the texture NAME.WMS
+  mods/order.txt                 optional: pack folder names, one per line, first wins;
+                                 packs not named follow alphabetically; loose files win over all
+
+Textures: start from the originals. "carnevil --export-textures DIR" (after the usual image
+argument in run.sh / play.bat) writes every texture as DIR/NAME.png. Edit one, keep its name and
+its proportions (a 64x32 texture can become 256x128, not 256x256), and put it in a pack. Bigger
+pictures are sharper, most visibly with --hires. Transparent pixels stay transparent.
+
+The game prints each replacement it uses ("[mods] NAME <- path") when it first loads it.
+Sounds (.BNK) and models (.ZM) can be replaced as whole files; they are in Midway's formats.

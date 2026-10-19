@@ -24,6 +24,7 @@
 #include <sys/mman.h>
 #endif
 #include "hal.h"
+#include "mods.h"
 #include "dcs_board.h"
 #include "audio.h"
 void port_texture_verbose(int);
@@ -49,6 +50,7 @@ static int	aim_fixed, mouse_seen;
    shipped game clears it at boot and only a player 3/4 switch toggles one bit; the rest were set
    from a debugger on the development systems */
 static unsigned int	port_debug_flags;
+static const char	*export_dir;		/* --export-textures DIR */
 /* tests: CARNEVIL_AIM is "x,y" (a fixed aim) or a schedule "FRAME:x,y;FRAME:x,y;..." (the aim
    moves to each point at its frame) */
 #define MAX_AIMS	32
@@ -252,6 +254,9 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--frames") && i + 1 < argc) hal_frame_limit = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--fast")) hal_fast = 1;
 		else if(!strcmp(argv[i], "--debug") && i + 1 < argc) port_debug_flags = (unsigned int)strtoul(argv[++i], 0, 0);
+		else if(!strcmp(argv[i], "--mods") && i + 1 < argc) { extern const char *port_mods_root; port_mods_root = argv[++i]; }
+		else if(!strcmp(argv[i], "--export-textures") && i + 1 < argc) export_dir = argv[++i];
+		else if(!strcmp(argv[i], "--no-mods")) { extern int port_mods; port_mods = 0; }
 		else if(!strcmp(argv[i], "--mice")) { extern int port_mice; port_mice = 1; }
 		else if(!strcmp(argv[i], "--mouse-speed") && i + 1 < argc) { extern float port_mice_speed; port_mice_speed = atof(argv[++i]); }
 		else if(!strcmp(argv[i], "--crosshair") && i + 1 < argc) port_crosshair = atoi(argv[++i]);
@@ -268,9 +273,10 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--press") && i + 1 < argc) parse_presses(argv[++i]);
 		else if(!strcmp(argv[i], "--state") && i + 1 < argc) hal_state_root = argv[++i];
 		else if(!strcmp(argv[i], "-v")) { verbose++; port_texture_verbose(1); dcs_set_verbose(verbose); }
-		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--fullscreen] [--borderless] [--hires] [--crosshair 0|1] [--mice] [--mouse-speed X] [--debug FLAGS] [--load-time X] [--violence 0-3] [--adjust N=V] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
+		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--fullscreen] [--borderless] [--hires] [--crosshair 0|1] [--mods DIR | --no-mods] [--mice] [--mouse-speed X] [--debug FLAGS] [--load-time X] [--violence 0-3] [--adjust N=V] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
 	choose_partition();
+	if(export_dir) { extern int port_export_textures(const char *); exit(port_export_textures(export_dir)); }
 	hal_gun_regs = map_fixed_page(0xb6800000);
 	if(hal_gun_regs == (void *)-1) { fprintf(stderr, "[hal] cannot map the gun port at 0xb6800000\n"); hal_gun_regs = 0; }
 	else gun_update();
@@ -715,6 +721,10 @@ static int map_path(const char *path, char *out, size_t n)
 	game_name(path, name, sizeof name);
 	snprintf(out, n, "%s/%s", hal_state_root, name);
 	if(access(out, F_OK) == 0) return 1;
+	{
+		const char *m = mods_lookup(name);		/* the mods folder, over the originals */
+		if(m) { snprintf(out, n, "%s", m); return 1; }
+	}
 	snprintf(out, n, "%s/%s", hal_partition_root, name);
 	if(access(out, F_OK) == 0) return 1;
 	d = opendir(hal_partition_root);

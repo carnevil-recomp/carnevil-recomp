@@ -161,6 +161,26 @@ for example `--debug 0x8504`:
 Others change behaviour rather than draw: 0x1 is the developers' mode (free play, the level's
 3D in the attract), 0x10 freezes the camera, 0x10000 follows one enemy and holds the movie.
 
+## Mods
+A `mods/` folder (`--mods DIR` for another, `--no-mods` for none) holds files that replace the
+game's own while it runs; the extracted game files are never changed. It is a port addition and
+changes nothing in the decompiled game.
+
+| In `mods/` | Replaces |
+|---|---|
+| `FILE.EXT` | the game file of that name (any case): a texture `.WMS`, a sound bank `.BNK`, a model `.ZM`, a movie... |
+| `PACK/...` | the same for every file in the pack folder (and one level of subfolders) |
+| `PACK/NAME.png` | the texture `NAME.WMS`, at any size with the same proportions |
+| `order.txt` | (optional) pack names, one per line, first wins; the rest follow alphabetically; loose files win over packs |
+
+`--export-textures DIR` writes all 1148 textures as `DIR/NAME.png` (the largest mip level, the
+orientation the mods folder reads back) to start from. A replacement picture keeps its texture's
+proportions: the game's texture coordinates are fractions of the picture, so a bigger one is just
+sharper (most visibly with `--hires`). Its pixels and the driver's mip levels go to the GPU as they
+are; pixels in the colour the game keys out stay keyed out. Each replacement is printed once,
+when first used. Replacement data is kept outside the 32-bit arena the game allocates from, so a
+texture pack does not change the free memory the game measures.
+
 ## Controls
 The cabinet's switches are mapped to the keyboard, and the mouse is player 1's light gun:
 move it over the picture to aim (the game's own gun code converts the position through its
