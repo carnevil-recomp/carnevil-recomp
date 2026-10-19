@@ -1,0 +1,1 @@
+# DIAG.EXE names pinned at addresses (address name), as config/names.txt for GAME.EXE

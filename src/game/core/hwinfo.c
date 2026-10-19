@@ -1,6 +1,7 @@
 /*
- * hwinfo.c - the security PIC's serial number (0x800c6480) and the hardware info screen the
- * main process shows while it boots (0x800c65d4).
+ * hwinfo.c - the security PIC's serial number (0x800c6480), the hardware info screen the
+ * main process shows while it boots (0x800c65d4), and the test switch's way into the
+ * diagnostics (0x800c6950-0x800c6a04): DIAG.EXE replaces the game through the BIOS exec.
  */
 #include <stdio.h>
 
@@ -14,6 +15,13 @@ extern int	cmos_status;						/* main.c */
 extern int	coinage_source;						/* 0x801e096c: 1 CMOS, 2 dipswitch */
 extern int	gun_status;						/* 0x80237404: 1 bad, 2 ok */
 extern int	snd_opsys_ver;						/* 0x802373e4 */
+extern void	*qcreate(char *, int, void (*)(), int, int, int, int);
+extern void	sleep(int);
+extern void	clean_up_level_sounds(void);
+extern int	movie_pause(void);
+extern void	install_disk_info(void *, void *, void *);
+extern int	exec(char *, unsigned int, int *);
+extern void	set_percent_audit(int, int, int);			/* 0x800f1cd4 */
 
 /* 0x801e7030: serial number, game id, month, day, year, date of manufacture (read as one block) */
 int	pic_serial[6];
@@ -104,5 +112,26 @@ void hw_info_screen(void)
 	{
 		graphical_printf(text_buffer, "%04X", snd_opsys_ver);
 		draw_string_centered(1, text_buffer, 300.0f, 50.0f, 0xff00);
+	}
+}
+
+/* 0x800c6950: the sounds stop and the movie holds, the disk loses its suspend hooks, and the BIOS
+   loads DIAG.EXE over the game (it never comes back: DIAG execs GAME.EXE to leave) */
+void diags_proc(int *args)
+{
+	clean_up_level_sounds();
+	movie_pause();
+	sleep(5);
+	install_disk_info(0, 0, 0);
+	exec("diag.exe", 0x8100000, args);
+}
+
+/* 0x800c69ac: the test switch (set_dcsw_handler(4) in main_proc) */
+void dispatch_diags_proc(int closed, int swid)
+{
+	if(closed == 1)
+	{
+		set_percent_audit(0x23, 0xc, 0x26);
+		qcreate("diags", 0, diags_proc, 0, 0, 0, 0);
 	}
 }

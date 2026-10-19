@@ -177,7 +177,7 @@ which is how the original reloads.
 | `Space` | Player 1 pump |
 | Left mouse button or `Left Ctrl` | Player 1 trigger |
 | Mouse position | Player 1 aim |
-| `F2` | Test switch (diagnostics not implemented yet) |
+| `F2` | Test switch: execs the diagnostics (DIAG.EXE, being ported, see docs/diag.md) |
 
 | Key | Port |
 |---|---|

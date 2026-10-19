@@ -93,7 +93,6 @@ void graphical_printf(char *buf, char *fmt, ...)
 char attract_text1[136], attract_text2[136], attract_text3[136];	/* 0x8021eed0.. filled by something_todo_with_credits */
 int attract_text_state;
 /* the game proper: not decompiled yet */
-void dispatch_diags_proc(int closed, int swid) { STUB(dispatch_diags_proc); (void)closed; (void)swid; }
 
 /* the triangle setup (0x800d1750) writes Voodoo commands; here it is a plain draw */
 void draw_tri(MidVertex *a, MidVertex *b, MidVertex *c) { grDrawTriangleDma(a, b, c, 0); }

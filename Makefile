@@ -238,7 +238,34 @@ verify: build/game.bin
 regen:
 	rm -rf asm && $(DISASM)
 
+# ---- DIAG.EXE (the operator diagnostics the test switch execs), rebuilt the same way ----
+DIAG_ORIG := original/partition/DIAG.EXE
+DIAG_LOAD := 0x80100000
+DIAG_DISASM := python3 tools/build/disasm.py $(DIAG_ORIG) asm_diag --functions config/diag/functions.txt \
+            --names config/diag/names.txt --modules config/diag/modules.txt --word-fallback config/diag/word_fallback.txt \
+            --nosym config/diag/nosym.txt --load $(DIAG_LOAD) --code-end 0x80152170 --build-dir build/diag --abs-out config/diag/symbols_abs.ld
+DIAG_ASM_OBJS := $(patsubst %.s,build/asm_diag/%.o,$(shell cat asm_diag/files.txt 2>/dev/null))
+asm_diag/files.txt build/diag/link_order.ld: | prereqs
+	@test -f $(DIAG_ORIG) || { echo "*** $(DIAG_ORIG) is missing (it is on the same partition as GAME.EXE)"; exit 1; }
+	$(DIAG_DISASM)
+build/asm_diag/%.o: asm_diag/%.s
+	@mkdir -p $(dir $@)
+	@$(AS) $(ASFLAGS) -o $@ $<
+build/diag/diag.elf: $(DIAG_ASM_OBJS) config/diag/diag.ld build/diag/link_order.ld
+	@echo "LD $@ ($(words $(DIAG_ASM_OBJS)) asm objects)"
+	@$(LD) -EL -T config/diag/diag.ld -o $@ $(DIAG_ASM_OBJS)
+build/diag/diag.bin: build/diag/diag.elf
+	$(OBJCOPY) -O binary $< $@
+build/diag/DIAG.EXE: build/diag/diag.bin
+	python3 tools/build/exe.py pack $< $(DIAG_LOAD) $@
+# the asm list is only known after the split: a first `make diag` splits, then rebuilds
+diag: asm_diag/files.txt
+	@$(MAKE) --no-print-directory build/diag/DIAG.EXE
+	@cmp $(DIAG_ORIG) build/diag/DIAG.EXE && echo "OK: build/diag/DIAG.EXE is byte-identical to $(DIAG_ORIG)"
+diag-regen:
+	rm -rf asm_diag && $(DIAG_DISASM)
+
 clean:
-	rm -rf build/asm build/game.* build/GAME.EXE build/src
-.PHONY: all check verify regen clean host port prereqs prereqs-sdk sdksrc sdksrc
+	rm -rf build/asm build/game.* build/GAME.EXE build/src build/asm_diag build/diag
+.PHONY: all check verify regen clean diag diag-regen host port prereqs prereqs-sdk sdksrc sdksrc
 .SECONDARY:

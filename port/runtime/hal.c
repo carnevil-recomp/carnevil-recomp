@@ -228,7 +228,9 @@ static int (*real_open)(const char *, int, ...);
 static int (*real_close)(int);
 void hal_init(int argc, char **argv)
 {
+	extern int hal_argc; extern char **hal_argv;
 	int	i;
+	hal_argc = argc; hal_argv = argv;		/* exec.c starts the other program with the same line */
 	const char *env = getenv("CARNEVIL_PARTITION");
 	int	nul;
 	if(env) hal_partition_root = env;
