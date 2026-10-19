@@ -96,3 +96,5 @@ flie                 src/game/enemies/flie.c                 game2  0x80122e40 0
 flie_data            src/game/enemies/flie_data.c            game2  -          -           -          -           0x801994e0 0x80199d80
 weapons              src/game/enemies/weapons.c              game2  0x8010d818 0x80110270  0x80172fd8 0x80173314  0x80194650 0x80194654
 weapons_data         src/game/enemies/weapons_data.c         game2  -          -           -          -           0x80193ad0 0x80194650
+mame                 src/game/enemies/mame.c                 game2  0x80131f10 0x8013357c  0x801744d0 0x801745b0  -          -
+mame_data            src/game/enemies/mame_data.c            game2  -          -           -          -           0x8019e720 0x8019ee88

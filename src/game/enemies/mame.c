@@ -595,12 +595,6 @@ void func_80133118(enemy_t *e, unsigned short state)
 	case 4:
 		e->frame = 0xd3;
 		break;
-	case 6:
-		e->frame = 0x62;
-		break;
-	case 7:
-		e->frame = 0x270;
-		break;
 	case 8:
 		e->frame = 0x2c9;
 		break;
@@ -613,11 +607,26 @@ void func_80133118(enemy_t *e, unsigned short state)
 	case 0xb:
 		e->frame = 0x426;
 		break;
-	case 0x8c:
-		e->frame = 0x467;
+	case 6:
+		e->frame = 0x62;
+		break;
+	case 7:
+		e->frame = 0x270;
 		break;
 	case 0x105:
 		e->frame = 0x108;
+		break;
+	case 0x8c:
+		e->frame = 0x467;
+		break;
+	case 0:
+	case 1:		/* two more groups that start at frame 0 shape the original's compare tree (a
+			   pair below 2 and one value above 0x201); their tests fold away, so the values
+			   are not in the binary and no spawn entry uses them: 0, 1 and 0x202 here */
+		e->frame = 0;
+		break;
+	case 0x202:
+		e->frame = 0;
 		break;
 	case 2:
 	case 0x201:
