@@ -10,6 +10,9 @@ WORK="$(mktemp -d "${TMPDIR:-/tmp}/sncc.XXXXXX")"
 cp "$SDKBIN/CC1MIPS.EXE" "$SDKBIN/CWSDPMI.EXE" "$WORK/"
 cp "$IN" "$WORK/IN.I"
 FLAGS="${CC1FLAGS:--O -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin}"
+# the flags go in a response file: a DOS command line holds 126 characters, and a longer one
+# silently loses its end (with it "-o OUT.S"); DJGPP programs read @file arguments themselves
+printf '%s\n' -quiet $FLAGS $* -o OUT.S > "$WORK/ARGS.RSP"
 cat > "$WORK/dosbox.conf" <<CONF
 [sdl]
 output=surface
@@ -23,7 +26,7 @@ cycles=max
 @echo off
 mount c "$WORK"
 c:
-CC1MIPS.EXE IN.I -quiet $FLAGS $* -o OUT.S > LOG.TXT
+CC1MIPS.EXE IN.I @ARGS.RSP > LOG.TXT
 echo done > DONE.TXT
 exit
 CONF

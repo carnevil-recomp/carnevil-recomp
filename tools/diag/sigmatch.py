@@ -52,14 +52,40 @@ def main():
         if w>>26==3:
             t=(dl&0xf0000000)|((w&0x3ffffff)<<2)
             if dl<=t<dend: starts.add(t)
-    # functions only reached through pointers (process entry points, handlers, menu tables):
-    # after a jr $ra and its delay slot, the next non-nop word that opens a stack frame
-    k=0; N=(dend-dl)//4
+    # functions only reached through pointers (process entry points, handlers, menu tables) and
+    # leaf functions: whatever follows a jr $ra and its delay slot starts a function, unless a
+    # branch of the function before it reaches past it (an early return). A word there that is
+    # no instruction is the junk the linker leaves between two objects: the function starts after it.
+    from capstone import Cs, CS_ARCH_MIPS, CS_MODE_MIPS32, CS_MODE_LITTLE_ENDIAN
+    md=Cs(CS_ARCH_MIPS, CS_MODE_MIPS32|CS_MODE_LITTLE_ENDIAN)
+    img=b''.join(struct.pack('<I',x) for x in dw[:(dend-dl)//4])
+    def valid(k):
+        g=list(md.disasm(img[4*k:4*k+4],dl+4*k))
+        return bool(g) and g[0].mnemonic not in ('ldxc1','lwxc1','sdxc1','swxc1','cache','lwc2','swc2','ldc2','sdc2','pref','jalx') and not g[0].mnemonic.startswith(('c2','mtc2','mfc2','cop'))
+    def btarget(k):
+        w=dw[k]; op=w>>26
+        if op in (4,5,6,7,0x14,0x15,0x16,0x17) or (op==1 and ((w>>16)&31) in (0,1,2,3,0x10,0x11,0x12,0x13)) or (op==0x11 and ((w>>21)&31)==8):
+            o=w&0xffff; o=o-0x10000 if o&0x8000 else o; return k+1+o
+        if op==2:      # a j inside the function (a loop, a goto), not a tail call into a known one
+            t=(dl&0xf0000000)|((w&0x3ffffff)<<2)
+            return None if t in calls else (t-dl)//4
+        return None
+    calls=set(starts)
+    N=(dend-dl)//4; fstart=0; reach=0; k=0; padding=set()
+    callk=set((c-dl)//4 for c in calls); import bisect; cl=sorted(callk)
+    frame=lambda k: (dw[k]&0xffff8000)==0x27bd8000
     while k<N:
+        if k in callk: reach=k          # a called address starts a function whatever came before
+        t=btarget(k)
+        # a C function's branches stay inside it: one that would pass a called address is a junk word
+        if t is not None and t>reach and not (bisect.bisect_right(cl,k)<len(cl) and cl[bisect.bisect_right(cl,k)]<=t): reach=t
         if dw[k]==0x03e00008:
             j=k+2
             while j<N and dw[j]==0: j+=1
-            if j<N and (dw[j]&0xffff8000)==0x27bd8000: starts.add(dl+4*j)
+            if j<N and j>reach:
+                if j+1<N and (not valid(j) or (btarget(j) is not None and (frame(j+1) or j+1 in callk))): padding.add(dl+4*j); j+=1
+                starts.add(dl+4*j); fstart=j; reach=j
+            k=j; continue
         k+=1
     # lui/addiu pairs that load a code address (function pointers in code)
     for k in range(N-1):
@@ -96,5 +122,8 @@ def main():
     for k,s in enumerate(starts):
         if s not in allf: allf[s]=((starts[k+1] if k+1<len(starts) else dend),"sub_%08x"%s)
     for s in sorted(allf): print("0x%08x 0x%08x %s"%(s,allf[s][0]-1,allf[s][1]))
+    with open('config/diag/padding.txt','w') as f:
+        f.write("# words the linker left between two objects (file boundaries), found by tools/diag/sigmatch.py\n")
+        for x in sorted(padding): f.write("0x%08x 0x%08x\n"%(x,dw[(x-dl)//4]))
     print("# %d of %d DIAG call targets named"%(len(out),len(starts)),file=sys.stderr)
 main()

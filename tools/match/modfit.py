@@ -5,6 +5,7 @@ usage: modfit.py <file.s from sncc> [--diffs N]"""
 import sys, os, re, struct, subprocess, tempfile, collections, importlib.util
 HERE=os.path.dirname(os.path.abspath(__file__)); BIN=os.path.join(HERE,"..","mipsel-elf-binutils","bin")
 GAME=os.environ.get("GAME_EXE",os.path.join(HERE,"..","..","original","partition","GAME.EXE")); LOAD=0x800c4000; CODE_END=0x8016dc4c
+if struct.unpack("<I",open(GAME,"rb").read(8)[4:])[0]==0x80100000: LOAD=0x80100000; CODE_END=0x80152170   # DIAG.EXE
 from capstone import *
 md=Cs(CS_ARCH_MIPS, CS_MODE_MIPS32|CS_MODE_LITTLE_ENDIAN)
 def relmask(t):

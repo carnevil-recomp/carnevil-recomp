@@ -8,12 +8,12 @@ are compared separately: each table the function indexes (lui/lw pair against .r
 every case to the same place in the function as the original's, or the cases are reported (the
 masked instruction compare cannot see a case body attached to the wrong case values).
 """
-import sys, os, os, subprocess, struct, re, tempfile
+import sys, os, subprocess, struct, re, tempfile
 HERE=os.path.dirname(os.path.abspath(__file__))
 BIN=os.path.join(HERE,"..","mipsel-elf-binutils","bin")
 AS=os.path.join(BIN,"mipsel-elf-as"); OBJDUMP=os.path.join(BIN,"mipsel-elf-objdump"); NM=os.path.join(BIN,"mipsel-elf-nm")
 GAME=os.environ.get("GAME_EXE",os.path.join(HERE,"..","..","original","partition","GAME.EXE"))
-LOAD=0x800c4000
+LOAD=struct.unpack("<I",open(GAME,"rb").read(8)[4:])[0]   # the header's load address (GAME_EXE=...DIAG.EXE for the diagnostics)
 from capstone import *
 md=Cs(CS_ARCH_MIPS, CS_MODE_MIPS32|CS_MODE_LITTLE_ENDIAN)
 
@@ -135,4 +135,4 @@ def main():
         for d in diffs[:lim]: print(d)
         if len(diffs)>lim: print("  ... %d more"%(len(diffs)-lim))
     print("TOTAL %d/%d insns (%d%%)"%(total_ok,total,100*total_ok//max(total,1)))
-main()
+if __name__=="__main__": main()

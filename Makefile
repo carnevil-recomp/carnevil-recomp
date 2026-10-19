@@ -43,6 +43,7 @@ CC1_game2nsr := -O2 -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 
 CC1_game1 := -O -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin    # the audit helpers
 CC1_game0 := -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin       # the high-score file
 CC1_noopt := -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
+CC1_diag  := -O2 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin -fno-strength-reduce   # DIAG.EXE's own files
 CC1_o2r5k := -O2 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin   # sound library (sound.mak: CC2)
 DISASM   := python3 tools/build/disasm.py $(ORIG) asm --functions config/functions_v103.txt --symbols config/binja_symbols.txt \
             --names config/names.txt --modules config/modules.txt --word-fallback config/word_fallback.txt --nosym config/nosym.txt
@@ -243,17 +244,22 @@ DIAG_ORIG := original/partition/DIAG.EXE
 DIAG_LOAD := 0x80100000
 DIAG_DISASM := python3 tools/build/disasm.py $(DIAG_ORIG) asm_diag --functions config/diag/functions.txt \
             --names config/diag/names.txt --modules config/diag/modules.txt --word-fallback config/diag/word_fallback.txt \
-            --nosym config/diag/nosym.txt --load $(DIAG_LOAD) --code-end 0x80152170 --build-dir build/diag --abs-out config/diag/symbols_abs.ld
+            --nosym config/diag/nosym.txt --load $(DIAG_LOAD) --code-end 0x80152170 --build-dir build/diag --abs-out config/diag/symbols_abs.ld \
+            --mk-var DIAG_C_OBJS
 DIAG_ASM_OBJS := $(patsubst %.s,build/asm_diag/%.o,$(shell cat asm_diag/files.txt 2>/dev/null))
-asm_diag/files.txt build/diag/link_order.ld: | prereqs
+-include build/diag/modules.mk
+build/src/diag/%.i: CPPFLAGS += -Isrc/diag
+# main_proc shows the build's __DATE__ and __TIME__: the shipped DIAG.EXE was built on Feb 1 1999 at 16:00:07
+build/src/diag/main.i: CPPFLAGS += -Wno-builtin-macro-redefined '-D__DATE__="Feb  1 1999"' '-D__TIME__="16:00:07"'
+asm_diag/files.txt build/diag/link_order.ld build/diag/modules.mk: | prereqs
 	@test -f $(DIAG_ORIG) || { echo "*** $(DIAG_ORIG) is missing (it is on the same partition as GAME.EXE)"; exit 1; }
 	$(DIAG_DISASM)
 build/asm_diag/%.o: asm_diag/%.s
 	@mkdir -p $(dir $@)
 	@$(AS) $(ASFLAGS) -o $@ $<
-build/diag/diag.elf: $(DIAG_ASM_OBJS) config/diag/diag.ld build/diag/link_order.ld
-	@echo "LD $@ ($(words $(DIAG_ASM_OBJS)) asm objects)"
-	@$(LD) -EL -T config/diag/diag.ld -o $@ $(DIAG_ASM_OBJS)
+build/diag/diag.elf: $(DIAG_ASM_OBJS) $(DIAG_C_OBJS) config/diag/diag.ld config/diag/symbols_abs.ld build/diag/link_order.ld
+	@echo "LD $@ ($(words $(DIAG_ASM_OBJS)) asm objects, $(words $(DIAG_C_OBJS)) C modules)"
+	@$(LD) -EL -T config/diag/diag.ld -o $@ $(DIAG_ASM_OBJS) $(DIAG_C_OBJS)
 build/diag/diag.bin: build/diag/diag.elf
 	$(OBJCOPY) -O binary $< $@
 build/diag/DIAG.EXE: build/diag/diag.bin

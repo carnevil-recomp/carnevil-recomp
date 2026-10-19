@@ -1,0 +1,3 @@
+# DIAG.EXE modules rebuilt from C (format as config/modules.txt):
+# name  source  profile  text_start text_end  rodata_start rodata_end  data_start data_end  [bss_start bss_end]
+main src/diag/main.c diag  0x801009b0 0x8010138c  0x80152560 0x8015291c  0x8015cc68 0x8015d070

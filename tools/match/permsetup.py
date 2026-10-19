@@ -14,10 +14,12 @@ flags=subprocess.check_output(["sh","-c",
     "sed -n 's/^  %s) F=\"\\([^\"]*\\)\".*/\\1/p' %s/tools/match/trymatch.sh"%(prof,ROOT)]).decode().strip()
 if not flags: sys.exit("unknown profile "+prof)
 hazard = "--fpu-hazard" if prof.startswith("game") else ""
-asmf=glob.glob(os.path.join(ROOT,"asm","functions","*_%s.s"%fn))
+diag=os.path.abspath(src).startswith(os.path.join(ROOT,"src","diag"))
+asmf=glob.glob(os.path.join(ROOT,"asm_diag" if diag else "asm","functions","*_%s.s"%fn))
 if len(asmf)!=1: sys.exit("no single asm/functions/*_%s.s (is it named in config/names.txt?)"%fn)
 d=os.path.join(ROOT,"build","perm",fn); os.makedirs(d,exist_ok=True)
 inc=" ".join("-I"+p.rstrip("/") for p in sorted(glob.glob(os.path.join(ROOT,"src","game","*/"))))
+if diag: inc="-I"+os.path.join(ROOT,"src","diag")
 pre=subprocess.check_output("clang -E -P -Wno-nonportable-include-path -nostdinc -I%s/original/sdk/include -I%s/include %s "
     "-D__DJGPP__ -DSEATTLE -DRELEASE -x c %s"%(ROOT,ROOT,inc,src),shell=True,cwd=ROOT).decode()
 sys.path.insert(0,os.environ.get("PERMUTER",os.path.join(ROOT,"..","decomp-permuter")))

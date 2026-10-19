@@ -1,1 +1,241 @@
 # DIAG.EXE names pinned at addresses (address name), as config/names.txt for GAME.EXE
+0x801105a0 func_801105a0
+# library functions identical to the game's (tools/match/fit.sh on the GOOSE and sound sources, 100%)
+0x80129f80 cmos_crc	# crc.c
+0x8012a010 crc	# crc.c
+0x8012a0c0 get_text_state	# ostrings.c
+0x8012a0e8 set_text_state	# ostrings.c
+0x8012a114 set_text_position	# ostrings.c
+0x8012a1dc set_text_scales	# ostrings.c
+0x8012a1f4 set_text_z_inc	# ostrings.c
+0x8012a204 set_text_id	# ostrings.c
+0x8012a214 set_string_id	# ostrings.c
+0x8012a224 apply_justification	# ostrings.c
+0x8012aaa4 get_string_width	# ostrings.c
+0x8012abc0 oputs	# ostrings.c
+0x8012accc delete_string	# ostrings.c
+0x8012ad94 delete_string_id	# ostrings.c
+0x8012ae48 delete_multiple_strings	# ostrings.c
+0x8012af70 delete_all_strings	# ostrings.c
+0x8012afcc change_string_state	# ostrings.c
+0x8012b0e0 set_string_shading	# ostrings.c
+0x8012b214 change_string_alpha_state	# ostrings.c
+0x8012b268 oprintf	# ostrings.c
+0x8012b38c fade_string	# ostrings.c
+0x8012d168 mxm	# sprites.c
+0x8012d95c notify_check	# sprites.c
+0x8012f1c4 hide_sprite	# sprites.c
+0x8012f1d8 hide_sprites	# sprites.c
+0x8012f230 unhide_sprite	# sprites.c
+0x8012f248 unhide_sprites	# sprites.c
+0x8012f2a8 do_sprite_veladd	# sprites.c
+0x8012f2b0 set_veladd_mode	# sprites.c
+0x8012f2d8 _draw_sprites	# sprites.c
+0x8012f6e0 sprite_exists	# sprites.c
+0x8012fd10 texture_to_mem	# texture.c
+0x801306c0 lock_multiple_textures	# texture.c
+0x80130700 lock_textures_all	# texture.c
+0x80130af0 clear_free_texture_list	# texture.c
+0x80131200 hide_multiple_objects	# object.c
+0x801312f0 hide_all_3d_objects	# object.c
+0x80131354 clear_free_object_list	# object.c
+0x80131ca4 generate_background_sprite_verts	# bgnd.c
+0x80131cd4 beginbobj	# bgnd.c
+0x80132890 get_font_space_width	# fonts.c
+0x801328d0 get_font_height	# fonts.c
+0x80133504 get_player_49way_current	# switch.c
+0x80133514 get_player_sw_current	# switch.c
+0x801336c4 get_player_sw_close	# switch.c
+0x801336d4 get_p5_sw_close	# switch.c
+0x801336e4 get_player_sw_open	# switch.c
+0x801336f4 get_p5_sw_open	# switch.c
+0x80133704 get_dip_coin_close	# switch.c
+0x80133714 get_dip_coin_open	# switch.c
+0x80133724 read_dip_direct	# switch.c
+0x80133750 read_coin_direct	# switch.c
+0x8013377c read_player12_direct	# switch.c
+0x801337a8 read_player34_direct	# switch.c
+0x801338fc null_sw_handler	# switch.c
+0x80133908 interrupt_handler	# inthand.c
+0x801339dc start_timeout_timer	# galhand.c
+0x80133a0c stop_timeout_timer	# galhand.c
+0x80133a3c get_timeout_time	# galhand.c
+0x80134084 add_func_to_sprite	# anim2d.c
+0x80134090 pause_sprite_anim	# anim2d.c
+0x801340a4 unpause_sprite_anim	# anim2d.c
+0x80137b90 cmos_read	# cmos.c
+0x8014e00c snd_bank_load	# sound.c
+0x8014e2f4 snd_bank_load_playing	# sound.c
+0x8014e6d0 snd_clear	# sound.c
+0x8014efd8 snd_get_boot_version	# sound.c
+0x8014f01c snd_get_sdrc_version	# sound.c
+0x8014f060 snd_get_pmint_sum	# sound.c
+0x80150468 snd_download_table	# sound.c
+0x80150638 snd_download_table_playing	# sound.c
+0x8015126c snd_flush_pending	# sound.c
+0x80151294 snd_flush_queues	# sound.c
+0x801512bc snd_set_reserved	# sound.c
+0x80151308 snd_stop_track	# sound.c
+0x80151354 snd_track_volume	# sound.c
+0x801513ac snd_track_pan	# sound.c
+0x80151e14 snd_bank_lockout	# sound.c
+0x80151e24 snd_lockout	# sound.c
+0x8015212c snd_get_lockout	# sound.c
+0x8015213c snd_get_bank_lockout	# sound.c
+0x8015214c snd_crc_check_enable	# sound.c
+0x80152160 snd_crc_fail_audit	# sound.c
+# ostrings.c setters at DIAG's revision: the field each one stores (text_state at 0x8016943c, the SDK's text_state_info_t)
+0x8012a144 set_text_font	# ostrings.c
+0x8012a18c set_text_drop_shadow	# ostrings.c
+0x8012a19c set_text_color	# ostrings.c
+0x8012a1ac set_text_bgnd_color	# ostrings.c
+0x8012a1bc set_text_transparency_mode	# ostrings.c
+0x8012a1cc set_text_justification_mode	# ostrings.c
+0x8012df94 beginobj	# sprites.c (the same wrapper code as bgnd.c beginbobj)
+# switch.c, by source order between the identical neighbours
+0x80133524 diag_get_player_sw_current	# switch.c
+0x80133658 get_p5_sw_current	# switch.c
+0x80133668 get_dip_coin_current	# switch.c
+# mthread.c (hand-written assembly): or the wake mask into the process and switch away
+0x801313d8 sleep	# mthread.c
+0x801188c8 func_801188c8
+0x8012e940 del1c	# sprites.c (_del1c inlined at this revision)
+# menu.c (src/diag/menu.c)
+0x80102568 do_menu
+0x80103168 clear_menu_box
+0x80103198 clear_menu_help
+0x801031c8 clear_menu
+0x80103230 draw_help
+# cmos.c at DIAG's revision, between the identical neighbours, in source order
+0x801384ec check_adjustments	# cmos.c
+0x801385a8 get_adjustment	# cmos.c
+0x801386e8 set_adjustment	# cmos.c
+# the BIOS jump table (copied in from the boot ROM at start-up), named as GAME.EXE's at the same offset
+0x8010008c tlb_exc	# BIOS
+0x80100094 jt_unused1	# BIOS
+0x8010009c jt_unused2	# BIOS
+0x801000a4 _close	# BIOS
+0x801000ac _commit	# BIOS
+0x801000b4 _creat	# BIOS
+0x801000bc _creatnew	# BIOS
+0x801000c4 _findfirst	# BIOS
+0x801000cc _findnext	# BIOS
+0x801000d4 _getdate	# BIOS
+0x801000dc _getdiskfree	# BIOS
+0x801000e4 _getdrive	# BIOS
+0x801000ec _getfileattr	# BIOS
+0x801000f4 _getftime	# BIOS
+0x801000fc _gettime	# BIOS
+0x80100104 _lock	# BIOS
+0x8010010c xtlb_exc	# BIOS
+0x80100114 _open	# BIOS
+0x8010011c _read	# BIOS
+0x80100124 _setdate	# BIOS
+0x8010012c _setdrive	# BIOS
+0x80100134 _setfileattr	# BIOS
+0x8010013c _setftime	# BIOS
+0x80100144 _unlock	# BIOS
+0x8010014c _write	# BIOS
+0x80100154 _ioctl	# BIOS
+0x8010015c _get_errno	# BIOS
+0x80100164 _exit	# BIOS
+0x8010016c isatty	# BIOS
+0x80100174 flush_data_cache	# BIOS
+0x8010017c pciGetConfigData	# BIOS
+0x80100184 pciSetConfigData	# BIOS
+0x8010018c cache_exc	# BIOS
+0x80100194 pciFindCardMulti	# BIOS
+0x8010019c pciMapCardMulti	# BIOS
+0x801001a4 ide_set_partition	# BIOS
+0x801001ac ide_get_partition_size	# BIOS
+0x801001b4 ide_get_partition_table	# BIOS
+0x801001bc ide_identify	# BIOS
+0x801001c4 ide_get_hdinfo	# BIOS
+0x801001cc SecReads	# BIOS
+0x801001d4 SecWrites	# BIOS
+0x801001dc FSFormat	# BIOS
+0x801001e4 _SecReads	# BIOS
+0x801001ec _SecWrites	# BIOS
+0x801001f4 get_ide_ident_info	# BIOS
+0x801001fc install_driver	# BIOS
+0x80100204 uninstall_driver	# BIOS
+0x8010020c exception	# BIOS
+0x80100214 _settime	# BIOS
+0x8010021c _remove	# BIOS
+0x80100224 exec	# BIOS
+0x8010022c get_platform_id	# BIOS
+0x80100234 get_arg_ptr	# BIOS
+0x8010023c reinitialize_disk_cache	# BIOS
+0x80100244 _rename	# BIOS
+0x8010024c _lseek	# BIOS
+0x80100254 get_rom_version	# BIOS
+0x8010025c is_revision_a	# BIOS
+0x80100264 install_disk_callback	# BIOS
+0x8010026c install_sys_handler	# BIOS
+0x80100274 install_fpu_handler	# BIOS
+0x8010027c install_int_div0_handler	# BIOS
+0x80100284 install_int_divo_handler	# BIOS
+0x8010028c install_interrupt_handler	# BIOS
+0x80100294 install_tlb_handler	# BIOS
+0x8010029c install_xtlb_handler	# BIOS
+0x801002a4 install_cache_error_handler	# BIOS
+0x801002ac install_disk_info	# BIOS
+0x801002b4 flush_disk_cache	# BIOS
+0x801002bc flush_disk_queue	# BIOS
+0x801002c4 install_disk_timeout_audit	# BIOS
+# fonts.c: create_font is the one before create_font_from_memory
+0x801321b8 create_font	# fonts.c
+# libc (DJGPP): a string FILE handed to _doscan
+0x8011e710 sscanf
+0x8011e780 _doscan
+# main.c (src/diag/main.c)
+0x801009b0 main_proc
+0x80100eac main_init_sound
+0x80100f4c software_update
+# what main.c and menu.c reach in the rest of DIAG (names are ours: from the menu item that runs
+# a function, or from what a variable holds)
+0x8010b260 dump_audits
+0x8010c644 clear_credits
+0x80114a10 reset_high_scores
+0x80119b78 gun_calibration
+0x80114930 default_adjustments
+0x80114848 factory_restore
+0x8010efc8 adjustments
+0x80110c48 volume_level
+0x80108468 switch_tests
+0x80108308 dip_switch_tests
+0x80116020 update_rom_check
+0x80116068 update_rom_process
+0x80101874 draw_title
+0x80101390 wait_prompt
+0x8015cc68 diag_revision
+0x8015cea8 utilities_menu
+0x8015d028 main_menu
+0x8015d040 main_menu_short
+0x8015d058 fonts
+0x801621a8 audits_menu
+0x801621c0 clear_audits_menu
+0x8016173c diagnostics_menu
+0x801615e4 help_switch_tests
+0x80161610 help_dip_switch_tests
+0x801610a0 dfont6
+0x801610c4 dfont8
+0x8016110c dfont10
+0x80161154 dfont13
+0x80161178 dfont20
+0x80167d68 sw_up
+0x80167d6c sw_down
+0x80167d78 sw_select
+0x80167d7c sw_back
+0x80167d88 sw_8
+0x801694cc font_set
+0x802fdbfc hres
+0x802fdc14 vres
+0x802fdd00 update_text_y
+0x802ef5b4 snd_bank_name
+0x802f0344 font0_height
+0x802ef59c font1_height
+0x802ef598 font2_height
+0x801726f8 diag_version
+0x80172708 rom_version
+0x80172748 rom_version_number

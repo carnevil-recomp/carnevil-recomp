@@ -34,6 +34,35 @@ named that way (libc, the GOOSE pieces at the same revision, Glide). DIAG's own 
 first 110 KB (0x80100000-0x8011b810, 221 functions); the rest is the libraries, several at
 revisions other than the game's.
 
+## Compiler flags and idioms
+DIAG's own files were built for the R5000 like GOOSE, but with signed chars and without loop
+strength reduction: `-O2 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0
+-fno-builtin -fno-strength-reduce` (profile `diag` in `tools/match/trymatch.sh` and the Makefile;
+`diagsr` is the same with strength reduction, for trying). Evidence: `madd.s` and the R5000
+schedule (draw_help is exact only with `-mcpu=r5000`), `lb` for `char`, and loops that keep
+`array[i]` as an index (main_proc's ROM-version copy).
+
+That flag list is longer than a DOS command line (126 characters): until 2026-10-18 sncc.sh
+passed the flags on the command line and cc1 silently lost the end of it (with it `-o OUT.S`),
+which looked like a compiler crash. The flags now go in a response file (`@ARGS.RSP`), which
+DJGPP programs read themselves; GAME.EXE still rebuilds byte-exact.
+
+Found so far:
+- The menu boxes are drawn sprite by sprite, each in its own block (the `FLAT_SPRITE` macro in
+  menu.c): one sprite pointer for the whole function gives other register choices.
+- main_proc's menu loop is a `goto` (a `do`/`while` lets the compiler hoist the message's
+  coordinates out of it, the original does not).
+- The build stamp main_proc shows is `__DATE__ __TIME__`; the build pins them to the shipped
+  "Feb  1 1999" / "16:00:07".
+- Help texts are word-aligned `char` arrays in .data; the menu item names are string literals in
+  .rodata, emitted in reverse order of each table.
+
+## Status
+| file | range | state |
+|---|---|---|
+| main.c | 0x801009b0-0x8010138c | main_proc, main_init_sound, software_update: 3 of 3 exact; registered (text, rodata 0x80152560-0x8015291c, data 0x8015cc68-0x8015d070: the version, the main and utilities menus, the font table) |
+| menu.c | 0x80102568-0x801036b4 | the menu engine: clear_menu_box, clear_menu_help, clear_menu, draw_help exact; do_menu (762 of 768 instructions, 19%) left: which float constants the loop keeps in registers, and a second pointer the original walks through the items |
+
 ## The port
 Each program is its own executable, as on the disk: `carnevil` (GAME.EXE) and
 `carnevil-diag` (DIAG.EXE), built from the same `port/` layer. `port/runtime/exec.c` is the
