@@ -523,6 +523,9 @@ static void dump_frame(void)
 	{
 		/* dump the first swap at or after every multiple of dump_every */
 		static unsigned long last_bucket;
+		static long from = -1;
+		if(from < 0) from = getenv("CARNEVIL_DUMP_FROM") ? atol(getenv("CARNEVIL_DUMP_FROM")) : 0;	/* tests: no dumps before */
+		if((long)hal_frame_count < from) return;
 		if(hal_frame_count / dump_every == last_bucket) return;
 		last_bucket = hal_frame_count / dump_every;
 	}

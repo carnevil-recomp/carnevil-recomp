@@ -5,3 +5,5 @@ int  video_open(int w, int h, const char *t) { (void)w; (void)h; (void)t; return
 void video_present(void) { }
 int  video_closed(void) { return 0; }
 void video_size(int *w, int *h) { *w = 0; *h = 0; }
+int  mice_open(void) { return 0; }
+void mice_poll(void) { }

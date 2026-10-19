@@ -8,6 +8,7 @@
 #include <goose/object.h>
 #include "objects.h"
 #include "enemy.h"
+#include "model.h"			/* group_t (the radar reads the hit group) */
 #include "credits.h"			/* debug_mode */
 #include "movie.h"
 #include "waves.h"
@@ -25,7 +26,7 @@ extern float	D_801faca4, D_801facb4;			/* the debug aim point (objects.c) */
 int		D_801fad20;				/* 0x801fad20 */
 float		D_801e0984;				/* 0x801e0984 */
 extern void	init_camera(void), rot_matrix_yxz(float *, float *), vec_negate(float *, float *);
-extern float	camera_x, camera_rx, view_matrix[9], camera_neg_pos[3];	/* camera.c */
+extern float	camera_x, camera_z, camera_rx, view_matrix[9], camera_neg_pos[3];	/* camera.c */
 extern void	init_player(int player);				/* 0x800e2f08 (player.c) */
 extern int	read_player12_direct(void);
 extern int	loaded_wave;					/* 0x80212e30 */
@@ -57,7 +58,6 @@ typedef struct qavert
 	float	a;			/* 0..255 */
 } qavert_t;
 extern void	func_800d2ff0(qavert_t *, qavert_t *, qavert_t *);	/* the triangle set-up for qavert_t */
-extern void	guAlphaSource(int), guColorCombineFunction(int);
 extern float	fsin(float), fcos(float);		/* GOOSE sincos.c */
 extern void	world_to_view(float *, float *);	/* vecmat.c */
 extern void	draw_string_color(int, char *, float, float, unsigned int);
@@ -67,6 +67,53 @@ float		marker_rim_alpha = 10.0f;		/* 0x80179c34: the markers' rim alpha, pulsing
 float		marker_rim_step = 0.1f;			/* 0x80179c38: its change per marker drawn */
 float		ring_centre_alpha = 10.0f;		/* 0x80179c3c: the rings' centre alpha (plus 10), pulsing between 1 and 20 */
 float		ring_centre_step = 0.1f;		/* 0x80179c40: its change per ring drawn */
+
+/* 0x800c8774: a flat disc of radius r round (x, y) in the colour, every corner at alpha a and
+   depth 0.909: 24 triangles from the centre, each corner snapped to a quarter pixel */
+void func_800c8774(float x, float y, float r, unsigned int color, float a)
+{
+	qavert_t	v[3];
+	float		angle, next;
+
+	guAlphaSource(GR_ALPHASOURCE_ITERATED_ALPHA);
+	grAlphaBlendFunction(GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA, GR_BLEND_SRC_ALPHA, GR_BLEND_ONE_MINUS_SRC_ALPHA);
+	guColorCombineFunction(GR_COLORCOMBINE_CCRGB);
+	grConstantColorValue(color);
+	angle = 0.0f;
+	v[0].x = x;
+	v[0].y = y;
+	v[0].q = v[1].q = v[2].q = 0.90909088f;
+	v[0].a = v[1].a = v[2].a = a;
+	do
+	{
+		v[1].x = v[0].x + r * fsin(angle);
+		v[1].y = v[0].y + r * fcos(angle);
+		next = angle + 0.26179934f;
+		v[2].x = v[0].x + r * fsin(next);
+		v[2].y = v[0].y + r * fcos(next);
+		v[0].x = (v[0].x + 2097152.0f) - 2097152.0f;
+		v[1].x = (v[1].x + 2097152.0f) - 2097152.0f;
+		v[1].y = (v[1].y + 2097152.0f) - 2097152.0f;
+		v[2].x = (v[2].x + 2097152.0f) - 2097152.0f;
+		v[0].y = (v[0].y + 2097152.0f) - 2097152.0f;
+		v[2].y = (v[2].y + 2097152.0f) - 2097152.0f;
+		func_800d2ff0(&v[0], &v[1], &v[2]);
+		angle = next;
+	} while(angle < 6.1086516f);
+	grAlphaBlendFunction(GR_BLEND_ONE, GR_BLEND_ZERO, GR_BLEND_ONE, GR_BLEND_ZERO);
+}
+
+/* 0x800c8938: the debug sphere (debug flag 0x100): a disc of the world radius at a world point,
+   at alpha 128, when the point is in front of the camera */
+void func_800c8938(float *pos, float radius, unsigned int color)
+{
+	float	scr[3];
+
+	if(get_screen_pos(pos, scr) != -1.0f)
+	{
+		func_800c8774(scr[0], scr[1], radius * scr[2] * proj_x, color, 128.0f);
+	}
+}
 
 /* 0x800c8a44: a disc of radius r round (x, y) at depth q in the colour: twelve triangles from
    the centre (alpha 255) to the rim (the pulsing alpha), every corner snapped to a quarter
@@ -263,6 +310,46 @@ void sample_switches(void)
 			{
 				debug_mode |= DEBUG_CHARACTERS;
 			}
+		}
+	}
+}
+
+/* 0x800c99e4: the debug radar (flag 0x1000): the enemy as a disc of its radius at its place
+   relative to the camera (x across, z up, the camera at the screen's centre) and its number,
+   black when gone, red dying, yellow hit, magenta 0x800, green attacking, white otherwise */
+void func_800c99e4(enemy_t *e, unsigned int color)
+{
+	float	x, y;
+
+	x = -(camera_x - e->hit_group->pos[0]) + 200.0f;
+	y = -(camera_z - e->hit_group->pos[2]) + 128.0f;
+	if(x > 0.0f && x < 400.0f && y > 0.0f && y < 256.0f)
+	{
+		func_800c8774(x, y, e->radius, color, 128.0f);
+		graphical_printf(text_buffer, "%d", e->num);
+		if(e->ai_state & 0x4000)
+		{
+			draw_string_color(0, text_buffer, x - 4.0f, y - 4.0f, 0);
+		}
+		else if(e->ai_state & 0x2000)
+		{
+			draw_string_color(0, text_buffer, x - 4.0f, y - 4.0f, 0xff0000);
+		}
+		else if(e->ai_state & 0x1000)
+		{
+			draw_string_color(0, text_buffer, x - 4.0f, y - 4.0f, 0xffff00);
+		}
+		else if(e->ai_state & 0x800)
+		{
+			draw_string_color(0, text_buffer, x - 4.0f, y - 4.0f, 0xff00ff);
+		}
+		else if(e->ai_state & 0x200)
+		{
+			draw_string_color(0, text_buffer, x - 4.0f, y - 4.0f, 0xff00);
+		}
+		else
+		{
+			draw_string_color(0, text_buffer, x - 4.0f, y - 4.0f, 0xffffff);
 		}
 	}
 }

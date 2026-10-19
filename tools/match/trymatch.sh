@@ -23,4 +23,7 @@ mkdir -p build/try; B=build/try/$(basename "$SRC" .c)
 case "$SRC" in src/game/*|build/try/*) for d in src/game/*/; do CPPEXTRA="$CPPEXTRA -I${d%/}"; done;; esac
 clang -E -P -Wno-nonportable-include-path -nostdinc -Ioriginal/sdk/include -Iinclude $CPPEXTRA -D__DJGPP__ -DSEATTLE -DRELEASE -x c "$SRC" -o $B.i
 CC1FLAGS="$F $EXTRAF" tools/build/sncc.sh $B.i $B.s 2>/dev/null
+# cc1's own errors are not visible under DOSBox (its stderr cannot be redirected there) and it can
+# still write code for the rest: let the host compiler point out real errors in the same source
+clang -fsyntax-only -w -x c $B.i 2>&1 | grep -E "error:" | grep -vE "conflicting types|redefinition of|incompatible" | head -5 | sed 's/^/[clang] /' >&2
 python3 tools/match/match.py $B.s "$@" 2>&1 | grep -vE 'Warning: used \$at|Assembler messages'

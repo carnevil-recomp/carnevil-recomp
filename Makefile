@@ -183,7 +183,7 @@ PORT_ARCH    := -arch x86_64
 PORT_LDFLAGS := -Wl$(comma)-pagezero_size$(comma)0x4000 -framework Cocoa -framework OpenGL
 PORT_VIDEO   := port/video/video_macos.m
 PORT_AUDIO   := port/audio/audio_macos.m
-PORT_LDFLAGS += -framework AudioToolbox -framework GameController
+PORT_LDFLAGS += -framework AudioToolbox -framework GameController -framework IOKit
 PORT_LIBS    := -lc++
 else
 PORT_ARCH    :=
@@ -205,7 +205,7 @@ PORT_AUDIO   := port/audio/audio_null.c
 PORT_LIBS    := -lstdc++ -ldl -lm -lpthread
 endif
 endif
-PORT_SRCS := $(filter-out port/video/video_null.c port/audio/audio_null.c port/video/video_sdl.c port/audio/audio_sdl.c,$(PORT_SRCS)) $(PORT_VIDEO) $(PORT_AUDIO)
+PORT_SRCS := $(filter-out port/video/video_null.c port/audio/audio_null.c port/video/video_sdl.c port/video/mice_sdl.c port/audio/audio_sdl.c,$(PORT_SRCS)) $(PORT_VIDEO) $(PORT_AUDIO) $(if $(filter port/video/video_sdl.c,$(PORT_VIDEO)),port/video/mice_sdl.c)
 # the virtual DCS sound board is C++ (it drives the vendored DCS decoder)
 PORT_CXX_SRCS := port/audio/dcs_board.cpp port/third_party/dcsdecoder/DCSDecoder.cpp port/third_party/dcsdecoder/DCSDecoderNative.cpp
 PORT_CXX_OBJS := $(patsubst %.cpp,$(PORT_OUT)/%.o,$(PORT_CXX_SRCS))

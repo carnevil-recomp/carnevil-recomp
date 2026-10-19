@@ -22,6 +22,10 @@ void hal_key(const char *name, int down);
 void hal_pad(int pad, float lx, float ly, unsigned int buttons);
 extern int port_crosshair;		/* --crosshair: 1 (default) draws the port's crosshairs */
 int  hal_crosshair(int player, float *gx, float *gy);	/* 1 when there is a crosshair to draw for that player (mouse or pad aim): where */
+/* a player's own pointing device (--mice, port/runtime/mice.c): aim in game units and PAD_* buttons */
+void hal_gun_aim(int player, float gx, float gy, int on);
+void hal_gun_buttons(int player, unsigned int buttons);
+int  hal_gun_owned(int player);
 void hal_mouse(float gx, float gy, int on);   /* the mouse as player 1's gun: game-screen x 0..400, y 0..256 from the bottom; on = over the picture */  /* a cabinet switch by name (see hal.c), pressed or released */
 #endif
 void	stub_reached(const char *name);

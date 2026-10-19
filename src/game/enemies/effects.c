@@ -947,10 +947,10 @@ void draw_smoke(void)
 		v2.v = s->t - s->height;
 		v3.u = 0.0625f;
 		v3.v = s->t - s->height;
-		v0.a = s->alpha;
+		v0.a = s->alpha;		/* the column fades out towards its top */
 		v1.a = s->alpha;
-		v2.a = s->alpha;
-		v3.a = s->alpha;
+		v2.a = 0.0f;
+		v3.a = 0.0f;
 		t0 = v0;
 		t3 = v3;
 		draw_world_tri(&v0, &v1, &v3);
@@ -979,8 +979,8 @@ void draw_smoke(void)
 		v2.v = s->t;
 		v3.u = 0.0625f;
 		v3.v = s->t;
-		v0.a = s->alpha;
-		v1.a = s->alpha;
+		v0.a = 0.0f;		/* and in from its foot */
+		v1.a = 0.0f;
 		v2.a = s->alpha;
 		v3.a = s->alpha;
 		t0 = v0;

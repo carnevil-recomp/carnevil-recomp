@@ -45,6 +45,10 @@ static void		parse_presses(const char *spec);
 static void		gun_update(void);
 static float	mouse_gx = 200.0f, mouse_gy = 128.0f;	/* CARNEVIL_AIM=x,y fixes the aim (tests) */
 static int	aim_fixed, mouse_seen;
+/* --debug FLAGS: bits held on in the game's debug_mode (game_state[3]; waves.h names them). The
+   shipped game clears it at boot and only a player 3/4 switch toggles one bit; the rest were set
+   from a debugger on the development systems */
+static unsigned int	port_debug_flags;
 /* tests: CARNEVIL_AIM is "x,y" (a fixed aim) or a schedule "FRAME:x,y;FRAME:x,y;..." (the aim
    moves to each point at its frame) */
 #define MAX_AIMS	32
@@ -247,6 +251,9 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--raw") && i + 1 < argc) hal_raw_image = argv[++i];
 		else if(!strcmp(argv[i], "--frames") && i + 1 < argc) hal_frame_limit = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--fast")) hal_fast = 1;
+		else if(!strcmp(argv[i], "--debug") && i + 1 < argc) port_debug_flags = (unsigned int)strtoul(argv[++i], 0, 0);
+		else if(!strcmp(argv[i], "--mice")) { extern int port_mice; port_mice = 1; }
+		else if(!strcmp(argv[i], "--mouse-speed") && i + 1 < argc) { extern float port_mice_speed; port_mice_speed = atof(argv[++i]); }
 		else if(!strcmp(argv[i], "--crosshair") && i + 1 < argc) port_crosshair = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "--fullscreen")) { extern int video_fullscreen; video_fullscreen = 1; }
 		else if(!strcmp(argv[i], "--borderless")) { extern int video_borderless; video_borderless = 1; }
@@ -261,7 +268,7 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--press") && i + 1 < argc) parse_presses(argv[++i]);
 		else if(!strcmp(argv[i], "--state") && i + 1 < argc) hal_state_root = argv[++i];
 		else if(!strcmp(argv[i], "-v")) { verbose++; port_texture_verbose(1); dcs_set_verbose(verbose); }
-		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--fullscreen] [--borderless] [--hires] [--crosshair 0|1] [--load-time X] [--violence 0-3] [--adjust N=V] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
+		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--fullscreen] [--borderless] [--hires] [--crosshair 0|1] [--mice] [--mouse-speed X] [--debug FLAGS] [--load-time X] [--violence 0-3] [--adjust N=V] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
 	choose_partition();
 	hal_gun_regs = map_fixed_page(0xb6800000);
@@ -361,6 +368,7 @@ static void padsim_parse(const char *spec)
 void hal_mouse(float gx, float gy, int on)
 {
 	if(aim_fixed) return;
+	{ extern int port_mice; if(port_mice) return; }		/* each device is read on its own instead */
 	if(gx != mouse_gx || gy != mouse_gy) pads[0].used = 0;	/* the mouse takes player 1 back */
 	mouse_gx = gx; mouse_gy = gy; mouse_on = on; mouse_seen = 1;
 }
@@ -399,29 +407,66 @@ static void pads_update(void)
 		pads[i].prev = b;
 	}
 }
+/* a pointing device of the player's own (--mice: a second mouse, a light gun, a DolphinBar):
+   port/runtime/mice.c gives each device a player and reports its aim and buttons here */
+static struct {
+	int		used;
+	float		x, y;		/* aim, game-screen units, y from the bottom */
+	int		on;		/* over the picture */
+	unsigned int	buttons, prev;	/* PAD_TRIGGER, PAD_PUMP, PAD_RELOAD */
+	int		reload;
+} dev[2];
+static unsigned int	dev_gun;
+void hal_gun_aim(int player, float gx, float gy, int on)
+{
+	if(player < 0 || player > 1) return;
+	dev[player].used = 1; dev[player].x = gx; dev[player].y = gy; dev[player].on = on;
+}
+void hal_gun_buttons(int player, unsigned int buttons)
+{
+	if(player < 0 || player > 1) return;
+	dev[player].used = 1; dev[player].buttons = buttons;
+}
+int hal_gun_owned(int player) { return player >= 0 && player <= 1 && dev[player].used; }
+static void devs_update(void)
+{
+	int	i;
+	dev_gun = 0;
+	for(i = 0; i < 2; i++)
+	{
+		unsigned int b = dev[i].buttons, pressed = b & ~dev[i].prev;
+		if(pressed & PAD_RELOAD) dev[i].reload = PAD_RELOAD_FRAMES;	/* the button that does what pointing away and firing does */
+		if(dev[i].reload > 0) dev[i].reload--;
+		if(b & PAD_TRIGGER || dev[i].reload > PAD_RELOAD_FRAMES / 2) dev_gun |= i ? 0x10 : 0x01;
+		if(b & PAD_PUMP) dev_gun |= i ? 0x20 : 0x02;
+		dev[i].prev = b;
+	}
+}
+/* where player N aims: its own device, else its pad, else (player 1) the system mouse */
+static int player_aim(int i, float *x, float *y, int *on)
+{
+	if(dev[i].used) { *x = dev[i].x; *y = dev[i].y; *on = dev[i].on && dev[i].reload == 0; return 1; }
+	if(pads[i].used || i) { *x = pads[i].x; *y = pads[i].y; *on = pads[i].reload == 0; return pads[i].used; }
+	*x = mouse_gx; *y = mouse_gy; *on = mouse_on;
+	return mouse_seen;
+}
 int	port_crosshair = 1;		/* --crosshair 0 hides them (the cabinet had none; MAME draws them) */
 int hal_crosshair(int player, float *gx, float *gy)
 {
+	int	on;
 	if(!port_crosshair || player < 0 || player > 1) return 0;
-	if(player == 0 && !pads[0].used)
-	{
-		if(!mouse_seen || !mouse_on) return 0;
-		*gx = mouse_gx; *gy = mouse_gy;
-		return 1;
-	}
-	if(!pads[player].used) return 0;
-	*gx = pads[player].x; *gy = pads[player].y;
-	return 1;
+	return player_aim(player, gx, gy, &on) && on;
 }
 static void gun_update(void)
 {
-	int rx = 128 << 4, ry = 128 << 4, rx2 = 128 << 4, ry2 = 128 << 4;
+	int rx = 128 << 4, ry = 128 << 4, rx2 = 128 << 4, ry2 = 128 << 4, on1, on2;
+	float x, y;
 	if(!hal_gun_regs) return;
-	unsigned int held = gun_held | pad_gun;
-	int on1 = pads[0].used ? pads[0].reload == 0 : mouse_on, on2 = pads[1].reload == 0;
-	if(pads[0].used) port_gun_raw(0, pads[0].x, pads[0].y, &rx, &ry);
-	else port_gun_raw(0, mouse_gx, mouse_gy, &rx, &ry);
-	port_gun_raw(1, pads[1].x, pads[1].y, &rx2, &ry2);
+	{ extern void mice_sim(unsigned long); mice_sim(hal_frame_count); }
+	devs_update();
+	unsigned int held = gun_held | pad_gun | dev_gun;
+	player_aim(0, &x, &y, &on1); port_gun_raw(0, x, y, &rx, &ry);
+	player_aim(1, &x, &y, &on2); port_gun_raw(1, x, y, &rx2, &ry2);
 	/* MAME carnevil_gun_r layout, one byte per 32-bit slot: X low, X high | buttons | 0x40 (sees the screen), Y low, Y high; P2 at +0x10 */
 	hal_gun_regs[0x00] = rx & 0xff; hal_gun_regs[0x04] = ((rx >> 8) & 0xf) | ((held & 3) << 4) | (on1 ? 0x40 : 0);
 	hal_gun_regs[0x08] = ry & 0xff; hal_gun_regs[0x0c] = (ry >> 8) & 3;
@@ -479,6 +524,7 @@ void hal_wait_frame(int frames)
 			else next = now;		/* fell behind: resynchronise */
 		}
 		hal_frame_count++;
+		if(port_debug_flags) { extern int game_state[4]; game_state[3] |= port_debug_flags; }	/* --debug: the game's debug_mode */
 		pads_update();
 		presses_update();
 		aim_update();

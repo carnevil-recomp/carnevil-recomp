@@ -139,7 +139,27 @@ would, so they persist.
 **Testing and debugging**: `--headless` (no window), `--fast` (no frame pacing),
 `--frames N` (stop after N frames), `--press FRAME:SWITCH,...` (script cabinet switches),
 `--dump frame.ppm` or `--dump-every PREFIX N` (screenshots), `--wav FILE` (capture the
-soundtrack), `-v` (traces; twice for every ioctl).
+soundtrack), `-v` (traces; twice for every ioctl), `--debug FLAGS` (the game's own debug
+displays, below).
+
+**The game's debug displays.** The game keeps a word of debug flags (`debug_mode`). The shipped
+game clears it at boot, and only a player 3/4 switch toggles one bit, so the displays were
+reached from a debugger on the development systems. `--debug FLAGS` holds the given bits on,
+for example `--debug 0x8504`:
+
+| Flag | Display |
+|---|---|
+| 0x4 | Triangle and DMA counters, frames per second (the hardware counters read 0 in the port) |
+| 0x20 | Each enemy and light as a dot on a top-down map |
+| 0x40 | A marker on every point light, and the number of directional lights |
+| 0x100 | Collision spheres: each body part's (green) and each enemy's (red) |
+| 0x400 | Enemy numbers |
+| 0x1000 | Each enemy's path |
+| 0x2000 | The movie frame |
+| 0x8000 | Heap use and the object count |
+
+Others change behaviour rather than draw: 0x1 is the developers' mode (free play, the level's
+3D in the attract), 0x10 freezes the camera, 0x10000 follows one enemy and holds the movie.
 
 ## Controls
 The cabinet's switches are mapped to the keyboard, and the mouse is player 1's light gun:
@@ -178,6 +198,24 @@ while the game runs. Moving the mouse gives player 1 back to the mouse.
 | Start / Menu | That player's start |
 | Back / Options | Coin (player 1 the left slot, player 2 the right) |
 
+### Two mice and light guns
+The system merges every mouse into one pointer, so normally only player 1 has a mouse.
+`--mice` reads each mouse and light gun on its own instead (Raw Input on Windows, XInput2 on
+Linux under X11, IOHIDManager on macOS): the first device to click is player 1's gun and the
+next player 2's. Ordinary mice move their player's crosshair (`--mouse-speed X`, game pixels
+per count, default 0.25); devices that report absolute positions (DolphinBar, Sinden, GUN4IR,
+AimTrak, tablets) aim where they point, and pointing one off the picture reloads as on the
+cabinet.
+
+| Device button | Cabinet |
+|---|---|
+| Left | Trigger |
+| Right | Reload (points the gun off the screen and fires) |
+| Middle | Pump |
+
+In this mode the system pointer no longer aims for player 1, and gamepads still work for
+either player. Under Wayland (no X11), `--mice` reports that it is unavailable.
+
 ### Crosshairs
 The cabinet's light guns need no on-screen sight, so the original draws none during play
 (only on the high-score initials board). Like MAME, the port draws one over the finished
@@ -192,7 +230,9 @@ turns it off.
 to the screen centre, or to `CARNEVIL_AIM=x,y` (x 0..400, y 0..256 from the bottom) or a
 schedule `CARNEVIL_AIM="FRAME:x,y;..."`. `CARNEVIL_PADSIM="FRAME:PAD:LX,LY,BUTTONS;..."`
 stands in for a gamepad (the stick and the `PAD_*` button bits from `port/runtime/hal.h`,
-from that frame on). Coins are not counted while the boot load runs (until about frame 960
+from that frame on). `CARNEVIL_MICESIM="FRAME:DEVICE:rel:DX,DY|down:BUTTON|up:BUTTON;..."`
+stands in for separate mice (`--mice`), and `CARNEVIL_DUMP_FROM=N` skips `--dump-every`
+screenshots before frame N. Coins are not counted while the boot load runs (until about frame 960
 with the default `--load-time`), so scripts press later:
 
 ```

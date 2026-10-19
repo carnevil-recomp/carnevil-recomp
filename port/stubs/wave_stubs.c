@@ -28,8 +28,6 @@ WEAK int func_8013ea08(void) { STUB(func_8013ea08); return 0; }
 WEAK int func_8013ef18(void) { STUB(func_8013ef18); return 0; }
 WEAK int func_8013f0dc(void) { STUB(func_8013f0dc); return 0; }
 WEAK int func_8013f324(void) { STUB(func_8013f324); return 0; }
-WEAK int func_800c8938(void) { STUB(func_800c8938); return 0; }
-WEAK int func_800c99e4(void) { STUB(func_800c99e4); return 0; }
 WEAK int func_8015f30c(void) { STUB(func_8015f30c); return 0; }
 /* term.c's helpers (hit tests, effects, steering, damage) still in assembly */
 /* krinkle.c's helpers still in assembly */

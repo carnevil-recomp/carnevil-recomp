@@ -5,8 +5,10 @@
 #include <SDL.h>
 #include "video.h"
 #include "hal.h"
+#include "mice.h"
 
 static SDL_Window	*win;
+SDL_Window *video_sdl_window(void) { return win; }
 static SDL_GLContext	ctx;
 static int		closed;
 int			video_fullscreen, video_borderless;
@@ -99,6 +101,11 @@ int video_open(int width, int height, const char *title)
 	SDL_GL_MakeCurrent(win, ctx);
 	SDL_GL_SetSwapInterval(0);		/* the HAL paces frames itself */
 	if(port_crosshair) SDL_ShowCursor(SDL_DISABLE);	/* the port draws the crosshair instead */
+	if(port_mice)
+	{
+		if(mice_open()) fprintf(stderr, "[mice] reading each mouse and light gun on its own: the first to click is player 1, the next player 2\n");
+		else { fprintf(stderr, "[mice] per-device input is not available here (X11 with XInput2, or Windows); --mice is off\n"); port_mice = 0; }
+	}
 #ifdef _WIN32
 	{
 		extern int port_gl_load(void *(*)(const char *));
@@ -152,7 +159,7 @@ void video_present(void)
 			break;
 		case SDL_MOUSEMOTION: mouse_to_gun(ev.motion.x, ev.motion.y); break;
 		case SDL_MOUSEBUTTONDOWN: case SDL_MOUSEBUTTONUP:
-			if(ev.button.button == SDL_BUTTON_LEFT)
+			if(ev.button.button == SDL_BUTTON_LEFT && !port_mice)	/* --mice: each device is read on its own */
 			{
 				mouse_to_gun(ev.button.x, ev.button.y);
 				hal_key("trigger", ev.type == SDL_MOUSEBUTTONDOWN);
@@ -161,6 +168,7 @@ void video_present(void)
 		}
 	}
 	pads_poll();
+	if(port_mice) mice_poll();
 }
 
 int video_closed(void) { return closed; }
