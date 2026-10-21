@@ -253,6 +253,9 @@
 0x80161950 disk_menu
 0x8016173c diagnostics_menu
 0x80162290 rtc_menu
+0x8016237c set_rtc_menu
+0x801622c8 set_rtc_items
+0x8010d668 rtc_field_help
 0x80168224 speaker_menu
 0x80119b98 gun_test
 0x80107ab0 draw_dip_field

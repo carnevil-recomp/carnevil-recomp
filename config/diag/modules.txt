@@ -31,3 +31,7 @@ volume src/diag/volume.c diag  0x80110c48 0x801110b4  0x80158950 0x801589e0  0x8
 rtc src/diag/rtc.c diag  0x80108d90 0x80109140  0x801538b0 0x80153a18  0x80161d58 0x80161da4
 diskmenu src/diag/diskmenu.c diag  -          -           0x80152e10 0x80152eb7  0x80161768 0x80161968
 diagmenu src/diag/diagmenu.c diag  -          -           0x80152c90 0x80152d2c  0x80161538 0x80161754
+rtcmenu src/diag/rtcmenu.c diag  -          -           0x801566e0 0x80156704  0x801621f0 0x801622a8
+setrtc src/diag/setrtc.c diag  0x8010d668 0x8010d884  0x80156708 0x801567cc  0x801622a8 0x80162394  0x80172f38 0x80172f44
+fscheck src/diag/fscheck.c diag  0x80114b90 0x80115920  0x80159440 0x80159684  -          -           0x801734a8 0x801734ac
+integrity src/diag/integrity.c diag  0x80115920 0x80116020  0x80159688 0x80159804  -          -
