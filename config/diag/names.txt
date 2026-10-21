@@ -280,6 +280,9 @@
 0x8010efc8 adjustments
 0x801105a0 set_pricing_country
 0x801105b0 sound_test
+0x8010f8a4 set_pricing
+0x80167580 asia_menu
+0x80167600 samerica_menu
 0x80167510 pricing_country
 0x8010f088 free_play
 0x8010f3f0 totalizer

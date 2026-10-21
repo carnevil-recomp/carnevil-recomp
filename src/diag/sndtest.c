@@ -1,7 +1,7 @@
 /*
- * sndtest.c - SOUND SUBSYSTEM TEST (0x801105a0-0x80110a50): resets the sound board and shows
+ * sndtest.c - SOUND SUBSYSTEM TEST (0x801105b0-0x80110a50): resets the sound board and shows
  * its boot and SDRC versions, the port, the program checksum, its SRAM, DRAM and tone tests
- * and the operating system it then loads; and the pricing menu's country hook.
+ * and the operating system it then loads.
  */
 #include <goose/sprites.h>
 #include <goose/ostrings.h>
@@ -10,14 +10,6 @@
 
 extern void	sleep(int);
 extern void	main_init_sound(void);
-
-int	pricing_country;
-
-/* 0x801105a0: the country menu's hook */
-void set_pricing_country(int n)
-{
-	pricing_country = n;
-}
 
 /* 0x801105b0 */
 int sound_test(void)
