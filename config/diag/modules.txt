@@ -44,3 +44,4 @@ australia_pricing src/diag/australia_pricing.c diag  -          -           0x80
 custprice_show src/diag/custprice_show.c diag  0x801110b8 0x80111c88  0x801589e0 0x80158bbc  -          -           0x80173220 0x80173228
 update src/diag/update.c diag3  0x80116020 0x80118194  0x80159808 0x80159a8c  0x80167d60 0x80167d64  0x801734b0 0x802935b0
 updfile src/diag/updfile.c diag3  0x80118198 0x801188c4  0x80159a90 0x80159aa9  -          -           0x802935b0 0x802b35c0
+speaker src/diag/speaker.c diag  0x8011b4d8 0x8011b80c  0x80159ec8 0x80159fd4  0x801680e0 0x801682aa

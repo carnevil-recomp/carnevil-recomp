@@ -296,6 +296,9 @@
 0x801622c8 set_rtc_items
 0x8010d668 rtc_field_help
 0x80168224 speaker_menu
+0x8011b4d8 draw_startup_help
+0x8011b5a8 speaker_test
+0x801680e0 startup_help
 0x80119b98 gun_test
 0x80107ab0 draw_dip_field
 0x80107d48 draw_dip_banks

@@ -17,7 +17,7 @@ extern char	*get_rom_version(void);
 extern int	get_dip_coin_current(void);
 extern void	sleep(int);
 extern void	func_8012a0a0(int);
-extern void	func_8011b4d8(void);
+extern void	draw_startup_help(void);
 extern void	message_box(char *, float, float, float);
 extern void	wait_test_exit(void);
 extern int	font_set;					/* 0x801694cc */
@@ -161,7 +161,7 @@ void main_proc(int *args)
 	set_text_position((int)(hres / 2.0F), (int)(vres * 0.7F), 1.0F);
 	oprintf("Boot ROM Version:  %d.%d", ver / 10, ver % 10);
 
-	func_8011b4d8();
+	draw_startup_help();
 	sleep(285);
 	delete_multiple_strings(0, 0);
 	software_update();
