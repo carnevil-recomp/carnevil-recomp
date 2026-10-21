@@ -13,6 +13,10 @@ asmmips differs from GNU as in these ways, all emulated here:
   compare hazard: asmmips put a nop between every c.cond.fmt and the bc1x that follows it
   (627 sites in game code, none in the GOOSE/Glide/libc objects, which were assembled for
   the R5000). Enabled with --fpu-hazard or SN2GAS_FPU_HAZARD=1.
+- `ulw` (an unaligned word, packed structs) is `lwr off` then `lwl off+3`; gas has the two
+  the other way round (DIAG's gun.c);
+- it never aligns .half/.word data by itself: packed initializers put them at odd offsets,
+  which gas would pad. `.align 0` after each data label turns gas's auto-alignment off.
 """
 import sys, re, os
 CCOND=re.compile(r"^\s*c\.(f|un|eq|ueq|olt|ult|ole|ule|sf|ngle|seq|ngl|lt|nge|le|ngt)\.[sd]\b")
@@ -25,6 +29,9 @@ LI=re.compile(r"^\s*li\.([sd])\s+(\$f\d+)\s*,\s*(\S+)")
 # gas through the destination register (loads) -- so expand it ourselves the asmmips way
 SYMBASE=re.compile(r"^\s*(lw|sw|lh|lhu|lb|lbu|sh|sb|lwc1|swc1|ldc1|sdc1|lwl|lwr|swl|swr)\s+(\$\w+)\s*,\s*([A-Za-z_$][\w$.]*(?:[+-]\d+)?)\((\$\w+)\)\s*$")   # symbols may contain '.' (sz.2) or '$' ($L94)
 MOVE=re.compile(r"^\s*move\s+(\$\w+)\s*,\s*(\$\w+)\s*$")   # asmmips encodes move as addu rd,rs,$0 (gas would use or)
+ULW=re.compile(r"^\s*ulw\s+(\$\w+)\s*,\s*(-?(?:0x[0-9a-fA-F]+|\d+))\((\$\w+)\)\s*$")
+SECTION=re.compile(r"^\s*\.(text|data|rdata|sdata|bss|section\s+([.\w]+))")
+LABEL=re.compile(r"^[A-Za-z_$.][\w$.]*:\s*$")
 DIVM=re.compile(r"^\s*(div|divu|rem|remu)\s+(\$\w+)\s*,\s*(\$\w+)\s*,\s*(\$\w+)\s*$")
 def expand_div(op,d,s,t,n):
     """asmmips expansion of the div/rem macros: the real div comes first, then the zero-divisor
@@ -40,9 +47,20 @@ def expand_div(op,d,s,t,n):
 def convert(lines, fpu_hazard=None):
     """Also: asmmips puts every li.s/li.d constant (no dedup, in order of appearance) into a
     literal pool and loads it via lui $at / lwc1|ldc1, so do the same in .rdata."""
-    out=["\t.set\tnoreorder"]; reorder=True; lits=[]; n=0; bss_off=0
+    out=["\t.set\tnoreorder"]; reorder=True; lits=[]; n=0; bss_off=0; data=False
     for line in lines:
         s=line.strip()
+        m=SECTION.match(line)
+        if m:
+            sec=m.group(2) or m.group(1)
+            data = sec.lstrip(".") in ("data","rdata","sdata","rodata")
+        m=ULW.match(line)
+        if m:
+            rt,off,base=m.groups(); off=int(off,0)
+            out+=["\tlwr\t%s,%d(%s)"%(rt,off,base),"\tlwl\t%s,%d(%s)"%(rt,off+3,base)]
+            continue
+        if data and LABEL.match(line):
+            out+=[line.rstrip("\n"),"\t.align\t0"]; continue
         m=re.match(r"\.set\s+(no)?reorder",s)
         if m:
             reorder = (m.group(1) is None)             # drop; we are always noreorder for gas
