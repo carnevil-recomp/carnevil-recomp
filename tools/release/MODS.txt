@@ -15,6 +15,8 @@ its proportions (a 64x32 texture can become 256x128, not 256x256), and put it in
 pictures are sharper, most visibly with --hires. Transparent pixels stay transparent.
 
 The game prints each replacement it uses ("[mods] NAME <- path") when it first loads it.
-Sounds (.BNK) and models (.ZM) can be replaced as whole files; they are in Midway's formats.
+Sound banks (.BNK) can be replaced as whole files, in Midway's format.
+Models (.ZM), animations (.ZA), paths (.PTH) and cameras (.RAW) can't: the game checksums them
+and loads its backup copy of the original instead.
 Movies and music are read from the disk image directly and can't be replaced.
 The full guide is MODS.md in the project's repository.

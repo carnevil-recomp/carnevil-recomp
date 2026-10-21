@@ -9,14 +9,22 @@ game code changes, and the byte-exact GAME.EXE rebuild doesn't use them.
 - **Textures, as PNG pictures.** Name the picture after the texture: `NAME.png` replaces
   `NAME.WMS`. All 1148 of the game's textures can be replaced this way: enemies, levels, the
   gun, text fonts, the attract and select screens. This is the main thing the mods folder is for.
-- **Any file in the game's file system, as a whole file of the same name.** This includes the
-  textures in their own `.WMS` format, sound banks (`.BNK`) and models (`.ZM`). Everything apart
-  from textures-as-PNG has to be in Midway's own formats; the port reads replacements exactly as
-  it reads the originals.
+- **Sound banks (`.BNK`), as whole files.** The game loads banks without a checksum on this
+  hardware, so a replacement bank is used. It has to be a DCS bank in Midway's format, with the
+  sound calls the game expects at the same numbers; this project has no tool for making one.
+- **Other files the game reads without a checksum**, as whole files of the same name: the
+  textures in their own `.WMS` format, for example. The port reads a replacement exactly as it
+  reads the original.
 
 ## What can't be replaced
 - **Movies and music.** The game streams them from raw partitions of the disk image, outside the
   file system, so there is no file to replace.
+- **Models (`.ZM`), animations (`.ZA`), enemy paths (`.PTH`) and level cameras (`HHOU.RAW` and
+  the other levels' `.RAW`).** The game checks each of these against a size and a checksum built
+  into its code. A changed file fails the check, so the game loads the backup copy next to it
+  (`.ZM2`, `.ZA2`, `.PT2`, `.RW2`), which is the original, and counts a file error in the audits.
+  So the mod has no effect, apart from the audit count. Replacing the backup as well doesn't help:
+  it fails the same check.
 - **Your saved settings and high scores** (the CMOS and the other files the game writes, in the
   state folder). A mod never overrides them.
 - **The game's code.** The port is compiled from the decompiled source, so changes to how the
@@ -37,8 +45,6 @@ mods/
   hd-enemies/           a pack: a folder of replacements
     BABYBOD.png         a texture as a picture (in place of BABYBOD.WMS)
     textures/...        one level of subfolders inside a pack is read too
-  my-sounds/
-    SOMEBANK.BNK
 ```
 (The pack and file names are examples; any folder name works for a pack.)
 

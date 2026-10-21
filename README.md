@@ -168,13 +168,14 @@ changes nothing in the decompiled game. **See [MODS.md](MODS.md) for how to use 
 
 | In `mods/` | Replaces |
 |---|---|
-| `FILE.EXT` | the game file of that name (any case): a texture `.WMS`, a sound bank `.BNK`, a model `.ZM`... |
+| `FILE.EXT` | the game file of that name (any case): a texture `.WMS`, a sound bank `.BNK`... (not models, animations, paths or cameras: the game checksums those) |
 | `PACK/...` | the same for every file in the pack folder (and one level of subfolders) |
 | `PACK/NAME.png` | the texture `NAME.WMS`, at any size with the same proportions |
 | `order.txt` | (optional) pack names, one per line, first wins; the rest follow alphabetically; loose files win over packs |
 
 Movies and music are streamed from raw partitions of the disk image, not files, so they can't
-be replaced; the game's saved files (CMOS, high scores) are never overridden.
+be replaced. Models, animations, paths and cameras fail the checksum the game checks them
+against, so the game loads their original backups instead; the game's saved files (CMOS, high scores) are never overridden.
 
 `--export-textures DIR` writes all 1148 textures as `DIR/NAME.png` (the largest mip level, the
 orientation the mods folder reads back) to start from. A replacement picture keeps its texture's
