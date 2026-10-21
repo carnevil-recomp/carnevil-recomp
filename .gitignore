@@ -9,12 +9,10 @@ assets/
 *.o
 *.elf
 *.bin
-experiments/**/out/
 .DS_Store
 __pycache__/
 tools/mipsel-elf-binutils/
 tools/mipsel-elf-binutils-linux/
-experiments/**/work/
 asm/
 # per-user save state of the port (CMOS, audits.fmt, high-score photos)
 state/
