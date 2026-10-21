@@ -36,3 +36,8 @@ setrtc src/diag/setrtc.c diag  0x8010d668 0x8010d884  0x80156708 0x801567cc  0x8
 fscheck src/diag/fscheck.c diag  0x80114b90 0x80115920  0x80159440 0x80159684  -          -           0x801734a8 0x801734ac
 integrity src/diag/integrity.c diag  0x80115920 0x80116020  0x80159688 0x80159804  -          -
 input src/diag/input.c diag  0x801188c8 0x801189d8  -          -           0x80167d68 0x80167d98
+pricing_menu src/diag/pricing_menu.c diag  0x8010f638 0x8010f64c  0x801576e8 0x8015776c  0x80164ee8 0x801650ec
+namerica_pricing src/diag/namerica_pricing.c diag  -          -           0x80157770 0x8015779e  0x801650f0 0x8016519c
+europe_pricing src/diag/europe_pricing.c diag  -          -           0x801577a0 0x8015783a  0x801651a0 0x801654c8
+pricing src/diag/pricing.c diag  0x8010f650 0x8011059c  0x80157840 0x80158658  0x801654c8 0x80167454  0x801730d8 0x8017321c
+australia_pricing src/diag/australia_pricing.c diag  -          -           0x80158658 0x80158676  0x80167458 0x80167510
