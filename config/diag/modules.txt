@@ -35,3 +35,4 @@ rtcmenu src/diag/rtcmenu.c diag  -          -           0x801566e0 0x80156704  0
 setrtc src/diag/setrtc.c diag  0x8010d668 0x8010d884  0x80156708 0x801567cc  0x801622a8 0x80162394  0x80172f38 0x80172f44
 fscheck src/diag/fscheck.c diag  0x80114b90 0x80115920  0x80159440 0x80159684  -          -           0x801734a8 0x801734ac
 integrity src/diag/integrity.c diag  0x80115920 0x80116020  0x80159688 0x80159804  -          -
+input src/diag/input.c diag  0x801188c8 0x801189d8  -          -           0x80167d68 0x80167d98

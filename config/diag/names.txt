@@ -331,6 +331,7 @@
 0x801105a0 set_pricing_country
 0x801105b0 sound_test
 0x80167d8c sw_vol_up
+0x80167d84 sw_unused
 0x80167d90 sw_vol_down
 0x802fdc08 volume_call
 0x8010f8a4 set_pricing
