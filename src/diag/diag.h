@@ -50,6 +50,13 @@ void	wait_prompt(char *);
 void	wait_test_exit(void);
 void	wait_start_exit(void);
 
+/* ADJUST.FMT's adjustments, as the format file parser lists them (0x80161ee8) */
+typedef struct adjust_node {
+	struct adjust_node	*next;
+	int			adj_num, min, max, default_val;	/* as GOOSE's adjustment_info_t */
+} adjust_node_t;
+extern adjust_node_t	*game_adjustments;
+
 int	do_menu(menu_t *);
 void	clear_menu(void);
 void	clear_menu_box(void);

@@ -200,6 +200,9 @@
 0x80119b78 gun_calibration
 0x80114930 default_adjustments
 0x80114848 factory_restore
+0x80114ab0 restore_game_adjustments
+0x80114af8 check_game_adjustments
+0x8010c7cc clear_all_audits
 0x80110c48 volume_level
 0x80108468 switch_tests
 0x80108308 dip_switch_tests
@@ -282,8 +285,11 @@
 0x8010f3f0 totalizer
 0x80110a50 attract_sounds
 0x80114848 factory_restore
+0x80114ab0 restore_game_adjustments
+0x80114af8 check_game_adjustments
+0x8010c7cc clear_all_audits
 0x801650d4 pricing_menu
-0x80161ee8 additional_adjustments
+0x80161ee8 game_adjustments
 0x802fd978 additional_items
 0x80164e28 adjust_items
 0x80164eb4 adjust_menu
