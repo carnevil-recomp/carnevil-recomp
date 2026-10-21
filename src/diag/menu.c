@@ -12,7 +12,7 @@ extern int	get_font_height(int);
 extern void	sleep(int);
 extern int	snd_scall_bank(char *, int, int, int, int);
 extern void	func_8012a0a0(int);
-extern void	func_80102534(void), func_80101844(void), func_80103964(void), func_80104068(void);
+extern void	clear_message_box(void), clear_text_box(void), func_80103964(void), func_80104068(void);
 
 static void	draw_help(menu_item_t *, float, float);
 
@@ -250,8 +250,8 @@ void clear_menu(void)
 	del1c(0x4d00, -1);
 	delete_multiple_strings(0x4800, -1);
 	del1c(0x4800, -1);
-	func_80102534();
-	func_80101844();
+	clear_message_box();
+	clear_text_box();
 	func_80103964();
 	func_80104068();
 }

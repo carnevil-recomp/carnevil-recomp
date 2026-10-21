@@ -11,7 +11,7 @@ HERE=os.path.dirname(os.path.abspath(__file__)); ROOT=os.path.abspath(os.path.jo
 BIN=os.path.join(ROOT,"tools","mipsel-elf-binutils","bin")
 src,prof,fn=sys.argv[1:4]
 flags=subprocess.check_output(["sh","-c",
-    "sed -n 's/^  %s) F=\"\\([^\"]*\\)\".*/\\1/p' %s/tools/match/trymatch.sh"%(prof,ROOT)]).decode().strip()
+    "sed -n 's/^  %s) *F=\"\\([^\"]*\\)\".*/\\1/p' %s/tools/match/trymatch.sh"%(prof,ROOT)]).decode().strip()
 if not flags: sys.exit("unknown profile "+prof)
 hazard = "--fpu-hazard" if prof.startswith("game") else ""
 diag=os.path.abspath(src).startswith(os.path.join(ROOT,"src","diag"))

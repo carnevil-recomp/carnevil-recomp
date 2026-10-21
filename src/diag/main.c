@@ -18,8 +18,8 @@ extern int	get_dip_coin_current(void);
 extern void	sleep(int);
 extern void	func_8012a0a0(int);
 extern void	func_8011b4d8(void);
-extern void	func_80102318(char *, float, float, float);
-extern void	func_8010145c(void);
+extern void	message_box(char *, float, float, float);
+extern void	wait_test_exit(void);
 extern int	font_set;					/* 0x801694cc */
 /* the DFONT.WMS fonts (0x801610a0-), by height */
 extern font_info_t	dfont6, dfont8, dfont10, dfont13, dfont20;
@@ -173,8 +173,8 @@ again:
 			sleep(1);
 		delete_multiple_strings(0, 0);
 		del1c(0, 0);
-		func_80102318("\x1b-65536cU8 SWITCH 8 IS ON - PLEASE TURN OFF", -1.0F, -1.0F, 1.0F);
-		func_8010145c();
+		message_box("\x1b-65536cU8 SWITCH 8 IS ON - PLEASE TURN OFF", -1.0F, -1.0F, 1.0F);
+		wait_test_exit();
 		if(get_dip_coin_current() < 0)
 			goto again;
 	}

@@ -13,8 +13,8 @@ case "$PROF" in
   game1) F="-O -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;
   game0) F="-mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;
   o2)    F="-O2 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
-  diag)  F="-O2 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin -fno-strength-reduce";;   # DIAG.EXE's own files: R5000, signed char, no loop strength reduction
-  diagsr) F="-O2 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;   # DIAG files built with loop strength reduction
+  diag)  F="-O2 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-strength-reduce";;   # DIAG.EXE's own files: R5000, signed char, builtins (fabs), no loop strength reduction
+  diagsr) F="-O2 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0";;   # DIAG files built with loop strength reduction
   o2r5k) F="-O2 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   o1r5k) F="-O -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   o1)    F="-O -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
