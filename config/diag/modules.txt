@@ -13,3 +13,4 @@ white_screen src/diag/white_screen.c diag  0x80104498 0x801044c0  -          -  
 black_screen src/diag/black_screen.c diag  0x801044c0 0x801044e8  -          -           -          -
 gray50_screen src/diag/gray50_screen.c diag  0x801044e8 0x80104514  -          -           -          -
 gray25_screen src/diag/gray25_screen.c diag  0x80104518 0x80104544  -          -           -          -
+sysinfo src/diag/sysinfo.c diag  0x80104548 0x80104990  0x80152d30 0x80152e10  0x80161758 0x80161764

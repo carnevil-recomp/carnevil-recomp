@@ -239,6 +239,10 @@
 0x80104518 gray25_screen
 0x801613b0 monitor_items
 0x8016148c monitor_menu
+0x80104548 system_info
+0x80161758 pic_games
+0x801686c0 __dj_stderr
+0x801207d0 close
 0x80167d70 sw_left
 0x80167d74 sw_right
 0x8015cc68 diag_revision

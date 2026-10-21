@@ -47,6 +47,8 @@ void	draw_thick_box(float, float, float, float, float, float, int, int, sprite_i
 void	draw_title(char *);
 void	clear_text_box(void);
 void	wait_prompt(char *);
+void	wait_test_exit(void);
+void	wait_start_exit(void);
 
 int	do_menu(menu_t *);
 void	clear_menu(void);
