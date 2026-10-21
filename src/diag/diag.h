@@ -30,12 +30,23 @@ typedef struct menu {
    (0x80167d68-0x80167d94, pointing into the input file 0x80118198-) */
 extern int	(*sw_up)(void);			/* volume down */
 extern int	(*sw_down)(void);		/* volume up */
+extern int	(*sw_left)(void);		/* 0x80167d70: nothing on CarnEvil */
+extern int	(*sw_right)(void);		/* 0x80167d74: nothing on CarnEvil */
 extern int	(*sw_select)(void);		/* test */
 extern int	(*sw_back)(void);		/* service credit */
 extern int	(*sw_8)(void);			/* 0x80167d88: nothing on CarnEvil */
 
 extern float	hres, vres;			/* GOOSE: the screen size */
 extern float	font0_height, font1_height, font2_height;	/* main(): get_font_height(0..2) */
+
+/* draw.c, point.c, title.c, prompt.c */
+sprite_info_t	*draw_rect(float, float, float, float, float, int, int);
+void	message_box(char *, float, float, float);
+void	clear_message_box(void);
+void	draw_thick_box(float, float, float, float, float, float, int, int, sprite_info_t **);
+void	draw_title(char *);
+void	clear_text_box(void);
+void	wait_prompt(char *);
 
 int	do_menu(menu_t *);
 void	clear_menu(void);

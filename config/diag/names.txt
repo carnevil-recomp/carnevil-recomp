@@ -224,6 +224,12 @@
 0x80102254 draw_rect
 0x80102318 message_box
 0x80102534 clear_message_box
+0x801036b8 draw_button
+0x80103964 clear_buttons
+0x80103998 dialog
+0x80104068 clear_dialog
+0x80167d70 sw_left
+0x80167d74 sw_right
 0x8015cc68 diag_revision
 0x8015cea8 utilities_menu
 0x8015d028 main_menu
