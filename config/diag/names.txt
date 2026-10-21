@@ -251,6 +251,10 @@
 0x80114b90 file_system_check
 0x80115920 disk_data_integrity
 0x80161950 disk_menu
+0x8016173c diagnostics_menu
+0x80162290 rtc_menu
+0x80168224 speaker_menu
+0x80119b98 gun_test
 0x80107ab0 draw_dip_field
 0x80107d48 draw_dip_banks
 0x80108460 num_49way_players
@@ -333,10 +337,6 @@
 0x8010f088 free_play
 0x8010f3f0 totalizer
 0x80110a50 attract_sounds
-0x80114848 factory_restore
-0x80114ab0 restore_additional_adjustments
-0x80114af8 check_additional_adjustments
-0x8010c7cc clear_all_audits
 0x801650d4 pricing_menu
 0x80161ee8 additional_adjustments
 0x802fd978 additional_items
@@ -362,9 +362,6 @@
 0x8015d028 main_menu
 0x8015d040 main_menu_short
 0x8015d058 fonts
-0x801621a8 audits_menu
-0x801621c0 clear_audits_menu
-0x8016173c diagnostics_menu
 0x801615e4 help_switch_tests
 0x80161610 help_dip_switch_tests
 0x801610a0 dfont6
