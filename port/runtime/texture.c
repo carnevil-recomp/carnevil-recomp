@@ -14,9 +14,20 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <glide/glide.h>
 #include "hal.h"
 #include "texture.h"
+#include "mods.h"
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_MALLOC(n)		host_alloc(n)	/* outside the game's arena (mods.c) */
+#define STBI_REALLOC(p, n)	host_realloc(p, n)
+#define STBI_FREE(p)		host_free(p)
+#define STBI_ONLY_PNG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#include "../third_party/stb/stb_image.h"	/* public domain / MIT, see its end */
+#pragma GCC diagnostic pop
 
 #define WMS_VERSION	0x8005
 #define WMS_HEADER	0x28
@@ -96,6 +107,20 @@ static GrMipMapId_t download(const char *name, Gu3dfInfo *info, const unsigned c
 	snprintf(tex[i].name, sizeof tex[i].name, "%s", name);
 	tex[i].gl_dirty = 1;
 	tmu_used += info->mem_required;
+	/* the mods folder: NAME.png in place of NAME.WMS, at any size with the same proportions (the
+	   game's texture coordinates are fractions of the picture, so a bigger one is just sharper) */
+	{
+		const char	*png = strcmp(name, "(memory)") ? mods_texture(name) : NULL;
+		int		w, h, n;
+		unsigned char	*px = png ? stbi_load(png, &w, &h, &n, 4) : NULL;
+		if(png && !px) fprintf(stderr, "[mods] %s: not a PNG this port can read (%s)\n", png, stbi_failure_reason());
+		else if(px && (long)w * info->header.height != (long)h * info->header.width)
+		{
+			fprintf(stderr, "[mods] %s is %dx%d; %s is %ux%u: the proportions must match, so it is not used\n", png, w, h, name, info->header.width, info->header.height);
+			stbi_image_free(px);
+		}
+		else if(px) { tex[i].mod_rgba = px; tex[i].mod_w = w; tex[i].mod_h = h; }
+	}
 	if(verbose) fprintf(stderr, "[texture] %d <- %s %ux%u fmt %d lod %d..%d (%u bytes)\n", i, name, info->header.width, info->header.height, info->header.format, info->header.large_lod, info->header.small_lod, info->mem_required);
 	return (GrMipMapId_t)i;
 }
@@ -152,6 +177,7 @@ void grFreeTexture(GrMipMapId_t h)
 	{
 		tmu_used -= tex[h].bytes;
 		free(tex[h].data);
+		if(tex[h].mod_rgba) stbi_image_free(tex[h].mod_rgba);
 		memset(&tex[h], 0, sizeof tex[h]);
 		tex[h].gl_dirty = 1;
 	}
@@ -176,3 +202,59 @@ void show_tmu_map(void)
 
 port_texture_t *port_texture(GrMipMapId_t h) { return (h < MAX_TEXTURES && tex[h].used) ? &tex[h] : 0; }
 void port_texture_verbose(int v) { verbose = v; }
+
+/* --export-textures DIR: every .WMS of the game as DIR/NAME.png (its largest level, row 0 at the
+   top: the orientation the mods folder reads back), the starting point for replacements */
+#include <dirent.h>
+#include <strings.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STBIW_MALLOC(n)		host_alloc(n)
+#define STBIW_REALLOC(p, n)	host_realloc(p, n)
+#define STBIW_FREE(p)		host_free(p)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#include "../third_party/stb/stb_image_write.h"	/* public domain / MIT, see its end */
+#pragma GCC diagnostic pop
+extern void port_texel_rgba(int fmt, const unsigned char *p, const GuTexTable *tbl, unsigned char *o);
+extern const char *hal_partition_root;
+int port_export_textures(const char *dir)
+{
+	DIR		*d = opendir(hal_partition_root);
+	struct dirent	*e;
+	int		n = 0, bad = 0;
+	if(!d) { fprintf(stderr, "[export] no game files at %s\n", hal_partition_root); return 1; }
+#ifdef _WIN32
+	mkdir(dir);
+#else
+	mkdir(dir, 0755);
+#endif
+	while((e = readdir(d)))
+	{
+		size_t		l = strlen(e->d_name);
+		char		path[1024], out[1024], base[256];
+		unsigned char	*buf, *rgba;
+		unsigned int	len, i, w, h, bpt;
+		const unsigned char *texels;
+		Gu3dfInfo	info;
+		FILE		*f;
+		if(l < 5 || strcasecmp(e->d_name + l - 4, ".wms")) continue;
+		snprintf(path, sizeof path, "%s/%s", hal_partition_root, e->d_name);
+		if(!(f = fopen(path, "rb"))) { bad++; continue; }
+		fseek(f, 0, SEEK_END); len = (unsigned int)ftell(f); fseek(f, 0, SEEK_SET);
+		buf = malloc(len);
+		if(fread(buf, 1, len, f) != len) { fclose(f); free(buf); bad++; continue; }
+		fclose(f);
+		if(!(texels = wms_parse(buf, len, &info, e->d_name))) { free(buf); bad++; continue; }
+		w = info.header.width; h = info.header.height;
+		bpt = info.header.format >= GR_TEXFMT_16BIT ? 2 : 1;
+		rgba = malloc(w * h * 4);
+		for(i = 0; i < w * h; i++) port_texel_rgba(info.header.format, texels + i * bpt, &info.table, rgba + i * 4);
+		snprintf(base, sizeof base, "%.*s", (int)(l - 4), e->d_name);
+		snprintf(out, sizeof out, "%s/%s.png", dir, base);
+		if(stbi_write_png(out, (int)w, (int)h, 4, rgba, (int)w * 4)) n++; else bad++;
+		free(rgba); free(buf);
+	}
+	closedir(d);
+	fprintf(stderr, "[export] %d textures written to %s%s\n", n, dir, bad ? " (some files could not be read)" : "");
+	return 0;
+}

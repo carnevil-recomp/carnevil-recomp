@@ -22,6 +22,8 @@ Options (after the image path)
   --borderless     window without a title bar
   --mice          read each mouse and light gun separately: first to click is player 1, next player 2
   --crosshair 0    no crosshairs (the cabinet had none; the port draws them like MAME)
+  --no-mods        ignore the mods folder (see mods/README.txt)
+  --export-textures DIR   write every texture as DIR/NAME.png, to start a mod from
   --hires          smooth window-resolution picture instead of the cabinet's 400x256 one
   --violence 0..3  0 none, 1 green blood, 2 red blood, 3 full gore (default); it is saved
   --adjust N=V     any operator adjustment by its number in the game's ADJUST.FMT

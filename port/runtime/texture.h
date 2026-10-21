@@ -12,6 +12,8 @@ typedef struct {
 	unsigned int	gl_name;	/* renderer's objects, 0 = none */
 	unsigned int	gl_keyed, gl_key;
 	int		gl_dirty;
+	unsigned char	*mod_rgba;	/* a replacement picture from the mods folder (RGBA, row 0 = t 0) */
+	int		mod_w, mod_h;
 } port_texture_t;
 port_texture_t *port_texture(GrMipMapId_t handle);
 unsigned int port_texture_bytes(const Gu3dfHeader *h);

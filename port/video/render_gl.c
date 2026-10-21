@@ -54,6 +54,7 @@ int port_gl_load(void *(*getproc)(const char *))
 #endif
 #include <glide/glide.h>
 #include "hal.h"
+#include "mods.h"
 #include "video.h"
 #include "texture.h"
 
@@ -94,7 +95,9 @@ static void glide_defaults(void)
 }
 
 /* ---- texture upload: Glide texel formats -> RGBA8 ---- */
-static void texel_rgba(int fmt, const unsigned char *p, const GuTexTable *tbl, unsigned char *o)
+void port_texel_rgba(int fmt, const unsigned char *p, const GuTexTable *tbl, unsigned char *o);
+#define texel_rgba port_texel_rgba
+void port_texel_rgba(int fmt, const unsigned char *p, const GuTexTable *tbl, unsigned char *o)
 {
 	unsigned int v;
 	/* the Voodoo widens a channel by repeating its top bits (MAME's voodoo), not by rounding */
@@ -125,6 +128,9 @@ static void texel_rgba(int fmt, const unsigned char *p, const GuTexTable *tbl, u
 	}
 }
 
+#ifndef GL_GENERATE_MIPMAP
+#define GL_GENERATE_MIPMAP	0x8191		/* OpenGL 1.4 (the MinGW headers stop at 1.1) */
+#endif
 static unsigned int upload(port_texture_t *t, int keyed, unsigned int key)
 {
 	const Gu3dfHeader *h = &t->header;
@@ -134,6 +140,20 @@ static unsigned int upload(port_texture_t *t, int keyed, unsigned int key)
 	unsigned char kr = (key >> 16) & 255, kg = (key >> 8) & 255, kb = key & 255;
 	glGenTextures(1, &name);
 	glBindTexture(GL_TEXTURE_2D, name);
+	if(t->mod_rgba)		/* a mods-folder picture: one level, the driver builds the smaller ones */
+	{
+		unsigned int i, n = (unsigned int)(t->mod_w * t->mod_h);
+		unsigned char *rgba = host_alloc(n * 4);		/* outside the game's arena */
+		memcpy(rgba, t->mod_rgba, n * 4);
+		if(keyed)
+			for(i = 0; i < n; i++)
+				if(rgba[i*4] == kr && rgba[i*4+1] == kg && rgba[i*4+2] == kb) rgba[i*4+3] = 0;
+		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, t->mod_w, t->mod_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+		host_free(rgba);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1000);
+		return name;
+	}
 	for(lod = h->large_lod; lod <= h->small_lod; lod++, level++)
 	{
 		unsigned int w = h->width >> (lod - h->large_lod), hh = h->height >> (lod - h->large_lod), i;

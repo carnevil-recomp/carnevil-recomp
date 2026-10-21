@@ -20,3 +20,7 @@ SDL2 (Windows package: SDL2.dll): Copyright (C) 1997-2024 Sam Lantinga. zlib lic
   notice may not be removed or altered from any source distribution.
 
 CarnEvil is (C) 1998 Midway Games. No Midway game data is included.
+
+stb_image and stb_image_write (port/third_party/stb), by Sean Barrett: public domain, or the MIT
+License (Copyright (c) 2017 Sean Barrett), at your choice; the full text is at the end of each
+header.

@@ -16,6 +16,8 @@ windows) cp "$HERE/build/win/carnevil.exe" "$HERE/build/win/SDL2.dll" "$R/play.b
 *)	echo "usage: $0 linux|windows|macos VERSION"; exit 2 ;;
 esac
 cp "$R/NOTICE.txt" "$STAGE/"
+mkdir -p "$STAGE/mods"
+if [ "$OS" = windows ]; then sed 's/$/\r/' "$R/MODS.txt" > "$STAGE/mods/README.txt"; else cp "$R/MODS.txt" "$STAGE/mods/README.txt"; fi
 chmod +x "$STAGE"/carnevil* "$STAGE"/*.sh 2>/dev/null || true
 cd "$HERE/dist"
 if [ "$OS" = windows ]; then rm -f "$NAME.zip"; (command -v zip >/dev/null && zip -qr -X "$NAME.zip" "$NAME") || python3 -c "import shutil,sys; shutil.make_archive(sys.argv[1], 'zip', '.', sys.argv[1])" "$NAME"; echo "dist/$NAME.zip"
