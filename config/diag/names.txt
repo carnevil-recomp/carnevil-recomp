@@ -228,6 +228,17 @@
 0x80103964 clear_buttons
 0x80103998 dialog
 0x80104068 clear_dialog
+0x801040a0 color_bars
+0x801041e8 crosshatch
+0x80104410 red_screen
+0x80104438 green_screen
+0x80104468 blue_screen
+0x80104498 white_screen
+0x801044c0 black_screen
+0x801044e8 gray50_screen
+0x80104518 gray25_screen
+0x801613b0 monitor_items
+0x8016148c monitor_menu
 0x80167d70 sw_left
 0x80167d74 sw_right
 0x8015cc68 diag_revision

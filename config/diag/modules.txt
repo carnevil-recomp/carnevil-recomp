@@ -3,3 +3,13 @@
 main src/diag/main.c diag  0x801009b0 0x8010138c  0x80152560 0x8015291c  0x8015cc68 0x8015d070
 prompt src/diag/prompt.c diag  0x80101390 0x80101614  0x80152920 0x80152967  -          -
 point src/diag/point.c diag  0x801018c8 0x80101968  0x80152990 0x801529b4  -          -
+monitor src/diag/monitor.c diag  -          -           0x80152bc8 0x80152c66  0x801611a0 0x801614a4
+color_bars src/diag/color_bars.c diag  0x801040a0 0x801041e8  0x80152c68 0x80152c74  0x801614a8 0x8016150c
+crosshatch src/diag/crosshatch.c diag  0x801041e8 0x8010440c  0x80152c78 0x80152c90  0x80161510 0x80161534
+red_screen src/diag/red_screen.c diag  0x80104410 0x80104438  -          -           -          -
+green_screen src/diag/green_screen.c diag  0x80104438 0x80104464  -          -           -          -
+blue_screen src/diag/blue_screen.c diag  0x80104468 0x80104494  -          -           -          -
+white_screen src/diag/white_screen.c diag  0x80104498 0x801044c0  -          -           -          -
+black_screen src/diag/black_screen.c diag  0x801044c0 0x801044e8  -          -           -          -
+gray50_screen src/diag/gray50_screen.c diag  0x801044e8 0x80104514  -          -           -          -
+gray25_screen src/diag/gray25_screen.c diag  0x80104518 0x80104544  -          -           -          -
