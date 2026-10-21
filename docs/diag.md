@@ -67,11 +67,17 @@ prompt.c's (one byte, 'r'). The monitor menu's data ends at 0x801614a4 and its n
 0x80152c66 ('ve'), so it is a file of data alone; color_bars.c's data starts 8-aligned after it.
 
 ## Status
-DIAG's own code is 0x80100000-0x8011b810 (about 28,000 instructions). Registered modules
-(exact, built from C, DIAG.EXE byte-identical): 5672 instructions of code in 36 files.
+All of DIAG's own code (0x801002d8-0x8011b810; 0x80100000-0x801002d8 is crt0 and the BIOS call
+stubs, assembly as in GAME.EXE) is written in C. Registered modules (exact, built from C,
+DIAG.EXE byte-identical): 10654 instructions of code in 46 files.
+
+Profiles: most files are `diag` (-O2); the flex scanner (fmtlex.c), the software update
+(update.c, updfile.c) and the start-up (initg.c) are `diag3` (-O3); the gun/records object
+(guntest.c) and the custom pricing editor (custprice.c) are `diag1` (-O).
 
 | file | text | profile | insns |
 |---|---|---|---|
+| initg.c | 0x801002d8-0x801009ac | diag3 | 437 |
 | main.c | 0x801009b0-0x8010138c | diag | 631 |
 | prompt.c | 0x80101390-0x80101614 | diag | 161 |
 | point.c | 0x801018c8-0x80101968 | diag | 40 |
@@ -96,20 +102,29 @@ DIAG's own code is 0x80100000-0x8011b810 (about 28,000 instructions). Registered
 | rtcset_year.c | 0x8010ece0-0x8010efc4 | diag | 185 |
 | adjust.c | 0x8010efc8-0x8010f088 | diag | 48 |
 | freeplay.c | 0x8010f088-0x8010f634 | diag | 363 |
+| pricing_menu.c | 0x8010f638-0x8010f64c | diag | 5 |
+| pricing.c | 0x8010f650-0x8011059c | diag | 979 |
 | asia_pricing.c | 0x801105a0-0x801105b0 | diag | 4 |
 | attract.c | 0x80110a50-0x80110c44 | diag | 125 |
 | volume.c | 0x80110c48-0x801110b4 | diag | 283 |
+| custprice_show.c | 0x801110b8-0x80111c88 | diag | 756 |
 | restore.c | 0x80114848-0x80114b90 | diag | 210 |
 | fscheck.c | 0x80114b90-0x80115920 | diag | 868 |
 | integrity.c | 0x80115920-0x80116020 | diag | 448 |
+| update.c | 0x80116020-0x80118194 | diag3 | 2141 |
+| updfile.c | 0x80118198-0x801188c4 | diag3 | 459 |
 | input.c | 0x801188c8-0x801189d8 | diag | 68 |
+| speaker.c | 0x8011b4d8-0x8011b80c | diag | 205 |
 | monitor.c | data only | diag | - |
 | diagmenu.c | data only | diag | - |
 | diskmenu.c | data only | diag | - |
 | rtcmenu.c | data only | diag | - |
+| namerica_pricing.c | data only | diag | - |
+| europe_pricing.c | data only | diag | - |
+| australia_pricing.c | data only | diag | - |
 | samerica_pricing.c | data only | diag | - |
 
-Written but not registered yet (a file is registered once every function in it matches):
+Written, not registered yet (a file goes in once every function in it matches):
 
 | file | range | state |
 |---|---|---|
@@ -119,9 +134,11 @@ Written but not registered yet (a file is registered once every function in it m
 | button.c, dialog.c | 0x801036b8-0x801040a0 | register choice in draw_button and dialog |
 | ide.c | 0x80104990-0x80107aac | 4 of 6 exact; the two random read tests at 98% |
 | dipsw.c | 0x80107ab0-0x8010845c | dip_switch_tests exact; the bank and field drawers register choices away |
-| switches.c | 0x80108460-0x80108d8c | the inline 49-way count exact; switch_tests 35% (register choice) |
-| fmtlex.c | 0x80109140- | the flex 2.5.2 scanner exact at -O3 (profile diag3); its section 3 (the audit menus, to 0x8010d664) shares its strings and is in progress |
-| sndtest.c | 0x801105b0-0x80110a50 | 297 of 300 instructions: where each result's 16-bit mask is scheduled |
+| switches.c | 0x80108460-0x80108d8c | switch_tests 35% (register choice) |
+| fmtlex.c | 0x80109140-0x8010d664 | 33 of 34 exact; show_audits 2 instructions short (a register copy of a duration's seconds) |
+| sndtest.c | 0x801105b0-0x80110a50 | 297 of 300: where each result's 16-bit mask is scheduled |
+| custprice.c | 0x80111c88-0x80114848 | 13 of 17 exact (-O); four register choices away |
+| guntest.c | 0x801189d8-0x8011b4d4 | 27 of 30 exact (-O); gun_test, try_calibration, calibrate_gun mask each gun byte read once more than the original |
 
 ## The port
 Each program is its own executable, as on the disk: `carnevil` (GAME.EXE) and
