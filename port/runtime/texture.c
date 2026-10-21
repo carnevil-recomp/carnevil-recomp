@@ -217,12 +217,28 @@ void port_texture_verbose(int v) { verbose = v; }
 #pragma GCC diagnostic pop
 extern void port_texel_rgba(int fmt, const unsigned char *p, const GuTexTable *tbl, unsigned char *o);
 extern const char *hal_partition_root;
-int port_export_textures(const char *dir)
+/* an absolute path: the HAL treats relative paths as the game's own, sending writes to the state
+   directory and reads through the mods folder, so the exporter names its files absolutely */
+static void host_path(const char *p, char *out, size_t n)
 {
-	DIR		*d = opendir(hal_partition_root);
+#ifdef _WIN32
+	if(!_fullpath(out, p, n)) snprintf(out, n, "%s", p);
+#else
+	size_t	l;
+	if(p[0] == '/' || !getcwd(out, n)) { snprintf(out, n, "%s", p); return; }
+	l = strlen(out);
+	snprintf(out + l, n - l, "/%s", p);
+#endif
+}
+int port_export_textures(const char *to)
+{
+	char		root[1024], dir[1024];
+	DIR		*d;
 	struct dirent	*e;
 	int		n = 0, bad = 0;
-	if(!d) { fprintf(stderr, "[export] no game files at %s\n", hal_partition_root); return 1; }
+	host_path(hal_partition_root, root, sizeof root);
+	host_path(to, dir, sizeof dir);
+	if(!(d = opendir(root))) { fprintf(stderr, "[export] no game files at %s\n", root); return 1; }
 #ifdef _WIN32
 	mkdir(dir);
 #else
@@ -238,7 +254,7 @@ int port_export_textures(const char *dir)
 		Gu3dfInfo	info;
 		FILE		*f;
 		if(l < 5 || strcasecmp(e->d_name + l - 4, ".wms")) continue;
-		snprintf(path, sizeof path, "%s/%s", hal_partition_root, e->d_name);
+		snprintf(path, sizeof path, "%s/%s", root, e->d_name);
 		if(!(f = fopen(path, "rb"))) { bad++; continue; }
 		fseek(f, 0, SEEK_END); len = (unsigned int)ftell(f); fseek(f, 0, SEEK_SET);
 		buf = malloc(len);
@@ -255,6 +271,7 @@ int port_export_textures(const char *dir)
 		free(rgba); free(buf);
 	}
 	closedir(d);
-	fprintf(stderr, "[export] %d textures written to %s%s\n", n, dir, bad ? " (some files could not be read)" : "");
+	if(bad) fprintf(stderr, "[export] %d textures written to %s; %d could not be read or written\n", n, dir, bad);
+	else fprintf(stderr, "[export] %d textures written to %s\n", n, dir);
 	return 0;
 }

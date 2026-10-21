@@ -273,7 +273,7 @@ void hal_init(int argc, char **argv)
 		else if(!strcmp(argv[i], "--press") && i + 1 < argc) parse_presses(argv[++i]);
 		else if(!strcmp(argv[i], "--state") && i + 1 < argc) hal_state_root = argv[++i];
 		else if(!strcmp(argv[i], "-v")) { verbose++; port_texture_verbose(1); dcs_set_verbose(verbose); }
-		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--fullscreen] [--borderless] [--hires] [--crosshair 0|1] [--mods DIR | --no-mods] [--mice] [--mouse-speed X] [--debug FLAGS] [--load-time X] [--violence 0-3] [--adjust N=V] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
+		else { fprintf(stderr, "usage: %s [--partition DIR] [--raw IMAGE] [--state DIR] [--wav FILE] [--press F:switch,...] [--frames N] [--fast] [--headless] [--fullscreen] [--borderless] [--hires] [--crosshair 0|1] [--mods DIR | --no-mods] [--export-textures DIR] [--mice] [--mouse-speed X] [--debug FLAGS] [--load-time X] [--violence 0-3] [--adjust N=V] [--dump frame.ppm | --dump-every prefix N] [-v]\n", argv[0]); exit(2); }
 	}
 	choose_partition();
 	if(export_dir) { extern int port_export_textures(const char *); exit(port_export_textures(export_dir)); }
