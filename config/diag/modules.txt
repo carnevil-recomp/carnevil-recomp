@@ -27,3 +27,5 @@ rtcset_year src/diag/rtcset_year.c diag  0x8010ece0 0x8010efc4  0x80157290 0x801
 restore src/diag/restore.c diag  0x80114848 0x80114b90  0x801592f0 0x8015943c  -          -
 asia_pricing src/diag/asia_pricing.c diag  0x801105a0 0x801105b0  0x80158678 0x8015868d  0x80167510 0x80167598
 samerica_pricing src/diag/samerica_pricing.c diag  -          -           0x80158690 0x801586b2  0x80167598 0x80167618
+volume src/diag/volume.c diag  0x80110c48 0x801110b4  0x80158950 0x801589e0  0x80167618 0x8016763c
+rtc src/diag/rtc.c diag  0x80108d90 0x80109140  0x801538b0 0x80153a18  0x80161d58 0x80161da4

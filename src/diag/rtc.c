@@ -26,6 +26,20 @@ char	*month_names[] = { "JANUARY", "FEBUARY", "MARCH", "APRIL", "MAY", "JUNE", "
 	"AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER" };
 char	*day_names[] = { "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" };
 
+static inline char *day_name(struct dosdate_t *d)
+{
+	if(d->dayofweek >= 7)
+		return "INVALID";
+	return day_names[d->dayofweek];
+}
+
+static inline char *month_name(struct dosdate_t *d)
+{
+	if(!d->month || d->month >= 13)
+		return "INVALID";
+	return month_names[d->month - 1];
+}
+
 /* 0x80108d90: the date and time on the serial port */
 void print_date_time(void)
 {
@@ -35,8 +49,8 @@ void print_date_time(void)
 
 	_gettime(&t);
 	_getdate(&d);
-	day = d.dayofweek >= 7 ? "INVALID" : day_names[d.dayofweek];
-	month = !d.month || d.month >= 13 ? "INVALID" : month_names[d.month - 1];
+	day = day_name(&d);
+	month = month_name(&d);
 	if(d.dayofweek >= 7 || !d.month || d.month >= 13)
 		fprintf(stderr, ">>> PLEASE SET CLOCK! <<<\n");
 	fprintf(stderr, "%s - %s  %02d,%04d\n", day, month, d.day, d.year);
@@ -62,8 +76,7 @@ int rtc_test(void)
 		set_text_position((int)(hres / 2.0F), (int)(vres / 2.0F), 1.0F);
 		set_text_color(0xffffff00);
 		oprintf("%s - %s  %02d,%04d",
-			d.dayofweek >= 7 ? "INVALID" : day_names[d.dayofweek],
-			!d.month || d.month >= 13 ? "INVALID" : month_names[d.month - 1],
+			day_name(&d), month_name(&d),
 			d.day, d.year);
 		set_text_position((int)(hres / 2.0F), (int)(vres / 2.0F - (font0_height + font0_height)), 1.0F);
 		oprintf("%02d:%02d:%02d", t.hour, t.minute, t.second);
@@ -76,7 +89,7 @@ int rtc_test(void)
 			}
 			sleep(1);
 			_gettime(&t);
-		} while(t.second == sec);
+		} while(sec == t.second);
 		if(!done)
 			snd_scall_bank("ttest", 13, 180, 127, 0x8000);
 		_getdate(&d);
