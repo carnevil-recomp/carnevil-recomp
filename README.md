@@ -164,14 +164,17 @@ Others change behaviour rather than draw: 0x1 is the developers' mode (free play
 ## Mods
 A `mods/` folder (`--mods DIR` for another, `--no-mods` for none) holds files that replace the
 game's own while it runs; the extracted game files are never changed. It is a port addition and
-changes nothing in the decompiled game.
+changes nothing in the decompiled game. **See [MODS.md](MODS.md) for how to use it.**
 
 | In `mods/` | Replaces |
 |---|---|
-| `FILE.EXT` | the game file of that name (any case): a texture `.WMS`, a sound bank `.BNK`, a model `.ZM`, a movie... |
+| `FILE.EXT` | the game file of that name (any case): a texture `.WMS`, a sound bank `.BNK`, a model `.ZM`... |
 | `PACK/...` | the same for every file in the pack folder (and one level of subfolders) |
 | `PACK/NAME.png` | the texture `NAME.WMS`, at any size with the same proportions |
 | `order.txt` | (optional) pack names, one per line, first wins; the rest follow alphabetically; loose files win over packs |
+
+Movies and music are streamed from raw partitions of the disk image, not files, so they can't
+be replaced; the game's saved files (CMOS, high scores) are never overridden.
 
 `--export-textures DIR` writes all 1148 textures as `DIR/NAME.png` (the largest mip level, the
 orientation the mods folder reads back) to start from. A replacement picture keeps its texture's

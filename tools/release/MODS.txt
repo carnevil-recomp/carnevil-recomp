@@ -16,3 +16,5 @@ pictures are sharper, most visibly with --hires. Transparent pixels stay transpa
 
 The game prints each replacement it uses ("[mods] NAME <- path") when it first loads it.
 Sounds (.BNK) and models (.ZM) can be replaced as whole files; they are in Midway's formats.
+Movies and music are read from the disk image directly and can't be replaced.
+The full guide is MODS.md in the project's repository.
