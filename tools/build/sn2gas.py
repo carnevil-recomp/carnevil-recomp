@@ -17,8 +17,10 @@ asmmips differs from GNU as in these ways, all emulated here:
   the other way round (DIAG's gun.c);
 - it never aligns .half/.word data by itself: packed initializers put them at odd offsets,
   which gas would pad. `.align 0` after each data label turns gas's auto-alignment off.
+- `li.d` into a general register pair (a double argument in $6/$7) is two `li`s of the
+  constant's low and high words, nothing in the pool; gas would load it from memory.
 """
-import sys, re, os
+import sys, re, os, struct
 CCOND=re.compile(r"^\s*c\.(f|un|eq|ueq|olt|ult|ole|ule|sf|ngle|seq|ngl|lt|nge|le|ngt)\.[sd]\b")
 BC1=re.compile(r"^\s*bc1(t|f|tl|fl)\b")
 BREAK=re.compile(r"^\s*break\s+(0x[0-9a-fA-F]+|\d+)\s*$")
@@ -32,6 +34,7 @@ MOVE=re.compile(r"^\s*move\s+(\$\w+)\s*,\s*(\$\w+)\s*$")   # asmmips encodes mov
 ULW=re.compile(r"^\s*ulw\s+(\$\w+)\s*,\s*(-?(?:0x[0-9a-fA-F]+|\d+))\((\$\w+)\)\s*$")
 SECTION=re.compile(r"^\s*\.(text|data|rdata|sdata|bss|section\s+([.\w]+))")
 LABEL=re.compile(r"^[A-Za-z_$.][\w$.]*:\s*$")
+LID_GPR=re.compile(r"^\s*li\.d\s+\$(\d+)\s*,\s*(\S+)")
 DIVM=re.compile(r"^\s*(div|divu|rem|remu)\s+(\$\w+)\s*,\s*(\$\w+)\s*,\s*(\$\w+)\s*$")
 def expand_div(op,d,s,t,n):
     """asmmips expansion of the div/rem macros: the real div comes first, then the zero-divisor
@@ -86,6 +89,11 @@ def convert(lines, fpu_hazard=None):
             while a<size and a<16: a*=2                # the section itself keeps alignment 1 and ld places it
             pad=(-bss_off)%a; bss_off+=pad+size        # exactly where modules.txt says
             out+=["\t.section\t.bss"]+(["\t.space\t%d"%pad] if pad else [])+["%s:"%sym,"\t.space\t%d"%size,"\t.previous"]
+            continue
+        m=LID_GPR.match(line)
+        if m:
+            r=int(m.group(1)); lo,hi=struct.unpack("<II",struct.pack("<d",float(m.group(2))))
+            out+=["\tli\t$%d,0x%08x"%(r,lo),"\tli\t$%d,0x%08x"%(r+1,hi)]
             continue
         m=LI.match(line)
         if m:
