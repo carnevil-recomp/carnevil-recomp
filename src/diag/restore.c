@@ -5,14 +5,15 @@
  */
 #include <goose/adjust.h>
 #include "diag.h"
+#include "fmt.h"
 
 extern int	get_adjustment(int, int *);
 extern int	set_adjustment(int, int);
 extern int	dialog(char *, float, float, float, int);
 extern int	clear_all_audits(int);
 
-static void	restore_game_adjustments(void);
-static int	check_game_adjustments(void);
+static void	restore_additional_adjustments(void);
+static int	check_additional_adjustments(void);
 
 /* 0x80114848 */
 int factory_restore(void)
@@ -23,10 +24,10 @@ int factory_restore(void)
 	if(err == 1)
 	{
 		restore_factory_adjustments(0, 0);
-		restore_game_adjustments();
+		restore_additional_adjustments();
 		if(!check_system_adjustments(0, 0))
 			err = 0;
-		if(check_game_adjustments())
+		if(check_additional_adjustments())
 			err |= 2;
 		clear_all_audits(-1);
 		if(err)
@@ -49,10 +50,10 @@ int default_adjustments(void)
 	if(err == 1)
 	{
 		restore_factory_adjustments(0, 0);
-		restore_game_adjustments();
+		restore_additional_adjustments();
 		if(!check_system_adjustments(0, 0))
 			err = 0;
-		if(check_game_adjustments())
+		if(check_additional_adjustments())
 			err |= 2;
 		if(err)
 			message_box("FAILURE PERFORMING AJUSTMENTS RESTORE", -1.0F, -1.0F, 1.0F);
@@ -80,30 +81,30 @@ int reset_high_scores(void)
 }
 
 /* 0x80114ab0 */
-static void restore_game_adjustments(void)
+static void restore_additional_adjustments(void)
 {
-	adjust_node_t	*p;
+	adjust_fmt_t	*p;
 
-	for(p = game_adjustments; p; p = p->next)
-		set_adjustment(p->adj_num, p->default_val);
+	for(p = additional_adjustments; p; p = p->next)
+		set_adjustment(p->adjustment, p->def);
 }
 
 /* 0x80114af8: 1 if one could not be set */
-static int check_game_adjustments(void)
+static int check_additional_adjustments(void)
 {
-	adjust_node_t	*p;
+	adjust_fmt_t	*p;
 	int	val, err = 0;
 
-	for(p = game_adjustments; p; p = p->next)
+	for(p = additional_adjustments; p; p = p->next)
 	{
-		if(get_adjustment(p->adj_num, &val))
+		if(get_adjustment(p->adjustment, &val))
 		{
-			if(set_adjustment(p->adj_num, p->default_val))
+			if(set_adjustment(p->adjustment, p->def))
 				err = 1;
 		}
-		else if(val != p->default_val)
+		else if(val != p->def)
 		{
-			if(set_adjustment(p->adj_num, p->default_val))
+			if(set_adjustment(p->adjustment, p->def))
 				err = 1;
 		}
 	}

@@ -12,6 +12,7 @@ case "$PROF" in
   game0) F="-mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin"; export SN2GAS_FPU_HAZARD=1;;
   o2)    F="-O2 -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   diag)  F="-O2 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0";;   # DIAG.EXE's own files: R5000, signed char, builtins (fabs)
+  diag3) F="-O3 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0";;   # DIAG\'s flex scanner: -O3 (its small buffer functions inlined, the unused yyunput gone)
   diagnsr) F="-O2 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-strength-reduce";;   # the same without loop strength reduction (for trying)
   o2r5k) F="-O2 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;
   o1r5k) F="-O -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin";;

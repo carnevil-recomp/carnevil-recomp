@@ -6,6 +6,7 @@
 #include <goose/sprites.h>
 #include <goose/ostrings.h>
 #include "diag.h"
+#include "fmt.h"
 
 extern int	free_play(void), attract_sounds(void), factory_restore(void);
 extern menu_t	pricing_menu;
@@ -36,7 +37,7 @@ int	additional_added = 0;
 /* 0x8010efc8 */
 int adjustments(void)
 {
-	if(game_adjustments && !additional_added)
+	if(additional_adjustments && !additional_added)
 	{
 		memcpy(&adjust_items[5], &adjust_items[4], sizeof(menu_item_t));
 		memcpy(&adjust_items[4], &adjust_items[3], sizeof(menu_item_t));

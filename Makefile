@@ -44,6 +44,7 @@ CC1_game1 := -O -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno
 CC1_game0 := -mips3 -fsigned-char -mhard-float -fomit-frame-pointer -G 0 -fno-builtin       # the high-score file
 CC1_noopt := -mips4 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin
 CC1_diag  := -O2 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0   # DIAG.EXE's own files
+CC1_diag3 := -O3 -mips4 -mcpu=r5000 -fsigned-char -mhard-float -fomit-frame-pointer -G 0   # DIAG's flex scanner (fmtlex.c)
 CC1_o2r5k := -O2 -mips4 -mcpu=r5000 -mhard-float -fomit-frame-pointer -G 0 -fno-builtin   # sound library (sound.mak: CC2)
 DISASM   := python3 tools/build/disasm.py $(ORIG) asm --functions config/functions_v103.txt --symbols config/binja_symbols.txt \
             --names config/names.txt --modules config/modules.txt --word-fallback config/word_fallback.txt --nosym config/nosym.txt
