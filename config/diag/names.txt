@@ -240,6 +240,15 @@
 0x801613b0 monitor_items
 0x8016148c monitor_menu
 0x80104548 system_info
+0x80107ab0 draw_dip_field
+0x80107d48 draw_dip_banks
+0x80108460 num_49way_players
+0x80167d94 sw_volume_both
+0x80161b18 player_switch_names
+0x80161c98 coin_switch_names
+0x80167d80 sw_exit
+0x80161968 coinage_source_names
+0x80161a28 dip_fields
 0x80161758 pic_games
 0x801686c0 __dj_stderr
 0x801207d0 close
