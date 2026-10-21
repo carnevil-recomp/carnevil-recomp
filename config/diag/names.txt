@@ -242,6 +242,15 @@
 0x801613b0 monitor_items
 0x8016148c monitor_menu
 0x80104548 system_info
+0x80104990 ide_sequential_read_test
+0x80105114 ide_cache_read_test
+0x80105884 ide_random_read_test
+0x80106054 ide_random_cache_read_test
+0x80106824 ide_disk_info
+0x801070a8 ide_surface_scan
+0x80114b90 file_system_check
+0x80115920 disk_data_integrity
+0x80161950 disk_menu
 0x80107ab0 draw_dip_field
 0x80107d48 draw_dip_banks
 0x80108460 num_49way_players
