@@ -244,6 +244,9 @@
 0x80108460 num_49way_players
 0x80108d90 print_date_time
 0x8010efc8 adjustments
+0x801105a0 set_pricing_country
+0x801105b0 sound_test
+0x80167510 pricing_country
 0x8010f088 free_play
 0x8010f3f0 totalizer
 0x80110a50 attract_sounds
