@@ -16,3 +16,4 @@ gray25_screen src/diag/gray25_screen.c diag  0x80104518 0x80104544  -          -
 sysinfo src/diag/sysinfo.c diag  0x80104548 0x80104990  0x80152d30 0x80152e10  0x80161758 0x80161764
 adjust src/diag/adjust.c diag  0x8010efc8 0x8010f088  0x801573f0 0x80157457  0x80164d80 0x80164ee8
 freeplay src/diag/freeplay.c diag  0x8010f088 0x8010f634  0x80157458 0x801576e8  -          -
+attract src/diag/attract.c diag  0x80110a50 0x80110c44  0x80158880 0x80158950  -          -

@@ -1,9 +1,10 @@
 /*
- * freeplay.c - free play and the totalizer (0x8010f088-0x8010f634): adjustment 0 is free play,
- * 1 the totalizer. Free play is the dip switches' when they set the coinage.
+ * freeplay.c - free play and the totalizer (0x8010f088-0x8010f634). Free play is the dip
+ * switches' when they set the coinage.
  */
 #include <goose/sprites.h>
 #include <goose/ostrings.h>
+#include <goose/adjust.h>
 #include "diag.h"
 
 extern int	get_dip_coin_current(void);
@@ -38,7 +39,7 @@ int free_play(void)
 		del1c(0, 0);
 		return 0;
 	}
-	if(get_adjustment(0, &val))
+	if(get_adjustment(FREEPLAY_ADJ, &val))
 	{
 		set_text_font(0);
 		set_text_justification_mode(HJUST_CENTER|VJUST_CENTER);
@@ -47,15 +48,15 @@ int free_play(void)
 		oprintf("THE CMOS SETTING OF FREE PLAY IS");
 		set_text_position((int)(hres / 2.0F), (int)(vres / 2.0F - (font0_height + font0_height)), 1.0F);
 		oprintf("INVALID - RESETTING TO FREE PLAY OFF");
-		set_adjustment(0, 0);
+		set_adjustment(FREEPLAY_ADJ, 0);
 		wait_test_exit();
 		delete_multiple_strings(0, 0);
 		del1c(0, 0);
-		get_adjustment(0, &val);
+		get_adjustment(FREEPLAY_ADJ, &val);
 	}
 	val = dialog("ENABLE FREE PLAY ?", -1.0F, -1.0F, 1.0F, 3);
-	set_adjustment(0, val == 1);
-	if(get_adjustment(0, &val))
+	set_adjustment(FREEPLAY_ADJ, val == 1);
+	if(get_adjustment(FREEPLAY_ADJ, &val))
 		message_box("SETTING FREE PLAY MODE FAILED", -1.0F, -1.0F, 1.0F);
 	else
 	{
@@ -71,7 +72,7 @@ int totalizer(void)
 {
 	int	val;
 
-	if(get_adjustment(1, &val))
+	if(get_adjustment(TOTALIZER_ADJ, &val))
 	{
 		set_text_font(0);
 		set_text_justification_mode(HJUST_CENTER|VJUST_CENTER);
@@ -80,19 +81,19 @@ int totalizer(void)
 		oprintf("THE CMOS SETTING OF TOTALIZER MODE IS");
 		set_text_position((int)(hres / 2.0F), (int)(vres / 2.0F - (font0_height + font0_height)), 1.0F);
 		oprintf("INVALID - RESETTING TO TOTALIZER MODE ON");
-		set_adjustment(1, 1);
+		set_adjustment(TOTALIZER_ADJ, 1);
 		wait_test_exit();
 		delete_multiple_strings(0, 0);
 		del1c(0, 0);
-		get_adjustment(1, &val);
+		get_adjustment(TOTALIZER_ADJ, &val);
 	}
 	if(val)
 	{
 		val = dialog("TOTALIZER MODE IS ENABLED - DO YOU WANT TO DISABLE ?", -1.0F, -1.0F, 1.0F, 3);
 		if(val == 1)
 		{
-			set_adjustment(1, 0);
-			if(get_adjustment(1, &val))
+			set_adjustment(TOTALIZER_ADJ, 0);
+			if(get_adjustment(TOTALIZER_ADJ, &val))
 				message_box("SETTING OF TOTALIZER MODE MODE FAILED", -1.0F, -1.0F, 1.0F);
 			else
 				message_box("TOTALIZER MODE MODE DISABLED", -1.0F, -1.0F, 1.0F);
@@ -105,8 +106,8 @@ int totalizer(void)
 		val = dialog("TOTALIZER MODE IS DISABLED - DO YOU WANT TO ENABLE ?", -1.0F, -1.0F, 1.0F, 3);
 		if(val == 1)
 		{
-			set_adjustment(1, 1);
-			if(get_adjustment(1, &val))
+			set_adjustment(TOTALIZER_ADJ, 1);
+			if(get_adjustment(TOTALIZER_ADJ, &val))
 				message_box("SETTING OF TOTALIZER MODE MODE FAILED", -1.0F, -1.0F, 1.0F);
 			else
 				message_box("TOTALIZER MODE MODE ENABLED", -1.0F, -1.0F, 1.0F);
