@@ -13,7 +13,7 @@
 
 extern void	sleep(int);
 extern int	(*sw_exit)(void);		/* 0x80167d80: nothing on CarnEvil */
-extern int	func_80120b08(const char *);	/* unlink() or remove(): calls _remove */
+extern int	remove(const char *);	/* unlink() or remove(): calls _remove */
 
 #define TEST_SIZE	0x80000
 
@@ -136,6 +136,6 @@ int disk_data_integrity(void)
 	free(buf);
 	delete_multiple_strings(0, 0);
 	del1c(0, 0);
-	func_80120b08("test.dat");
+	remove("test.dat");
 	return 0;
 }
